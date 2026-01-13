@@ -1,238 +1,292 @@
 # HablaAI Product Specification
 
-> An AI-powered language learning companion for Spanish and German conversation practice
+> Take someone from zero to conversational in Spanish or German
 
 ---
 
 ## Vision
 
-HablaAI is a conversational language tutor that adapts to your level, corrects mistakes gently, and tracks your vocabulary growth over time. Unlike traditional apps that focus on drills and flashcards, HablaAI prioritizes natural conversation with intelligent feedback.
+HablaAI is an AI conversation partner that takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, HablaAI gets you talking from day one—with enough scaffolding that you're never lost.
 
-**Core Belief**: The best way to learn a language is through practice, not memorization. But practice needs to be guided, tracked, and adapted to the learner.
+**Core Belief**: Conversation confidence comes from conversation practice. Grammar and vocabulary stick better when learned in context, not from flashcards.
 
 ---
 
 ## Target Users
 
-- **Primary**: Self-learners who want conversation practice beyond what Duolingo offers
-- **Secondary**: Anyone preparing for travel, work, or exams who needs practical speaking skills
-- **Tertiary**: Language hobbyists who enjoy the process of learning
+- **Primary**: Complete beginners who want to actually speak, not just study
+- **Secondary**: Lapsed learners who studied before but never got comfortable talking
+- **Tertiary**: Anyone preparing for travel/work who needs practical conversation skills
 
-**Not for**: Complete beginners (A0) who need foundational grammar instruction first
-
----
-
-## Core Features
-
-### V1 — Minimum Lovable Product
-
-| Feature | Description | Why It Matters |
-|---------|-------------|----------------|
-| **Adaptive Conversation** | AI responds in target language at your CEFR level (A1-C2) | Conversations that challenge without overwhelming |
-| **Gentle Grammar Feedback** | Catches mistakes, explains the rule briefly, suggests corrections | Learn from errors without interrupting flow |
-| **Vocabulary Tracking** | Automatically extracts and saves new words you encounter | See your vocabulary grow organically |
-| **Multi-Language Support** | Spanish and German with extensible architecture | Two popular languages, room to grow |
-| **Progress Visibility** | Words learned, sessions completed, level progression | Motivation through visible growth |
-| **Customizable Feedback** | Choose gentle, detailed, or minimal correction style | Match your learning preferences |
-
-### V2 — Enhanced Learning
-
-| Feature | Description |
-|---------|-------------|
-| **Scenario Roleplay** | Practice specific situations (ordering food, job interviews, doctor visits) |
-| **Spaced Repetition** | Review vocabulary at optimal intervals for retention |
-| **Grammar Pattern Library** | Track which grammar rules you struggle with most |
-| **Voice Input** | Practice pronunciation with Whisper speech-to-text |
-| **Conversation History** | Review past conversations and corrections |
-
-### Future Considerations
-
-- Regional language variants (Mexican Spanish, Austrian German)
-- Additional languages
-- Mobile-optimized PWA
-- Export vocabulary to Anki
+**Sweet spot**: Someone who's intimidated by conversation but motivated to learn
 
 ---
 
-## User Experience Design
+## The A0 → B1 Journey
 
-### Design Principles
+### Level Progression
 
-1. **Focus on Conversation**: The chat is center stage. Everything else supports it.
+| Level | You Can... | AI Behavior | Scaffolding |
+|-------|-----------|-------------|-------------|
+| **A0** | Say nothing yet | Bilingual mode, heavy hand-holding | Word banks, sentence templates, translations |
+| **A1** | Handle basic phrases | Simple questions, slow pace | Hints available, translations on request |
+| **A2** | Have simple exchanges | Everyday topics, past tense | Occasional hints, grammar tips contextual |
+| **B1** | Hold real conversations | Opinions, narratives, abstract topics | Minimal scaffolding, corrections only |
 
-2. **Non-Interrupting Feedback**: Corrections appear after the AI's natural response, collapsed by default. Expand if you want to learn more.
+### What Makes Each Level Feel Different
 
-3. **Progress Without Pressure**: No timers, no streak anxiety, no gamification guilt. Just track what you've learned.
+**A0 - First Steps** (0-2 weeks)
+- AI speaks 80% English, 20% target language
+- Every prompt has a "How do I say...?" helper
+- Sentence starters provided: "Yo soy..." / "Ich bin..."
+- Celebrate tiny wins: "You just said your first Spanish sentence!"
 
-4. **Predictable Patterns**: Same layout every session. Consistent interaction patterns. Reduce cognitive overhead.
+**A1 - Building Blocks** (2-8 weeks)
+- AI speaks 50/50, always offers translation toggle
+- Topics: introductions, family, food, daily routine
+- Grammar learned by doing: "You used 'soy' perfectly! That's the verb 'to be'"
+- Word bank for new vocabulary, but user types full sentences
 
-5. **Visual Learning Aids**: Color-coded parts of speech, highlighted grammar patterns, clear visual hierarchy.
+**A2 - Finding Your Voice** (2-4 months)
+- AI speaks 80% target language, 20% English for complex explanations
+- Topics: travel, shopping, describing experiences, making plans
+- Past tense introduced naturally through storytelling
+- Hints available but not automatic
 
-6. **Flexible Pacing**: Take as long as you need. Pause anytime. Resume with full context.
-
-### Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  [🇪🇸 Spanish ▾]    HablaAI    [Level: B1]    [⚙️]             │
-├─────────────────────────────────────────────────────────────────┤
-│                                               │                  │
-│   ┌────────────────────────────────────┐     │  📚 New Words    │
-│   │                                    │     │  ──────────────  │
-│   │  🤖 ¡Hola! ¿Cómo estás hoy?       │     │  • mercado (n)   │
-│   │                                    │     │  • comprar (v)   │
-│   │  👤 Estoy bien. Ayer fui al       │     │  • fresco (adj)  │
-│   │     mercado con mi madre.          │     │                  │
-│   │                                    │     │  [View all →]    │
-│   │  🤖 ¡Qué bien! ¿Qué compraron?    │     │                  │
-│   │                                    │     ├──────────────────┤
-│   │     💡 Great use of preterite!    │     │  📊 Session      │
-│   │        [Expand for details]        │     │  ──────────────  │
-│   │                                    │     │  Words: +5       │
-│   └────────────────────────────────────┘     │  Time: 12 min    │
-│                                               │                  │
-│   ┌────────────────────────────────────┐     │                  │
-│   │  Type your response...       [📤] │     │                  │
-│   └────────────────────────────────────┘     │                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Feedback Display
-
-Corrections appear inline but collapsed:
-
-```
-🤖 ¡Muy bien! Entiendo que fuiste de compras.
-
-💡 Small note
-   ├─ You wrote: "Yo soy ir al mercado"
-   ├─ Better: "Yo fui al mercado"
-   └─ Rule: Use preterite (fui) for completed past actions
-      [Learn more about preterite →]
-```
-
-### Visual Vocabulary
-
-Words are color-coded by part of speech for visual pattern recognition:
-
-- 🔵 Verbs: comprar, hablar, entender
-- 🟢 Nouns: mercado, madre, comida
-- 🟠 Adjectives: fresco, grande, nuevo
-- 🟣 German Gender: der (m), die (f), das (n)
+**B1 - Confident Conversations** (4-6 months)
+- AI speaks 95%+ target language
+- Topics: opinions, news, hypotheticals, professional contexts
+- Corrections are gentle nudges, not interruptions
+- User drives the conversation
 
 ---
 
-## CEFR Level Behavior
+## Core Features (MVP)
 
-| Level | AI Behavior | Vocabulary | Grammar Focus |
-|-------|-------------|------------|---------------|
-| **A1** | Simple sentences, common topics, slow pacing | Basic (500 words) | Present tense, basic questions |
-| **A2** | Short conversations, everyday situations | Elementary (1000 words) | Past tense basics, pronouns |
-| **B1** | Extended discussions, opinions, narratives | Intermediate (2000 words) | Complex past, subjunctive intro |
-| **B2** | Abstract topics, nuanced expression | Upper-intermediate (4000 words) | Subjunctive, conditionals |
-| **C1** | Professional/academic discourse | Advanced (8000 words) | Nuanced usage, idioms |
-| **C2** | Native-like complexity | Near-native | All structures, style |
+### 1. Scaffolded Conversation
 
-### Level Adjustment Logic
+The main experience. Chat with an AI that meets you at your level.
 
-- **Upgrade trigger**: 10+ correct sentences in a row with level-appropriate structures
-- **Downgrade trigger**: 5+ fundamental errors suggesting level is too high
-- **User override**: Always allow manual level selection
+**For Beginners (A0-A1):**
+```
+┌─────────────────────────────────────────────────────────┐
+│  🤖 ¡Hola! What's your name?                            │
+│     (En español: ¿Cómo te llamas?)                      │
+│                                                         │
+│  💡 Try saying: "Me llamo [your name]"                  │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ Me llamo...                              [Send] │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│  [Word Bank: me llamo, soy, hola, mucho gusto]         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**For Intermediate (A2-B1):**
+```
+┌─────────────────────────────────────────────────────────┐
+│  🤖 ¿Qué hiciste el fin de semana?                      │
+│                                                         │
+│  👤 Fui al cine con mis amigos. Vimos una película     │
+│     de terror pero no me gustó mucho.                   │
+│                                                         │
+│  🤖 ¡Qué interesante! ¿Por qué no te gustó?            │
+│     Yo tampoco soy muy fan del terror...               │
+│                                                         │
+│     💡 Nice use of preterite! [tap to learn more]      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 2. Micro-Lessons
+
+2-3 minute focused lessons that unlock conversation abilities.
+
+**Lesson Structure:**
+1. **Context**: Why this matters for conversation (30 sec)
+2. **Pattern**: The grammar/vocab pattern with examples (60 sec)
+3. **Practice**: 3-5 quick exercises (60 sec)
+4. **Use It**: Guided mini-conversation using the pattern (30 sec)
+
+**Example Lessons:**
+- "Introducing Yourself" (A0)
+- "Ordering Food" (A1)
+- "Talking About Your Weekend" (A2)
+- "Giving Your Opinion" (B1)
+
+### 3. Progress That Feels Real
+
+No arbitrary XP or streaks. Progress = "I can do things I couldn't before."
+
+**Progress Indicators:**
+- Topics unlocked: "You can now talk about: Family, Food, Daily Routine"
+- Vocabulary size: "142 words learned" (with breakdown by category)
+- Grammar patterns: "Patterns you've used: present tense, ser vs estar, gustar"
+- Conversation milestones: "First 5-minute conversation without English!"
+
+### 4. Adaptive Difficulty
+
+AI continuously adjusts based on your performance:
+
+- **Struggling?** → More scaffolding, simpler vocabulary, bilingual mode
+- **Cruising?** → Less hand-holding, new grammar introduced, longer responses
+- **Specific weakness?** → Extra practice on that pattern
+
+User always has override: "This is too easy" / "I need more help"
 
 ---
 
-## Scenarios (V2)
+## Conversation Design
 
-Pre-built conversation contexts with specific goals:
+### Scaffolding Levels
 
-| Scenario | Level | You Play | Goal |
-|----------|-------|----------|------|
-| Lost in the City | A1 | Tourist | Ask for directions, understand basic instructions |
-| At the Restaurant | A1-A2 | Customer | Order food, ask about menu, request bill |
-| Hotel Check-in | A2 | Guest | Check in, ask about amenities, report issues |
-| Doctor Visit | B1 | Patient | Describe symptoms, understand instructions |
-| Job Interview | B2 | Candidate | Answer questions about experience, ask about role |
-| Apartment Hunting | B1 | Renter | Negotiate terms, ask about utilities |
-| Business Meeting | B2-C1 | Colleague | Present ideas, discuss strategy |
+| Level | Scaffolding | Example |
+|-------|-------------|---------|
+| **Full** | Template + word bank + translation | "Say: Me llamo ___ [word bank: me llamo, soy]" |
+| **Guided** | Hint available on tap | "💡 Tap for hint" → "Try using 'me gusta'" |
+| **Light** | Translation toggle only | "[🇬🇧 Show English]" |
+| **None** | Corrections only after response | Grammar feedback collapsed by default |
 
-Each scenario has:
-- Clear setup and context
-- Specific vocabulary focus
-- Success criteria
-- Option to continue as free conversation
+### Grammar Through Context
+
+Instead of teaching rules, then practicing:
+
+```
+User: "Yo soy cansado"
+
+AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
+
+[Collapsed feedback]
+💡 Quick tip: For feelings like tired, hungry, or happy,
+   Spanish uses "estar" not "ser".
+
+   estar = how you feel right now
+   ser = what you are (permanent)
+
+   [More examples →]
+```
+
+### Conversation Starters by Level
+
+**A0**: AI initiates everything with heavy scaffolding
+**A1**: AI provides topics, user chooses
+**A2**: Mix of AI-led and user-initiated
+**B1**: User can start any topic, AI follows
+
+---
+
+## Technical Simplifications
+
+### What's Different from Original Spec
+
+| Original | Now | Why |
+|----------|-----|-----|
+| LangGraph with 8 nodes | Simpler state machine | MVP doesn't need complex routing |
+| Conversation checkpointing | Session-based only | Cross-session memory is V2 |
+| Spaced repetition system | Simple "words learned" list | SRS is V2 |
+| Scenarios with goals | Free conversation + lessons | Scenarios are V2 |
+| Voice input | Text only | Voice is V2 |
+
+### MVP Technical Scope
+
+- Single conversation thread per session
+- SQLite for persistence (vocabulary, progress, settings)
+- Claude API for all language generation
+- Simple prompt engineering (no complex agent routing)
+- HTMX for reactive UI without JS complexity
+
+---
+
+## User Experience Principles
+
+1. **Never Lost**: Beginners always have a lifeline (translation, hint, word bank)
+
+2. **Always Progressing**: Every conversation teaches something, even mistakes
+
+3. **Conversation First**: Lessons exist to unlock conversations, not the reverse
+
+4. **Gentle Corrections**: Errors are learning moments, not failures
+
+5. **Real Progress**: "I can order food in Spanish" beats "500 XP streak"
 
 ---
 
 ## Success Metrics
 
-### Engagement (Do people use it?)
-
-- Sessions per week per user
-- Average session duration
-- Return rate after first session
-
-### Learning (Does it work?)
-
-- Vocabulary growth over time
-- Error rate decrease for specific patterns
+### Learning Effectiveness
+- Time to first unassisted sentence (target: <5 min)
+- Scaffolding usage over time (should decrease)
 - Level progression velocity
+- Vocabulary retention (revisit learned words in context)
 
-### Satisfaction (Do people like it?)
+### Engagement
+- Sessions per week
+- Average session length
+- Return rate after first session
+- Completion rate of micro-lessons
 
+### Satisfaction
+- "I feel more confident speaking" (self-report)
+- Scaffolding level chosen vs needed
 - Would recommend to friend
-- Qualitative feedback on conversation quality
-- Feature usage patterns
 
 ---
 
-## Open Questions
+## What We're NOT Building
 
-1. **Pronunciation feedback**: Should we add voice input in V1 or wait? (Leaning: V2)
-
-2. **Community features**: Vocabulary sharing? Conversation sharing? (Leaning: Not in V1-V2)
-
-3. **Offline mode**: Important for travel use case but adds complexity (Leaning: Future)
-
-4. **Multiple personas**: Different AI personalities (formal teacher, casual friend)? (Leaning: V2)
+- **Grammar course**: We teach through practice, not lectures
+- **Flashcard app**: Vocabulary learned in conversation context
+- **Gamified experience**: No streaks, XP, leaderboards, or guilt
+- **Translation tool**: Goal is to think in the language, not translate
+- **Perfect pronunciation trainer**: Text-based for MVP, voice is future
 
 ---
 
-## Non-Goals
+## MVP Scope (Phase 1)
 
-- **Not a grammar course**: We correct mistakes, but don't teach grammar from scratch
-- **Not a certification prep tool**: Focus is practical conversation, not test-taking
-- **Not a social platform**: No leaderboards, no comparing with others
-- **Not a replacement for human interaction**: Supplement, not substitute
+### Must Have
+- [ ] Scaffolded conversation with 4 difficulty levels
+- [ ] Micro-lessons (5-10 covering A0-A1 basics)
+- [ ] Vocabulary tracking (words encountered, can review list)
+- [ ] Grammar feedback (contextual, collapsed by default)
+- [ ] Level selection (A0/A1/A2/B1) with appropriate AI behavior
+- [ ] Spanish language support
+- [ ] Basic progress view (words learned, lessons completed)
 
----
+### Nice to Have
+- [ ] German language support
+- [ ] Conversation history
+- [ ] Settings (feedback verbosity, translation preferences)
 
-## Technical Constraints
-
-- **Single user initially**: No authentication complexity for MVP
-- **SQLite persistence**: Simple, no server setup required
-- **API costs**: Claude API usage scales with conversation length
-- **Browser-based**: No native app, HTMX for minimal JS
+### Explicitly Deferred
+- Voice input/output
+- Spaced repetition
+- Scenario roleplay
+- Cross-session conversation memory
+- Multiple personas
+- Offline mode
 
 ---
 
 ## Launch Plan
 
-### Phase 1: Personal Use (Weekend 1-2)
-- Core chat working
-- Basic feedback
-- Single language (Spanish)
+### Week 1: Core Loop
+- Scaffolded conversation working at all 4 levels
+- A0 experience with word banks and templates
+- Basic Claude prompts for level-appropriate responses
 
-### Phase 2: Polish (Weekend 3)
-- German support
-- Vocabulary sidebar
+### Week 2: Learning Features
+- 5 micro-lessons for A0-A1
+- Vocabulary tracking and display
+- Grammar feedback system
+
+### Week 3: Polish
+- Progress visualization
 - Settings panel
+- German support (if time)
+- UI polish and mobile responsiveness
 
-### Phase 3: Share (Week 4+)
-- Deploy publicly
-- Get feedback from friends
-- Iterate based on usage
-
-### Phase 4: Expand (If it works)
-- Scenarios
-- Spaced repetition
-- Voice input
+### Week 4+: Iterate
+- User testing with actual beginners
+- Adjust scaffolding based on feedback
+- Add more lessons as needed
