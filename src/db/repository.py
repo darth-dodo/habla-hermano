@@ -16,13 +16,9 @@ class VocabularyRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_by_word_and_language(
-        self, word: str, language: str
-    ) -> Vocabulary | None:
+    async def get_by_word_and_language(self, word: str, language: str) -> Vocabulary | None:
         """Get vocabulary entry by word and language."""
-        stmt = select(Vocabulary).where(
-            Vocabulary.word == word, Vocabulary.language == language
-        )
+        stmt = select(Vocabulary).where(Vocabulary.word == word, Vocabulary.language == language)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -100,9 +96,7 @@ class SessionRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def end_session(
-        self, session_id: int, messages_count: int, words_learned: int
-    ) -> None:
+    async def end_session(self, session_id: int, messages_count: int, words_learned: int) -> None:
         """Mark session as ended with statistics."""
         stmt = (
             update(Session)
@@ -168,9 +162,7 @@ class LessonProgressRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def complete_lesson(
-        self, lesson_id: str, score: int | None = None
-    ) -> LessonProgress:
+    async def complete_lesson(self, lesson_id: str, score: int | None = None) -> LessonProgress:
         """Mark lesson as completed with optional score."""
         stmt = (
             sqlite_insert(LessonProgress)

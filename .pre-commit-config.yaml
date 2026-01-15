@@ -3,7 +3,7 @@
 # Run manually: pre-commit run --all-files
 
 default_language_version:
-  python: python3.11
+  python: python3
 
 repos:
   # ==========================================================================
@@ -50,10 +50,13 @@ repos:
           - types-aiofiles>=24.1.0
           - pydantic>=2.0.0
           - pydantic-settings>=2.0.0
-        args: [--config-file=pyproject.toml]
+          - fastapi>=0.115.0
+          - sqlalchemy>=2.0.0
+          - langgraph>=0.2.0
+          - langchain-core>=0.3.0
+          - jinja2>=3.1.0
+        args: [--config-file=pyproject.toml, src/]
         pass_filenames: false
-        # Only run on src/ to avoid test file issues
-        files: ^src/
 
   # ==========================================================================
   # Security
