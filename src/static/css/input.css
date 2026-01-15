@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Focus visible for keyboard navigation */
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-primary-500;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        @apply w-2;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-slate-400 dark:bg-slate-500;
+    }
+}
+
+/* Custom component styles */
+@layer components {
+    /* Chat bubble animations */
+    .message-bubble {
+        @apply animate-fade-in;
+    }
+
+    /* Loading indicator */
+    .typing-indicator {
+        @apply flex gap-1 items-center px-4 py-3;
+    }
+
+    .typing-indicator span {
+        @apply w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+}
+
+/* Custom utilities */
+@layer utilities {
+    /* Animation for new messages */
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.3s ease-out;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}

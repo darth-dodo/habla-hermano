@@ -1,0 +1,26 @@
+<!-- User Message -->
+{% if is_user %}
+<div class="flex justify-end" role="listitem">
+    <div class="max-w-[85%] sm:max-w-[70%]">
+        <div class="bg-primary-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+            <p>{{ content }}</p>
+        </div>
+        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 mr-2 block text-right">You</span>
+    </div>
+</div>
+{% else %}
+<!-- AI Response -->
+<div class="flex justify-start" role="listitem">
+    <div class="max-w-[85%] sm:max-w-[70%]">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p class="text-slate-800 dark:text-slate-200">{{ content }}</p>
+            {% if translation %}
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 italic">
+                {{ translation }}
+            </p>
+            {% endif %}
+        </div>
+        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-2 block">HablaAI</span>
+    </div>
+</div>
+{% endif %}
