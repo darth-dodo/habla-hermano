@@ -1,8 +1,8 @@
-"""API route modules for HablaAI.
+"""API routes package.
 
-Contains chat, lessons, and progress endpoints with HTMX response patterns.
+Contains all FastAPI routers for the application.
 """
 
-from src.api.routes import chat, lessons, progress
+from src.api.routes import chat
 
-__all__ = ["chat", "lessons", "progress"]
+__all__ = ["chat"]

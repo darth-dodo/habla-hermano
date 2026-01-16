@@ -1,81 +1,125 @@
+/*
+ * HablaAI - Tailwind CSS Input File
+ * This file contains Tailwind directives and custom styles
+ * Run: npx tailwindcss -i ./src/static/css/input.css -o ./src/static/css/output.css --watch
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
+/* ============================================
+   Base Layer - Custom defaults
+   ============================================ */
 @layer base {
-    /* Smooth scrolling */
+    /* Smooth scrolling for the whole app */
     html {
         scroll-behavior: smooth;
     }
 
-    /* Focus visible for keyboard navigation */
-    :focus-visible {
-        @apply outline-2 outline-offset-2 outline-primary-500;
+    /* Better focus outlines for accessibility */
+    *:focus-visible {
+        @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-gray-900;
     }
 
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        @apply w-2;
-    }
-
-    ::-webkit-scrollbar-track {
-        @apply bg-transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        @apply bg-slate-300 dark:bg-slate-600 rounded-full;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        @apply bg-slate-400 dark:bg-slate-500;
+    /* Custom selection color */
+    ::selection {
+        @apply bg-primary-600/50 text-white;
     }
 }
 
-/* Custom component styles */
+/* ============================================
+   Component Layer - Reusable components
+   ============================================ */
 @layer components {
-    /* Chat bubble animations */
-    .message-bubble {
-        @apply animate-fade-in;
+    /* Chat bubble base styles */
+    .chat-bubble {
+        @apply px-4 py-3 rounded-2xl max-w-[85%];
     }
 
-    /* Loading indicator */
-    .typing-indicator {
-        @apply flex gap-1 items-center px-4 py-3;
+    .chat-bubble-user {
+        @apply chat-bubble bg-primary-600 text-white rounded-tr-sm;
     }
 
-    .typing-indicator span {
-        @apply w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce;
+    .chat-bubble-ai {
+        @apply chat-bubble bg-gray-800 text-gray-100 rounded-tl-sm;
     }
 
-    .typing-indicator span:nth-child(2) {
-        animation-delay: 0.1s;
+    /* Avatar styles */
+    .avatar {
+        @apply flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center;
     }
 
-    .typing-indicator span:nth-child(3) {
-        animation-delay: 0.2s;
+    .avatar-user {
+        @apply avatar bg-gray-600;
+    }
+
+    .avatar-ai {
+        @apply avatar bg-primary-600;
+    }
+
+    /* Input field styling */
+    .input-chat {
+        @apply w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl
+               text-gray-100 placeholder-gray-400
+               focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+               transition-all;
+    }
+
+    /* Button styles */
+    .btn-primary {
+        @apply px-4 py-3 bg-primary-600 hover:bg-primary-500 active:bg-primary-700
+               text-white font-medium rounded-xl transition-colors
+               focus:outline-none focus:ring-2 focus:ring-primary-500
+               focus:ring-offset-2 focus:ring-offset-gray-800
+               disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-secondary {
+        @apply px-4 py-2 bg-gray-700 hover:bg-gray-600
+               text-gray-200 font-medium rounded-lg transition-colors
+               focus:outline-none focus:ring-2 focus:ring-gray-500;
+    }
+
+    /* Level badge */
+    .level-badge {
+        @apply inline-flex items-center px-2 py-1 bg-primary-600/20
+               text-primary-400 text-sm font-medium rounded-md;
+    }
+
+    /* Vocabulary chip */
+    .vocab-chip {
+        @apply inline-flex items-center px-2 py-1 bg-gray-700 rounded-lg text-sm;
+    }
+
+    /* Correction highlight */
+    .correction-original {
+        @apply line-through text-red-400;
+    }
+
+    .correction-fixed {
+        @apply text-green-400;
     }
 }
 
-/* Custom utilities */
+/* ============================================
+   Utility Layer - Custom utilities
+   ============================================ */
 @layer utilities {
-    /* Animation for new messages */
-    @keyframes fade-in {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
+    /* Animation utilities */
     .animate-fade-in {
-        animation: fade-in 0.3s ease-out;
+        animation: fadeIn 0.3s ease-out;
     }
 
-    /* Hide scrollbar but keep functionality */
+    .animate-slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .animate-bounce-gentle {
+        animation: bounceGentle 2s infinite;
+    }
+
+    /* Scrollbar hiding utility */
     .scrollbar-hide {
         -ms-overflow-style: none;
         scrollbar-width: none;
@@ -83,5 +127,174 @@
 
     .scrollbar-hide::-webkit-scrollbar {
         display: none;
+    }
+
+    /* Text utilities */
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+/* ============================================
+   Custom Keyframes
+   ============================================ */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceGentle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes loadingDot {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   Loading Animation
+   ============================================ */
+.loading-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.loading-dots span {
+    width: 8px;
+    height: 8px;
+    background-color: #9ca3af;
+    border-radius: 50%;
+    animation: loadingDot 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+/* ============================================
+   Custom Scrollbar (Dark Theme)
+   ============================================ */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #1f2937;
+}
+
+/* ============================================
+   HTMX Indicator Styles
+   ============================================ */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: flex;
+}
+
+.htmx-request.htmx-indicator {
+    display: flex;
+}
+
+/* ============================================
+   Prose Overrides (for markdown content)
+   ============================================ */
+.prose-invert {
+    --tw-prose-body: #e5e7eb;
+    --tw-prose-headings: #f9fafb;
+    --tw-prose-links: #60a5fa;
+    --tw-prose-bold: #f9fafb;
+    --tw-prose-code: #f472b6;
+    --tw-prose-pre-bg: #111827;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 640px) {
+    /* Prevent overscroll bounce on mobile */
+    body {
+        overscroll-behavior: none;
+    }
+
+    /* Adjust chat bubble max-width on mobile */
+    .chat-bubble {
+        max-width: 90%;
+    }
+
+    /* Larger touch targets on mobile */
+    .btn-primary,
+    .btn-secondary {
+        min-height: 48px;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .chat-bubble-user {
+        border: 2px solid white;
+    }
+
+    .chat-bubble-ai {
+        border: 2px solid #60a5fa;
     }
 }

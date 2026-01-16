@@ -1,67 +1,90 @@
-"""FastAPI application factory and configuration.
+"""FastAPI application entry point.
 
-Entry point for the HablaAI web application with HTMX support.
+Creates and configures the FastAPI application with routes, static files,
+and lifespan management.
 """
 
-from collections.abc import AsyncIterator
+import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from src.api.config import get_settings
-from src.api.routes import chat, lessons, progress
+from src.api.routes import chat
+
+# Configure logging
+settings = get_settings()
+logging.basicConfig(
+    level=settings.log_level,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown events.
 
     Args:
-        _app: FastAPI application instance (unused in stub).
+        _app: FastAPI application instance (unused, required by lifespan protocol).
 
     Yields:
-        None: Control returns to application during runtime.
+        None: Control returns to the application during its lifetime.
     """
+    # Startup
+    logger.info("Starting %s...", settings.APP_NAME)
+    logger.info("Debug mode: %s", settings.DEBUG)
+    logger.info("Templates directory: %s", settings.templates_dir)
+    logger.info("Static files directory: %s", settings.static_dir)
+
     yield
+
+    # Shutdown
+    logger.info("Shutting down %s...", settings.APP_NAME)
 
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application.
 
     Returns:
-        FastAPI: Configured application with routes, middleware, and static files.
+        FastAPI: Configured application instance.
     """
-    settings = get_settings()
-
     app = FastAPI(
-        title=settings.app_name,
-        version=settings.app_version,
-        debug=settings.debug,
+        title=settings.APP_NAME,
+        description="AI-powered language tutor for Spanish learners",
+        version="0.1.0",
+        debug=settings.DEBUG,
         lifespan=lifespan,
     )
 
-    # CORS middleware for development
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=settings.cors_allow_credentials,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    # Static files
+    # Mount static files
     if settings.static_dir.exists():
-        app.mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static")
+        app.mount(
+            "/static",
+            StaticFiles(directory=str(settings.static_dir)),
+            name="static",
+        )
+        logger.info("Static files mounted at /static")
+    else:
+        logger.warning("Static directory not found: %s", settings.static_dir)
 
-    # Route registration
-    app.include_router(chat.router, prefix="/chat", tags=["chat"])
-    app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
-    app.include_router(progress.router, prefix="/progress", tags=["progress"])
+    # Include routers
+    app.include_router(chat.router)
 
     return app
 
 
-# Application instance for uvicorn
+# Create the application instance
 app = create_app()
+
+
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    """Health check endpoint.
+
+    Returns:
+        dict: Health status response.
+    """
+    return {"status": "healthy", "app": settings.APP_NAME}
