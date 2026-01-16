@@ -4,6 +4,21 @@
 
 ---
 
+## Current Implementation Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 1** | Minimal Graph - Basic state, single respond node | Completed |
+| **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | Planned |
+| **Phase 3** | Conditional Routing - Branching logic, scaffolding | Planned |
+| **Phase 4** | Checkpointing - Persistence, conversation memory | Planned |
+| **Phase 5** | Complex State - Rich state management | Planned |
+| **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
+
+**Test Coverage**: 229 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+
+---
+
 ## Learning Goals
 
 This project is intentionally built with **LangGraph** to learn:
@@ -31,28 +46,30 @@ This project is intentionally built with **LangGraph** to learn:
 
 ## Project Structure
 
+Legend: Implemented files are marked with a checkmark. Files without a checkmark are planned for future phases.
+
 ```
 habla-ai/
 ├── src/
 │   ├── api/
-│   │   ├── __init__.py
-│   │   ├── main.py              # FastAPI app entry
-│   │   ├── config.py            # Settings (Pydantic)
-│   │   ├── dependencies.py      # DI for graph, db session
+│   │   ├── __init__.py          # [Implemented]
+│   │   ├── main.py              # [Implemented] FastAPI app entry
+│   │   ├── config.py            # [Implemented] Settings (Pydantic)
+│   │   ├── dependencies.py      # [Implemented] DI for graph, db session
 │   │   └── routes/
-│   │       ├── __init__.py
-│   │       ├── chat.py          # POST /chat, conversation endpoints
+│   │       ├── __init__.py      # [Implemented]
+│   │       ├── chat.py          # [Implemented] POST /chat, conversation endpoints
 │   │       ├── lessons.py       # Micro-lesson endpoints
 │   │       └── progress.py      # Vocabulary, stats endpoints
 │   │
 │   ├── agent/
-│   │   ├── __init__.py
-│   │   ├── graph.py             # LangGraph definition
-│   │   ├── state.py             # TypedDict state
-│   │   ├── prompts.py           # System prompts by level
+│   │   ├── __init__.py          # [Implemented]
+│   │   ├── graph.py             # [Implemented] LangGraph definition
+│   │   ├── state.py             # [Implemented] TypedDict state
+│   │   ├── prompts.py           # [Implemented] System prompts by level
 │   │   └── nodes/
-│   │       ├── __init__.py
-│   │       ├── respond.py       # Generate AI response
+│   │       ├── __init__.py      # [Implemented]
+│   │       ├── respond.py       # [Implemented] Generate AI response
 │   │       ├── analyze.py       # Grammar/vocab analysis
 │   │       ├── scaffold.py      # Generate scaffolding (hints, word banks)
 │   │       └── feedback.py      # Format corrections
@@ -68,7 +85,7 @@ habla-ai/
 │   │   ├── vocabulary.py        # Vocab extraction logic
 │   │   └── levels.py            # Level detection/adjustment
 │   │
-│   ├── templates/
+│   ├── templates/               # [Implemented] All template files
 │   │   ├── base.html
 │   │   ├── chat.html
 │   │   ├── lessons.html
@@ -99,8 +116,10 @@ habla-ai/
 
 Build the graph incrementally, learning concepts as you go:
 
-### Phase 1: Minimal Graph (Week 1)
+### Phase 1: Minimal Graph (Week 1) - IMPLEMENTED
 **Learn**: Basic graph structure, state, single node
+
+**Status**: This phase is complete and working in production. The minimal graph with a single respond node is fully operational.
 
 ```python
 # Simplest possible graph - just responds
