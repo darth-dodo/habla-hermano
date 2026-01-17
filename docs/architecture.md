@@ -15,7 +15,7 @@
 | **Phase 5** | Complex State - Rich state management | Planned |
 | **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
 
-**Test Coverage**: 229 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 227 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -40,7 +40,7 @@ This project is intentionally built with **LangGraph** to learn:
 | **Agent** | LangGraph | Learning goal: stateful conversations, routing, checkpointing |
 | **LLM** | Claude API | Superior language understanding, structured outputs |
 | **Database** | SQLite + SQLAlchemy | Simple persistence, no server setup |
-| **Styling** | Tailwind CSS | Utility-first, rapid prototyping |
+| **Styling** | Tailwind CSS + CSS Variables | Utility-first, 3-theme system (dark/light/ocean) |
 
 ---
 
@@ -86,11 +86,12 @@ habla-ai/
 │   │   └── levels.py            # Level detection/adjustment
 │   │
 │   ├── templates/               # [Implemented] All template files
-│   │   ├── base.html
-│   │   ├── chat.html
+│   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
+│   │   ├── chat.html            # [Implemented] Chat UI with language/level selectors, theme toggle
 │   │   ├── lessons.html
 │   │   └── partials/
-│   │       ├── message.html
+│   │       ├── message.html     # [Implemented] Message bubble styling
+│   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)
 │   │       ├── scaffold.html    # Word bank, hints UI
 │   │       ├── feedback.html
 │   │       └── vocab_sidebar.html
@@ -98,6 +99,7 @@ habla-ai/
 │   └── static/
 │       ├── css/
 │       └── js/
+│           └── app.js           # [Implemented] HTMX handlers, optimistic UI, keyboard shortcuts
 │
 ├── tests/
 ├── data/

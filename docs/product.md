@@ -254,9 +254,18 @@ AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
 - [ ] Basic progress view (words learned, lessons completed)
 
 ### Nice to Have
-- [x] German language support
+- [x] German language support (language selector with 🇪🇸/🇩🇪 flags)
 - [ ] Conversation history
+- [x] Theme system (dark/light/ocean themes with warm color palettes)
 - [ ] Settings (feedback verbosity, translation preferences)
+
+### UI/UX Completed
+- [x] Modern, minimal design with 3 themes
+- [x] Optimistic UI (instant message feedback)
+- [x] Theme toggle button (cycles dark → light → ocean)
+- [x] Language selector dropdown
+- [x] Level selector dropdown
+- [x] Keyboard shortcuts (/ to focus, Escape to blur, Cmd+Enter to send)
 
 ### Explicitly Deferred
 - Voice input/output
@@ -285,8 +294,8 @@ AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
 ### Week 3: Polish
 - Progress visualization
 - Settings panel
-- German support (if time)
-- UI polish and mobile responsiveness
+- [x] German support ✅
+- [x] UI polish ✅ (3 themes, optimistic UI, modern design)
 
 ### Week 4+: Iterate
 - User testing with actual beginners

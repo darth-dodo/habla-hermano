@@ -7,7 +7,7 @@ An AI conversation partner that takes absolute beginners to confident intermedia
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-green.svg)
 ![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-purple.svg)
-![Tests](https://img.shields.io/badge/Tests-229-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-227-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ---
@@ -17,8 +17,11 @@ An AI conversation partner that takes absolute beginners to confident intermedia
 - LangGraph StateGraph with `respond` node
 - FastAPI + HTMX + Jinja2 server-driven UI
 - Level-specific prompts (A0, A1, A2, B1) for Spanish and German
-- Dark theme chat interface with level selector
-- 229 pytest tests passing
+- **Modern UI with 3 themes**: Dark (warm amber), Light (sage green), Ocean (midnight gold)
+- Language selector with Spanish 🇪🇸 and German 🇩🇪 support
+- Level selector (A0-B1) with dynamic AI behavior
+- Optimistic UI for instant message feedback
+- 227 pytest tests passing
 - E2E testing infrastructure via Playwright
 
 ---
@@ -32,7 +35,7 @@ An AI conversation partner that takes absolute beginners to confident intermedia
 | **Agent** | LangGraph | Stateful conversation graphs, routing, checkpointing |
 | **LLM** | Claude API | Language understanding, structured outputs |
 | **Database** | SQLite + SQLAlchemy | Simple persistence, vocabulary tracking |
-| **Styling** | Tailwind CSS | Utility-first, dark theme |
+| **Styling** | Tailwind CSS + CSS Variables | Utility-first, 3-theme system (dark/light/ocean) |
 
 ---
 
