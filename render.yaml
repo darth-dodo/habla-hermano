@@ -1,0 +1,97 @@
+# =============================================================================
+# Render Blueprint for HablaAI FastAPI Application
+# =============================================================================
+# Documentation: https://render.com/docs/blueprint-spec
+#
+# Deployment Instructions:
+# 1. Connect your GitHub repository to Render.com
+# 2. Create a new "Blueprint" and point to this render.yaml
+# 3. Set the required environment variables in Render dashboard:
+#    - ANTHROPIC_API_KEY: Your Anthropic API key for LLM
+# 4. Deploy!
+#
+# Manual Deployment:
+#   render blueprint apply
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Primary Web Service - FastAPI Application
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: habla-ai
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+
+    # Build Configuration
+    # Install uv package manager, then sync dependencies (production only)
+    buildCommand: |
+      pip install uv &&
+      uv sync --frozen --no-dev --no-install-project
+
+    # Start Command
+    # Run uvicorn with production settings
+    # Note: Render provides $PORT automatically
+    startCommand: |
+      uv run uvicorn src.api.main:app --host 0.0.0.0 --port $PORT --workers 1
+
+    # Health Check Configuration
+    # Render will poll this endpoint to verify service health
+    healthCheckPath: /health
+
+    # Environment Variables
+    envVars:
+      # -----------------------------------------------------------------------
+      # Required: API Keys (set via Render Dashboard - never commit secrets!)
+      # -----------------------------------------------------------------------
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Must be set manually in Render dashboard
+
+      # -----------------------------------------------------------------------
+      # Application Configuration
+      # -----------------------------------------------------------------------
+      - key: DEBUG
+        value: "false"
+
+      - key: HOST
+        value: "0.0.0.0"
+
+      # -----------------------------------------------------------------------
+      # LLM Configuration
+      # -----------------------------------------------------------------------
+      - key: LLM_MODEL
+        value: "claude-sonnet-4-20250514"
+
+      - key: LLM_TEMPERATURE
+        value: "0.7"
+
+      # -----------------------------------------------------------------------
+      # Database Configuration
+      # -----------------------------------------------------------------------
+      # SQLite will be stored in Render's ephemeral disk
+      # For persistent storage, consider upgrading plan or using external DB
+      - key: DATABASE_URL
+        value: "sqlite:///data/habla.db"
+
+      # -----------------------------------------------------------------------
+      # Feature Flags
+      # -----------------------------------------------------------------------
+      - key: ENABLE_VOICE_INPUT
+        value: "false"
+
+      - key: ENABLE_SPACED_REPETITION
+        value: "false"
+
+      # -----------------------------------------------------------------------
+      # Python Runtime Configuration
+      # -----------------------------------------------------------------------
+      - key: PYTHON_VERSION
+        value: "3.12"
+
+      - key: PYTHONUNBUFFERED
+        value: "1"
