@@ -1,41 +1,59 @@
 # CI Pipeline for HablaAI
-# Runs on push to main/init and all PRs
+# Runs on push to main and all PRs
+# Includes Docker build validation for Render deployment
 
 name: CI
 
 on:
   push:
-    branches: [main, init]
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Dockerfile'
+      - 'render.yaml'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'Dockerfile'
+      - 'render.yaml'
+      - '.github/workflows/ci.yml'
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
+  UV_CACHE_DIR: /tmp/.uv-cache
 
 jobs:
   # ===========================================================================
-  # Linting & Type Checking
+  # Linting & Formatting
   # ===========================================================================
   lint:
-    name: Lint & Type Check
+    name: Lint & Format Check
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
 
       - name: Run Ruff linter
         run: uv run ruff check src/ tests/
@@ -43,9 +61,32 @@ jobs:
       - name: Run Ruff formatter check
         run: uv run ruff format --check src/ tests/
 
+  # ===========================================================================
+  # Type Checking
+  # ===========================================================================
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+
       - name: Run MyPy
         run: uv run mypy src/
-        continue-on-error: true  # Until we have source files
 
   # ===========================================================================
   # Tests
@@ -55,27 +96,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
-        continue-on-error: true  # Until we have tests
+        run: uv run pytest --cov=src --cov-report=term-missing
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: test-api-key-for-ci  # pragma: allowlist secret
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -92,48 +132,67 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --frozen --all-extras
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+          uv pip install bandit
 
       - name: Run Bandit security scan
-        run: uv run pip install bandit && uv run bandit -r src/ -ll
-        continue-on-error: true  # Until we have source files
+        run: uv run bandit -r src/ -ll
 
   # ===========================================================================
-  # Build Check
+  # Docker Build (validates Render deployment)
   # ===========================================================================
   build:
-    name: Build Check
+    name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, typecheck, test]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          context: .
+          push: false
+          tags: habla-ai:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "latest"
+  # ===========================================================================
+  # CI Success Gate
+  # ===========================================================================
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, security, build]
+    if: always()
 
-      - name: Build package
-        run: uv build
-        continue-on-error: true  # Until we have source files
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ]] || \
+             [[ "${{ needs.typecheck.result }}" != "success" ]] || \
+             [[ "${{ needs.test.result }}" != "success" ]] || \
+             [[ "${{ needs.security.result }}" != "success" ]] || \
+             [[ "${{ needs.build.result }}" != "success" ]]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All CI jobs passed!"
