@@ -11,6 +11,7 @@
 | A0 Chat Flow | ✅ Pass | Absolute beginner gets English-heavy response |
 | A1 Chat Flow | ✅ Pass | Beginner gets 50/50 Spanish/English mix |
 | B1 Chat Flow | ✅ Pass | Intermediate gets 95%+ Spanish response |
+| Grammar Feedback | ✅ Pass | Analyze node detects errors, feedback UI works |
 
 ---
 
@@ -18,7 +19,8 @@
 
 - **URL**: http://127.0.0.1:8000
 - **Browser**: Chromium (via Playwright MCP)
-- **Date**: 2025-01-16
+- **Date**: 2025-01-17 (Phase 2 update)
+- **Previous Date**: 2025-01-16 (Phase 1)
 
 ---
 
@@ -143,6 +145,48 @@
 
 ---
 
+### 6. Grammar Feedback (Phase 2)
+
+**Purpose**: Verify analyze node detects grammar errors and feedback UI displays correctly.
+
+**Steps**:
+1. Select "A1 Beginner" from dropdown
+2. Type message with intentional grammar error: "Yo soy muy bueno hoy. Me gusta el agua frio."
+3. Click Send
+4. Verify AI response appears
+5. Verify grammar feedback section appears below response
+6. Click to expand feedback
+
+**Expected Behavior**:
+- Grammar feedback section shows "1 grammar tip" badge
+- Collapsible section expands on click
+- Error details show original vs correction
+- Severity color-coded (minor=sky, moderate=amber, significant=rose)
+- Explanation is friendly and educational
+
+**Actual Response**:
+
+AI Response:
+> ¡Hola! ¡Qué bueno que te sientes bien hoy! You're doing great with your Spanish! When you say "el agua," remember that agua is actually feminine (starts with "a" sound, so we use "el" but adjectives are still feminine). So it's "el agua fría" (cold water). ¿Te gusta el agua fría cuando hace calor? (Do you like cold water when it's hot?) Keep practicing!
+
+Grammar Feedback (1 tip):
+- **Original**: "el agua frio"
+- **Correction**: "el agua fría"
+- **Explanation**: "While 'agua' uses the article 'el' (because it starts with a stressed 'a'), it's still a feminine noun. The adjective 'frío' should agree with the feminine noun, so it becomes 'fría'."
+- **Severity**: minor (sky blue)
+
+**UI Behavior**:
+- ✅ Feedback section appears collapsed by default
+- ✅ Shows count badge: "1 grammar tip"
+- ✅ Expands with smooth animation on click
+- ✅ Color-coded severity (sky-400 for minor)
+- ✅ Displays original → correction with arrow
+- ✅ Accessible with ARIA labels
+
+**Result**: ✅ Pass - Grammar feedback displays correctly with level-appropriate analysis
+
+---
+
 ## HTMX Integration Tests
 
 ### Form Submission
@@ -233,4 +277,6 @@ B1: "Ayer fui al cine con mis amigos y vimos una película muy interesante sobre
 2. **Mobile Testing**: Test on 375px viewport
 3. **Error Handling**: Test API failures, network issues
 4. **Conversation Persistence**: Test when checkpointing is added (Phase 4)
-5. **Grammar Feedback**: Test analyze node when added (Phase 2)
+5. ~~**Grammar Feedback**: Test analyze node when added (Phase 2)~~ ✅ Complete
+6. **Scaffold Node**: Test word bank and scaffolding UI (Phase 3)
+7. **Vocabulary Tracking**: Test vocabulary display and persistence

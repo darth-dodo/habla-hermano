@@ -6,7 +6,7 @@ Provides lesson listing, content delivery, and progress tracking.
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from src.api.dependencies import Templates
+from src.api.dependencies import TemplatesDep
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/", response_class=HTMLResponse)
 async def get_lessons_page(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
 ) -> HTMLResponse:
     """Render the lessons overview page with available micro-lessons.
 
@@ -35,7 +35,7 @@ async def get_lessons_page(
 @router.get("/{lesson_id}", response_class=HTMLResponse)
 async def get_lesson(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
     lesson_id: str,
 ) -> HTMLResponse:
     """Render a specific micro-lesson content.
@@ -58,7 +58,7 @@ async def get_lesson(
 @router.post("/{lesson_id}/complete", response_class=HTMLResponse)
 async def complete_lesson(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
     lesson_id: str,
 ) -> HTMLResponse:
     """Mark a lesson as completed and update progress.

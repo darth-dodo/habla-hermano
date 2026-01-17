@@ -78,11 +78,18 @@ async def send_message(
     # Extract AI response from graph result
     ai_response = result["messages"][-1].content
 
+    # Extract grammar feedback and vocabulary from analyze node (if present)
+    # These fields are populated by the analyze node in Phase 2
+    grammar_feedback = result.get("grammar_feedback", [])
+    new_vocabulary = result.get("new_vocabulary", [])
+
     return templates.TemplateResponse(
         request=request,
         name="partials/message_pair.html",
         context={
             "user_message": message,
             "ai_response": ai_response,
+            "grammar_feedback": grammar_feedback,
+            "new_vocabulary": new_vocabulary,
         },
     )

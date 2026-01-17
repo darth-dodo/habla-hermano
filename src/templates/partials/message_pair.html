@@ -1,8 +1,10 @@
 {#
-Message pair partial template - AI response only
+Message pair partial template - AI response with optional grammar feedback
 The user message is shown immediately via JavaScript (optimistic UI)
 Variables expected:
   - ai_response: string (the AI's response)
+  - grammar_feedback: list (optional) - grammar corrections from analyze node
+  - new_vocabulary: list (optional) - vocabulary items from analyze node
 #}
 
 <!-- AI Response -->
@@ -13,3 +15,8 @@ Variables expected:
         </div>
     </div>
 </div>
+
+<!-- Grammar Feedback (collapsible) -->
+{% if grammar_feedback %}
+{% include "partials/grammar_feedback.html" %}
+{% endif %}
