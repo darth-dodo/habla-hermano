@@ -1,0 +1,15 @@
+{#
+Message pair partial template - AI response only
+The user message is shown immediately via JavaScript (optimistic UI)
+Variables expected:
+  - ai_response: string (the AI's response)
+#}
+
+<!-- AI Response -->
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+        <div class="text-ai-text leading-relaxed">
+            {{ ai_response | safe }}
+        </div>
+    </div>
+</div>

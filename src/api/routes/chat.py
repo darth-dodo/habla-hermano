@@ -1,28 +1,33 @@
-"""Chat endpoints for conversational language learning.
+"""Chat router for handling conversation interactions.
 
-Handles message exchange, conversation state, and HTMX partial responses.
+Provides endpoints for the main chat interface and message handling.
+Uses HTMX for partial HTML responses.
 """
 
 from typing import Annotated
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
+from langchain_core.messages import HumanMessage
 
-from src.api.dependencies import Templates, ThreadId
+from src.agent import compiled_graph
+from src.api.dependencies import SettingsDep, TemplatesDep
 
-router = APIRouter()
+router = APIRouter(tags=["chat"])
 
 
 @router.get("/", response_class=HTMLResponse)
-async def get_chat_page(
+async def chat_page(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
+    settings: SettingsDep,
 ) -> HTMLResponse:
     """Render the main chat interface.
 
     Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        settings: Application settings.
 
     Returns:
         HTMLResponse: Rendered chat page.
@@ -30,83 +35,54 @@ async def get_chat_page(
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={"level": "A1", "language": "es"},
-    )
-
-
-@router.post("/send", response_class=HTMLResponse)
-async def send_message(
-    request: Request,
-    templates: Templates,
-    thread_id: ThreadId,
-    message: Annotated[str, Form()],
-) -> HTMLResponse:
-    """Process user message and return AI response with scaffolding.
-
-    Invokes the LangGraph conversation graph and returns HTMX partial.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        thread_id: Conversation thread identifier for persistence.
-        message: User's message text.
-
-    Returns:
-        HTMLResponse: Rendered message partial with AI response and scaffolding.
-    """
-    del thread_id  # Will be used for graph invocation when agent module is ready
-    return templates.TemplateResponse(
-        request=request,
-        name="partials/message.html",
         context={
-            "user_message": message,
-            "ai_message": "",
-            "scaffolding": {},
-            "feedback": [],
-            "new_vocab": [],
+            "app_name": settings.APP_NAME,
+            "debug": settings.DEBUG,
         },
     )
 
 
-@router.post("/new", response_class=HTMLResponse)
-async def new_conversation(
+@router.post("/chat", response_class=HTMLResponse)
+async def send_message(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
+    message: Annotated[str, Form()],
+    level: Annotated[str, Form()] = "A1",
+    language: Annotated[str, Form()] = "es",
 ) -> HTMLResponse:
-    """Start a new conversation, clearing previous thread state.
+    """Process a chat message and return the response as partial HTML.
+
+    This endpoint is designed for HTMX requests. It receives a message,
+    invokes the LangGraph agent, and returns a partial HTML fragment
+    that HTMX swaps into the chat container.
 
     Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        message: User's message from form data.
+        level: CEFR level (A0, A1, A2, B1). Defaults to A1.
+        language: Target language (es, de). Defaults to es (Spanish).
 
     Returns:
-        HTMLResponse: Empty chat container for fresh conversation.
+        HTMLResponse: Partial HTML with user message and AI response.
     """
-    return templates.TemplateResponse(
-        request=request,
-        name="partials/chat_container.html",
-        context={"messages": []},
+    # Invoke LangGraph agent
+    result = await compiled_graph.ainvoke(
+        {
+            "messages": [HumanMessage(content=message)],
+            "level": level,
+            "language": language,
+        }
     )
 
+    # Extract AI response from graph result
+    ai_response = result["messages"][-1].content
 
-@router.post("/settings/level", response_class=HTMLResponse)
-async def set_level(
-    request: Request,
-    templates: Templates,
-    level: Annotated[str, Form()],
-) -> HTMLResponse:
-    """Update the user's CEFR proficiency level.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        level: CEFR level code (A0, A1, A2, B1).
-
-    Returns:
-        HTMLResponse: Updated level indicator partial.
-    """
     return templates.TemplateResponse(
         request=request,
-        name="partials/level_indicator.html",
-        context={"level": level},
+        name="partials/message_pair.html",
+        context={
+            "user_message": message,
+            "ai_response": ai_response,
+        },
     )

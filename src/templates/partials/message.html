@@ -1,26 +1,57 @@
+{#
+Message partial template
+Renders a single message exchange (user message + AI response)
+Variables expected:
+  - user_message: string (the user's input)
+  - ai_response: string (the AI's response)
+  - correction: optional object with original and corrected text
+  - vocabulary: optional list of word objects with spanish and english keys
+#}
+
 <!-- User Message -->
-{% if is_user %}
-<div class="flex justify-end" role="listitem">
-    <div class="max-w-[85%] sm:max-w-[70%]">
-        <div class="bg-primary-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
-            <p>{{ content }}</p>
-        </div>
-        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 mr-2 block text-right">You</span>
+<div class="message-enter flex justify-end mb-6">
+    <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm">
+        <p class="text-user-text leading-relaxed">{{ user_message }}</p>
     </div>
 </div>
-{% else %}
+
 <!-- AI Response -->
-<div class="flex justify-start" role="listitem">
-    <div class="max-w-[85%] sm:max-w-[70%]">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-700">
-            <p class="text-slate-800 dark:text-slate-200">{{ content }}</p>
-            {% if translation %}
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 italic">
-                {{ translation }}
-            </p>
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+        <div class="text-ai-text leading-relaxed">
+            {% if ai_response %}
+                {{ ai_response | safe }}
+            {% else %}
+                <p class="text-text-muted italic">No response received.</p>
             {% endif %}
         </div>
-        <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-2 block">HablaAI</span>
+
+        {# Optional: Correction highlighting #}
+        {% if correction %}
+        <div class="mt-3 pt-3 border-t border-border/50">
+            <p class="text-xs font-medium text-accent mb-2">Correction</p>
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="line-through text-text-subtle">{{ correction.original }}</span>
+                <span class="text-text-subtle">→</span>
+                <span class="text-accent font-medium">{{ correction.corrected }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Optional: Vocabulary highlight #}
+        {% if vocabulary %}
+        <div class="mt-3 pt-3 border-t border-border/50">
+            <p class="text-xs font-medium text-accent mb-2">New vocabulary</p>
+            <div class="flex flex-wrap gap-2">
+                {% for word in vocabulary %}
+                <span class="inline-flex items-center px-2.5 py-1 bg-surface-overlay/50 rounded-lg text-sm">
+                    <span class="text-accent font-medium">{{ word.spanish }}</span>
+                    <span class="mx-1.5 text-text-subtle">-</span>
+                    <span class="text-text-muted">{{ word.english }}</span>
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
-{% endif %}

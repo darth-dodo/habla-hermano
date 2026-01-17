@@ -1,63 +1,67 @@
-"""Respond node - generates AI tutor responses.
+"""
+Respond node for the HablaAI conversation graph.
 
-This node is the core of the conversation flow. It takes the current
-conversation state, constructs an appropriate prompt based on the
-user's level, and generates a response.
-
-Phase 1: Returns a placeholder response (no LLM integration yet)
-Future: Will integrate with Claude API via langchain-anthropic
+This is the core node that generates AI responses appropriate
+to the user's language level.
 """
 
-from langchain_core.messages import AIMessage
+from typing import Any
+
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import SystemMessage
 
 from src.agent.prompts import get_prompt_for_level
 from src.agent.state import ConversationState
+from src.api.config import get_settings
 
 
-async def respond_node(state: ConversationState) -> dict[str, list[AIMessage]]:
-    """Generate an AI response appropriate to the user's level.
+def _get_llm() -> ChatAnthropic:
+    """
+    Create and return a ChatAnthropic instance.
 
-    This node reads the conversation history and user's proficiency level,
-    then generates a contextually appropriate response.
+    Uses claude-sonnet-4-20250514 for good balance of quality and speed.
+    API key is read from application settings.
+    """
+    settings = get_settings()
+    return ChatAnthropic(
+        model=settings.LLM_MODEL,
+        temperature=settings.LLM_TEMPERATURE,
+        max_tokens=1024,
+        api_key=settings.ANTHROPIC_API_KEY,
+    )
 
-    Phase 1 Implementation:
-        Returns a placeholder response demonstrating the state flow.
-        The response includes level-aware greeting to verify routing works.
 
-    Future Implementation:
-        Will use langchain-anthropic to generate responses:
-        ```
-        llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
-        response = await llm.ainvoke([
-            SystemMessage(content=prompt),
-            *state["messages"]
-        ])
-        return {"messages": [response]}
-        ```
+async def respond_node(state: ConversationState) -> dict[str, Any]:
+    """
+    Generate an AI response appropriate to the user's level.
+
+    This node:
+    1. Gets the appropriate system prompt for the user's level
+    2. Calls Claude with the conversation history
+    3. Returns the response to be added to messages
 
     Args:
-        state: Current conversation state containing messages, level, and language.
+        state: Current conversation state containing messages, level, and language
 
     Returns:
-        Dict with "messages" key containing the AI response.
-        Uses the add_messages reducer pattern for automatic accumulation.
+        Dictionary with "messages" key containing the AI response.
+        The add_messages reducer will append this to existing messages.
     """
-    level = state.get("level", "A1")
-    language = state.get("language", "es")
+    # Get level-appropriate system prompt
+    prompt = get_prompt_for_level(
+        language=state["language"],
+        level=state["level"],
+    )
 
-    # Get the appropriate prompt (validates level and language)
-    _prompt = get_prompt_for_level(language, level)
+    # Build message list with system prompt first
+    messages = [
+        SystemMessage(content=prompt),
+        *state["messages"],
+    ]
 
-    # Phase 1: Placeholder response
-    # This demonstrates the state flow without requiring LLM integration
-    level_greetings = {
-        "A0": "Hola! Hello! I'm your Spanish tutor. Let's start with basics!",
-        "A1": "Hola! Como estas? I'm here to help you practice Spanish.",
-        "A2": "Hola! Que tal? Vamos a practicar espanol juntos.",
-        "B1": "Hola! Que gusto verte. Estoy listo para nuestra conversacion.",
-    }
+    # Call Claude
+    llm = _get_llm()
+    response = await llm.ainvoke(messages)
 
-    greeting = level_greetings.get(level, level_greetings["A1"])
-    response = AIMessage(content=greeting)
-
+    # Return response - add_messages reducer will append it
     return {"messages": [response]}

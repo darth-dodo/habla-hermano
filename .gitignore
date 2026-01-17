@@ -92,9 +92,8 @@ src/static/css/output.css
 Thumbs.db
 
 # =============================================================================
-# Secrets
+# Secrets (but NOT .secrets.baseline - that's the allowlist for pre-commit)
 # =============================================================================
-.secrets.baseline
 *.pem
 *.key
 

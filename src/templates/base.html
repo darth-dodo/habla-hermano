@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="HablaAI - Conversational Spanish learning powered by AI">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="description" content="HablaAI - Your AI Spanish Language Tutor">
+    <meta name="theme-color" content="#1a1a1a">
     <title>{% block title %}HablaAI{% endblock %}</title>
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN (development) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -15,70 +15,294 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            300: '#86efac',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
+                        // Theme-aware colors using CSS variables
+                        surface: {
+                            DEFAULT: 'var(--surface)',
+                            elevated: 'var(--surface-elevated)',
+                            overlay: 'var(--surface-overlay)',
+                        },
+                        border: {
+                            DEFAULT: 'var(--border)',
+                            subtle: 'var(--border-subtle)',
+                        },
+                        text: {
+                            DEFAULT: 'var(--text)',
+                            muted: 'var(--text-muted)',
+                            subtle: 'var(--text-subtle)',
+                        },
+                        accent: {
+                            DEFAULT: 'var(--accent)',
+                            hover: 'var(--accent-hover)',
+                            muted: 'var(--accent-muted)',
+                            text: 'var(--accent-text)',
+                        },
+                        user: {
+                            DEFAULT: 'var(--user-bubble)',
+                            text: 'var(--user-text)',
+                        },
+                        ai: {
+                            DEFAULT: 'var(--ai-bubble)',
+                            text: 'var(--ai-text)',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulseSubtle: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' },
                         }
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
                     }
                 }
             }
         }
     </script>
 
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', path='css/output.css') }}">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+
+    <!-- Alpine.js for minimal interactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Theme System -->
+    <style>
+        /* ============================================
+           THEME DEFINITIONS
+           Modern, minimal, warm color palettes
+           ============================================ */
+
+        /* Dark Theme (default) - Warm charcoal with amber accents */
+        :root, [data-theme="dark"] {
+            --surface: #1a1a1a;
+            --surface-elevated: #252525;
+            --surface-overlay: #2f2f2f;
+            --border: #3a3a3a;
+            --border-subtle: #2a2a2a;
+            --text: #f5f5f4;
+            --text-muted: #a8a29e;
+            --text-subtle: #78716c;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --accent-muted: rgba(245, 158, 11, 0.15);
+            --accent-text: #fef3c7;
+            --user-bubble: #f59e0b;
+            --user-text: #1a1a1a;
+            --ai-bubble: #2f2f2f;
+            --ai-text: #f5f5f4;
+            --scrollbar-track: #1a1a1a;
+            --scrollbar-thumb: #404040;
+            --scrollbar-thumb-hover: #525252;
+        }
+
+        /* Light Theme - Warm sand with sage green accents */
+        [data-theme="light"] {
+            --surface: #fefdfb;
+            --surface-elevated: #ffffff;
+            --surface-overlay: #f8f6f3;
+            --border: #e8e4dd;
+            --border-subtle: #f2efe9;
+            --text: #2d2a26;
+            --text-muted: #6b6560;
+            --text-subtle: #9c958d;
+            --accent: #5d7c5d;
+            --accent-hover: #6b8e6b;
+            --accent-muted: rgba(93, 124, 93, 0.12);
+            --accent-text: #ffffff;
+            --user-bubble: #5d7c5d;
+            --user-text: #ffffff;
+            --ai-bubble: #f3f0eb;
+            --ai-text: #2d2a26;
+            --scrollbar-track: #fefdfb;
+            --scrollbar-thumb: #d9d4cc;
+            --scrollbar-thumb-hover: #b8b2a8;
+        }
+
+        /* Ocean Theme - Midnight waters with golden sand accents */
+        [data-theme="ocean"] {
+            --surface: #0d1b2a;
+            --surface-elevated: #1b2838;
+            --surface-overlay: #243447;
+            --border: #3d5a73;
+            --border-subtle: #2c4459;
+            --text: #e0e6ed;
+            --text-muted: #8fa7bb;
+            --text-subtle: #5c7a94;
+            --accent: #d4a55a;
+            --accent-hover: #e4b86a;
+            --accent-muted: rgba(212, 165, 90, 0.15);
+            --accent-text: #0d1b2a;
+            --user-bubble: #d4a55a;
+            --user-text: #0d1b2a;
+            --ai-bubble: #1b3344;
+            --ai-text: #e0e6ed;
+            --scrollbar-track: #0d1b2a;
+            --scrollbar-thumb: #3d5a73;
+            --scrollbar-thumb-hover: #4d7a9a;
+        }
+
+        /* ============================================
+           BASE STYLES
+           ============================================ */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--surface);
+            color: var(--text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Selection */
+        ::selection {
+            background-color: var(--accent-muted);
+            color: var(--text);
+        }
+
+        /* Focus styles */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+
+        .message-enter {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        /* Loading dots */
+        .loading-dots span {
+            animation: loadingDot 1.4s infinite ease-in-out both;
+        }
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loadingDot {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Smooth theme transitions */
+        .theme-transition,
+        .theme-transition *,
+        .theme-transition *::before,
+        .theme-transition *::after {
+            transition: background-color 0.3s ease,
+                        border-color 0.3s ease,
+                        color 0.3s ease,
+                        box-shadow 0.3s ease !important;
+        }
+
+        /* ============================================
+           MOBILE OPTIMIZATIONS
+           ============================================ */
+
+        @media (max-width: 640px) {
+            body {
+                overscroll-behavior: none;
+            }
+        }
+
+        /* ============================================
+           ACCESSIBILITY
+           ============================================ */
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border: #525252;
+                --text-muted: #d6d3d1;
+            }
+        }
+    </style>
 
     {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased">
+<body class="h-full antialiased font-sans" x-data="{
+    theme: localStorage.getItem('habla-theme') || 'dark',
+    setTheme(newTheme) {
+        this.theme = newTheme;
+        localStorage.setItem('habla-theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+        document.body.classList.add('theme-transition');
+        setTimeout(() => document.body.classList.remove('theme-transition'), 300);
+    }
+}" x-init="document.documentElement.setAttribute('data-theme', theme)">
     <div id="app" class="h-full flex flex-col">
-        <!-- Header -->
-        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex-shrink-0">
-            <div class="max-w-4xl mx-auto flex items-center justify-between">
-                <a href="/" class="flex items-center gap-2" aria-label="HablaAI Home">
-                    <span class="text-2xl" role="img" aria-hidden="true">🇪🇸</span>
-                    <h1 class="text-xl font-bold text-primary-600 dark:text-primary-400">HablaAI</h1>
-                </a>
-                <nav class="flex items-center gap-4" aria-label="Main navigation">
-                    <a href="/lessons" class="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                        Lessons
-                    </a>
-                    <button
-                        id="theme-toggle"
-                        type="button"
-                        class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                        aria-label="Toggle dark mode"
-                    >
-                        <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
-                        </svg>
-                        <svg class="w-5 h-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                        </svg>
-                    </button>
-                </nav>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="flex-1 overflow-hidden">
-            {% block content %}{% endblock %}
-        </main>
+        {% block content %}{% endblock %}
     </div>
 
-    <!-- Custom JS -->
+    <!-- Custom JavaScript -->
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

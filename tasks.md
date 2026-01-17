@@ -31,10 +31,8 @@
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Project setup (config, CI, pre-commit) | ✅ | Complete |
-| Create src/ directory structure | ✅ | Complete - parallel agent workflow |
-| Phase 1 LangGraph: minimal respond node | ✅ | StateGraph with respond node |
-| Basic FastAPI app with HTMX | ✅ | Templates + routes created |
+| Phase 1 complete with tests | ✅ | 227 pytest tests, E2E validated, committed to feature/phase1-chat-ui |
+| UI modernization | ✅ | 3 themes (dark/light/ocean), optimistic UI, German language support |
 
 ### Up Next - Priority Tasks
 
@@ -42,15 +40,16 @@
 
 | Task | Status | Priority | Notes |
 |------|--------|----------|-------|
-| Wire up LangGraph to Claude API | ⏳ | 🔴 | Connect respond_node to real LLM |
-| Test basic chat flow end-to-end | ⏳ | 🔴 | Verify HTMX + FastAPI + LangGraph |
+| Create src/ directory structure | ✅ | 🔴 | Completed 2025-01-16 |
+| Phase 1 LangGraph: minimal respond node | ✅ | 🔴 | StateGraph, respond node working |
+| Basic FastAPI app with HTMX | ✅ | 🔴 | Chat UI functional |
 
 #### 🟠 High Priority (Week 1)
 
 | Task | Status | Priority | Notes |
 |------|--------|----------|-------|
 | Phase 2 LangGraph: add analyze node | ⏳ | 🟠 | Learning: multi-node graphs |
-| Level selection (A0/A1/A2/B1) | ⏳ | 🟠 | Different prompts per level |
+| Level selection (A0/A1/A2/B1) | ✅ | 🟠 | Dropdown in UI, passed to graph |
 | Grammar feedback display | ⏳ | 🟠 | Collapsed by default |
 
 #### 🟡 Medium Priority (Week 2)
@@ -68,7 +67,7 @@
 |------|--------|----------|-------|
 | Micro-lessons (3-5 for A0-A1) | ⏳ | 🟢 | 2-3 min lessons |
 | Progress visualization | ⏳ | 🟢 | Words learned, sessions |
-| German language support | ⏳ | 🟢 | If time permits |
+| German language support | ✅ | 🟢 | Language selector with 🇪🇸/🇩🇪 |
 | Mobile responsiveness | ⏳ | 🟢 | Polish phase |
 
 ---
@@ -121,68 +120,173 @@
 
 ---
 
-### Session Log: 2025-01-15
+### Session Log: 2025-01-16
 
-**Session Focus**: Create complete src/ directory structure using parallel agents
+**Session Focus**: Phase 1 Implementation - LangGraph + FastAPI + HTMX
 
-**Workflow**: Multi-agent parallel coordination (`.agentic-framework/workflows/multi-agent-coordination.md`)
-
-**Agents Used**:
-1. Agent A (python-expert): API module - FastAPI routes, config, dependencies
-2. Agent B (python-expert): Agent module - LangGraph graph, state, prompts, nodes
-3. Agent C (python-expert): DB + Services - SQLAlchemy models, repository, services
-4. Agent D (frontend-architect): Templates + Static - Jinja2, Tailwind, HTMX
-
-**Branch**: `feature/src-structure`
-
-**Artifacts Created**:
-```
-src/
-├── api/
-│   ├── main.py, config.py, dependencies.py
-│   └── routes/ (chat.py, lessons.py, progress.py)
-├── agent/
-│   ├── graph.py, state.py, prompts.py
-│   └── nodes/ (respond.py, analyze.py, scaffold.py, feedback.py)
-├── db/
-│   └── models.py, repository.py, seed.py
-├── services/
-│   └── vocabulary.py, levels.py
-├── templates/
-│   ├── base.html, chat.html, lessons.html
-│   └── partials/ (message, scaffold, feedback, vocab_sidebar)
-└── static/
-    ├── css/input.css
-    └── js/app.js
-data/
-├── .gitkeep
-└── lessons/.gitkeep
-```
-
-**Quality Gates**:
-- ✅ ruff check: All passed
-- ✅ mypy --strict: No issues in 25 source files
+**Approach**: Used `.agentic-framework` parallel coordination pattern with 3 subagents
 
 **Key Decisions**:
-1. Phase 1 LangGraph: Single respond node (START → respond → END)
-2. ConversationState with messages (add_messages reducer), level, language
-3. LEVEL_PROMPTS for A0/A1/A2/B1 (Spanish focus)
-4. Tailwind CDN + HTMX for frontend (no build step needed initially)
-5. Mobile-first, dark mode support in templates
+1. Parallel agent pattern for independent components
+2. claude-sonnet-4-20250514 as LLM model
+3. HTMX for server-driven UI with minimal JS
+4. Dark theme by default (language learning often evening activity)
+5. Level selector in UI (A0/A1/A2/B1) passed to graph
+
+**Branch**: `init`
+
+**Artifacts Created**:
+- `src/agent/state.py` - ConversationState TypedDict
+- `src/agent/prompts.py` - Level-specific system prompts (A0-B1)
+- `src/agent/nodes/respond.py` - Respond node calling Claude
+- `src/agent/graph.py` - Minimal StateGraph: START → respond → END
+- `src/api/config.py` - Pydantic Settings with env loading
+- `src/api/dependencies.py` - FastAPI DI for templates
+- `src/api/main.py` - FastAPI app with lifespan, static files
+- `src/api/routes/chat.py` - Chat endpoints with LangGraph integration
+- `src/templates/base.html` - Base template with Tailwind, HTMX, Alpine.js
+- `src/templates/chat.html` - Chat UI with level selector
+- `src/templates/partials/message.html` - Message bubble partial
+- `src/templates/partials/message_pair.html` - User + AI message pair
+- `src/static/css/input.css` - Tailwind input with custom components
+- `src/static/js/app.js` - Auto-scroll, focus management, HTMX handlers
+
+**Quality Gates**:
+- ✅ Ruff linting: All checks passed
+- ✅ MyPy type checking: No issues in 15 files
+- ✅ App boots successfully
+- ✅ Health endpoint returns 200
+- ✅ Chat page renders correctly
+- ⏳ E2E test with valid API key (pending user test)
+
+**LangGraph Learning**:
+- Learned: StateGraph, TypedDict with Annotated, add_messages reducer
+- Learned: Single node graph structure (entry point → node → END)
+- Learned: Async node functions returning state updates
 
 **Next Steps**:
-- [ ] Wire respond_node to Claude API (langchain-anthropic)
-- [ ] Test end-to-end chat flow
-- [ ] Add database initialization
+- [x] Test E2E with valid ANTHROPIC_API_KEY
+- [ ] Phase 2: Add analyze node for grammar feedback
+- [ ] Add conversation persistence (checkpointing)
+
+---
+
+### Session Log: 2025-01-16 (E2E Testing)
+
+**Session Focus**: End-to-end testing with Playwright MCP
+
+**Approach**: Used Playwright MCP server for browser automation testing
+
+**Tests Executed**:
+1. ✅ Chat page initial load
+2. ✅ Level selector dropdown functionality
+3. ✅ A0 (Complete Beginner) chat flow - English-heavy response
+4. ✅ A1 (Beginner) chat flow - 50/50 Spanish/English mix
+5. ✅ B1 (Intermediate) chat flow - 95%+ Spanish response
+
+**Key Observations**:
+- Level-specific prompts working correctly
+- HTMX form submission and response swapping functional
+- Dark theme UI renders properly
+- Response times acceptable for Claude API calls
+
+**Artifacts Created**:
+- `docs/playwright-e2e.md` - E2E test documentation
+- `docs/screenshots/chat-initial.png` - Initial page screenshot
+- `docs/screenshots/chat-a0-response.png` - A0 level response
+- `docs/screenshots/chat-a1-response.png` - A1 level response
+- `docs/screenshots/chat-b1-response.png` - B1 level response
+
+**Bug Fixed**:
+- API key not loading in respond node → Fixed by importing from config.get_settings()
+
+**Next Steps**:
+- [x] Write comprehensive pytest test suite
+- [ ] Create PR for feature/phase1-chat-ui → main
+
+---
+
+### Session Log: 2025-01-16 (Test Suite & Commit)
+
+**Session Focus**: Test suite implementation and commit
+
+**Approach**: Used subagents for parallel test file creation
+
+**What Was Done**:
+1. Created 229 pytest tests via subagents
+2. Fixed pre-commit hook issues (ruff, mypy, detect-secrets)
+3. Committed to feature/phase1-chat-ui branch
+4. Pushed to origin
+
+**Test Coverage**:
+- `tests/test_agent_state.py` - ConversationState TypedDict tests
+- `tests/test_agent_prompts.py` - Prompt generation tests
+- `tests/test_agent_graph.py` - Graph structure tests
+- `tests/test_api_config.py` - Settings and config tests
+- `tests/test_api_routes.py` - FastAPI route tests
+
+**Branch**: `feature/phase1-chat-ui`
+**Commit**: `4e218a7`
+
+**Quality Gates**:
+- ✅ Ruff linting: All checks passed
+- ✅ MyPy type checking: No issues
+- ✅ 229 tests passing
+- ✅ Pre-commit hooks passing
+- ✅ Pushed to origin
+
+**Next Steps**:
+- [ ] Create PR for feature/phase1-chat-ui → main
+- [ ] Phase 2: Add analyze node for grammar feedback
+- [ ] Add conversation persistence (checkpointing)
+
+---
+
+### Session Log: 2025-01-17
+
+**Session Focus**: UI Modernization and German Language Support
+
+**What Was Done**:
+1. Modernized UI with 3 theme system (dark/light/ocean)
+2. Added optimistic UI for instant message feedback
+3. Added German language support with language selector
+4. Improved light theme (warm sand with sage green accents)
+5. Improved ocean theme (midnight waters with golden sand accents)
+6. Updated all documentation
+
+**Key Changes**:
+- `src/templates/base.html` - CSS variable theme system with 3 themes
+- `src/templates/chat.html` - Language selector, theme toggle, dynamic content
+- `src/templates/partials/message_pair.html` - AI-only response (user shown via JS)
+- `src/static/js/app.js` - Optimistic UI, escapeHtml, HTMX handlers
+- Updated tests to reflect new UI patterns
+
+**Theme Details**:
+- **Dark**: Warm charcoal with amber accents (#f59e0b)
+- **Light**: Warm sand with sage green accents (#5d7c5d)
+- **Ocean**: Midnight blue with golden sand accents (#d4a55a)
+
+**Branch**: `feature/phase1-chat-ui`
+
+**Quality Gates**:
+- ✅ 227 tests passing
+- ✅ Pre-commit hooks passing
+- ✅ Pushed to origin
+
+**Next Steps**:
+- [ ] Create PR for feature/phase1-chat-ui → main
+- [ ] Phase 2: Add analyze node for grammar feedback
 
 ---
 
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Setup → Moving to Phase 1 Implementation
-- **Test Coverage**: N/A (no tests yet)
-- **CI/CD**: GitHub Actions configured, waiting for src/
+- **Current Phase**: Phase 1 Complete with UI Modernization (227 pytest tests)
+- **UI Features**: 3 themes, German support, optimistic UI
+- **Test Coverage**: Unit tests in `tests/`, E2E docs in `docs/playwright-e2e.md`
+- **Branch**: `feature/phase1-chat-ui` ready for PR to main
+- **CI/CD**: GitHub Actions configured
 - **Pre-commit**: Hooks defined, need `make install-hooks` to activate
 
 ### Key Files to Review

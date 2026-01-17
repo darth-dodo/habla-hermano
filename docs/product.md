@@ -12,6 +12,57 @@ HablaAI is an AI conversation partner that takes absolute beginners (A0) to conf
 
 ---
 
+## Pedagogical Approach
+
+### Style: Communicative Language Teaching (CLT)
+
+HablaAI uses a **Communicative Language Teaching** approach - learning by doing, not by studying rules.
+
+#### Core Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| **Conversation-first** | You talk from day one, not after memorizing vocabulary |
+| **Meaning over form** | Communication matters more than perfect grammar |
+| **Implicit correction** | AI models correct form naturally, doesn't interrupt |
+| **Authentic interaction** | Real conversations, not drill exercises |
+| **Contextual learning** | Grammar and vocabulary learned in conversation context |
+
+#### What HablaAI Avoids
+
+| Avoided Style | Reason |
+|---------------|--------|
+| Grammar-Translation | No rule memorization → practice sentences |
+| Audio-Lingual | No repetitive drills |
+| Gamification | No XP, streaks, leaderboards, or guilt |
+| Flashcards | Vocabulary in context, not isolation |
+
+#### The "Gentle Nudge" Correction Pattern
+
+Instead of explicit corrections that interrupt flow:
+```
+User: "Yo soy cansado"
+AI: "Ah, ¿estás cansado? Yo también después del trabajo."
+    (Models correct form without saying "you made a mistake")
+
+[Optional collapsed feedback]
+💡 Quick tip: For feelings like tired, hungry, or happy,
+   Spanish uses "estar" not "ser".
+```
+
+#### Language Mix Progression
+
+| Level | Target Language | English | Teaching Style |
+|-------|-----------------|---------|----------------|
+| **A0** | 20% | 80% | Heavy scaffolding, celebrate every attempt |
+| **A1** | 50% | 50% | Simple sentences, model correct forms |
+| **A2** | 80% | 20% | Longer exchanges, past tense naturally |
+| **B1** | 95%+ | 5% | Natural conversations, gentle asides |
+
+This is essentially **immersion-lite** with training wheels (scaffolding) that gradually come off as the learner progresses.
+
+---
+
 ## Target Users
 
 - **Primary**: Complete beginners who want to actually speak, not just study
@@ -245,18 +296,27 @@ AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
 ## MVP Scope (Phase 1)
 
 ### Must Have
-- [ ] Scaffolded conversation with 4 difficulty levels
+- [ ] Scaffolded conversation with 4 difficulty levels (partial - conversation works, scaffolding UI pending)
 - [ ] Micro-lessons (5-10 covering A0-A1 basics)
 - [ ] Vocabulary tracking (words encountered, can review list)
 - [ ] Grammar feedback (contextual, collapsed by default)
-- [ ] Level selection (A0/A1/A2/B1) with appropriate AI behavior
-- [ ] Spanish language support
+- [x] Level selection (A0/A1/A2/B1) with appropriate AI behavior
+- [x] Spanish language support
 - [ ] Basic progress view (words learned, lessons completed)
 
 ### Nice to Have
-- [ ] German language support
+- [x] German language support (language selector with 🇪🇸/🇩🇪 flags)
 - [ ] Conversation history
+- [x] Theme system (dark/light/ocean themes with warm color palettes)
 - [ ] Settings (feedback verbosity, translation preferences)
+
+### UI/UX Completed
+- [x] Modern, minimal design with 3 themes
+- [x] Optimistic UI (instant message feedback)
+- [x] Theme toggle button (cycles dark → light → ocean)
+- [x] Language selector dropdown
+- [x] Level selector dropdown
+- [x] Keyboard shortcuts (/ to focus, Escape to blur, Cmd+Enter to send)
 
 ### Explicitly Deferred
 - Voice input/output
@@ -270,10 +330,12 @@ AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
 
 ## Launch Plan
 
-### Week 1: Core Loop
-- Scaffolded conversation working at all 4 levels
-- A0 experience with word banks and templates
-- Basic Claude prompts for level-appropriate responses
+### Week 1: Core Loop - COMPLETE
+> Completed 2025-01-16 with LangGraph Phase 1
+
+- [x] Scaffolded conversation working at all 4 levels
+- [x] A0 experience with word banks and templates
+- [x] Basic Claude prompts for level-appropriate responses
 
 ### Week 2: Learning Features
 - 5 micro-lessons for A0-A1
@@ -283,8 +345,8 @@ AI Response: "Ah, ¿estás cansado? Yo también después del trabajo."
 ### Week 3: Polish
 - Progress visualization
 - Settings panel
-- German support (if time)
-- UI polish and mobile responsiveness
+- [x] German support ✅
+- [x] UI polish ✅ (3 themes, optimistic UI, modern design)
 
 ### Week 4+: Iterate
 - User testing with actual beginners

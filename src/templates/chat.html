@@ -3,93 +3,236 @@
 {% block title %}Chat - HablaAI{% endblock %}
 
 {% block content %}
-<div class="h-full flex flex-col max-w-4xl mx-auto">
-    <!-- Chat Messages Area -->
-    <div
-        id="chat-messages"
-        class="flex-1 overflow-y-auto p-4 space-y-4"
-        role="log"
-        aria-label="Chat messages"
-        aria-live="polite"
-    >
-        <!-- Welcome message -->
-        <div class="flex justify-start">
-            <div class="max-w-[85%] sm:max-w-[70%]">
-                <div class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-700">
-                    <p class="text-slate-800 dark:text-slate-200">
-                        Hola! I'm your Spanish tutor. Let's practice conversation together. What would you like to talk about today?
-                    </p>
+<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}' }">
+    <!-- Header -->
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-4 sm:px-6 shadow-sm">
+        <div class="max-w-3xl mx-auto flex items-center justify-between">
+            <!-- Logo/Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
                 </div>
-                <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 ml-2 block">HablaAI</span>
+                <h1 class="text-xl font-semibold text-text">HablaAI</h1>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="flex items-center gap-2">
+                <!-- Theme Toggle Button -->
+                <button
+                    @click="setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'ocean' : 'dark')"
+                    class="p-2.5 rounded-xl bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-text transition-all duration-200"
+                    :aria-label="'Current theme: ' + theme + '. Click to switch theme.'"
+                    :title="'Theme: ' + theme"
+                >
+                    <!-- Dark theme icon (moon) -->
+                    <svg x-show="theme === 'dark'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <!-- Light theme icon (sun) -->
+                    <svg x-show="theme === 'light'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Ocean theme icon (wave) -->
+                    <svg x-show="theme === 'ocean'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                    </svg>
+                </button>
+
+                <!-- Language Selector -->
+                <div class="relative" x-data="{ open: false }">
+                    <button
+                        @click="open = !open"
+                        @click.away="open = false"
+                        class="flex items-center gap-2 px-3 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        aria-label="Select language"
+                    >
+                        <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
+                        <span x-show="language === 'de'" class="text-lg">🇩🇪</span>
+                        <span x-show="language === 'fr'" class="text-lg">🇫🇷</span>
+                        <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Language Dropdown -->
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                        x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
+                        class="absolute right-0 mt-2 w-44 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                    >
+                        <div class="p-2">
+                            <button
+                                @click="language = 'es'; open = false; $refs.languageInput.value = 'es'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'es' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇪🇸</span>
+                                <span class="font-medium">Spanish</span>
+                            </button>
+                            <button
+                                @click="language = 'de'; open = false; $refs.languageInput.value = 'de'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'de' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇩🇪</span>
+                                <span class="font-medium">German</span>
+                            </button>
+                            <button
+                                @click="language = 'fr'; open = false; $refs.languageInput.value = 'fr'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'fr' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇫🇷</span>
+                                <span class="font-medium">French</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level Selector -->
+                <div class="relative" x-data="{ open: false }">
+                    <button
+                        @click="open = !open"
+                        @click.away="open = false"
+                        class="flex items-center gap-2 px-3.5 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        aria-label="Select language level"
+                    >
+                        <span class="text-text-muted">Level:</span>
+                        <span x-text="level" class="text-accent font-semibold"></span>
+                        <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                        x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
+                        class="absolute right-0 mt-2 w-56 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                    >
+                        <div class="p-2">
+                            {% for lvl, desc in [('A0', 'Complete Beginner'), ('A1', 'Beginner'), ('A2', 'Elementary'), ('B1', 'Intermediate')] %}
+                            <button
+                                @click="level = '{{ lvl }}'; open = false; $refs.levelInput.value = '{{ lvl }}'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150"
+                                :class="level === '{{ lvl }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="font-semibold">{{ lvl }}</span>
+                                <span class="text-text-muted text-sm ml-2">{{ desc }}</span>
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </header>
 
-        <!-- Messages will be appended here via HTMX -->
-    </div>
+    <!-- Chat Messages Container -->
+    <main class="flex-1 overflow-y-auto bg-surface" id="chat-container">
+        <div class="max-w-3xl mx-auto px-4 py-8 sm:px-6">
+            <div id="chat-messages" class="space-y-6">
+                <!-- Welcome Message -->
+                <div class="message-enter flex justify-start mb-6">
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+                        <p class="text-ai-text leading-relaxed">
+                            <span x-show="language === 'es'">¡Hola!</span>
+                            <span x-show="language === 'de'">Hallo!</span>
+                            <span x-show="language === 'fr'">Bonjour!</span>
+                            I'm your AI <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span> tutor. I'll adapt to your
+                            <span class="text-accent font-semibold" x-text="level"></span> level.
+                        </p>
+                        <p class="text-ai-text/70 mt-2 leading-relaxed">
+                            <span x-show="language === 'es'">Try saying something in Spanish, or ask me to help you practice!</span>
+                            <span x-show="language === 'de'">Try saying something in German, or ask me to help you practice!</span>
+                            <span x-show="language === 'fr'">Try saying something in French, or ask me to help you practice!</span>
+                        </p>
+                    </div>
+                </div>
 
-    <!-- Scaffold Area (word bank, hints) -->
-    <div
-        id="scaffold-area"
-        class="px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 hidden"
-        aria-label="Learning aids"
-    >
-        <!-- Scaffold content injected via HTMX -->
-    </div>
-
-    <!-- Chat Input Form -->
-    <form
-        id="chat-form"
-        class="flex-shrink-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700"
-        hx-post="/chat"
-        hx-target="#chat-messages"
-        hx-swap="beforeend"
-        hx-on::after-request="this.reset(); document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;"
-    >
-        <div class="flex gap-3 items-end max-w-4xl mx-auto">
-            <div class="flex-1 relative">
-                <label for="message-input" class="sr-only">Type your message in Spanish</label>
-                <textarea
-                    id="message-input"
-                    name="message"
-                    rows="1"
-                    class="w-full resize-none rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 placeholder-slate-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
-                    placeholder="Type your message in Spanish..."
-                    aria-describedby="input-hint"
-                    required
-                    autocomplete="off"
-                ></textarea>
-                <p id="input-hint" class="sr-only">Press Enter to send, Shift+Enter for new line</p>
+                {% if messages %}
+                    {% for msg in messages %}
+                        {% include "partials/message.html" %}
+                    {% endfor %}
+                {% endif %}
             </div>
-            <button
-                type="submit"
-                class="flex-shrink-0 bg-primary-600 hover:bg-primary-700 text-white rounded-xl px-5 py-3 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Send message"
+
+            <!-- Loading Indicator (hidden by default) -->
+            <div id="loading-indicator" class="hidden mt-6">
+                <div class="flex justify-start">
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+                        <div class="loading-dots flex gap-1.5">
+                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
+                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
+                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Form -->
+    <footer class="flex-shrink-0 bg-surface-elevated border-t border-border px-4 py-5 sm:px-6">
+        <div class="max-w-3xl mx-auto">
+            <form
+                id="chat-form"
+                hx-post="/chat"
+                hx-target="#chat-messages"
+                hx-swap="beforeend"
+                hx-indicator="#loading-indicator"
+                hx-on::before-request="showLoading()"
+                hx-on::after-request="hideLoading(); clearInput()"
+                class="flex gap-3"
             >
-                <span class="hidden sm:inline">Send</span>
-                <svg class="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                </svg>
-            </button>
+                <!-- Hidden inputs -->
+                <input type="hidden" name="level" x-ref="levelInput" :value="level">
+                <input type="hidden" name="language" x-ref="languageInput" :value="language">
+
+                <!-- Message Input -->
+                <div class="flex-1 relative">
+                    <input
+                        type="text"
+                        name="message"
+                        id="message-input"
+                        :placeholder="language === 'es' ? 'Type your message in Spanish or English...' : language === 'de' ? 'Type your message in German or English...' : 'Type your message in French or English...'"
+                        autocomplete="off"
+                        required
+                        class="w-full px-5 py-4 bg-surface-overlay border border-border rounded-2xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                    >
+                </div>
+
+                <!-- Send Button -->
+                <button
+                    type="submit"
+                    class="flex-shrink-0 px-5 py-4 bg-accent hover:bg-accent-hover active:scale-95 text-accent-text font-medium rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    aria-label="Send message"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Helper Text -->
+            <p class="mt-3 text-xs text-text-subtle text-center">
+                Press Enter to send. I can help with vocabulary, grammar, and conversation practice.
+            </p>
         </div>
-    </form>
+    </footer>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Auto-resize textarea
-    const textarea = document.getElementById('message-input');
-    textarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-    });
-
-    // Submit on Enter (Shift+Enter for newline)
-    textarea.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            document.getElementById('chat-form').requestSubmit();
-        }
-    });
-</script>
 {% endblock %}

@@ -1,40 +1,24 @@
-"""Dependency injection for FastAPI routes.
+"""FastAPI dependency injection providers.
 
-Provides graph instance, database sessions, and template engine access.
+Provides reusable dependencies for routes including settings and templates.
 """
 
-from collections.abc import AsyncGenerator
+from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.config import Settings, get_settings
-
-
-async def get_db_session(
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> AsyncGenerator[AsyncSession, None]:
-    """Yield a database session for the request lifecycle.
-
-    Args:
-        settings: Application settings with database URL.
-
-    Yields:
-        AsyncSession: Database session that auto-commits on success.
-    """
-    del settings  # Will be used when db module is ready
-    raise NotImplementedError
 
 
 def get_templates(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> Jinja2Templates:
-    """Get configured Jinja2 templates instance.
+    """Return Jinja2Templates instance configured with templates directory.
 
     Args:
-        settings: Application settings with templates directory path.
+        settings: Application settings instance.
 
     Returns:
         Jinja2Templates: Configured template engine.
@@ -42,34 +26,20 @@ def get_templates(
     return Jinja2Templates(directory=str(settings.templates_dir))
 
 
-def get_thread_id(request: Request) -> str:
-    """Extract or generate conversation thread ID from request.
+@lru_cache
+def get_cached_templates() -> Jinja2Templates:
+    """Return cached Jinja2Templates instance.
 
-    Thread IDs enable LangGraph checkpointing for conversation persistence.
-
-    Args:
-        request: FastAPI request with session/cookie data.
+    Uses lru_cache to avoid recreating templates engine on every request.
+    Use this for performance-critical paths.
 
     Returns:
-        str: Unique thread identifier for the conversation.
+        Jinja2Templates: Cached template engine instance.
     """
-    session_id = request.cookies.get("habla_session", "")
-    if session_id:
-        return f"thread-{session_id}"
-    return "thread-anonymous"
+    settings = get_settings()
+    return Jinja2Templates(directory=str(settings.templates_dir))
 
 
-async def get_graph() -> AsyncGenerator[object, None]:
-    """Yield the compiled LangGraph instance for conversation processing.
-
-    Yields:
-        CompiledGraph: The LangGraph conversation graph with checkpointing.
-    """
-    raise NotImplementedError
-
-
-# Type aliases for cleaner route signatures
-DbSession = Annotated[AsyncSession, Depends(get_db_session)]
-Templates = Annotated[Jinja2Templates, Depends(get_templates)]
-ThreadId = Annotated[str, Depends(get_thread_id)]
-AppSettings = Annotated[Settings, Depends(get_settings)]
+# Type aliases for dependency injection
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+TemplatesDep = Annotated[Jinja2Templates, Depends(get_cached_templates)]
