@@ -64,8 +64,9 @@ class TestChatPageEndpoint:
     def test_chat_page_contains_welcome_message(self, test_client: TestClient) -> None:
         """GET / should include welcome message from AI tutor."""
         response = test_client.get("/")
-        assert "Hola" in response.text
-        assert "Spanish tutor" in response.text
+        # Welcome message includes both Spanish and German greetings (Alpine.js switches)
+        assert "Hola" in response.text or "Hallo" in response.text
+        assert "tutor" in response.text
 
     def test_chat_page_contains_send_button(self, test_client: TestClient) -> None:
         """GET / should include send button."""

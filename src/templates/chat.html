@@ -3,7 +3,7 @@
 {% block title %}Chat - HablaAI{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}' }">
+<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}' }">
     <!-- Header -->
     <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-4 sm:px-6 shadow-sm">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
@@ -40,6 +40,53 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
                     </svg>
                 </button>
+
+                <!-- Language Selector -->
+                <div class="relative" x-data="{ open: false }">
+                    <button
+                        @click="open = !open"
+                        @click.away="open = false"
+                        class="flex items-center gap-2 px-3 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        aria-label="Select language"
+                    >
+                        <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
+                        <span x-show="language === 'de'" class="text-lg">🇩🇪</span>
+                        <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Language Dropdown -->
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                        x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
+                        x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
+                        class="absolute right-0 mt-2 w-44 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                    >
+                        <div class="p-2">
+                            <button
+                                @click="language = 'es'; open = false; $refs.languageInput.value = 'es'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'es' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇪🇸</span>
+                                <span class="font-medium">Spanish</span>
+                            </button>
+                            <button
+                                @click="language = 'de'; open = false; $refs.languageInput.value = 'de'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'de' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇩🇪</span>
+                                <span class="font-medium">German</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Level Selector -->
                 <div class="relative" x-data="{ open: false }">
@@ -93,11 +140,14 @@
                 <div class="message-enter flex justify-start mb-6">
                     <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
                         <p class="text-ai-text leading-relaxed">
-                            ¡Hola! I'm your AI Spanish tutor. I'll adapt to your
+                            <span x-show="language === 'es'">¡Hola!</span>
+                            <span x-show="language === 'de'">Hallo!</span>
+                            I'm your AI <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span> tutor. I'll adapt to your
                             <span class="text-accent font-semibold" x-text="level"></span> level.
                         </p>
                         <p class="text-ai-text/70 mt-2 leading-relaxed">
-                            Try saying something in Spanish, or ask me to help you practice!
+                            <span x-show="language === 'es'">Try saying something in Spanish, or ask me to help you practice!</span>
+                            <span x-show="language === 'de'">Try saying something in German, or ask me to help you practice!</span>
                         </p>
                     </div>
                 </div>
@@ -137,8 +187,9 @@
                 hx-on::after-request="hideLoading(); clearInput()"
                 class="flex gap-3"
             >
-                <!-- Hidden level input -->
+                <!-- Hidden inputs -->
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
+                <input type="hidden" name="language" x-ref="languageInput" :value="language">
 
                 <!-- Message Input -->
                 <div class="flex-1 relative">
@@ -146,7 +197,7 @@
                         type="text"
                         name="message"
                         id="message-input"
-                        placeholder="Type your message in Spanish or English..."
+                        :placeholder="language === 'es' ? 'Type your message in Spanish or English...' : 'Type your message in German or English...'"
                         autocomplete="off"
                         required
                         class="w-full px-5 py-4 bg-surface-overlay border border-border rounded-2xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
