@@ -4,7 +4,6 @@ Provides endpoints for the main chat interface and message handling.
 Uses HTMX for partial HTML responses.
 """
 
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Form, Request
@@ -67,8 +66,6 @@ async def send_message(
     Returns:
         HTMLResponse: Partial HTML with user message and AI response.
     """
-    timestamp = datetime.now().strftime("%H:%M")
-
     # Invoke LangGraph agent
     result = await compiled_graph.ainvoke(
         {
@@ -87,6 +84,5 @@ async def send_message(
         context={
             "user_message": message,
             "ai_response": ai_response,
-            "timestamp": timestamp,
         },
     )

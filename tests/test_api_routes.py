@@ -116,18 +116,6 @@ class TestSendMessageEndpoint:
         )
         assert "text/html" in response.headers["content-type"]
 
-    def test_send_message_contains_user_message(
-        self,
-        test_client: TestClient,
-        sample_message: str,
-    ) -> None:
-        """POST /chat response should include the user's message."""
-        response = test_client.post(
-            "/chat",
-            data={"message": sample_message, "level": "A1"},
-        )
-        assert sample_message in response.text
-
     def test_send_message_contains_ai_response(
         self,
         test_client: TestClient,
@@ -141,31 +129,19 @@ class TestSendMessageEndpoint:
         )
         assert sample_ai_response in response.text
 
-    def test_send_message_contains_timestamp(
+    def test_send_message_contains_ai_bubble(
         self,
         test_client: TestClient,
         sample_message: str,
     ) -> None:
-        """POST /chat response should include timestamp."""
+        """POST /chat response should include AI chat bubble class."""
         response = test_client.post(
             "/chat",
             data={"message": sample_message, "level": "A1"},
         )
-        # Timestamp format is HH:MM
-        assert 'class="timestamp"' in response.text
-
-    def test_send_message_contains_message_classes(
-        self,
-        test_client: TestClient,
-        sample_message: str,
-    ) -> None:
-        """POST /chat response should include proper CSS classes."""
-        response = test_client.post(
-            "/chat",
-            data={"message": sample_message, "level": "A1"},
-        )
-        assert "user-message" in response.text
-        assert "ai-message" in response.text
+        # User message is shown client-side via JavaScript (optimistic UI)
+        # Server only returns AI response
+        assert "bg-ai" in response.text
 
     def test_send_message_default_level(
         self,
@@ -276,7 +252,7 @@ class TestSendMessageEndpoint:
             data={"message": sample_message, "level": "A1"},
         )
         assert response.status_code == 200
-        assert sample_message in response.text
+        # User message shown client-side, server returns AI response only
         assert sample_ai_response in response.text
 
 
@@ -509,9 +485,8 @@ class TestResponsePartial:
             data={"message": sample_message, "level": "A1"},
         )
 
-        # Should contain both user and AI message divs
-        assert 'class="message user-message"' in response.text
-        assert 'class="message ai-message"' in response.text
+        # User message shown client-side, server returns AI response only
+        assert "bg-ai" in response.text
 
 
 class TestDifferentAgentResponses:

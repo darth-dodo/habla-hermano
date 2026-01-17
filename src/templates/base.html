@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="HablaAI - Your AI Spanish Language Tutor">
-    <meta name="theme-color" content="#111827">
+    <meta name="theme-color" content="#1a1a1a">
     <title>{% block title %}HablaAI{% endblock %}</title>
 
     <!-- Tailwind CSS CDN (development) -->
@@ -15,22 +15,43 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
+                        // Theme-aware colors using CSS variables
+                        surface: {
+                            DEFAULT: 'var(--surface)',
+                            elevated: 'var(--surface-elevated)',
+                            overlay: 'var(--surface-overlay)',
+                        },
+                        border: {
+                            DEFAULT: 'var(--border)',
+                            subtle: 'var(--border-subtle)',
+                        },
+                        text: {
+                            DEFAULT: 'var(--text)',
+                            muted: 'var(--text-muted)',
+                            subtle: 'var(--text-subtle)',
+                        },
+                        accent: {
+                            DEFAULT: 'var(--accent)',
+                            hover: 'var(--accent-hover)',
+                            muted: 'var(--accent-muted)',
+                            text: 'var(--accent-text)',
+                        },
+                        user: {
+                            DEFAULT: 'var(--user-bubble)',
+                            text: 'var(--user-text)',
+                        },
+                        ai: {
+                            DEFAULT: 'var(--ai-bubble)',
+                            text: 'var(--ai-text)',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                     },
                     animation: {
                         'fade-in': 'fadeIn 0.3s ease-out',
                         'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
                     },
                     keyframes: {
                         fadeIn: {
@@ -40,12 +61,24 @@
                         slideUp: {
                             '0%': { opacity: '0', transform: 'translateY(10px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        pulseSubtle: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' },
                         }
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
                     }
                 }
             }
         }
     </script>
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
@@ -53,29 +86,149 @@
     <!-- Alpine.js for minimal interactivity -->
     <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
-    <!-- Custom styles -->
+    <!-- Theme System -->
     <style>
-        /* Custom scrollbar for dark theme */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
+        /* ============================================
+           THEME DEFINITIONS
+           Modern, minimal, warm color palettes
+           ============================================ */
+
+        /* Dark Theme (default) - Warm charcoal with amber accents */
+        :root, [data-theme="dark"] {
+            --surface: #1a1a1a;
+            --surface-elevated: #252525;
+            --surface-overlay: #2f2f2f;
+            --border: #3a3a3a;
+            --border-subtle: #2a2a2a;
+            --text: #f5f5f4;
+            --text-muted: #a8a29e;
+            --text-subtle: #78716c;
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --accent-muted: rgba(245, 158, 11, 0.15);
+            --accent-text: #fef3c7;
+            --user-bubble: #f59e0b;
+            --user-text: #1a1a1a;
+            --ai-bubble: #2f2f2f;
+            --ai-text: #f5f5f4;
+            --scrollbar-track: #1a1a1a;
+            --scrollbar-thumb: #404040;
+            --scrollbar-thumb-hover: #525252;
         }
 
-        /* Chat bubble animations */
+        /* Light Theme - Warm cream with terracotta accents */
+        [data-theme="light"] {
+            --surface: #faf9f7;
+            --surface-elevated: #ffffff;
+            --surface-overlay: #f5f4f1;
+            --border: #e7e5e0;
+            --border-subtle: #f0eeea;
+            --text: #1c1917;
+            --text-muted: #57534e;
+            --text-subtle: #a8a29e;
+            --accent: #c2410c;
+            --accent-hover: #ea580c;
+            --accent-muted: rgba(194, 65, 12, 0.1);
+            --accent-text: #fff7ed;
+            --user-bubble: #c2410c;
+            --user-text: #ffffff;
+            --ai-bubble: #f5f4f1;
+            --ai-text: #1c1917;
+            --scrollbar-track: #faf9f7;
+            --scrollbar-thumb: #d6d3d1;
+            --scrollbar-thumb-hover: #a8a29e;
+        }
+
+        /* Ocean Theme - Deep sea blues with coral accents */
+        [data-theme="ocean"] {
+            --surface: #0c1929;
+            --surface-elevated: #132337;
+            --surface-overlay: #1a3048;
+            --border: #234e70;
+            --border-subtle: #1a3a55;
+            --text: #e0f2fe;
+            --text-muted: #7dd3fc;
+            --text-subtle: #38bdf8;
+            --accent: #fb7185;
+            --accent-hover: #fda4af;
+            --accent-muted: rgba(251, 113, 133, 0.15);
+            --accent-text: #fff1f2;
+            --user-bubble: #fb7185;
+            --user-text: #0c1929;
+            --ai-bubble: #1a3048;
+            --ai-text: #e0f2fe;
+            --scrollbar-track: #0c1929;
+            --scrollbar-thumb: #234e70;
+            --scrollbar-thumb-hover: #38bdf8;
+        }
+
+        /* ============================================
+           BASE STYLES
+           ============================================ */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--surface);
+            color: var(--text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Selection */
+        ::selection {
+            background-color: var(--accent-muted);
+            color: var(--text);
+        }
+
+        /* Focus styles */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+
         .message-enter {
             animation: slideUp 0.3s ease-out;
         }
 
-        /* Loading dots animation */
+        /* Loading dots */
         .loading-dots span {
             animation: loadingDot 1.4s infinite ease-in-out both;
         }
@@ -83,21 +236,66 @@
         .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 
         @keyframes loadingDot {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
         }
 
-        /* Prevent body scroll when chat is focused on mobile */
+        /* Smooth theme transitions */
+        .theme-transition,
+        .theme-transition *,
+        .theme-transition *::before,
+        .theme-transition *::after {
+            transition: background-color 0.3s ease,
+                        border-color 0.3s ease,
+                        color 0.3s ease,
+                        box-shadow 0.3s ease !important;
+        }
+
+        /* ============================================
+           MOBILE OPTIMIZATIONS
+           ============================================ */
+
         @media (max-width: 640px) {
             body {
                 overscroll-behavior: none;
+            }
+        }
+
+        /* ============================================
+           ACCESSIBILITY
+           ============================================ */
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border: #525252;
+                --text-muted: #d6d3d1;
             }
         }
     </style>
 
     {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-900 text-gray-100 antialiased">
+<body class="h-full antialiased font-sans" x-data="{
+    theme: localStorage.getItem('habla-theme') || 'dark',
+    setTheme(newTheme) {
+        this.theme = newTheme;
+        localStorage.setItem('habla-theme', newTheme);
+        document.documentElement.setAttribute('data-theme', newTheme);
+        document.body.classList.add('theme-transition');
+        setTimeout(() => document.body.classList.remove('theme-transition'), 300);
+    }
+}" x-init="document.documentElement.setAttribute('data-theme', theme)">
     <div id="app" class="h-full flex flex-col">
         {% block content %}{% endblock %}
     </div>

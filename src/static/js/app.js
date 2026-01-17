@@ -89,6 +89,36 @@
         loadingIndicator.classList.add('hidden');
     }
 
+    /**
+     * Add user message bubble immediately (optimistic UI)
+     * @param {string} message - The user's message
+     */
+    function addUserMessage(message) {
+        const { chatMessages } = getElements();
+        if (!chatMessages || !message.trim()) return;
+
+        const userBubbleHtml = `
+            <div class="message-enter flex justify-end mb-6" data-user-message>
+                <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm">
+                    <p class="text-user-text leading-relaxed">${escapeHtml(message)}</p>
+                </div>
+            </div>
+        `;
+        chatMessages.insertAdjacentHTML('beforeend', userBubbleHtml);
+        scrollToBottom();
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // ============================================
     // HTMX Event Handlers
     // ============================================
@@ -100,6 +130,17 @@
         // Only handle chat form requests
         if (event.detail.elt.id !== 'chat-form') return;
 
+        // Get the message before it's cleared
+        const { messageInput } = getElements();
+        const message = messageInput ? messageInput.value : '';
+
+        // Show user message immediately (optimistic UI)
+        addUserMessage(message);
+
+        // Clear input right away for better UX
+        clearInput();
+
+        // Show loading indicator
         showLoading();
     }
 
@@ -111,7 +152,6 @@
         if (event.detail.elt.id !== 'chat-form') return;
 
         hideLoading();
-        clearInput();
         focusInput();
     }
 
@@ -119,6 +159,9 @@
      * After HTMX swaps content into DOM
      */
     function onAfterSwap(event) {
+        // Remove any user message we added optimistically (server response includes it)
+        // Actually, we need to handle this differently - server only returns AI response now
+
         // Scroll to bottom after new message is added
         scrollToBottom();
 
@@ -131,6 +174,8 @@
 
     /**
      * Handle HTMX errors
+     * Note: Error colors (red-*) are intentionally hardcoded as semantic error indicators
+     * that remain consistent across all themes for accessibility and clarity.
      */
     function onResponseError(event) {
         console.error('HTMX request failed:', event.detail);
@@ -140,14 +185,8 @@
         const { chatMessages } = getElements();
         if (chatMessages) {
             const errorHtml = `
-                <div class="message-enter flex items-start gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-red-600 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <div class="bg-red-900/50 border border-red-700 rounded-2xl rounded-tl-sm px-4 py-3 max-w-[85%]">
+                <div class="message-enter flex justify-start mb-6">
+                    <div class="bg-red-900/50 border border-red-700 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
                         <p class="text-red-200">
                             Sorry, there was an error processing your message. Please try again.
                         </p>
