@@ -33,7 +33,8 @@
 |------|--------|-------|
 | Phase 1 complete with tests | ✅ | 227 pytest tests, E2E validated |
 | UI modernization | ✅ | 3 themes (dark/light/ocean), optimistic UI, German language support |
-| Phase 2 LangGraph: analyze node | ✅ | Multi-node graph, grammar feedback, 328 tests |
+| Phase 2 LangGraph: analyze node | ✅ | Multi-node graph, grammar feedback |
+| Test coverage upgrade | ✅ | 641 tests, 98% coverage (was 37%) |
 
 ### Up Next - Priority Tasks
 
@@ -324,7 +325,7 @@
 **Branch**: `feature/phase2-analyze-node`
 
 **Test Coverage**:
-- 328 total tests (101 new tests for Phase 2)
+- 328 tests for Phase 2 (later upgraded to 641 tests with 98% coverage)
 - `tests/test_analyze_node.py` - 51 tests for analyze node
 - Updated `tests/test_agent_state.py` - GrammarFeedback/VocabWord tests
 - Updated `tests/test_agent_graph.py` - 2-node graph structure tests
@@ -382,14 +383,64 @@
 
 ---
 
+### Session Log: 2025-01-17 (Test Coverage Upgrade)
+
+**Session Focus**: Comprehensive test coverage upgrade from 37% to 98%
+
+**Approach**: Used 5 parallel subagents to create comprehensive test suites for all modules
+
+**What Was Done**:
+1. Created comprehensive test suites across all modules
+2. Fixed analyze.py edge cases (malformed JSON handling, AttributeError)
+3. Updated pyproject.toml with greenlet dependency and SIM117 ruff exception
+4. Committed to `feat/test-coverage-upgrade` branch
+5. Pushed to origin for PR
+
+**New Test Files Created**:
+- `tests/test_agent_nodes.py` - Tests for respond, feedback, scaffold nodes
+- `tests/test_database.py` - Tests for models, repository, seed modules
+- `tests/test_lessons_progress_routes.py` - API route tests with template mocking
+- `tests/test_services.py` - Tests for levels and vocabulary services
+
+**Test Files Modified**:
+- `tests/test_analyze_node.py` - Extended coverage for analysis parsing edge cases
+
+**Coverage Metrics**:
+- Before: 37% coverage
+- After: 98% coverage
+- Tests: 328 → 641 (313 new tests)
+
+**Key Fixes**:
+1. **analyze.py**: Added isinstance checks for malformed JSON entries
+2. **analyze.py**: Added AttributeError to exception handling
+3. **pyproject.toml**: Added greenlet to dev dependencies for async SQLAlchemy testing
+4. **pyproject.toml**: Added SIM117 to ruff per-file-ignores for tests (nested with statements for mocking)
+
+**Branch**: `feat/test-coverage-upgrade`
+**Commit**: `985e952`
+
+**Quality Gates**:
+- ✅ Ruff linting: All checks passed
+- ✅ MyPy type checking: No issues
+- ✅ 641 tests passing
+- ✅ 98% coverage (target was 85%)
+- ✅ Pre-commit hooks passing
+- ✅ Pushed to origin
+
+**Next Steps**:
+- [ ] Create PR for feat/test-coverage-upgrade → main
+- [ ] Phase 3: Add scaffold node with conditional routing
+
+---
+
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 2 Complete with Analyze Node (328 pytest tests)
+- **Current Phase**: Phase 2 Complete with Analyze Node (641 pytest tests, 98% coverage)
 - **Graph Structure**: respond → analyze → END
 - **UI Features**: 3 themes, German support, optimistic UI, collapsible grammar feedback
 - **Test Coverage**: Unit tests in `tests/`, E2E docs in `docs/playwright-e2e.md`
-- **Branch**: `feature/phase2-analyze-node`
+- **Branch**: `feat/test-coverage-upgrade`
 - **CI/CD**: GitHub Actions configured
 - **Pre-commit**: Hooks defined, need `make install-hooks` to activate
 

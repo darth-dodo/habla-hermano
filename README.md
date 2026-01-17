@@ -128,7 +128,7 @@ AI:   "Ah, ¿estás cansado? Yo también después del trabajo."
 | **Frontend** | HTMX + Jinja2 + Tailwind CSS |
 | **AI Agent** | LangGraph (StateGraph with analyze node) |
 | **LLM** | Claude API via langchain-anthropic |
-| **Testing** | pytest (328 tests) + Playwright E2E |
+| **Testing** | pytest (641 tests, 98% coverage) + Playwright E2E |
 
 ---
 
@@ -151,7 +151,7 @@ habla-ai/
 │   ├── api/            # FastAPI routes and config
 │   ├── templates/      # Jinja2 HTML templates
 │   └── static/         # CSS, JavaScript
-├── tests/              # 328 pytest tests
+├── tests/              # 641 pytest tests (98% coverage)
 └── docs/               # Product spec, architecture, screenshots
 ```
 
