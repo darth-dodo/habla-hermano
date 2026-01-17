@@ -15,7 +15,7 @@
 | **Phase 5** | Complex State - Rich state management | Planned |
 | **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
 
-**Test Coverage**: 328 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 641 tests (98% coverage) covering agent, API, database, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 

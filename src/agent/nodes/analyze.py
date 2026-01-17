@@ -110,6 +110,9 @@ def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[
 
         grammar_feedback: list[GrammarFeedback] = []
         for error in data.get("grammar_errors", []):
+            # Skip non-dict entries (malformed data)
+            if not isinstance(error, dict):
+                continue
             # Validate and normalize severity value
             raw_severity = error.get("severity", "minor")
             if raw_severity not in ("minor", "moderate", "significant"):
@@ -127,6 +130,9 @@ def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[
 
         new_vocabulary: list[VocabWord] = []
         for vocab in data.get("new_vocabulary", []):
+            # Skip non-dict entries (malformed data)
+            if not isinstance(vocab, dict):
+                continue
             new_vocabulary.append(
                 VocabWord(
                     word=str(vocab.get("word", "")),
@@ -137,7 +143,7 @@ def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[
 
         return grammar_feedback, new_vocabulary
 
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+    except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
         logger.warning(f"Failed to parse analysis response: {e}")
         return [], []
 

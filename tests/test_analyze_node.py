@@ -531,3 +531,491 @@ class TestVocabWordTypedDictIntegration:
         hints = get_type_hints(VocabWord)
         expected_fields = {"word", "translation", "part_of_speech"}
         assert set(hints.keys()) == expected_fields
+
+
+# =============================================================================
+# COVERAGE GAP TESTS - _parse_analysis_response()
+# =============================================================================
+
+
+class TestParseAnalysisResponseMarkdownBlocks:
+    """Tests for _parse_analysis_response handling of markdown code blocks."""
+
+    def test_parse_json_with_json_code_block(self) -> None:
+        """_parse_analysis_response should handle JSON wrapped in ```json blocks."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = """```json
+{
+    "grammar_errors": [
+        {
+            "original": "Yo es",
+            "correction": "Yo soy",
+            "explanation": "Use soy with yo",
+            "severity": "moderate"
+        }
+    ],
+    "new_vocabulary": []
+}
+```"""
+        grammar, vocab = _parse_analysis_response(content)
+        assert len(grammar) == 1
+        assert grammar[0]["original"] == "Yo es"
+        assert grammar[0]["correction"] == "Yo soy"
+        assert vocab == []
+
+    def test_parse_json_with_plain_code_block(self) -> None:
+        """_parse_analysis_response should handle JSON wrapped in plain ``` blocks."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = """```
+{
+    "grammar_errors": [],
+    "new_vocabulary": [
+        {
+            "word": "libro",
+            "translation": "book",
+            "part_of_speech": "noun"
+        }
+    ]
+}
+```"""
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert len(vocab) == 1
+        assert vocab[0]["word"] == "libro"
+
+    def test_parse_plain_json(self) -> None:
+        """_parse_analysis_response should handle plain JSON without code blocks."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = '{"grammar_errors": [], "new_vocabulary": []}'
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert vocab == []
+
+
+class TestParseAnalysisResponseGrammarErrors:
+    """Tests for _parse_analysis_response parsing grammar_errors array."""
+
+    def test_parse_single_grammar_error(self) -> None:
+        """_parse_analysis_response should parse a single grammar error."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [
+                    {
+                        "original": "Yo es estudiante",
+                        "correction": "Yo soy estudiante",
+                        "explanation": "Use soy with yo",
+                        "severity": "moderate",
+                    }
+                ],
+                "new_vocabulary": [],
+            }
+        )
+        grammar, _vocab = _parse_analysis_response(content)
+        assert len(grammar) == 1
+        assert grammar[0]["original"] == "Yo es estudiante"
+        assert grammar[0]["correction"] == "Yo soy estudiante"
+        assert grammar[0]["explanation"] == "Use soy with yo"
+        assert grammar[0]["severity"] == "moderate"
+
+    def test_parse_multiple_grammar_errors(self) -> None:
+        """_parse_analysis_response should parse multiple grammar errors."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [
+                    {
+                        "original": "err1",
+                        "correction": "corr1",
+                        "explanation": "exp1",
+                        "severity": "minor",
+                    },
+                    {
+                        "original": "err2",
+                        "correction": "corr2",
+                        "explanation": "exp2",
+                        "severity": "significant",
+                    },
+                    {
+                        "original": "err3",
+                        "correction": "corr3",
+                        "explanation": "exp3",
+                        "severity": "moderate",
+                    },
+                ],
+                "new_vocabulary": [],
+            }
+        )
+        grammar, _vocab = _parse_analysis_response(content)
+        assert len(grammar) == 3
+        assert grammar[0]["severity"] == "minor"
+        assert grammar[1]["severity"] == "significant"
+        assert grammar[2]["severity"] == "moderate"
+
+    def test_parse_grammar_error_with_invalid_severity(self) -> None:
+        """_parse_analysis_response should default invalid severity to 'minor'."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [
+                    {
+                        "original": "test",
+                        "correction": "test",
+                        "explanation": "test",
+                        "severity": "INVALID",
+                    }
+                ],
+                "new_vocabulary": [],
+            }
+        )
+        grammar, _vocab = _parse_analysis_response(content)
+        assert len(grammar) == 1
+        assert grammar[0]["severity"] == "minor"  # Defaults to minor
+
+    def test_parse_grammar_error_with_missing_severity(self) -> None:
+        """_parse_analysis_response should default missing severity to 'minor'."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [
+                    {"original": "test", "correction": "test", "explanation": "test"}
+                ],
+                "new_vocabulary": [],
+            }
+        )
+        grammar, _vocab = _parse_analysis_response(content)
+        assert len(grammar) == 1
+        assert grammar[0]["severity"] == "minor"  # Defaults to minor
+
+    def test_parse_grammar_error_with_missing_fields(self) -> None:
+        """_parse_analysis_response should handle missing fields with defaults."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [
+                    {}  # All fields missing
+                ],
+                "new_vocabulary": [],
+            }
+        )
+        grammar, _vocab = _parse_analysis_response(content)
+        assert len(grammar) == 1
+        assert grammar[0]["original"] == ""
+        assert grammar[0]["correction"] == ""
+        assert grammar[0]["explanation"] == ""
+        assert grammar[0]["severity"] == "minor"
+
+
+class TestParseAnalysisResponseVocabulary:
+    """Tests for _parse_analysis_response parsing new_vocabulary array."""
+
+    def test_parse_single_vocabulary_word(self) -> None:
+        """_parse_analysis_response should parse a single vocabulary word."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [],
+                "new_vocabulary": [
+                    {"word": "casa", "translation": "house", "part_of_speech": "noun"}
+                ],
+            }
+        )
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert len(vocab) == 1
+        assert vocab[0]["word"] == "casa"
+        assert vocab[0]["translation"] == "house"
+        assert vocab[0]["part_of_speech"] == "noun"
+
+    def test_parse_multiple_vocabulary_words(self) -> None:
+        """_parse_analysis_response should parse multiple vocabulary words."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [],
+                "new_vocabulary": [
+                    {"word": "hola", "translation": "hello", "part_of_speech": "interjection"},
+                    {"word": "libro", "translation": "book", "part_of_speech": "noun"},
+                    {"word": "grande", "translation": "big", "part_of_speech": "adjective"},
+                ],
+            }
+        )
+        _grammar, vocab = _parse_analysis_response(content)
+        assert len(vocab) == 3
+        assert vocab[0]["word"] == "hola"
+        assert vocab[1]["word"] == "libro"
+        assert vocab[2]["word"] == "grande"
+
+    def test_parse_vocabulary_with_missing_fields(self) -> None:
+        """_parse_analysis_response should handle missing vocab fields with defaults."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = json.dumps(
+            {
+                "grammar_errors": [],
+                "new_vocabulary": [
+                    {}  # All fields missing
+                ],
+            }
+        )
+        _grammar, vocab = _parse_analysis_response(content)
+        assert len(vocab) == 1
+        assert vocab[0]["word"] == ""
+        assert vocab[0]["translation"] == ""
+        assert vocab[0]["part_of_speech"] == "other"
+
+
+class TestParseAnalysisResponseErrors:
+    """Tests for _parse_analysis_response error handling."""
+
+    def test_parse_invalid_json(self) -> None:
+        """_parse_analysis_response should return empty lists for invalid JSON."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = "not valid json {"
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert vocab == []
+
+    def test_parse_empty_string(self) -> None:
+        """_parse_analysis_response should return empty lists for empty string."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = ""
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert vocab == []
+
+    def test_parse_json_missing_keys(self) -> None:
+        """_parse_analysis_response should handle JSON without expected keys."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = '{"other_key": "value"}'
+        grammar, vocab = _parse_analysis_response(content)
+        assert grammar == []
+        assert vocab == []
+
+    def test_parse_json_with_wrong_types(self) -> None:
+        """_parse_analysis_response should handle JSON with wrong value types."""
+        from src.agent.nodes.analyze import _parse_analysis_response
+
+        content = '{"grammar_errors": "not_an_array", "new_vocabulary": 123}'
+        grammar, vocab = _parse_analysis_response(content)
+        # Should not crash, returns empty or handles gracefully
+        assert isinstance(grammar, list)
+        assert isinstance(vocab, list)
+
+
+# =============================================================================
+# COVERAGE GAP TESTS - analyze_node() edge cases
+# =============================================================================
+
+
+class TestAnalyzeNodeEmptyUserText:
+    """Tests for analyze_node when user_text is empty or non-string."""
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_for_none_content(self) -> None:
+        """analyze_node should return empty lists when message content is None-like."""
+        # This tests line 188: if not user_text or not isinstance(user_text, str)
+        state: ConversationState = {
+            "messages": [
+                HumanMessage(content=""),  # Empty content
+                AIMessage(content="Response"),
+            ],
+            "level": "A1",
+            "language": "es",
+        }
+        result = await analyze_node(state)
+        assert result["grammar_feedback"] == []
+        assert result["new_vocabulary"] == []
+
+
+class TestAnalyzeNodeLLMResponse:
+    """Tests for analyze_node handling different LLM response types."""
+
+    @pytest.mark.asyncio
+    async def test_handles_non_string_llm_response(self) -> None:
+        """analyze_node should handle LLM returning non-string content."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        # Create mock LLM that returns non-string content
+        mock_response = MagicMock()
+        mock_response.content = ["list", "content"]  # Not a string
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
+        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": [
+                    HumanMessage(content="Hola amigo"),
+                    AIMessage(content="Response"),
+                ],
+                "level": "A1",
+                "language": "es",
+            }
+            result = await analyze_node(state)
+            # Should return empty lists when content is not string
+            assert result["grammar_feedback"] == []
+            assert result["new_vocabulary"] == []
+
+
+class TestAnalyzeNodeLLMExceptions:
+    """Tests for analyze_node handling LLM exceptions."""
+
+    @pytest.mark.asyncio
+    async def test_handles_llm_exception(self) -> None:
+        """analyze_node should handle LLM exceptions gracefully."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        # Create mock LLM that raises an exception
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(side_effect=Exception("API Error"))
+
+        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": [
+                    HumanMessage(content="Hola amigo"),
+                    AIMessage(content="Response"),
+                ],
+                "level": "A1",
+                "language": "es",
+            }
+            result = await analyze_node(state)
+            # Should return empty lists on exception
+            assert result["grammar_feedback"] == []
+            assert result["new_vocabulary"] == []
+
+    @pytest.mark.asyncio
+    async def test_handles_timeout_exception(self) -> None:
+        """analyze_node should handle timeout exceptions gracefully."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(side_effect=TimeoutError())
+
+        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": [
+                    HumanMessage(content="Hola"),
+                    AIMessage(content="Response"),
+                ],
+                "level": "A1",
+                "language": "es",
+            }
+            result = await analyze_node(state)
+            assert result["grammar_feedback"] == []
+            assert result["new_vocabulary"] == []
+
+
+class TestAnalyzeNodeWithMockedLLMSuccess:
+    """Tests for analyze_node with successful mocked LLM responses."""
+
+    @pytest.mark.asyncio
+    async def test_successful_analysis_with_grammar_errors(self) -> None:
+        """analyze_node should return parsed grammar errors from successful LLM call."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        mock_response = MagicMock()
+        mock_response.content = json.dumps(
+            {
+                "grammar_errors": [
+                    {
+                        "original": "Yo es",
+                        "correction": "Yo soy",
+                        "explanation": "Use soy with yo",
+                        "severity": "moderate",
+                    }
+                ],
+                "new_vocabulary": [
+                    {"word": "estudiante", "translation": "student", "part_of_speech": "noun"}
+                ],
+            }
+        )
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
+        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": [
+                    HumanMessage(content="Yo es estudiante"),
+                    AIMessage(content="Response"),
+                ],
+                "level": "A1",
+                "language": "es",
+            }
+            result = await analyze_node(state)
+            assert len(result["grammar_feedback"]) == 1
+            assert result["grammar_feedback"][0]["original"] == "Yo es"
+            assert len(result["new_vocabulary"]) == 1
+            assert result["new_vocabulary"][0]["word"] == "estudiante"
+
+
+class TestGetLlmAnalyze:
+    """Tests for _get_llm helper in analyze module."""
+
+    def test_get_llm_creates_chat_anthropic(self) -> None:
+        """_get_llm should create a ChatAnthropic instance."""
+        from unittest.mock import MagicMock, patch
+
+        from src.api.config import Settings
+
+        mock_settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            LLM_MODEL="claude-test",
+            LLM_TEMPERATURE=0.5,
+        )
+
+        with patch("src.agent.nodes.analyze.get_settings", return_value=mock_settings):
+            with patch("src.agent.nodes.analyze.ChatAnthropic") as mock_chat:
+                mock_chat.return_value = MagicMock()
+                from src.agent.nodes.analyze import _get_llm
+
+                _get_llm()
+                mock_chat.assert_called_once()
+                call_kwargs = mock_chat.call_args[1]
+                assert call_kwargs["temperature"] == 0.3  # Fixed lower temp for analysis
+                assert call_kwargs["max_tokens"] == 1024
+
+
+class TestGetLanguageName:
+    """Tests for _get_language_name helper."""
+
+    def test_spanish_code(self) -> None:
+        """_get_language_name should convert 'es' to 'Spanish'."""
+        from src.agent.nodes.analyze import _get_language_name
+
+        assert _get_language_name("es") == "Spanish"
+
+    def test_german_code(self) -> None:
+        """_get_language_name should convert 'de' to 'German'."""
+        from src.agent.nodes.analyze import _get_language_name
+
+        assert _get_language_name("de") == "German"
+
+    def test_french_code(self) -> None:
+        """_get_language_name should convert 'fr' to 'French'."""
+        from src.agent.nodes.analyze import _get_language_name
+
+        assert _get_language_name("fr") == "French"
+
+    def test_unknown_code_defaults_to_spanish(self) -> None:
+        """_get_language_name should default unknown codes to 'Spanish'."""
+        from src.agent.nodes.analyze import _get_language_name
+
+        assert _get_language_name("unknown") == "Spanish"
+        assert _get_language_name("") == "Spanish"
+        assert _get_language_name("it") == "Spanish"

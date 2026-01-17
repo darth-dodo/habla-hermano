@@ -394,6 +394,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "greenlet" },
     { name = "httpx" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -408,6 +409,7 @@ dev = [
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.20.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "greenlet", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
     { name = "jinja2", specifier = ">=3.1.0" },
     { name = "langchain", specifier = ">=0.3.0" },
