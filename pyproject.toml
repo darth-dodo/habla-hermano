@@ -91,7 +91,7 @@ ignore = [
 known-first-party = ["src"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ARG", "PLR2004"]
+"tests/**/*.py" = ["ARG", "PLR2004", "PLC0415"]  # Allow late imports for mocking
 
 # =============================================================================
 # MyPy Configuration
