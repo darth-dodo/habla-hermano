@@ -51,6 +51,7 @@
                     >
                         <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
                         <span x-show="language === 'de'" class="text-lg">🇩🇪</span>
+                        <span x-show="language === 'fr'" class="text-lg">🇫🇷</span>
                         <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -83,6 +84,14 @@
                             >
                                 <span class="text-xl">🇩🇪</span>
                                 <span class="font-medium">German</span>
+                            </button>
+                            <button
+                                @click="language = 'fr'; open = false; $refs.languageInput.value = 'fr'"
+                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                :class="language === 'fr' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                            >
+                                <span class="text-xl">🇫🇷</span>
+                                <span class="font-medium">French</span>
                             </button>
                         </div>
                     </div>
@@ -142,12 +151,14 @@
                         <p class="text-ai-text leading-relaxed">
                             <span x-show="language === 'es'">¡Hola!</span>
                             <span x-show="language === 'de'">Hallo!</span>
-                            I'm your AI <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span> tutor. I'll adapt to your
+                            <span x-show="language === 'fr'">Bonjour!</span>
+                            I'm your AI <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span> tutor. I'll adapt to your
                             <span class="text-accent font-semibold" x-text="level"></span> level.
                         </p>
                         <p class="text-ai-text/70 mt-2 leading-relaxed">
                             <span x-show="language === 'es'">Try saying something in Spanish, or ask me to help you practice!</span>
                             <span x-show="language === 'de'">Try saying something in German, or ask me to help you practice!</span>
+                            <span x-show="language === 'fr'">Try saying something in French, or ask me to help you practice!</span>
                         </p>
                     </div>
                 </div>
@@ -197,7 +208,7 @@
                         type="text"
                         name="message"
                         id="message-input"
-                        :placeholder="language === 'es' ? 'Type your message in Spanish or English...' : 'Type your message in German or English...'"
+                        :placeholder="language === 'es' ? 'Type your message in Spanish or English...' : language === 'de' ? 'Type your message in German or English...' : 'Type your message in French or English...'"
                         autocomplete="off"
                         required
                         class="w-full px-5 py-4 bg-surface-overlay border border-border rounded-2xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"

@@ -248,9 +248,17 @@ class TestGetPromptForLevelEdgeCases:
 
     def test_unknown_language_returns_spanish(self) -> None:
         """Unknown language should return original Spanish prompt."""
-        prompt = get_prompt_for_level("fr", "A1")
-        # French is not handled, so no replacements made
+        prompt = get_prompt_for_level("xx", "A1")
+        # Unknown language code is not handled, so no replacements made
         assert "Spanish" in prompt
+
+    def test_french_language_returns_french(self) -> None:
+        """French language should return French prompt."""
+        prompt = get_prompt_for_level("fr", "A1")
+        assert "French" in prompt
+        # A0 has greetings in the example, A1 doesn't
+        prompt_a0 = get_prompt_for_level("fr", "A0")
+        assert "Bonjour" in prompt_a0 or "bonjour" in prompt_a0
 
     def test_none_like_behavior(self) -> None:
         """Function should handle edge cases gracefully."""

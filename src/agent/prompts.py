@@ -102,7 +102,7 @@ def get_prompt_for_level(language: str, level: str) -> str:
     """
     prompt = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["A1"])
 
-    # For German, we would replace "Spanish" with "German" in prompts
+    # For German, we replace "Spanish" with "German" in prompts
     # This is a simple approach for Phase 1; more sophisticated
     # language-specific prompts can be added later
     if language == "de":
@@ -112,5 +112,12 @@ def get_prompt_for_level(language: str, level: str) -> str:
         prompt = prompt.replace("Hola", "Hallo")
         prompt = prompt.replace("hola", "hallo")
         prompt = prompt.replace("Me llamo", "Ich heisse")
+    elif language == "fr":
+        prompt = prompt.replace("Spanish", "French")
+        prompt = prompt.replace("spanish", "french")
+        # Update example greetings for French
+        prompt = prompt.replace("Hola", "Bonjour")
+        prompt = prompt.replace("hola", "bonjour")
+        prompt = prompt.replace("Me llamo", "Je m'appelle")
 
     return prompt

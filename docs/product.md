@@ -12,6 +12,57 @@ HablaAI is an AI conversation partner that takes absolute beginners (A0) to conf
 
 ---
 
+## Pedagogical Approach
+
+### Style: Communicative Language Teaching (CLT)
+
+HablaAI uses a **Communicative Language Teaching** approach - learning by doing, not by studying rules.
+
+#### Core Principles
+
+| Principle | Implementation |
+|-----------|----------------|
+| **Conversation-first** | You talk from day one, not after memorizing vocabulary |
+| **Meaning over form** | Communication matters more than perfect grammar |
+| **Implicit correction** | AI models correct form naturally, doesn't interrupt |
+| **Authentic interaction** | Real conversations, not drill exercises |
+| **Contextual learning** | Grammar and vocabulary learned in conversation context |
+
+#### What HablaAI Avoids
+
+| Avoided Style | Reason |
+|---------------|--------|
+| Grammar-Translation | No rule memorization → practice sentences |
+| Audio-Lingual | No repetitive drills |
+| Gamification | No XP, streaks, leaderboards, or guilt |
+| Flashcards | Vocabulary in context, not isolation |
+
+#### The "Gentle Nudge" Correction Pattern
+
+Instead of explicit corrections that interrupt flow:
+```
+User: "Yo soy cansado"
+AI: "Ah, ¿estás cansado? Yo también después del trabajo."
+    (Models correct form without saying "you made a mistake")
+
+[Optional collapsed feedback]
+💡 Quick tip: For feelings like tired, hungry, or happy,
+   Spanish uses "estar" not "ser".
+```
+
+#### Language Mix Progression
+
+| Level | Target Language | English | Teaching Style |
+|-------|-----------------|---------|----------------|
+| **A0** | 20% | 80% | Heavy scaffolding, celebrate every attempt |
+| **A1** | 50% | 50% | Simple sentences, model correct forms |
+| **A2** | 80% | 20% | Longer exchanges, past tense naturally |
+| **B1** | 95%+ | 5% | Natural conversations, gentle asides |
+
+This is essentially **immersion-lite** with training wheels (scaffolding) that gradually come off as the learner progresses.
+
+---
+
 ## Target Users
 
 - **Primary**: Complete beginners who want to actually speak, not just study
