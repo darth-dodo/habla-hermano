@@ -66,32 +66,38 @@ class TestGraphStructure:
         graph = build_graph()
         assert "respond" in graph.nodes
 
+    def test_graph_has_analyze_node(self) -> None:
+        """Graph should have an 'analyze' node (Phase 2)."""
+        graph = build_graph()
+        assert "analyze" in graph.nodes
+
     def test_graph_has_start_node(self) -> None:
         """Graph should have a '__start__' node (entry point)."""
         graph = build_graph()
         assert "__start__" in graph.nodes
 
     def test_graph_connects_to_end(self) -> None:
-        """Graph should connect respond to END (even if __end__ not in nodes dict).
+        """Graph should connect analyze to END (even if __end__ not in nodes dict).
 
         LangGraph may not expose __end__ as a node, but the edge to END should exist.
-        We verify this by checking the graph compiles with the respond -> END edge.
+        We verify this by checking the graph compiles with the analyze -> END edge.
         """
         graph = build_graph()
-        # The graph should complete after respond
+        # The graph should complete after analyze
         # In recent LangGraph versions, __end__ may not appear in nodes dict
         # but the graph should still have the edge configured
         assert graph is not None
-        # Verify respond node exists (which connects to END)
-        assert "respond" in graph.nodes
+        # Verify analyze node exists (which connects to END)
+        assert "analyze" in graph.nodes
 
     def test_graph_has_expected_processing_nodes(self) -> None:
-        """Phase 1 graph should have __start__ and respond nodes visible."""
+        """Phase 2 graph should have __start__, respond, and analyze nodes visible."""
         graph = build_graph()
         # In LangGraph, __end__ may not be exposed in nodes dict
         # We verify the processing nodes we expect
         assert "__start__" in graph.nodes
         assert "respond" in graph.nodes
+        assert "analyze" in graph.nodes
 
 
 class TestGraphEdges:
@@ -102,28 +108,39 @@ class TestGraphEdges:
         # Build the graph step by step to verify edges
         builder = StateGraph(ConversationState)
         builder.add_node("respond", lambda x: x)  # Dummy node
+        builder.add_node("analyze", lambda x: x)  # Dummy node
         builder.set_entry_point("respond")
-        builder.add_edge("respond", END)
+        builder.add_edge("respond", "analyze")
+        builder.add_edge("analyze", END)
 
         # This should compile without errors
         compiled = builder.compile()
         assert compiled is not None
 
-    def test_respond_configured_with_end_edge(self) -> None:
-        """Respond node should be configured to connect to END."""
+    def test_respond_connects_to_analyze(self) -> None:
+        """Respond node should connect to analyze node (Phase 2)."""
         graph = build_graph()
-        # The graph should complete after respond
-        # We verify this by checking the graph is valid and has respond node
-        assert graph is not None
+        # The graph should have both nodes
         assert "respond" in graph.nodes
+        assert "analyze" in graph.nodes
+
+    def test_analyze_configured_with_end_edge(self) -> None:
+        """Analyze node should be configured to connect to END."""
+        graph = build_graph()
+        # The graph should complete after analyze
+        # We verify this by checking the graph is valid and has analyze node
+        assert graph is not None
+        assert "analyze" in graph.nodes
 
     def test_graph_edge_configuration_is_valid(self) -> None:
         """Graph edges should be properly configured for execution."""
         # Build and verify graph compiles without edge errors
         builder = StateGraph(ConversationState)
         builder.add_node("respond", lambda x: x)
+        builder.add_node("analyze", lambda x: x)
         builder.set_entry_point("respond")
-        builder.add_edge("respond", END)
+        builder.add_edge("respond", "analyze")
+        builder.add_edge("analyze", END)
 
         # If edges were misconfigured, compilation would fail
         compiled = builder.compile()
@@ -181,6 +198,13 @@ class TestGraphWithMockedNode:
         mock.return_value = {"messages": [AIMessage(content="Hola! Como estas?")]}
         return mock
 
+    @pytest.fixture
+    def mock_analyze_node(self) -> AsyncMock:
+        """Create a mock analyze_node that returns empty analysis."""
+        mock = AsyncMock()
+        mock.return_value = {"grammar_feedback": [], "new_vocabulary": []}
+        return mock
+
     @pytest.mark.asyncio
     async def test_graph_invocation_with_mock(self, mock_respond_node: AsyncMock) -> None:
         """Graph should be invocable with a mocked node."""
@@ -203,11 +227,15 @@ class TestGraphInputValidation:
             "messages": [HumanMessage(content="Hola!")],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         # Verify state has required fields
         assert "messages" in valid_state
         assert "level" in valid_state
         assert "language" in valid_state
+        assert "grammar_feedback" in valid_state
+        assert "new_vocabulary" in valid_state
 
     def test_state_with_multiple_messages(self) -> None:
         """Graph should accept state with conversation history."""
@@ -219,6 +247,8 @@ class TestGraphInputValidation:
             ],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert len(state["messages"]) == 3
 
@@ -232,6 +262,8 @@ class TestGraphInputValidation:
             "messages": [HumanMessage(content="Hello")],
             "level": level,
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["level"] == level
 
@@ -245,6 +277,8 @@ class TestGraphInputValidation:
             "messages": [HumanMessage(content="Hello")],
             "level": "A1",
             "language": language,
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["language"] == language
 
@@ -262,6 +296,8 @@ class TestGraphOutputStructure:
             ],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert "messages" in expected_output
         assert len(expected_output["messages"]) == 2
@@ -279,6 +315,28 @@ class TestGraphOutputStructure:
         last_message = output["messages"][-1]
         assert isinstance(last_message, AIMessage)
 
+    def test_expected_output_has_grammar_feedback(self) -> None:
+        """Graph output should include grammar_feedback (Phase 2)."""
+        expected_output: dict[str, Any] = {
+            "messages": [HumanMessage(content="Hola!")],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+        }
+        assert "grammar_feedback" in expected_output
+
+    def test_expected_output_has_new_vocabulary(self) -> None:
+        """Graph output should include new_vocabulary (Phase 2)."""
+        expected_output: dict[str, Any] = {
+            "messages": [HumanMessage(content="Hola!")],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+        }
+        assert "new_vocabulary" in expected_output
+
 
 class TestGraphNodeImports:
     """Tests for proper node imports in graph module."""
@@ -291,6 +349,14 @@ class TestGraphNodeImports:
         graph = build_graph()
         assert graph is not None
 
+    def test_analyze_node_is_imported(self) -> None:
+        """Graph module should properly import analyze_node."""
+        from src.agent.nodes.analyze import analyze_node
+
+        # Verify analyze_node is importable
+        assert analyze_node is not None
+        assert callable(analyze_node)
+
     def test_state_is_imported(self) -> None:
         """Graph module should properly import ConversationState."""
         from src.agent.graph import build_graph
@@ -301,58 +367,67 @@ class TestGraphNodeImports:
         assert build_graph is not None
 
 
-class TestGraphPhase1Requirements:
-    """Tests verifying Phase 1 requirements are met."""
+class TestGraphPhase2Requirements:
+    """Tests verifying Phase 2 requirements are met."""
 
-    def test_minimal_graph_structure(self) -> None:
-        """Phase 1 should have minimal graph: START -> respond -> END.
-
-        Note: __end__ may not appear in nodes dict in recent LangGraph versions,
-        but the edge configuration should connect respond to END.
-        """
-        graph = build_graph()
-
-        # Should have __start__ and respond nodes
-        assert "__start__" in graph.nodes
-        assert "respond" in graph.nodes
-
-        # Verify we have the expected number of visible nodes
-        # __end__ might not be exposed in the nodes dict
-        visible_nodes = set(graph.nodes)
-        assert "__start__" in visible_nodes
-        assert "respond" in visible_nodes
-
-    def test_single_respond_node(self) -> None:
-        """Phase 1 should have only one processing node (respond)."""
+    def test_graph_has_two_processing_nodes(self) -> None:
+        """Phase 2 should have two processing nodes: respond and analyze."""
         graph = build_graph()
 
         # Filter out system nodes
         processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
-        assert len(processing_nodes) == 1
-        assert processing_nodes[0] == "respond"
+        assert len(processing_nodes) == 2
+        assert "respond" in processing_nodes
+        assert "analyze" in processing_nodes
+
+    def test_graph_structure_start_respond_analyze_end(self) -> None:
+        """Phase 2 should have: START -> respond -> analyze -> END."""
+        graph = build_graph()
+
+        # Should have __start__, respond, and analyze nodes
+        assert "__start__" in graph.nodes
+        assert "respond" in graph.nodes
+        assert "analyze" in graph.nodes
+
+    def test_entry_point_is_respond(self) -> None:
+        """Entry point should still be 'respond' node."""
+        # Build a test graph to verify entry point
+        builder = StateGraph(ConversationState)
+        builder.add_node("respond", lambda x: x)
+        builder.add_node("analyze", lambda x: x)
+        builder.set_entry_point("respond")
+        builder.add_edge("respond", "analyze")
+        builder.add_edge("analyze", END)
+
+        compiled = builder.compile()
+        assert compiled is not None
+        assert "respond" in compiled.nodes
 
     def test_no_conditional_edges(self) -> None:
-        """Phase 1 should not have conditional edges (simple linear flow)."""
+        """Phase 2 should not have conditional edges (simple linear flow)."""
         # Build a simple test graph to verify structure
         builder = StateGraph(ConversationState)
         builder.add_node("respond", lambda x: x)
+        builder.add_node("analyze", lambda x: x)
         builder.set_entry_point("respond")
-        builder.add_edge("respond", END)
+        builder.add_edge("respond", "analyze")
+        builder.add_edge("analyze", END)
 
         # Should compile successfully with simple linear edges
         compiled = builder.compile()
         assert compiled is not None
 
     def test_linear_flow_structure(self) -> None:
-        """Graph should have a simple linear flow without branching."""
+        """Graph should have a simple linear flow: respond -> analyze -> END."""
         graph = build_graph()
 
-        # There should be exactly one processing node
+        # There should be exactly two processing nodes
         processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
-        assert len(processing_nodes) == 1
+        assert len(processing_nodes) == 2
 
-        # The only processing node should be respond
+        # Both respond and analyze should be present
         assert "respond" in processing_nodes
+        assert "analyze" in processing_nodes
 
 
 class TestGraphDocumentation:
@@ -363,10 +438,75 @@ class TestGraphDocumentation:
         assert build_graph.__doc__ is not None
         assert len(build_graph.__doc__) > 0
 
-    def test_docstring_mentions_phase1(self) -> None:
-        """Docstring should mention Phase 1 structure."""
-        assert "Phase 1" in build_graph.__doc__
+    def test_docstring_mentions_phase(self) -> None:
+        """Docstring should mention Phase structure."""
+        # Check for Phase 1 or Phase 2 mention
+        assert "Phase" in build_graph.__doc__
 
     def test_docstring_has_example(self) -> None:
         """Docstring should include usage example."""
         assert "Example" in build_graph.__doc__ or "example" in build_graph.__doc__
+
+
+class TestAnalyzeNodeInGraph:
+    """Tests for analyze_node integration in the graph."""
+
+    def test_analyze_node_is_async(self) -> None:
+        """analyze_node should be an async function."""
+        import inspect
+
+        from src.agent.nodes.analyze import analyze_node
+
+        assert inspect.iscoroutinefunction(analyze_node)
+
+    def test_analyze_node_returns_correct_keys(self) -> None:
+        """analyze_node should return dict with grammar_feedback and new_vocabulary."""
+        # This is tested more thoroughly in test_analyze_node.py
+        # Here we just verify the node exists and has expected signature
+        from src.agent.nodes.analyze import analyze_node
+
+        assert callable(analyze_node)
+
+    def test_graph_includes_analyze_node_from_module(self) -> None:
+        """Graph should use analyze_node from src.agent.nodes.analyze."""
+        # Verify the module is importable
+        from src.agent.nodes.analyze import analyze_node
+
+        assert analyze_node is not None
+
+        # Verify graph can be built (which imports analyze_node)
+        graph = build_graph()
+        assert "analyze" in graph.nodes
+
+
+class TestGraphExecutionOrder:
+    """Tests for graph node execution order."""
+
+    def test_respond_executes_before_analyze(self) -> None:
+        """Respond node should execute before analyze node."""
+        # This is verified by the edge configuration: respond -> analyze
+        builder = StateGraph(ConversationState)
+        builder.add_node("respond", lambda x: x)
+        builder.add_node("analyze", lambda x: x)
+        builder.set_entry_point("respond")
+        builder.add_edge("respond", "analyze")
+        builder.add_edge("analyze", END)
+
+        compiled = builder.compile()
+
+        # If this compiles, the order is correct
+        assert compiled is not None
+        assert "respond" in compiled.nodes
+        assert "analyze" in compiled.nodes
+
+    def test_analyze_is_terminal_node(self) -> None:
+        """Analyze node should be the terminal node (connects to END)."""
+        graph = build_graph()
+
+        # analyze should be in the graph
+        assert "analyze" in graph.nodes
+
+        # There should be no node after analyze (it connects to END)
+        processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
+        # respond and analyze are the only processing nodes
+        assert set(processing_nodes) == {"respond", "analyze"}

@@ -5,7 +5,7 @@ This module tests the structure and behavior of the conversation state
 used by the LangGraph conversation flow.
 """
 
-from typing import get_type_hints
+from typing import Any, get_type_hints
 
 import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -32,10 +32,20 @@ class TestConversationStateStructure:
         hints = get_type_hints(ConversationState, include_extras=True)
         assert "language" in hints
 
-    def test_state_has_exactly_three_fields(self) -> None:
-        """ConversationState should have exactly three fields for Phase 1."""
+    def test_state_has_grammar_feedback_field(self) -> None:
+        """ConversationState should have a grammar_feedback field (Phase 2)."""
         hints = get_type_hints(ConversationState, include_extras=True)
-        assert len(hints) == 3
+        assert "grammar_feedback" in hints
+
+    def test_state_has_new_vocabulary_field(self) -> None:
+        """ConversationState should have a new_vocabulary field (Phase 2)."""
+        hints = get_type_hints(ConversationState, include_extras=True)
+        assert "new_vocabulary" in hints
+
+    def test_state_has_exactly_five_fields(self) -> None:
+        """ConversationState should have exactly five fields for Phase 2."""
+        hints = get_type_hints(ConversationState, include_extras=True)
+        assert len(hints) == 5
 
     def test_level_field_is_string(self) -> None:
         """Level field should be typed as str."""
@@ -57,6 +67,8 @@ class TestConversationStateCreation:
             "messages": [],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["messages"] == []
         assert state["level"] == "A1"
@@ -69,6 +81,8 @@ class TestConversationStateCreation:
             "messages": [message],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert len(state["messages"]) == 1
         assert isinstance(state["messages"][0], HumanMessage)
@@ -81,6 +95,8 @@ class TestConversationStateCreation:
             "messages": [message],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert len(state["messages"]) == 1
         assert isinstance(state["messages"][0], AIMessage)
@@ -96,6 +112,8 @@ class TestConversationStateCreation:
             "messages": messages,
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert len(state["messages"]) == 3
 
@@ -109,6 +127,8 @@ class TestConversationStateCreation:
             "messages": [],
             "level": level,
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["level"] == level
 
@@ -122,6 +142,8 @@ class TestConversationStateCreation:
             "messages": [],
             "level": "A1",
             "language": language,
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["language"] == language
 
@@ -197,6 +219,8 @@ class TestConversationStateEdgeCases:
             "messages": [],
             "level": "",
             "language": "",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["level"] == ""
         assert state["language"] == ""
@@ -207,6 +231,8 @@ class TestConversationStateEdgeCases:
             "messages": [],
             "level": "C2",  # Not a supported level
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["level"] == "C2"
 
@@ -215,7 +241,9 @@ class TestConversationStateEdgeCases:
         state: ConversationState = {
             "messages": [],
             "level": "A1",
-            "language": "fr",  # Not currently supported
+            "language": "fr",  # French is now supported per state.py
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["language"] == "fr"
 
@@ -225,6 +253,8 @@ class TestConversationStateEdgeCases:
             "messages": [HumanMessage(content="")],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         assert state["messages"][0].content == ""
 
@@ -234,8 +264,284 @@ class TestConversationStateEdgeCases:
             "messages": [],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
         }
         # Test dictionary operations
         assert "level" in state
-        assert list(state.keys()) == ["messages", "level", "language"]
-        assert len(state) == 3
+        assert len(state) == 5
+
+
+class TestGrammarFeedbackField:
+    """Tests for the grammar_feedback field in ConversationState (Phase 2)."""
+
+    def test_create_state_with_empty_grammar_feedback(self) -> None:
+        """Should be able to create state with empty grammar_feedback list."""
+        state: ConversationState = {
+            "messages": [],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+        }
+        assert state["grammar_feedback"] == []
+
+    def test_create_state_with_grammar_feedback(self) -> None:
+        """Should be able to create state with grammar_feedback items."""
+        feedback: list[dict[str, Any]] = [
+            {
+                "original": "Yo es estudiante",
+                "correction": "Yo soy estudiante",
+                "explanation": "The verb 'ser' conjugates to 'soy' with 'yo'",
+                "severity": "moderate",
+            }
+        ]
+        state: ConversationState = {
+            "messages": [],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": feedback,  # type: ignore[typeddict-item]
+            "new_vocabulary": [],
+        }
+        assert len(state["grammar_feedback"]) == 1
+
+    def test_grammar_feedback_item_has_required_fields(self) -> None:
+        """GrammarFeedback items should have required fields."""
+        expected_fields = {"original", "correction", "explanation", "severity"}
+        sample_feedback = {
+            "original": "Yo es",
+            "correction": "Yo soy",
+            "explanation": "Use 'soy' with 'yo'",
+            "severity": "moderate",
+        }
+        assert set(sample_feedback.keys()) == expected_fields
+
+    def test_grammar_feedback_original_is_string(self) -> None:
+        """GrammarFeedback original field should be string."""
+        feedback = {
+            "original": "Yo es",
+            "correction": "Yo soy",
+            "explanation": "Use 'soy' with 'yo'",
+            "severity": "moderate",
+        }
+        assert isinstance(feedback["original"], str)
+
+    def test_grammar_feedback_correction_is_string(self) -> None:
+        """GrammarFeedback correction field should be string."""
+        feedback = {
+            "original": "Yo es",
+            "correction": "Yo soy",
+            "explanation": "Use 'soy' with 'yo'",
+            "severity": "moderate",
+        }
+        assert isinstance(feedback["correction"], str)
+
+    def test_grammar_feedback_explanation_is_string(self) -> None:
+        """GrammarFeedback explanation field should be string."""
+        feedback = {
+            "original": "Yo es",
+            "correction": "Yo soy",
+            "explanation": "Use 'soy' with 'yo'",
+            "severity": "moderate",
+        }
+        assert isinstance(feedback["explanation"], str)
+
+    @pytest.mark.parametrize("severity", ["minor", "moderate", "significant"])
+    def test_grammar_feedback_valid_severity_values(self, severity: str) -> None:
+        """GrammarFeedback severity should have valid values."""
+        valid_severities = {"minor", "moderate", "significant"}
+        assert severity in valid_severities
+
+
+class TestNewVocabularyField:
+    """Tests for the new_vocabulary field in ConversationState (Phase 2)."""
+
+    def test_create_state_with_empty_new_vocabulary(self) -> None:
+        """Should be able to create state with empty new_vocabulary list."""
+        state: ConversationState = {
+            "messages": [],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+        }
+        assert state["new_vocabulary"] == []
+
+    def test_create_state_with_new_vocabulary(self) -> None:
+        """Should be able to create state with new_vocabulary items."""
+        vocabulary: list[dict[str, Any]] = [
+            {
+                "word": "edificio",
+                "translation": "building",
+                "part_of_speech": "noun",
+            }
+        ]
+        state: ConversationState = {
+            "messages": [],
+            "level": "A1",
+            "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": vocabulary,  # type: ignore[typeddict-item]
+        }
+        assert len(state["new_vocabulary"]) == 1
+
+    def test_vocab_word_has_required_fields(self) -> None:
+        """VocabWord items should have required fields."""
+        expected_fields = {"word", "translation", "part_of_speech"}
+        sample_vocab = {
+            "word": "edificio",
+            "translation": "building",
+            "part_of_speech": "noun",
+        }
+        assert set(sample_vocab.keys()) == expected_fields
+
+    def test_vocab_word_word_is_string(self) -> None:
+        """VocabWord word field should be string."""
+        vocab = {
+            "word": "edificio",
+            "translation": "building",
+            "part_of_speech": "noun",
+        }
+        assert isinstance(vocab["word"], str)
+
+    def test_vocab_word_translation_is_string(self) -> None:
+        """VocabWord translation field should be string."""
+        vocab = {
+            "word": "edificio",
+            "translation": "building",
+            "part_of_speech": "noun",
+        }
+        assert isinstance(vocab["translation"], str)
+
+    def test_vocab_word_part_of_speech_is_string(self) -> None:
+        """VocabWord part_of_speech field should be string."""
+        vocab = {
+            "word": "edificio",
+            "translation": "building",
+            "part_of_speech": "noun",
+        }
+        assert isinstance(vocab["part_of_speech"], str)
+
+    @pytest.mark.parametrize(
+        "part_of_speech",
+        ["noun", "verb", "adjective", "adverb", "preposition", "conjunction"],
+    )
+    def test_vocab_word_valid_part_of_speech_values(self, part_of_speech: str) -> None:
+        """VocabWord part_of_speech can be various grammatical categories."""
+        # Part of speech is a string, so any string is technically valid
+        assert isinstance(part_of_speech, str)
+
+
+class TestGrammarFeedbackTypedDict:
+    """Tests for GrammarFeedback TypedDict structure (Phase 2)."""
+
+    def test_grammar_feedback_typeddict_exists(self) -> None:
+        """GrammarFeedback TypedDict should be importable from state module."""
+        from src.agent.state import GrammarFeedback
+
+        assert GrammarFeedback is not None
+
+    def test_grammar_feedback_has_original_field(self) -> None:
+        """GrammarFeedback should have an original field."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        assert "original" in hints
+
+    def test_grammar_feedback_has_correction_field(self) -> None:
+        """GrammarFeedback should have a correction field."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        assert "correction" in hints
+
+    def test_grammar_feedback_has_explanation_field(self) -> None:
+        """GrammarFeedback should have an explanation field."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        assert "explanation" in hints
+
+    def test_grammar_feedback_has_severity_field(self) -> None:
+        """GrammarFeedback should have a severity field."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        assert "severity" in hints
+
+    def test_grammar_feedback_has_exactly_four_fields(self) -> None:
+        """GrammarFeedback should have exactly four fields."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        assert len(hints) == 4
+
+
+class TestVocabWordTypedDict:
+    """Tests for VocabWord TypedDict structure (Phase 2)."""
+
+    def test_vocab_word_typeddict_exists(self) -> None:
+        """VocabWord TypedDict should be importable from state module."""
+        from src.agent.state import VocabWord
+
+        assert VocabWord is not None
+
+    def test_vocab_word_has_word_field(self) -> None:
+        """VocabWord should have a word field."""
+        from src.agent.state import VocabWord
+
+        hints = get_type_hints(VocabWord, include_extras=True)
+        assert "word" in hints
+
+    def test_vocab_word_has_translation_field(self) -> None:
+        """VocabWord should have a translation field."""
+        from src.agent.state import VocabWord
+
+        hints = get_type_hints(VocabWord, include_extras=True)
+        assert "translation" in hints
+
+    def test_vocab_word_has_part_of_speech_field(self) -> None:
+        """VocabWord should have a part_of_speech field."""
+        from src.agent.state import VocabWord
+
+        hints = get_type_hints(VocabWord, include_extras=True)
+        assert "part_of_speech" in hints
+
+    def test_vocab_word_has_exactly_three_fields(self) -> None:
+        """VocabWord should have exactly three fields."""
+        from src.agent.state import VocabWord
+
+        hints = get_type_hints(VocabWord, include_extras=True)
+        assert len(hints) == 3
+
+
+class TestStateFieldTypes:
+    """Tests for field type validation in state TypedDicts."""
+
+    def test_grammar_feedback_severity_is_literal(self) -> None:
+        """GrammarFeedback severity should be a Literal type."""
+        from src.agent.state import GrammarFeedback
+
+        # Get the type hints without stripping extras to see the Literal
+        hints = get_type_hints(GrammarFeedback, include_extras=True)
+        severity_type = hints["severity"]
+        # Check it's a Literal type by verifying it has __args__
+        assert hasattr(severity_type, "__args__")
+        # Verify the Literal contains the expected values
+        assert set(severity_type.__args__) == {"minor", "moderate", "significant"}
+
+    def test_vocab_word_fields_are_strings(self) -> None:
+        """All VocabWord fields should be strings."""
+        from src.agent.state import VocabWord
+
+        hints = get_type_hints(VocabWord, include_extras=False)
+        for field, field_type in hints.items():
+            assert field_type is str, f"Field {field} should be str, got {field_type}"
+
+    def test_grammar_feedback_text_fields_are_strings(self) -> None:
+        """GrammarFeedback text fields should be strings."""
+        from src.agent.state import GrammarFeedback
+
+        hints = get_type_hints(GrammarFeedback, include_extras=False)
+        for field in ["original", "correction", "explanation"]:
+            assert hints[field] is str, f"Field {field} should be str"

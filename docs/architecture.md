@@ -9,13 +9,13 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | **Phase 1** | Minimal Graph - Basic state, single respond node | Completed |
-| **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | Planned |
+| **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | Completed |
 | **Phase 3** | Conditional Routing - Branching logic, scaffolding | Planned |
 | **Phase 4** | Checkpointing - Persistence, conversation memory | Planned |
 | **Phase 5** | Complex State - Rich state management | Planned |
 | **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
 
-**Test Coverage**: 227 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 328 tests covering agent and API modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -64,13 +64,13 @@ habla-ai/
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
-│   │   ├── graph.py             # [Implemented] LangGraph definition
-│   │   ├── state.py             # [Implemented] TypedDict state
+│   │   ├── graph.py             # [Implemented] LangGraph: respond → analyze → END
+│   │   ├── state.py             # [Implemented] TypedDict state with GrammarFeedback, VocabWord
 │   │   ├── prompts.py           # [Implemented] System prompts by level
 │   │   └── nodes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── respond.py       # [Implemented] Generate AI response
-│   │       ├── analyze.py       # Grammar/vocab analysis
+│   │       ├── analyze.py       # [Implemented] Grammar/vocab analysis
 │   │       ├── scaffold.py      # Generate scaffolding (hints, word banks)
 │   │       └── feedback.py      # Format corrections
 │   │
@@ -92,8 +92,8 @@ habla-ai/
 │   │   └── partials/
 │   │       ├── message.html     # [Implemented] Message bubble styling
 │   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)
+│   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
 │   │       ├── scaffold.html    # Word bank, hints UI
-│   │       ├── feedback.html
 │   │       └── vocab_sidebar.html
 │   │
 │   └── static/
@@ -144,15 +144,17 @@ def build_graph():
 - The `add_messages` reducer pattern
 - Node functions that read/write state
 
-### Phase 2: Add Analysis Node (Week 1-2)
+### Phase 2: Add Analysis Node (Week 1-2) - IMPLEMENTED
 **Learn**: Multi-node graphs, sequential edges
+
+**Status**: This phase is complete. The graph now chains respond → analyze → END, with grammar feedback displayed in a collapsible UI.
 
 ```python
 def build_graph():
     graph = StateGraph(ConversationState)
 
     graph.add_node("respond", respond_node)
-    graph.add_node("analyze", analyze_node)  # NEW: grammar/vocab
+    graph.add_node("analyze", analyze_node)  # Grammar/vocab analysis
 
     graph.set_entry_point("respond")
     graph.add_edge("respond", "analyze")     # Chain nodes
@@ -161,10 +163,11 @@ def build_graph():
     return graph.compile()
 ```
 
-**What you'll learn**:
-- Chaining nodes sequentially
-- Passing state between nodes
-- Extending state with new fields (grammar_errors, new_vocab)
+**What you learned**:
+- Chaining nodes sequentially with `add_edge()`
+- State passing between nodes (analyze reads messages from respond)
+- Extending state with new fields (grammar_feedback, new_vocabulary)
+- Using NotRequired for optional state fields
 
 ### Phase 3: Conditional Routing (Week 2)
 **Learn**: Conditional edges, branching logic

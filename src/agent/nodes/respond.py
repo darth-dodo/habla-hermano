@@ -24,10 +24,10 @@ def _get_llm() -> ChatAnthropic:
     """
     settings = get_settings()
     return ChatAnthropic(
-        model=settings.LLM_MODEL,
+        model=settings.LLM_MODEL,  # type: ignore[call-arg]
         temperature=settings.LLM_TEMPERATURE,
-        max_tokens=1024,
-        api_key=settings.ANTHROPIC_API_KEY,
+        max_tokens=1024,  # type: ignore[call-arg]
+        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
     )
 
 

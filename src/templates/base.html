@@ -93,27 +93,27 @@
            Modern, minimal, warm color palettes
            ============================================ */
 
-        /* Dark Theme (default) - Warm charcoal with amber accents */
+        /* Dark Theme (default) - Purple Noir with violet accents */
         :root, [data-theme="dark"] {
-            --surface: #1a1a1a;
-            --surface-elevated: #252525;
-            --surface-overlay: #2f2f2f;
-            --border: #3a3a3a;
-            --border-subtle: #2a2a2a;
-            --text: #f5f5f4;
-            --text-muted: #a8a29e;
-            --text-subtle: #78716c;
-            --accent: #f59e0b;
-            --accent-hover: #fbbf24;
-            --accent-muted: rgba(245, 158, 11, 0.15);
-            --accent-text: #fef3c7;
-            --user-bubble: #f59e0b;
-            --user-text: #1a1a1a;
-            --ai-bubble: #2f2f2f;
-            --ai-text: #f5f5f4;
-            --scrollbar-track: #1a1a1a;
-            --scrollbar-thumb: #404040;
-            --scrollbar-thumb-hover: #525252;
+            --surface: #1a1625;
+            --surface-elevated: #252033;
+            --surface-overlay: #302940;
+            --border: #3d3654;
+            --border-subtle: #2a2540;
+            --text: #f5f3ff;
+            --text-muted: #a5a0b8;
+            --text-subtle: #6b6580;
+            --accent: #a78bfa;
+            --accent-hover: #c4b5fd;
+            --accent-muted: rgba(167, 139, 250, 0.15);
+            --accent-text: #1a1625;
+            --user-bubble: #a78bfa;
+            --user-text: #1a1625;
+            --ai-bubble: #302940;
+            --ai-text: #f5f3ff;
+            --scrollbar-track: #1a1625;
+            --scrollbar-thumb: #3d3654;
+            --scrollbar-thumb-hover: #5b5275;
         }
 
         /* Light Theme - Warm sand with sage green accents */
@@ -218,6 +218,15 @@
         * {
             scrollbar-width: thin;
             scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+        }
+
+        /* ============================================
+           ALPINE.JS UTILITIES
+           ============================================ */
+
+        /* Hide elements with x-cloak until Alpine.js initializes */
+        [x-cloak] {
+            display: none !important;
         }
 
         /* ============================================

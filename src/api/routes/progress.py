@@ -6,7 +6,7 @@ Tracks vocabulary learned, session history, and learning statistics.
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from src.api.dependencies import Templates
+from src.api.dependencies import TemplatesDep
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ router = APIRouter()
 @router.get("/", response_class=HTMLResponse)
 async def get_progress_page(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
 ) -> HTMLResponse:
     """Render the progress overview page with learning statistics.
 
@@ -40,7 +40,7 @@ async def get_progress_page(
 @router.get("/vocabulary", response_class=HTMLResponse)
 async def get_vocabulary(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
 ) -> HTMLResponse:
     """Render the vocabulary sidebar with learned words.
 
@@ -61,7 +61,7 @@ async def get_vocabulary(
 @router.get("/stats", response_class=HTMLResponse)
 async def get_stats(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
 ) -> HTMLResponse:
     """Render session statistics summary.
 
@@ -86,7 +86,7 @@ async def get_stats(
 @router.delete("/vocabulary/{word_id}", response_class=HTMLResponse)
 async def remove_vocabulary_word(
     request: Request,
-    templates: Templates,
+    templates: TemplatesDep,
     word_id: int,
 ) -> HTMLResponse:
     """Remove a word from the learned vocabulary list.

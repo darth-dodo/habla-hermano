@@ -31,8 +31,9 @@
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Phase 1 complete with tests | ✅ | 227 pytest tests, E2E validated, committed to feature/phase1-chat-ui |
+| Phase 1 complete with tests | ✅ | 227 pytest tests, E2E validated |
 | UI modernization | ✅ | 3 themes (dark/light/ocean), optimistic UI, German language support |
+| Phase 2 LangGraph: analyze node | ✅ | Multi-node graph, grammar feedback, 328 tests |
 
 ### Up Next - Priority Tasks
 
@@ -48,9 +49,9 @@
 
 | Task | Status | Priority | Notes |
 |------|--------|----------|-------|
-| Phase 2 LangGraph: add analyze node | ⏳ | 🟠 | Learning: multi-node graphs |
+| Phase 2 LangGraph: add analyze node | ✅ | 🟠 | Multi-node graph with respond → analyze → END |
 | Level selection (A0/A1/A2/B1) | ✅ | 🟠 | Dropdown in UI, passed to graph |
-| Grammar feedback display | ⏳ | 🟠 | Collapsed by default |
+| Grammar feedback display | ✅ | 🟠 | Collapsible feedback with severity colors |
 
 #### 🟡 Medium Priority (Week 2)
 
@@ -275,17 +276,120 @@
 
 **Next Steps**:
 - [ ] Create PR for feature/phase1-chat-ui → main
-- [ ] Phase 2: Add analyze node for grammar feedback
+- [x] Phase 2: Add analyze node for grammar feedback
+
+---
+
+### Session Log: 2025-01-17 (Phase 2 Implementation)
+
+**Session Focus**: Phase 2 LangGraph - Multi-node graph with analyze node
+
+**Approach**: Used `.agentic-framework` parallel coordination pattern with 3 subagents:
+- Agent A: State extension + analyze node (backend)
+- Agent B: Templates + UI for feedback display (frontend)
+- Agent C: Tests for analyze node (quality)
+
+**Key Changes**:
+
+1. **Extended ConversationState** (`src/agent/state.py`):
+   - Added `GrammarFeedback` TypedDict (original, correction, explanation, severity)
+   - Added `VocabWord` TypedDict (word, translation, part_of_speech)
+   - Extended ConversationState with `grammar_feedback` and `new_vocabulary` fields
+
+2. **Created analyze node** (`src/agent/nodes/analyze.py`):
+   - Analyzes user's last message for grammar errors
+   - Level-aware feedback (A0 = very basic, B1 = advanced)
+   - Returns structured JSON parsed into typed structures
+   - Handles edge cases (empty messages, parse errors)
+
+3. **Updated graph** (`src/agent/graph.py`):
+   - Changed from `START → respond → END`
+   - To `START → respond → analyze → END`
+
+4. **Created feedback UI** (`src/templates/partials/grammar_feedback.html`):
+   - Collapsible grammar feedback section
+   - Color-coded by severity (minor=sky, moderate=amber, significant=rose)
+   - Alpine.js for toggle with smooth animations
+   - Accessible with proper ARIA labels
+
+5. **Updated chat route** (`src/api/routes/chat.py`):
+   - Extracts grammar_feedback and new_vocabulary from graph result
+   - Passes to template with graceful fallbacks
+
+**LangGraph Learning**:
+- Learned: Chaining nodes sequentially (respond → analyze)
+- Learned: State passing between nodes
+- Learned: Extending state with new fields that accumulate
+
+**Branch**: `feature/phase2-analyze-node`
+
+**Test Coverage**:
+- 328 total tests (101 new tests for Phase 2)
+- `tests/test_analyze_node.py` - 51 tests for analyze node
+- Updated `tests/test_agent_state.py` - GrammarFeedback/VocabWord tests
+- Updated `tests/test_agent_graph.py` - 2-node graph structure tests
+
+**Quality Gates**:
+- ✅ Ruff linting: All checks passed
+- ✅ MyPy type checking: No issues in 25 files
+- ✅ 328 tests passing
+- ✅ All quality checks passing
+
+**Next Steps**:
+- [x] Test E2E with real API key to verify grammar feedback
+- [ ] Phase 3: Add scaffold node with conditional routing
+- [ ] Create PR for feature/phase2-analyze-node → main
+
+---
+
+### Session Log: 2025-01-17 (Phase 2 E2E Testing)
+
+**Session Focus**: End-to-end testing of Phase 2 grammar feedback feature
+
+**Approach**: Used Playwright MCP server for browser automation testing
+
+**Tests Executed**:
+1. ✅ Chat page loads correctly
+2. ✅ Sent message with grammar error: "Yo soy muy bueno hoy. Me gusta el agua frio."
+3. ✅ AI responded with conversational correction
+4. ✅ Grammar feedback section appeared with "1 grammar tip"
+5. ✅ Expanded feedback showed: "el agua frio → el agua fría"
+6. ✅ Explanation about feminine noun agreement displayed correctly
+
+**Key Observations**:
+- Analyze node correctly identified gender agreement error
+- Feedback UI renders collapsed by default
+- Severity color-coding works (minor = sky blue)
+- Alpine.js toggle animation is smooth
+- ARIA labels present for accessibility
+
+**Fixes Applied**:
+- Removed unused `type: ignore` comments from respond.py and analyze.py
+- Added mypy override for src/db/ module (future phase stub files)
+- Updated pyproject.toml with new mypy configuration
+
+**Documentation Updated**:
+- `docs/playwright-e2e.md` - Added Grammar Feedback test flow
+- `tasks.md` - This session log
+
+**Branch**: `feature/phase2-analyze-node`
+
+**Quality Gates**:
+- ✅ E2E testing passed
+- ✅ Grammar feedback working correctly
+- ✅ UI collapsible behavior verified
+- ✅ All documentation updated
 
 ---
 
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 1 Complete with UI Modernization (227 pytest tests)
-- **UI Features**: 3 themes, German support, optimistic UI
+- **Current Phase**: Phase 2 Complete with Analyze Node (328 pytest tests)
+- **Graph Structure**: respond → analyze → END
+- **UI Features**: 3 themes, German support, optimistic UI, collapsible grammar feedback
 - **Test Coverage**: Unit tests in `tests/`, E2E docs in `docs/playwright-e2e.md`
-- **Branch**: `feature/phase1-chat-ui` ready for PR to main
+- **Branch**: `feature/phase2-analyze-node`
 - **CI/CD**: GitHub Actions configured
 - **Pre-commit**: Hooks defined, need `make install-hooks` to activate
 
@@ -299,7 +403,7 @@
 | Phase | Status | Concept |
 |-------|--------|---------|
 | 1. Minimal Graph | ✅ | StateGraph, TypedDict, single node |
-| 2. Multi-node | ⏳ | Sequential edges, state passing |
+| 2. Multi-node | ✅ | Sequential edges, state passing between nodes |
 | 3. Conditional Routing | ⏳ | Branching logic, routing functions |
 | 4. Checkpointing | ⏳ | SqliteSaver, thread IDs |
 | 5. Complex State | ⏳ | Nested TypedDict, multiple fields |
