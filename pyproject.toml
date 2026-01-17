@@ -37,6 +37,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "httpx>=0.28.0",
+    "greenlet>=3.0.0",  # Required for async SQLAlchemy testing
 
     # Linting & Formatting
     "ruff>=0.8.0",
@@ -91,7 +92,7 @@ ignore = [
 known-first-party = ["src"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ARG", "PLR2004", "PLC0415"]  # Allow late imports for mocking
+"tests/**/*.py" = ["ARG", "PLR2004", "PLC0415", "SIM117"]  # Allow late imports and nested with for mocking
 
 # =============================================================================
 # MyPy Configuration
