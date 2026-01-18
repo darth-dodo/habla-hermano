@@ -1,4 +1,4 @@
-"""SQLAlchemy 2.0 async models for HablaAI."""
+"""SQLAlchemy 2.0 async models for Habla Hermano."""
 
 from datetime import datetime
 

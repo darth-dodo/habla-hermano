@@ -1,4 +1,4 @@
-# HablaAI - Task Tracking
+# Habla Hermano - Task Tracking
 
 > **Source of Truth**: This file is the single source of truth for project state.
 
@@ -14,7 +14,7 @@
 
 ## Project Overview
 
-**HablaAI**: AI language tutor taking learners from A0 (absolute beginner) to B1 (intermediate).
+**Habla Hermano**: AI language tutor taking learners from A0 (absolute beginner) to B1 (intermediate).
 
 **Tech Stack**: FastAPI + HTMX + LangGraph + Claude API
 
@@ -29,17 +29,18 @@
 
 ## Current State
 
-**Branch**: `feature/phase3-scaffold-node`
-**Phase**: Phase 3 Complete
+**Branch**: `main`
+**Phase**: Phase 3 Complete + Hermano Personality
 **Test Coverage**: 641+ tests, 98% coverage
 
 ### What's Working
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Scaffolded Conversation | ✅ | Chat with AI that adapts to level |
-| 4 Proficiency Levels | ✅ | A0, A1, A2, B1 with distinct behavior |
-| 3 Languages | ✅ | Spanish, German, French |
+| Hermano Personality | ✅ | Friendly big brother tutor with consistent voice |
+| Scaffolded Conversation | ✅ | Chat with Hermano who adapts to level |
+| 4 Proficiency Levels | ✅ | A0, A1, A2, B1 with distinct Hermano behavior |
+| 3 Languages | ✅ | Spanish, German, French via LANGUAGE_ADAPTER |
 | Grammar Feedback | ✅ | Gentle corrections with expandable tips |
 | Word Banks & Hints | ✅ | Contextual help for A0-A1 learners |
 | Sentence Starters | ✅ | Partial sentences to get beginners going |
@@ -118,6 +119,59 @@ START → respond → [needs_scaffold?]
 ---
 
 ## Session Logs
+
+### Session Log: 2025-01-18 (Habla Hermano Rename & Personality)
+
+**Session Focus**: Rename project to "Habla Hermano" and create the Hermano personality
+
+**Key Changes**:
+
+1. **Project Rename**: habla-ai → habla-hermano
+   - 38 files renamed across the codebase
+   - All imports and references updated
+   - Repository structure maintained
+
+2. **Hermano Personality** (`src/agent/prompts.py`):
+   - Created "Hermano" as a friendly, laid-back big brother figure
+   - Patient, encouraging, makes learning feel like chatting with a friend
+   - Celebrates small wins without being condescending
+   - Uses casual, warm language appropriate to each level
+
+3. **Language Adapter Pattern** (`src/agent/prompts.py`):
+   - Replaced string replacement with `LANGUAGE_ADAPTER` dictionary
+   - Clean separation of language-specific vocabulary
+   - Supports Spanish, German, French with extensible structure
+   - Format dict approach for prompt templating
+
+4. **Personality by Level**:
+   - A0: Supportive big brother for absolute beginners, heavy encouragement
+   - A1: Chill friend who spent a year abroad, relaxed guidance
+   - A2: Challenges learners while keeping it fun and conversational
+   - B1: Peer-to-peer natural conversation partner
+
+**Technical Details**:
+
+The `LANGUAGE_ADAPTER` dictionary pattern:
+```python
+LANGUAGE_ADAPTER = {
+    "es": {"language_name": "Spanish", "hello": "Hola", ...},
+    "de": {"language_name": "German", "hello": "Hallo", ...},
+    "fr": {"language_name": "French", "hello": "Bonjour", ...},
+}
+```
+
+Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(**format_dict)`.
+
+**Documentation Updates**:
+- README.md updated with Hermano personality
+- CHANGELOG.md entry for v0.4.0
+- docs/product.md updated with Hermano description
+- docs/architecture.md with language adapter section
+- docs/design/phase1-basic-chat.md with new prompt patterns
+
+**Branch**: `main`
+
+---
 
 ### Session Log: 2025-01-18 (Phase 3 Implementation)
 
@@ -264,16 +318,32 @@ START → respond → [needs_scaffold?]
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 3 Complete (Scaffold Node with Conditional Routing)
+- **Current Phase**: Phase 3 Complete + Hermano Personality
+- **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
 - **Graph Structure**: respond → [conditional] → scaffold OR analyze → END
 - **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding
 - **Test Coverage**: 641+ tests, 98% coverage
-- **Branch**: `feature/phase3-scaffold-node`
+- **Branch**: `main`
+
+### Hermano Personality Guidelines
+When modifying prompts or adding new features, maintain Hermano's voice:
+- Warm and encouraging, never condescending
+- Uses casual language ("Nice!", "You got this!")
+- Celebrates small wins genuinely
+- Shares relatable moments ("This one tripped me up at first too")
+- Feels like texting a supportive friend
+
+### Language Adapter Pattern
+The `LANGUAGE_ADAPTER` dict in `src/agent/prompts.py` handles language switching:
+- Add new languages by adding entries to the dictionary
+- Prompts use `{language_name}`, `{hello}`, `{my_name_is}` placeholders
+- Never use string replacement for language adaptation
 
 ### Key Files to Review
-- `docs/product.md` - What we're building
-- `docs/architecture.md` - How we're building it
+- `docs/product.md` - What we're building (includes Hermano personality)
+- `docs/architecture.md` - How we're building it (includes language adapter)
 - `docs/design/` - Phase-by-phase design documents
+- `src/agent/prompts.py` - Hermano prompts and language adapter
 - `tasks.md` - Current state (this file)
 
 ### LangGraph Learning Progression

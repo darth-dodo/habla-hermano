@@ -1,4 +1,4 @@
-"""Services module for HablaAI business logic."""
+"""Services module for Habla Hermano business logic."""
 
 from src.services.levels import (
     CEFRLevel,

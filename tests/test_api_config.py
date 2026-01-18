@@ -34,7 +34,7 @@ class TestSettingsClass:
 
         assert settings.ANTHROPIC_API_KEY == "test-key-123"  # pragma: allowlist secret
         # Check defaults
-        assert settings.APP_NAME == "HablaAI"
+        assert settings.APP_NAME == "Habla Hermano"
         assert settings.DEBUG is False
         assert settings.LLM_MODEL == "claude-sonnet-4-20250514"
         assert settings.LLM_TEMPERATURE == 0.7
@@ -44,7 +44,7 @@ class TestSettingsClass:
     def test_settings_with_all_fields(self, mock_settings: Settings) -> None:
         """Settings should accept all configurable fields."""
         assert mock_settings.ANTHROPIC_API_KEY == "test-api-key-12345"  # pragma: allowlist secret
-        assert mock_settings.APP_NAME == "HablaAI-Test"
+        assert mock_settings.APP_NAME == "Habla Hermano-Test"
         assert mock_settings.DEBUG is True
         assert mock_settings.LLM_MODEL == "claude-test-model"
         assert mock_settings.LLM_TEMPERATURE == 0.5
@@ -331,15 +331,15 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
-            APP_NAME="HablaAI - Test Version (v1.0)",
+            APP_NAME="Habla Hermano - Test Version (v1.0)",
         )
-        assert settings.APP_NAME == "HablaAI - Test Version (v1.0)"
+        assert settings.APP_NAME == "Habla Hermano - Test Version (v1.0)"
 
     def test_unicode_in_app_name(self) -> None:
         """APP_NAME should accept unicode characters."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
-            APP_NAME="HablaAI Espanol",
+            APP_NAME="Habla Hermano Espanol",
         )
-        assert settings.APP_NAME == "HablaAI Espanol"
+        assert settings.APP_NAME == "Habla Hermano Espanol"

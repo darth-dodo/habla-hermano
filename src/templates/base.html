@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="HablaAI - Your AI Spanish Language Tutor">
+    <meta name="description" content="Habla Hermano - Your AI Spanish Language Tutor">
     <meta name="theme-color" content="#1a1a1a">
-    <title>{% block title %}HablaAI{% endblock %}</title>
+    <title>{% block title %}Habla Hermano{% endblock %}</title>
 
     <!-- Tailwind CSS CDN (development) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -296,10 +296,10 @@
     {% block head %}{% endblock %}
 </head>
 <body class="h-full antialiased font-sans" x-data="{
-    theme: localStorage.getItem('habla-theme') || 'dark',
+    theme: localStorage.getItem('hermano-theme') || 'dark',
     setTheme(newTheme) {
         this.theme = newTheme;
-        localStorage.setItem('habla-theme', newTheme);
+        localStorage.setItem('hermano-theme', newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
         document.body.classList.add('theme-transition');
         setTimeout(() => document.body.classList.remove('theme-transition'), 300);

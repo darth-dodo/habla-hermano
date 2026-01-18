@@ -1,4 +1,4 @@
-# Pre-commit hooks for HablaAI
+# Pre-commit hooks for Habla Hermano
 # Install: pre-commit install
 # Run manually: pre-commit run --all-files
 

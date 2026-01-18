@@ -1,5 +1,5 @@
 """
-LangGraph nodes for HablaAI conversation flow.
+LangGraph nodes for Habla Hermano conversation flow.
 
 Phase 2: respond and analyze nodes are implemented.
 Phase 3: scaffold node adds conditional routing for A0-A1 learners.

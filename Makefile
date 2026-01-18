@@ -1,4 +1,4 @@
-# HablaAI Makefile
+# Habla Hermano Makefile
 # Usage: make [target]
 
 .PHONY: install dev test lint format typecheck clean help

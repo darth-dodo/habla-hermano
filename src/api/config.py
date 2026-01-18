@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str
 
     # Application settings
-    APP_NAME: str = "HablaAI"
+    APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
 
     # LLM settings

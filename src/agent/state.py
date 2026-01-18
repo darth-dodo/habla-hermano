@@ -1,5 +1,5 @@
 """
-Conversation state for HablaAI LangGraph.
+Conversation state for Habla Hermano LangGraph.
 
 This module defines the TypedDict state used by the LangGraph conversation flow.
 Phase 2 adds grammar feedback and vocabulary tracking.
@@ -73,7 +73,7 @@ class VocabWord(TypedDict):
 
 class ConversationState(TypedDict):
     """
-    Main LangGraph state for HablaAI conversations.
+    Main LangGraph state for Habla Hermano conversations.
 
     Core fields:
     - messages: Conversation history with add_messages reducer

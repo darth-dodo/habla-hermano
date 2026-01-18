@@ -1,6 +1,6 @@
-# HablaAI Test Documentation
+# Habla Hermano Test Documentation
 
-> Comprehensive test coverage documentation for the HablaAI language tutor application.
+> Comprehensive test coverage documentation for the Habla Hermano language tutor application.
 
 ---
 
