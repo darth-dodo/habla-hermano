@@ -12,6 +12,10 @@
 | A1 Chat Flow | ✅ Pass | Beginner gets 50/50 Spanish/English mix |
 | B1 Chat Flow | ✅ Pass | Intermediate gets 95%+ Spanish response |
 | Grammar Feedback | ✅ Pass | Analyze node detects errors, feedback UI works |
+| A0 Scaffold | ✅ Pass | Auto-expanded scaffold with word bank + translations |
+| A1 Scaffold | ✅ Pass | Collapsed scaffold, expandable on click |
+| B1 No Scaffold | ✅ Pass | Conditional routing skips scaffold for higher levels |
+| Word Bank Insert | ✅ Pass | Click word to insert into input field |
 
 ---
 
@@ -19,8 +23,8 @@
 
 - **URL**: http://127.0.0.1:8000
 - **Browser**: Chromium (via Playwright MCP)
-- **Date**: 2025-01-17 (Phase 2 update)
-- **Previous Date**: 2025-01-16 (Phase 1)
+- **Date**: 2025-01-18 (Phase 3 update)
+- **Previous Dates**: 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
 
 ---
 
@@ -187,6 +191,138 @@ Grammar Feedback (1 tip):
 
 ---
 
+### 7. Scaffold Node (Phase 3)
+
+**Purpose**: Verify scaffold node provides word banks and hints to A0-A1 learners, and that conditional routing correctly skips scaffold for higher levels.
+
+#### 7a. A0 Scaffold (Auto-Expanded)
+
+**Steps**:
+1. Select "A0 Complete Beginner" from dropdown
+2. Type: "Hello, I want to learn Spanish!"
+3. Click Send
+4. Verify AI response appears
+5. Verify scaffold section appears below response
+
+**Expected Behavior**:
+- Scaffold section auto-expands for A0 learners
+- Word bank shows 4-6 words with English translations in parentheses
+- Hint text provides guidance in English
+- Sentence starter (optional) helps begin response
+
+**Actual Response**:
+
+Scaffold Section (Auto-Expanded):
+- **Word Bank**: "hola (hello)", "sí (yes)", "gracias (thank you)", "bien (good/well)"
+- **Hint**: "Try responding to the greeting! You can say 'hola' back or answer a simple yes/no question."
+- **Sentence Starter**: "Hola, yo..."
+
+**UI Behavior**:
+- ✅ Scaffold section appears automatically expanded
+- ✅ Word bank displays as clickable chips/buttons
+- ✅ Words include translations for A0 level
+- ✅ Hint is displayed in clear English
+- ✅ Sentence starter shown in italics
+
+**Screenshot**:
+![A0 Scaffold](../.playwright-mcp/phase3-scaffold-a0.png)
+
+**Result**: ✅ Pass - A0 scaffold auto-expands with translated word bank
+
+---
+
+#### 7b. A1 Scaffold (Collapsed by Default)
+
+**Steps**:
+1. Select "A1 Beginner" from dropdown
+2. Type: "Hola, me llamo Maria"
+3. Click Send
+4. Verify scaffold section appears collapsed
+5. Click to expand scaffold
+
+**Expected Behavior**:
+- Scaffold section collapsed by default for A1
+- Shows "Need help responding?" prompt
+- Expands to reveal word bank and hints on click
+- Word bank may have fewer translations than A0
+
+**Actual Response**:
+
+Scaffold Section (Collapsed):
+- Header shows "Need help responding?" with expand icon
+- Click reveals word bank, hint, and optional sentence starter
+
+Scaffold Section (Expanded):
+- **Word Bank**: "también (also)", "mucho gusto (nice to meet you)", "¿cómo estás? (how are you?)", "bien (well)"
+- **Hint**: "Try responding to the greeting and ask the tutor something about themselves!"
+- **Sentence Starter**: "Mucho gusto, yo..."
+
+**UI Behavior**:
+- ✅ Scaffold section collapsed by default
+- ✅ Shows "Need help responding?" header
+- ✅ Expands with smooth animation on click
+- ✅ Word bank chips are clickable
+- ✅ Chevron icon rotates on expand/collapse
+
+**Screenshots**:
+- Collapsed: ![A1 Scaffold Collapsed](../.playwright-mcp/phase3-scaffold-a1-collapsed.png)
+- Expanded: ![A1 Scaffold Expanded](../.playwright-mcp/phase3-scaffold-a1-expanded.png)
+
+**Result**: ✅ Pass - A1 scaffold collapsed by default, expandable on click
+
+---
+
+#### 7c. B1 No Scaffold (Conditional Routing)
+
+**Steps**:
+1. Select "B1 Intermediate" from dropdown
+2. Type: "Hola, quiero practicar mi español contigo"
+3. Click Send
+4. Verify AI response appears
+5. Verify NO scaffold section appears
+
+**Expected Behavior**:
+- AI response displays normally
+- No scaffold section rendered
+- Grammar feedback may appear (Phase 2)
+- Conditional routing in graph skips scaffold node for A2-B1
+
+**Actual Response**:
+- ✅ AI response in mostly Spanish (appropriate for B1)
+- ✅ No scaffold section visible
+- ✅ Grammar feedback section present (if errors detected)
+
+**Screenshot**:
+![B1 No Scaffold](../.playwright-mcp/phase3-b1-no-scaffold.png)
+
+**Result**: ✅ Pass - B1 correctly skips scaffold via conditional routing
+
+---
+
+#### 7d. Word Bank Click-to-Insert
+
+**Steps**:
+1. Complete A0 or A1 chat flow with scaffold visible
+2. Locate word bank section with clickable words
+3. Click a word (e.g., "hola (hello)")
+4. Verify word is inserted into message input field
+
+**Expected Behavior**:
+- Clicking word inserts it at cursor position in input
+- Word is inserted without the translation portion
+- Multiple words can be inserted
+- Input field gains focus after insertion
+
+**Actual Behavior**:
+- ✅ Clicking "hola (hello)" inserts "hola" into input
+- ✅ Translation "(hello)" is stripped before insertion
+- ✅ Input field receives focus
+- ✅ User can continue typing after insertion
+
+**Result**: ✅ Pass - Word bank click-to-insert works correctly
+
+---
+
 ## HTMX Integration Tests
 
 ### Form Submission
@@ -278,5 +414,5 @@ B1: "Ayer fui al cine con mis amigos y vimos una película muy interesante sobre
 3. **Error Handling**: Test API failures, network issues
 4. **Conversation Persistence**: Test when checkpointing is added (Phase 4)
 5. ~~**Grammar Feedback**: Test analyze node when added (Phase 2)~~ ✅ Complete
-6. **Scaffold Node**: Test word bank and scaffolding UI (Phase 3)
+6. ~~**Scaffold Node**: Test word bank and scaffolding UI (Phase 3)~~ ✅ Complete
 7. **Vocabulary Tracking**: Test vocabulary display and persistence

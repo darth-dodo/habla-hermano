@@ -1,185 +1,123 @@
 # HablaAI
 
-**Learn Spanish or German through conversation, not flashcards.**
+**Learn Spanish, German, or French through conversation, not flashcards.**
 
-An AI conversation partner that takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that adapts to your level.
+An AI conversation partner that takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-dark-home.png" alt="HablaAI Mobile Dark Theme" width="200"/>
-  <img src="docs/screenshots/mobile-light-home.png" alt="HablaAI Mobile Light Theme" width="200"/>
-  <img src="docs/screenshots/mobile-ocean-home.png" alt="HablaAI Mobile Ocean Theme" width="200"/>
+  <img src="docs/screenshots/desktop-ocean-home.png" alt="HablaAI Desktop" width="700"/>
 </p>
 
 ---
 
-## Why HablaAI?
+## The Problem with Language Apps
 
-**Conversation confidence comes from conversation practice.**
-
-Most language apps drill vocabulary in isolation. You memorize words, ace flashcards, but freeze when someone actually speaks to you.
+Most language apps drill vocabulary in isolation. You memorize words, ace flashcards, but freeze when someone actually speaks to you. **Conversation confidence comes from conversation practice.**
 
 HablaAI is different:
+
 - **Talk from day one** — Even complete beginners have real conversations
-- **Level-adaptive AI** — Adjusts vocabulary, grammar complexity, and scaffolding to your level
+- **Scaffolding that fades** — Word banks and hints for beginners, natural flow for intermediates
 - **Gentle corrections** — Grammar feedback that doesn't interrupt your flow
 - **No gamification guilt** — No streaks, XP, or leaderboards. Just learning.
 
 ---
 
-## Features
+## How It Works
 
-### Conversation with Grammar Feedback
-
-<p align="center">
-  <img src="docs/screenshots/desktop-dark-conversation.png" alt="Conversation with Grammar Feedback" width="700"/>
-</p>
-
-Chat naturally and get contextual grammar tips. The AI models correct form in its responses (like a native speaker would), with optional expandable feedback for deeper learning.
-
-### Four Proficiency Levels (A0 → B1)
-
-| Level | Experience | AI Behavior |
-|-------|------------|-------------|
-| **A0** Complete Beginner | Just starting | 80% English, celebrates every attempt |
-| **A1** Beginner | Basic phrases | 50/50 mix, translation toggles |
-| **A2** Elementary | Simple conversations | 80% target language, past tense |
-| **B1** Intermediate | Real discussions | 95%+ target language, natural flow |
-
-### Three Beautiful Themes
+### Real Conversations at Every Level
 
 <p align="center">
-  <img src="docs/screenshots/mobile-dark-conversation.png" alt="Dark Theme Conversation" width="250"/>
+  <img src="docs/screenshots/mobile-ocean-conversation.png" alt="HablaAI Mobile Conversation" width="300"/>
 </p>
 
-- **Dark** — Purple noir with violet accents (perfect for evening study)
-- **Light** — Warm sand with sage green accents
-- **Ocean** — Midnight blue with golden sand accents
+The AI adapts its language mix based on your level:
 
-### Two Languages
+| Level | What You Experience |
+|-------|---------------------|
+| **A0** Complete Beginner | 80% English with Spanish words introduced one at a time. Pronunciation guides, celebration of every attempt. |
+| **A1** Beginner | 50/50 mix. Short sentences, translations when needed, natural back-and-forth. |
+| **A2** Elementary | 80% Spanish. Past tense, longer exchanges, less hand-holding. |
+| **B1** Intermediate | 95%+ Spanish. Idioms, subjunctive, real discussions like talking to a native friend. |
 
-- 🇪🇸 **Spanish** — Full support from A0 to B1
-- 🇩🇪 **German** — Full support from A0 to B1
+### Scaffolding That Helps You Respond
+
+<p align="center">
+  <img src="docs/screenshots/desktop-ocean-scaffold-a0.png" alt="Word Bank and Hints" width="700"/>
+</p>
+
+Stuck on what to say? Beginners get contextual help:
+
+- **Word Bank** — Clickable vocabulary relevant to the conversation (click to insert)
+- **Hints** — Simple guidance in English on how to respond
+- **Sentence Starters** — Partial sentences to get you going
+
+For A0 learners, scaffolding appears automatically. A1 learners can expand it when needed. By A2, you won't need it anymore.
+
+### Grammar Feedback Without Interruption
+
+<p align="center">
+  <img src="docs/screenshots/desktop-ocean-grammar.png" alt="Grammar Feedback" width="700"/>
+</p>
+
+Made a mistake? The AI models the correct form naturally in its response (like a native speaker would), then offers an expandable grammar tip for deeper learning:
+
+```
+You:  "Yo soy cansado"
+AI:   "¿Estás cansado? Yo también después del trabajo."
+
+      💡 Grammar tip: Use "estar" for temporary feelings like tired.
+```
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- Anthropic API key
-
-### Installation
-
 ```bash
-# Clone the repository
+# Clone and install
 git clone https://github.com/darth-dodo/habla-ai.git
 cd habla-ai
-
-# Install dependencies
 make install
 
-# Set up environment
+# Configure
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Add your ANTHROPIC_API_KEY to .env
 
-# Run development server
+# Run
 make dev
 ```
 
-Open [http://localhost:8000](http://localhost:8000) and start learning!
+Open [http://localhost:8000](http://localhost:8000) and start your first conversation.
+
+**Requirements:** Python 3.11+, [uv](https://docs.astral.sh/uv/) or pip, Anthropic API key
 
 ---
 
-## How It Works
+## Features at a Glance
 
-HablaAI uses **Communicative Language Teaching** — learning by doing, not by studying rules.
-
-### The "Gentle Nudge" Pattern
-
-Instead of interrupting with corrections:
-
-```
-You:  "Yo soy cansado"
-AI:   "Ah, ¿estás cansado? Yo también después del trabajo."
-      (Models correct form naturally)
-
-      💡 Quick tip: For feelings like tired or hungry,
-         Spanish uses "estar" not "ser".
-```
-
-### Scaffolding That Fades
-
-| Level | Support |
-|-------|---------|
-| A0 | Word banks, sentence templates, translations everywhere |
-| A1 | Hints on tap, translation toggles |
-| A2 | Occasional hints, grammar tips contextual |
-| B1 | Minimal scaffolding, just natural conversation |
-
----
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| **Backend** | FastAPI + Python 3.11 |
-| **Frontend** | HTMX + Jinja2 + Tailwind CSS |
-| **AI Agent** | LangGraph (StateGraph with analyze node) |
-| **LLM** | Claude API via langchain-anthropic |
-| **Testing** | pytest (641 tests, 98% coverage) + Playwright E2E |
-
----
-
-## Development
-
-```bash
-make dev        # Start development server
-make test       # Run all tests
-make check      # Run lint + typecheck + format check
-make lint       # Run Ruff linter
-make typecheck  # Run MyPy
-```
-
-### Project Structure
-
-```
-habla-ai/
-├── src/
-│   ├── agent/          # LangGraph nodes (respond, analyze)
-│   ├── api/            # FastAPI routes and config
-│   ├── templates/      # Jinja2 HTML templates
-│   └── static/         # CSS, JavaScript
-├── tests/              # 641 pytest tests (98% coverage)
-└── docs/               # Product spec, architecture, screenshots
-```
-
----
-
-## Roadmap
-
-| Phase | Status | Focus |
-|-------|--------|-------|
-| 1. Basic Chat | ✅ Complete | StateGraph, respond node, HTMX UI |
-| 2. Grammar Feedback | ✅ Complete | Analyze node, collapsible feedback UI |
-| 3. Scaffolding | 🔜 Next | Word banks, sentence templates, conditional routing |
-| 4. Persistence | Planned | Conversation history, vocabulary tracking |
-| 5. Micro-lessons | Planned | 2-3 min focused lessons |
+| Feature | Description |
+|---------|-------------|
+| **4 Proficiency Levels** | A0 → B1 with adaptive AI behavior |
+| **Intelligent Scaffolding** | Word banks, hints, sentence starters for beginners |
+| **Grammar Feedback** | Gentle corrections with expandable explanations |
+| **3 Languages** | Spanish, German, and French — full support A0-B1 |
+| **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
+| **Mobile-First** | Works great on phone, tablet, or desktop |
 
 ---
 
 ## Documentation
 
-- [Product Specification](docs/product.md) — Vision, pedagogy, feature details
-- [Technical Architecture](docs/architecture.md) — LangGraph design, API endpoints
-- [E2E Test Results](docs/playwright-e2e.md) — Playwright test documentation
+- [Product Vision](docs/product.md) — Pedagogy and feature philosophy
+- [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
+- [API Reference](docs/api.md) — Endpoints and data structures
+- [Changelog](CHANGELOG.md) — Release history
 
 ---
 
-## License
+## Built With
 
-MIT
+FastAPI • HTMX • Tailwind CSS • LangGraph • Claude API
 
 ---
 

@@ -42,10 +42,15 @@ class TestConversationStateStructure:
         hints = get_type_hints(ConversationState, include_extras=True)
         assert "new_vocabulary" in hints
 
-    def test_state_has_exactly_five_fields(self) -> None:
-        """ConversationState should have exactly five fields for Phase 2."""
+    def test_state_has_scaffolding_field(self) -> None:
+        """ConversationState should have a scaffolding field (Phase 3)."""
         hints = get_type_hints(ConversationState, include_extras=True)
-        assert len(hints) == 5
+        assert "scaffolding" in hints
+
+    def test_state_has_exactly_six_fields(self) -> None:
+        """ConversationState should have exactly six fields for Phase 3."""
+        hints = get_type_hints(ConversationState, include_extras=True)
+        assert len(hints) == 6
 
     def test_level_field_is_string(self) -> None:
         """Level field should be typed as str."""

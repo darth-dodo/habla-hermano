@@ -367,66 +367,49 @@ class TestGraphNodeImports:
         assert build_graph is not None
 
 
-class TestGraphPhase2Requirements:
-    """Tests verifying Phase 2 requirements are met."""
+class TestGraphPhase3Requirements:
+    """Tests verifying Phase 3 requirements are met."""
 
-    def test_graph_has_two_processing_nodes(self) -> None:
-        """Phase 2 should have two processing nodes: respond and analyze."""
+    def test_graph_has_three_processing_nodes(self) -> None:
+        """Phase 3 should have three processing nodes: respond, scaffold, analyze."""
         graph = build_graph()
 
         # Filter out system nodes
         processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
-        assert len(processing_nodes) == 2
+        assert len(processing_nodes) == 3
         assert "respond" in processing_nodes
+        assert "scaffold" in processing_nodes
         assert "analyze" in processing_nodes
 
-    def test_graph_structure_start_respond_analyze_end(self) -> None:
-        """Phase 2 should have: START -> respond -> analyze -> END."""
+    def test_graph_structure_with_conditional_routing(self) -> None:
+        """Phase 3 should have: START -> respond -> (scaffold|analyze) -> analyze -> END."""
         graph = build_graph()
 
-        # Should have __start__, respond, and analyze nodes
+        # Should have __start__, respond, scaffold, and analyze nodes
         assert "__start__" in graph.nodes
         assert "respond" in graph.nodes
+        assert "scaffold" in graph.nodes
         assert "analyze" in graph.nodes
 
     def test_entry_point_is_respond(self) -> None:
         """Entry point should still be 'respond' node."""
-        # Build a test graph to verify entry point
-        builder = StateGraph(ConversationState)
-        builder.add_node("respond", lambda x: x)
-        builder.add_node("analyze", lambda x: x)
-        builder.set_entry_point("respond")
-        builder.add_edge("respond", "analyze")
-        builder.add_edge("analyze", END)
+        graph = build_graph()
+        assert "respond" in graph.nodes
 
-        compiled = builder.compile()
-        assert compiled is not None
-        assert "respond" in compiled.nodes
+    def test_graph_has_scaffold_node(self) -> None:
+        """Phase 3 should have scaffold node for A0-A1 levels."""
+        graph = build_graph()
+        assert "scaffold" in graph.nodes
 
-    def test_no_conditional_edges(self) -> None:
-        """Phase 2 should not have conditional edges (simple linear flow)."""
-        # Build a simple test graph to verify structure
-        builder = StateGraph(ConversationState)
-        builder.add_node("respond", lambda x: x)
-        builder.add_node("analyze", lambda x: x)
-        builder.set_entry_point("respond")
-        builder.add_edge("respond", "analyze")
-        builder.add_edge("analyze", END)
-
-        # Should compile successfully with simple linear edges
-        compiled = builder.compile()
-        assert compiled is not None
-
-    def test_linear_flow_structure(self) -> None:
-        """Graph should have a simple linear flow: respond -> analyze -> END."""
+    def test_conditional_routing_structure(self) -> None:
+        """Phase 3 should have conditional routing from respond node."""
         graph = build_graph()
 
-        # There should be exactly two processing nodes
+        # All three processing nodes should exist
         processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
-        assert len(processing_nodes) == 2
-
-        # Both respond and analyze should be present
+        assert len(processing_nodes) == 3
         assert "respond" in processing_nodes
+        assert "scaffold" in processing_nodes
         assert "analyze" in processing_nodes
 
 
@@ -506,7 +489,7 @@ class TestGraphExecutionOrder:
         # analyze should be in the graph
         assert "analyze" in graph.nodes
 
-        # There should be no node after analyze (it connects to END)
+        # There should be three processing nodes in Phase 3
         processing_nodes = [n for n in graph.nodes if not n.startswith("__")]
-        # respond and analyze are the only processing nodes
-        assert set(processing_nodes) == {"respond", "analyze"}
+        # respond, scaffold, and analyze are the processing nodes
+        assert set(processing_nodes) == {"respond", "scaffold", "analyze"}

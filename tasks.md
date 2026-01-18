@@ -4,8 +4,9 @@
 
 ## Table of Contents
 - [Project Overview](#project-overview)
-- [Current Work](#current-work)
+- [Current State](#current-state)
 - [Completed Phases](#completed-phases)
+- [Up Next](#up-next)
 - [Session Logs](#session-logs)
 - [Notes for Future Agents](#notes-for-future-agents)
 
@@ -15,371 +16,193 @@
 
 **HablaAI**: AI language tutor taking learners from A0 (absolute beginner) to B1 (intermediate).
 
-**Tech Stack**: FastAPI + HTMX + LangGraph + Claude API + SQLite
+**Tech Stack**: FastAPI + HTMX + LangGraph + Claude API
 
 **Learning Goal**: Build proficiency with LangGraph (state management, routing, checkpointing)
 
 **Key Documents**:
 - `docs/product.md` - Product specification
-- `docs/architecture.md` - Technical architecture with LangGraph learning progression
+- `docs/architecture.md` - Technical architecture
+- `docs/design/` - Phase-by-phase design documents
 
 ---
 
-## Current Work
+## Current State
 
-### Active Tasks
+**Branch**: `feature/phase3-scaffold-node`
+**Phase**: Phase 3 Complete
+**Test Coverage**: 641+ tests, 98% coverage
 
-| Task | Status | Notes |
-|------|--------|-------|
-| Phase 1 complete with tests | ✅ | 227 pytest tests, E2E validated |
-| UI modernization | ✅ | 3 themes (dark/light/ocean), optimistic UI, German language support |
-| Phase 2 LangGraph: analyze node | ✅ | Multi-node graph, grammar feedback |
-| Test coverage upgrade | ✅ | 641 tests, 98% coverage (was 37%) |
+### What's Working
 
-### Up Next - Priority Tasks
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Scaffolded Conversation | ✅ | Chat with AI that adapts to level |
+| 4 Proficiency Levels | ✅ | A0, A1, A2, B1 with distinct behavior |
+| 3 Languages | ✅ | Spanish, German, French |
+| Grammar Feedback | ✅ | Gentle corrections with expandable tips |
+| Word Banks & Hints | ✅ | Contextual help for A0-A1 learners |
+| Sentence Starters | ✅ | Partial sentences to get beginners going |
+| Conditional Routing | ✅ | A0-A1 → scaffold, A2-B1 → skip |
+| 3 Themes | ✅ | Dark, Light, Ocean |
+| Mobile-First UI | ✅ | Works on all devices |
 
-#### 🔴 Critical (Immediate)
+### LangGraph Flow
 
-| Task | Status | Priority | Notes |
-|------|--------|----------|-------|
-| Create src/ directory structure | ✅ | 🔴 | Completed 2025-01-16 |
-| Phase 1 LangGraph: minimal respond node | ✅ | 🔴 | StateGraph, respond node working |
-| Basic FastAPI app with HTMX | ✅ | 🔴 | Chat UI functional |
-
-#### 🟠 High Priority (Week 1)
-
-| Task | Status | Priority | Notes |
-|------|--------|----------|-------|
-| Phase 2 LangGraph: add analyze node | ✅ | 🟠 | Multi-node graph with respond → analyze → END |
-| Level selection (A0/A1/A2/B1) | ✅ | 🟠 | Dropdown in UI, passed to graph |
-| Grammar feedback display | ✅ | 🟠 | Collapsible feedback with severity colors |
-
-#### 🟡 Medium Priority (Week 2)
-
-| Task | Status | Priority | Notes |
-|------|--------|----------|-------|
-| Phase 3 LangGraph: scaffold node | ⏳ | 🟡 | Learning: conditional routing |
-| Word bank UI for A0-A1 | ⏳ | 🟡 | Scaffolding feature |
-| Phase 4 LangGraph: checkpointing | ⏳ | 🟡 | Learning: persistence |
-| Vocabulary tracking | ⏳ | 🟡 | Save words learned |
-
-#### 🟢 Low Priority (Week 3+)
-
-| Task | Status | Priority | Notes |
-|------|--------|----------|-------|
-| Micro-lessons (3-5 for A0-A1) | ⏳ | 🟢 | 2-3 min lessons |
-| Progress visualization | ⏳ | 🟢 | Words learned, sessions |
-| German language support | ✅ | 🟢 | Language selector with 🇪🇸/🇩🇪 |
-| Mobile responsiveness | ⏳ | 🟢 | Polish phase |
+```
+START → respond → [needs_scaffold?]
+                    ├── A0/A1 → scaffold → analyze → END
+                    └── A2/B1 → analyze → END
+```
 
 ---
 
 ## Completed Phases
 
-### Phase 0: Documentation & Planning ✅
+### Phase 0: Project Setup ✅
+- Project scaffolding with uv package manager
+- FastAPI + HTMX + Tailwind CSS stack
+- Pre-commit hooks, CI/CD pipeline
+- [Design Doc](docs/design/phase0-project-setup.md)
+
+### Phase 1: Basic Chat ✅
+- LangGraph StateGraph with respond node
+- Level-adaptive AI responses (A0-B1)
+- HTMX chat UI with themes
+- [Design Doc](docs/design/phase1-basic-chat.md)
+
+### Phase 2: Grammar Feedback ✅
+- Analyze node for grammar detection
+- "Gentle nudge" correction pattern
+- Collapsible feedback UI with severity colors
+- [Design Doc](docs/design/phase2-grammar-feedback.md)
+
+### Phase 3: Scaffolding ✅
+- Scaffold node with word banks, hints, sentence starters
+- Conditional routing based on learner level
+- A0: auto-expanded, A1: collapsed, A2-B1: skipped
+- Click-to-insert word bank functionality
+- [Design Doc](docs/design/phase3-scaffold-node.md)
+
+---
+
+## Up Next
+
+### Phase 4: Persistence (Priority: 🟠 High)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Initial product spec | ✅ | `docs/product.md` |
-| Initial architecture | ✅ | `docs/architecture.md` |
-| Rework for A0→B1 focus | ✅ | Complete beginners as target |
-| Add LangGraph learning progression | ✅ | 6-phase incremental approach |
+| LangGraph checkpointing | ⏳ | Learning: SqliteSaver, thread IDs |
+| Conversation history | ⏳ | Resume previous conversations |
+| Vocabulary tracking | ⏳ | Save words learned across sessions |
+| User sessions | ⏳ | Multiple users/threads |
+
+### Phase 5: Micro-lessons (Priority: 🟡 Medium)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Lesson data model | ⏳ | Structure for 2-3 min lessons |
+| 5-10 A0-A1 lessons | ⏳ | Introductions, food, daily routine |
+| Lesson UI | ⏳ | Step-through with practice |
+| Lesson → conversation handoff | ⏳ | Use learned patterns in chat |
+
+### Phase 6: Progress Tracking (Priority: 🟢 Low)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Words learned display | ⏳ | Vocabulary list with categories |
+| Patterns mastered | ⏳ | Grammar patterns used correctly |
+| Conversation milestones | ⏳ | "First 5-min conversation!" |
+| Progress visualization | ⏳ | Charts/graphs |
 
 ---
 
 ## Session Logs
 
-### Session Log: 2025-01-14
+### Session Log: 2025-01-18 (Phase 3 Implementation)
 
-**Session Focus**: Project setup - pre-commit, GitHub Actions, task management
+**Session Focus**: Phase 3 LangGraph - Scaffold node with conditional routing
 
-**Key Decisions**:
-1. Using `uv` for Python package management
-2. Ruff for linting + formatting (replaces Black + isort)
-3. MyPy strict mode for type checking
-4. tasks.md as single source of truth for project state
-
-**Branch**: `init`
-**Commit**: `edc8152` (docs rework)
-
-**Artifacts Created**:
-- `pyproject.toml` - Project config with all dependencies
-- `.pre-commit-config.yaml` - Pre-commit hooks (ruff, mypy, security)
-- `.github/workflows/ci.yml` - CI pipeline (lint, test, security, build)
-- `Makefile` - Dev commands
-- `.env.example` - Environment template
-- `.gitignore` - Standard ignores
-- `tasks.md` - This file
-
-**Quality Gates**:
-- Pre-commit hooks configured
-- CI pipeline ready (will work once src/ exists)
-
-**Next Steps**:
-- [x] Create src/ directory structure
-- [x] Implement Phase 1 LangGraph (minimal graph)
-- [x] Basic FastAPI + HTMX chat UI
-
----
-
-### Session Log: 2025-01-16
-
-**Session Focus**: Phase 1 Implementation - LangGraph + FastAPI + HTMX
-
-**Approach**: Used `.agentic-framework` parallel coordination pattern with 3 subagents
-
-**Key Decisions**:
-1. Parallel agent pattern for independent components
-2. claude-sonnet-4-20250514 as LLM model
-3. HTMX for server-driven UI with minimal JS
-4. Dark theme by default (language learning often evening activity)
-5. Level selector in UI (A0/A1/A2/B1) passed to graph
-
-**Branch**: `init`
-
-**Artifacts Created**:
-- `src/agent/state.py` - ConversationState TypedDict
-- `src/agent/prompts.py` - Level-specific system prompts (A0-B1)
-- `src/agent/nodes/respond.py` - Respond node calling Claude
-- `src/agent/graph.py` - Minimal StateGraph: START → respond → END
-- `src/api/config.py` - Pydantic Settings with env loading
-- `src/api/dependencies.py` - FastAPI DI for templates
-- `src/api/main.py` - FastAPI app with lifespan, static files
-- `src/api/routes/chat.py` - Chat endpoints with LangGraph integration
-- `src/templates/base.html` - Base template with Tailwind, HTMX, Alpine.js
-- `src/templates/chat.html` - Chat UI with level selector
-- `src/templates/partials/message.html` - Message bubble partial
-- `src/templates/partials/message_pair.html` - User + AI message pair
-- `src/static/css/input.css` - Tailwind input with custom components
-- `src/static/js/app.js` - Auto-scroll, focus management, HTMX handlers
-
-**Quality Gates**:
-- ✅ Ruff linting: All checks passed
-- ✅ MyPy type checking: No issues in 15 files
-- ✅ App boots successfully
-- ✅ Health endpoint returns 200
-- ✅ Chat page renders correctly
-- ⏳ E2E test with valid API key (pending user test)
-
-**LangGraph Learning**:
-- Learned: StateGraph, TypedDict with Annotated, add_messages reducer
-- Learned: Single node graph structure (entry point → node → END)
-- Learned: Async node functions returning state updates
-
-**Next Steps**:
-- [x] Test E2E with valid ANTHROPIC_API_KEY
-- [ ] Phase 2: Add analyze node for grammar feedback
-- [ ] Add conversation persistence (checkpointing)
-
----
-
-### Session Log: 2025-01-16 (E2E Testing)
-
-**Session Focus**: End-to-end testing with Playwright MCP
-
-**Approach**: Used Playwright MCP server for browser automation testing
-
-**Tests Executed**:
-1. ✅ Chat page initial load
-2. ✅ Level selector dropdown functionality
-3. ✅ A0 (Complete Beginner) chat flow - English-heavy response
-4. ✅ A1 (Beginner) chat flow - 50/50 Spanish/English mix
-5. ✅ B1 (Intermediate) chat flow - 95%+ Spanish response
-
-**Key Observations**:
-- Level-specific prompts working correctly
-- HTMX form submission and response swapping functional
-- Dark theme UI renders properly
-- Response times acceptable for Claude API calls
-
-**Artifacts Created**:
-- `docs/playwright-e2e.md` - E2E test documentation
-- `docs/screenshots/chat-initial.png` - Initial page screenshot
-- `docs/screenshots/chat-a0-response.png` - A0 level response
-- `docs/screenshots/chat-a1-response.png` - A1 level response
-- `docs/screenshots/chat-b1-response.png` - B1 level response
-
-**Bug Fixed**:
-- API key not loading in respond node → Fixed by importing from config.get_settings()
-
-**Next Steps**:
-- [x] Write comprehensive pytest test suite
-- [ ] Create PR for feature/phase1-chat-ui → main
-
----
-
-### Session Log: 2025-01-16 (Test Suite & Commit)
-
-**Session Focus**: Test suite implementation and commit
-
-**Approach**: Used subagents for parallel test file creation
-
-**What Was Done**:
-1. Created 229 pytest tests via subagents
-2. Fixed pre-commit hook issues (ruff, mypy, detect-secrets)
-3. Committed to feature/phase1-chat-ui branch
-4. Pushed to origin
-
-**Test Coverage**:
-- `tests/test_agent_state.py` - ConversationState TypedDict tests
-- `tests/test_agent_prompts.py` - Prompt generation tests
-- `tests/test_agent_graph.py` - Graph structure tests
-- `tests/test_api_config.py` - Settings and config tests
-- `tests/test_api_routes.py` - FastAPI route tests
-
-**Branch**: `feature/phase1-chat-ui`
-**Commit**: `4e218a7`
-
-**Quality Gates**:
-- ✅ Ruff linting: All checks passed
-- ✅ MyPy type checking: No issues
-- ✅ 229 tests passing
-- ✅ Pre-commit hooks passing
-- ✅ Pushed to origin
-
-**Next Steps**:
-- [ ] Create PR for feature/phase1-chat-ui → main
-- [ ] Phase 2: Add analyze node for grammar feedback
-- [ ] Add conversation persistence (checkpointing)
-
----
-
-### Session Log: 2025-01-17
-
-**Session Focus**: UI Modernization and German Language Support
-
-**What Was Done**:
-1. Modernized UI with 3 theme system (dark/light/ocean)
-2. Added optimistic UI for instant message feedback
-3. Added German language support with language selector
-4. Improved light theme (warm sand with sage green accents)
-5. Improved ocean theme (midnight waters with golden sand accents)
-6. Updated all documentation
-
-**Key Changes**:
-- `src/templates/base.html` - CSS variable theme system with 3 themes
-- `src/templates/chat.html` - Language selector, theme toggle, dynamic content
-- `src/templates/partials/message_pair.html` - AI-only response (user shown via JS)
-- `src/static/js/app.js` - Optimistic UI, escapeHtml, HTMX handlers
-- Updated tests to reflect new UI patterns
-
-**Theme Details**:
-- **Dark**: Warm charcoal with amber accents (#f59e0b)
-- **Light**: Warm sand with sage green accents (#5d7c5d)
-- **Ocean**: Midnight blue with golden sand accents (#d4a55a)
-
-**Branch**: `feature/phase1-chat-ui`
-
-**Quality Gates**:
-- ✅ 227 tests passing
-- ✅ Pre-commit hooks passing
-- ✅ Pushed to origin
-
-**Next Steps**:
-- [ ] Create PR for feature/phase1-chat-ui → main
-- [x] Phase 2: Add analyze node for grammar feedback
-
----
-
-### Session Log: 2025-01-17 (Phase 2 Implementation)
-
-**Session Focus**: Phase 2 LangGraph - Multi-node graph with analyze node
-
-**Approach**: Used `.agentic-framework` parallel coordination pattern with 3 subagents:
-- Agent A: State extension + analyze node (backend)
-- Agent B: Templates + UI for feedback display (frontend)
-- Agent C: Tests for analyze node (quality)
+**Approach**: Used parallel subagents for implementation:
+- Agent A: Scaffold node implementation (backend)
+- Agent B: Scaffold UI templates (frontend)
+- Agent C: Scaffold node tests (quality)
 
 **Key Changes**:
 
 1. **Extended ConversationState** (`src/agent/state.py`):
-   - Added `GrammarFeedback` TypedDict (original, correction, explanation, severity)
-   - Added `VocabWord` TypedDict (word, translation, part_of_speech)
-   - Extended ConversationState with `grammar_feedback` and `new_vocabulary` fields
+   - Added `ScaffoldingConfig` Pydantic model
+   - Fields: enabled, word_bank, hint_text, sentence_starter, auto_expand
 
-2. **Created analyze node** (`src/agent/nodes/analyze.py`):
-   - Analyzes user's last message for grammar errors
-   - Level-aware feedback (A0 = very basic, B1 = advanced)
-   - Returns structured JSON parsed into typed structures
-   - Handles edge cases (empty messages, parse errors)
+2. **Created routing logic** (`src/agent/routing.py`):
+   - `needs_scaffold()` function for conditional routing
+   - Returns True for A0/A1, False for A2/B1
 
-3. **Updated graph** (`src/agent/graph.py`):
-   - Changed from `START → respond → END`
-   - To `START → respond → analyze → END`
+3. **Created scaffold node** (`src/agent/nodes/scaffold.py`):
+   - Generates word banks based on AI's last response
+   - Level-aware: A0 gets translations, A1 gets plain words
+   - auto_expand: True for A0, False for A1
 
-4. **Created feedback UI** (`src/templates/partials/grammar_feedback.html`):
-   - Collapsible grammar feedback section
-   - Color-coded by severity (minor=sky, moderate=amber, significant=rose)
-   - Alpine.js for toggle with smooth animations
-   - Accessible with proper ARIA labels
+4. **Updated graph** (`src/agent/graph.py`):
+   - Changed from linear to conditional routing
+   - `respond → [conditional] → scaffold OR analyze → END`
 
-5. **Updated chat route** (`src/api/routes/chat.py`):
-   - Extracts grammar_feedback and new_vocabulary from graph result
-   - Passes to template with graceful fallbacks
+5. **Created scaffold UI** (`src/templates/partials/scaffold.html`):
+   - Collapsible section with Alpine.js
+   - Word bank with clickable chips
+   - Click-to-insert functionality
+   - Hint and sentence starter display
+
+6. **Added click-to-insert** (`src/static/js/app.js`):
+   - `insertWord()` function strips translations
+   - Inserts word at cursor position in input
 
 **LangGraph Learning**:
-- Learned: Chaining nodes sequentially (respond → analyze)
-- Learned: State passing between nodes
-- Learned: Extending state with new fields that accumulate
-
-**Branch**: `feature/phase2-analyze-node`
+- Learned: Conditional edges with routing functions
+- Learned: `add_conditional_edges()` API
+- Learned: Routing functions return node names
 
 **Test Coverage**:
-- 328 tests for Phase 2 (later upgraded to 641 tests with 98% coverage)
-- `tests/test_analyze_node.py` - 51 tests for analyze node
-- Updated `tests/test_agent_state.py` - GrammarFeedback/VocabWord tests
-- Updated `tests/test_agent_graph.py` - 2-node graph structure tests
+- 16 new tests in `tests/test_scaffold_node.py`
+- 10 new tests in `tests/test_routing.py`
+- Updated `tests/test_agent_graph.py` for Phase 3 structure
+
+**E2E Testing**:
+- ✅ A0 scaffold auto-expanded with translated word bank
+- ✅ A1 scaffold collapsed, expandable on click
+- ✅ B1 no scaffold (conditional routing working)
+- ✅ Word bank click-to-insert functionality
+
+**Documentation**:
+- Created `docs/design/phase3-scaffold-node.md`
+- Created `docs/design/phase0-project-setup.md`
+- Created `docs/design/phase1-basic-chat.md`
+- Created `docs/design/phase2-grammar-feedback.md`
+- Updated `docs/playwright-e2e.md` with scaffold tests
+- Updated `docs/product.md` with current state
+- Updated `docs/api.md` with ScaffoldingConfig
+- Updated `docs/testing.md` with Phase 3 coverage
+- Created `CHANGELOG.md`
+- Rewrote `README.md` with product focus and ocean theme screenshots
+
+**Branch**: `feature/phase3-scaffold-node`
+
+**Commits**:
+- `56702f2` - feat: implement Phase 3 scaffold node with conditional routing
+- `56192d3` - docs: update all documentation for Phase 3
+- `84b0bf0` - docs: rewrite README with product focus and ocean theme screenshots
+- `b910cfc` - docs: fix language count to 3 (Spanish, German, French)
+- `4c22832` - docs: add design documents for Phase 0, 1, and 2
 
 **Quality Gates**:
-- ✅ Ruff linting: All checks passed
-- ✅ MyPy type checking: No issues in 25 files
-- ✅ 328 tests passing
-- ✅ All quality checks passing
+- ✅ All tests passing
+- ✅ Pre-commit hooks passing
+- ✅ E2E tests documented
+- ✅ All documentation updated
 
 **Next Steps**:
-- [x] Test E2E with real API key to verify grammar feedback
-- [ ] Phase 3: Add scaffold node with conditional routing
-- [ ] Create PR for feature/phase2-analyze-node → main
-
----
-
-### Session Log: 2025-01-17 (Phase 2 E2E Testing)
-
-**Session Focus**: End-to-end testing of Phase 2 grammar feedback feature
-
-**Approach**: Used Playwright MCP server for browser automation testing
-
-**Tests Executed**:
-1. ✅ Chat page loads correctly
-2. ✅ Sent message with grammar error: "Yo soy muy bueno hoy. Me gusta el agua frio."
-3. ✅ AI responded with conversational correction
-4. ✅ Grammar feedback section appeared with "1 grammar tip"
-5. ✅ Expanded feedback showed: "el agua frio → el agua fría"
-6. ✅ Explanation about feminine noun agreement displayed correctly
-
-**Key Observations**:
-- Analyze node correctly identified gender agreement error
-- Feedback UI renders collapsed by default
-- Severity color-coding works (minor = sky blue)
-- Alpine.js toggle animation is smooth
-- ARIA labels present for accessibility
-
-**Fixes Applied**:
-- Removed unused `type: ignore` comments from respond.py and analyze.py
-- Added mypy override for src/db/ module (future phase stub files)
-- Updated pyproject.toml with new mypy configuration
-
-**Documentation Updated**:
-- `docs/playwright-e2e.md` - Added Grammar Feedback test flow
-- `tasks.md` - This session log
-
-**Branch**: `feature/phase2-analyze-node`
-
-**Quality Gates**:
-- ✅ E2E testing passed
-- ✅ Grammar feedback working correctly
-- ✅ UI collapsible behavior verified
-- ✅ All documentation updated
+- [ ] Create PR for feature/phase3-scaffold-node → main
+- [ ] Phase 4: Persistence with LangGraph checkpointing
 
 ---
 
@@ -387,66 +210,70 @@
 
 **Session Focus**: Comprehensive test coverage upgrade from 37% to 98%
 
-**Approach**: Used 5 parallel subagents to create comprehensive test suites for all modules
-
 **What Was Done**:
 1. Created comprehensive test suites across all modules
-2. Fixed analyze.py edge cases (malformed JSON handling, AttributeError)
-3. Updated pyproject.toml with greenlet dependency and SIM117 ruff exception
-4. Committed to `feat/test-coverage-upgrade` branch
-5. Pushed to origin for PR
-
-**New Test Files Created**:
-- `tests/test_agent_nodes.py` - Tests for respond, feedback, scaffold nodes
-- `tests/test_database.py` - Tests for models, repository, seed modules
-- `tests/test_lessons_progress_routes.py` - API route tests with template mocking
-- `tests/test_services.py` - Tests for levels and vocabulary services
-
-**Test Files Modified**:
-- `tests/test_analyze_node.py` - Extended coverage for analysis parsing edge cases
+2. Fixed analyze.py edge cases
+3. Committed to `feat/test-coverage-upgrade` branch
 
 **Coverage Metrics**:
 - Before: 37% coverage
 - After: 98% coverage
 - Tests: 328 → 641 (313 new tests)
 
-**Key Fixes**:
-1. **analyze.py**: Added isinstance checks for malformed JSON entries
-2. **analyze.py**: Added AttributeError to exception handling
-3. **pyproject.toml**: Added greenlet to dev dependencies for async SQLAlchemy testing
-4. **pyproject.toml**: Added SIM117 to ruff per-file-ignores for tests (nested with statements for mocking)
+---
 
-**Branch**: `feat/test-coverage-upgrade`
-**Commit**: `985e952`
+### Session Log: 2025-01-17 (Phase 2 Implementation)
 
-**Quality Gates**:
-- ✅ Ruff linting: All checks passed
-- ✅ MyPy type checking: No issues
-- ✅ 641 tests passing
-- ✅ 98% coverage (target was 85%)
-- ✅ Pre-commit hooks passing
-- ✅ Pushed to origin
+**Session Focus**: Phase 2 LangGraph - Multi-node graph with analyze node
 
-**Next Steps**:
-- [ ] Create PR for feat/test-coverage-upgrade → main
-- [ ] Phase 3: Add scaffold node with conditional routing
+**Key Changes**:
+1. Extended ConversationState with grammar_feedback and new_vocabulary
+2. Created analyze node for grammar detection
+3. Updated graph: respond → analyze → END
+4. Created collapsible feedback UI
+
+**LangGraph Learning**:
+- Learned: Chaining nodes sequentially
+- Learned: State passing between nodes
+
+---
+
+### Session Log: 2025-01-17 (UI Modernization)
+
+**Session Focus**: UI Modernization and German Language Support
+
+**What Was Done**:
+1. 3 theme system (dark/light/ocean)
+2. Optimistic UI for instant feedback
+3. German language support
+4. Language selector with flags
+
+---
+
+### Session Log: 2025-01-16 (Phase 1 Implementation)
+
+**Session Focus**: Phase 1 Implementation - LangGraph + FastAPI + HTMX
+
+**What Was Done**:
+1. Created LangGraph StateGraph with respond node
+2. Built HTMX chat UI with level selector
+3. 229 tests passing
 
 ---
 
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 2 Complete with Analyze Node (641 pytest tests, 98% coverage)
-- **Graph Structure**: respond → analyze → END
-- **UI Features**: 3 themes, German support, optimistic UI, collapsible grammar feedback
-- **Test Coverage**: Unit tests in `tests/`, E2E docs in `docs/playwright-e2e.md`
-- **Branch**: `feat/test-coverage-upgrade`
-- **CI/CD**: GitHub Actions configured
-- **Pre-commit**: Hooks defined, need `make install-hooks` to activate
+- **Current Phase**: Phase 3 Complete (Scaffold Node with Conditional Routing)
+- **Graph Structure**: respond → [conditional] → scaffold OR analyze → END
+- **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding
+- **Test Coverage**: 641+ tests, 98% coverage
+- **Branch**: `feature/phase3-scaffold-node`
 
 ### Key Files to Review
-- `docs/product.md` - What we're building (A0→B1 language tutor)
-- `docs/architecture.md` - How we're building it (LangGraph progression)
+- `docs/product.md` - What we're building
+- `docs/architecture.md` - How we're building it
+- `docs/design/` - Phase-by-phase design documents
 - `tasks.md` - Current state (this file)
 
 ### LangGraph Learning Progression
@@ -454,37 +281,25 @@
 | Phase | Status | Concept |
 |-------|--------|---------|
 | 1. Minimal Graph | ✅ | StateGraph, TypedDict, single node |
-| 2. Multi-node | ✅ | Sequential edges, state passing between nodes |
-| 3. Conditional Routing | ⏳ | Branching logic, routing functions |
+| 2. Multi-node | ✅ | Sequential edges, state passing |
+| 3. Conditional Routing | ✅ | Branching logic, routing functions |
 | 4. Checkpointing | ⏳ | SqliteSaver, thread IDs |
 | 5. Complex State | ⏳ | Nested TypedDict, multiple fields |
-| 6. Subgraphs | ⏳ | Graph composition (future) |
+| 6. Subgraphs | ⏳ | Graph composition |
 
 ### Quick Commands
 
 ```bash
-# Install dependencies
-make install
-
-# Install pre-commit hooks
-make install-hooks
-
-# Run dev server
-make dev
-
-# Run tests
-make test
-
-# Run all checks
-make check
+make install        # Install dependencies
+make install-hooks  # Install pre-commit hooks
+make dev            # Run dev server
+make test           # Run tests
+make check          # Run all checks (lint + typecheck)
 ```
 
 ### Environment Setup
 
 ```bash
-# Copy env template
 cp .env.example .env
-
-# Add your Anthropic API key
 # Edit .env: ANTHROPIC_API_KEY=your_key_here
 ```
