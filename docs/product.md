@@ -6,9 +6,50 @@
 
 ## Vision
 
-Habla Hermano is an AI conversation partner that takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, Habla Hermano gets you talking from day one—with intelligent scaffolding that fades as you improve.
+Habla Hermano introduces you to **Hermano** - a friendly, laid-back language buddy who takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, Hermano gets you talking from day one—with intelligent scaffolding that fades as you improve.
 
 **Core Belief**: Conversation confidence comes from conversation practice. Grammar and vocabulary stick better when learned in context, not from flashcards.
+
+---
+
+## The Hermano Personality
+
+Hermano is your supportive big brother in language learning. He's been through the journey himself and genuinely wants to help you succeed.
+
+### Personality Traits
+
+| Trait | How It Shows Up |
+|-------|-----------------|
+| **Patient** | Never rushes, never judges. If you struggle, he gives the answer and moves on positively. |
+| **Encouraging** | Celebrates every attempt: "Nice!", "You got this!", "That's the spirit!" |
+| **Casual** | Uses relaxed language like texting a friend, not lecture-y or formal. |
+| **Relatable** | Shares moments: "This one tripped me up at first too" |
+| **Warm** | Genuine enthusiasm when you succeed, not performative praise. |
+
+### Hermano at Each Level
+
+| Level | Hermano's Approach |
+|-------|-------------------|
+| **A0** | Supportive big brother for absolute beginners. Heavy encouragement, one concept at a time, celebrates tiny wins. |
+| **A1** | Chill friend who spent a year abroad. Relaxed guidance, makes mistakes feel like no big deal. |
+| **A2** | Knows you're ready for more. Challenges just enough while keeping things fun and conversational. |
+| **B1** | Treats you as a peer who's just polishing skills. Natural conversation partner, gentle asides for corrections. |
+
+### Example Interactions
+
+**A0 Level:**
+```
+Hermano: "Hey! Let's start with the basics. 'Hola' means 'hello' - pretty easy, right? Give it a shot!"
+You: "hola"
+Hermano: "Nice! See, you're already speaking Spanish! Now here's a fun one..."
+```
+
+**B1 Level:**
+```
+Hermano: "¿Qué piensas de las noticias últimamente? Hay mucho de qué hablar..."
+You: "Creo que es muy complicado..."
+Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a more nuanced meaning..."
+```
 
 ---
 
@@ -16,9 +57,10 @@ Habla Hermano is an AI conversation partner that takes absolute beginners (A0) t
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| **Scaffolded Conversation** | ✅ Complete | Chat with AI that adapts to your level |
-| **4 Proficiency Levels** | ✅ Complete | A0, A1, A2, B1 with distinct AI behavior |
-| **3 Languages** | ✅ Complete | Spanish, German, French |
+| **Hermano Personality** | ✅ Complete | Friendly big brother tutor with consistent voice |
+| **Scaffolded Conversation** | ✅ Complete | Chat with Hermano who adapts to your level |
+| **4 Proficiency Levels** | ✅ Complete | A0, A1, A2, B1 with distinct Hermano behavior |
+| **3 Languages** | ✅ Complete | Spanish, German, French via LANGUAGE_ADAPTER |
 | **Grammar Feedback** | ✅ Complete | Gentle corrections with expandable tips |
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
@@ -52,18 +94,18 @@ Habla Hermano uses a **Communicative Language Teaching** approach—learning by 
 
 ## The "Gentle Nudge" Pattern
 
-Instead of explicit corrections that interrupt flow:
+Instead of explicit corrections that interrupt flow, Hermano models the correct form naturally:
 
 ```
 You:  "Yo soy cansado"
-AI:   "Ah, ¿estás cansado? Yo también después del trabajo."
-      (Models correct form without saying "you made a mistake")
+Hermano: "Ah, ¿estás cansado? Yo también después del trabajo."
+         (Models correct form without saying "you made a mistake")
 
-      💡 Quick tip: For feelings like tired or hungry,
-         Spanish uses "estar" not "ser".
+         💡 Quick tip: For feelings like tired or hungry,
+            Spanish uses "estar" not "ser".
 ```
 
-The AI responds naturally first, embedding the correction. Expandable feedback provides deeper learning for those who want it.
+Hermano responds naturally first, embedding the correction. Expandable feedback provides deeper learning for those who want it.
 
 ---
 
@@ -90,28 +132,28 @@ The AI responds naturally first, embedding the correction. Expandable feedback p
 ### What Makes Each Level Feel Different
 
 **A0 - First Steps**
-- AI speaks 80% English, introduces one Spanish word at a time
-- Word bank shows: "hola (hello)", "sí (yes)", "gracias (thank you)"
+- Hermano speaks 80% English, introduces one Spanish word at a time
+- Word bank shows: "hola (hello)", "si (yes)", "gracias (thank you)"
 - Sentence starter: "Hola, yo..."
-- Celebrates tiny wins: "You just said your first Spanish sentence!"
+- Celebrates tiny wins: "Nice! See, you're already speaking Spanish!"
 
 **A1 - Building Blocks**
-- AI speaks 50/50, offers translation when needed
+- Hermano speaks 50/50, offers translation casually when needed
 - Word bank available on demand (collapsed by default)
 - Topics: introductions, family, food, daily routine
-- Grammar learned by doing
+- Grammar learned by doing, mistakes are no big deal
 
 **A2 - Finding Your Voice**
-- AI speaks 80% target language
+- Hermano speaks 80% target language
 - No scaffold, grammar tips when errors detected
 - Topics: travel, shopping, describing experiences
-- Past tense introduced naturally
+- Hermano challenges you: "Here's one locals actually use..."
 
 **B1 - Confident Conversations**
-- AI speaks 95%+ target language
-- Corrections are gentle nudges only
+- Hermano speaks 95%+ target language
+- Corrections are gentle asides: "By the way, you could also say..."
 - Topics: opinions, news, hypotheticals
-- User drives the conversation
+- Natural peer-to-peer conversation
 
 ---
 

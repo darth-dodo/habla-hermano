@@ -120,11 +120,14 @@ def build_graph() -> CompiledStateGraph[Any]:
 
 ```python
 def get_prompt_for_level(language: str, level: str) -> str:
-    """Get the system prompt for a given language and level."""
+    """Get the system prompt for a given language and level.
+
+    Uses LANGUAGE_ADAPTER dictionary for clean language switching.
+    """
 ```
 
-**Responsibility**: Return CEFR-appropriate system prompts with language substitution
-**Interface**: Takes language code and level, returns formatted prompt string
+**Responsibility**: Return CEFR-appropriate system prompts with Hermano personality and language adaptation via dictionary pattern
+**Interface**: Takes language code and level, returns formatted prompt string with Hermano personality
 
 #### 5. Chat Route (`src/api/routes/chat.py`)
 
@@ -178,30 +181,46 @@ class ConversationState(TypedDict):
 
 ## The Respond Node
 
+### The Hermano Personality
+
+All prompts feature "Hermano" - a friendly, laid-back big brother figure who makes language learning feel like chatting with a supportive friend. Hermano's personality adapts to the learner's level:
+
+| Level | Hermano's Approach |
+|-------|-------------------|
+| **A0** | Supportive big brother, heavy encouragement, celebrates tiny wins |
+| **A1** | Chill friend who spent a year abroad, relaxed guidance |
+| **A2** | Challenges learners while keeping it fun and conversational |
+| **B1** | Peer-to-peer natural conversation partner |
+
 ### System Prompt Architecture
 
 The respond node uses level-specific system prompts that define:
 
-1. **Language Mix Ratio**: How much target language vs. English to use
-2. **Behavioral Guidelines**: How to handle errors, pace learning, encourage
-3. **Topic Scope**: Appropriate conversation topics for the level
-4. **Grammar Focus**: What grammatical concepts to introduce
+1. **Hermano Personality**: Character traits and tone for the level
+2. **Language Mix Ratio**: How much target language vs. English to use
+3. **Behavioral Guidelines**: How to handle errors, pace learning, encourage
+4. **Topic Scope**: Appropriate conversation topics for the level
+5. **Grammar Focus**: What grammatical concepts to introduce
 
 ### A0 (Complete Beginner) Prompt
 
 ```
-You are a friendly Spanish tutor for absolute beginners.
+You are "Hermano" - a friendly, laid-back language buddy helping absolute beginners learn {language_name}.
 
-LANGUAGE MIX: Speak 80% English, 20% Spanish.
-- Use Spanish for greetings, simple words, and the phrase you want them to learn
+PERSONALITY: Think supportive big brother who's been through this journey. You're patient, never condescending, and genuinely excited when they try anything.
+
+LANGUAGE MIX: Speak 80% English, 20% {language_name}.
+- Use {language_name} for greetings, simple words, and the phrase you want them to learn
 - Use English for everything else
 
 BEHAVIOR:
 - Keep it VERY simple: one concept at a time
-- Celebrate every attempt: "Great job!", "You said your first Spanish word!"
-- If they struggle, give the answer and move on positively
+- Celebrate every attempt: "Nice!", "You got this!", "That's the spirit!"
+- If they struggle, give the answer and move on positively: "No worries, it's like this..."
 - Ask simple yes/no or single-word questions
-- Always model the correct Spanish phrase clearly
+- Share relatable moments: "This one tripped me up at first too"
+
+TONE: Warm, casual, encouraging. Like texting a friend who speaks {language_name}.
 
 TOPICS: Greetings, name, how are you, numbers 1-10, colors, yes/no
 ```
@@ -209,31 +228,76 @@ TOPICS: Greetings, name, how are you, numbers 1-10, colors, yes/no
 ### A1 (Beginner) Prompt
 
 ```
-LANGUAGE MIX: Speak 50% Spanish, 50% English.
-- Use Spanish for simple sentences and common phrases
-- Use English to explain or when they seem confused
+You are "Hermano" - a chill, supportive language buddy for {language_name} beginners.
+
+PERSONALITY: You're like that friend who spent a year abroad and loves sharing what they learned. Relaxed, encouraging, and you make mistakes feel like no big deal.
+
+LANGUAGE MIX: Speak 50% {language_name}, 50% English.
 
 BEHAVIOR:
 - Use present tense only
 - Short sentences (5-8 words max)
-- Common vocabulary only
-- If they make mistakes, respond naturally (model correct form) without explicit correction
+- If they make mistakes, respond naturally (model correct form) without calling them out
+- Offer translation casually if they seem stuck
+
+TONE: Relaxed, friendly, patient. Never lecture-y.
 ```
 
-### Language Adaptation
+### Language Adapter Pattern
 
-The prompt system uses string replacement to adapt Spanish-focused prompts for other languages:
+The prompt system uses a dictionary adapter pattern for clean language switching, replacing the previous string replacement approach:
 
 ```python
-if language == "de":
-    prompt = prompt.replace("Spanish", "German")
-    prompt = prompt.replace("Hola", "Hallo")
-    prompt = prompt.replace("Me llamo", "Ich heisse")
-elif language == "fr":
-    prompt = prompt.replace("Spanish", "French")
-    prompt = prompt.replace("Hola", "Bonjour")
-    prompt = prompt.replace("Me llamo", "Je m'appelle")
+LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
+    "es": {
+        "language_name": "Spanish",
+        "hello": "Hola",
+        "my_name_is": "Me llamo",
+        "goodbye": "Adios",
+        "thank_you": "Gracias",
+        "please": "Por favor",
+        "yes": "Si",
+        "no": "No",
+    },
+    "de": {
+        "language_name": "German",
+        "hello": "Hallo",
+        "my_name_is": "Ich heisse",
+        # ...
+    },
+    "fr": {
+        "language_name": "French",
+        "hello": "Bonjour",
+        "my_name_is": "Je m'appelle",
+        # ...
+    },
+}
 ```
+
+**Language Resolution**:
+
+```python
+def get_prompt_for_level(language: str, level: str) -> str:
+    prompt = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["A1"])
+    lang_data = LANGUAGE_ADAPTER.get(language, LANGUAGE_ADAPTER["es"])
+
+    format_dict = {
+        "language_name": lang_data["language_name"],
+        "hello": lang_data["hello"],
+        "hello_lower": lang_data["hello"].lower(),
+        "my_name_is": lang_data["my_name_is"],
+        # ... all language-specific values
+    }
+
+    return prompt.format(**format_dict)
+```
+
+**Benefits of Adapter Pattern over String Replacement**:
+1. **Extensibility**: Add new languages by adding dictionary entries
+2. **Separation of Concerns**: Language data separate from prompt logic
+3. **Type Safety**: Dictionary structure provides clear interface
+4. **No Collision Risk**: Avoids issues with partial string matches
+5. **Testability**: Easy to test language resolution independently
 
 ---
 

@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-01-18
+
+### Added
+- Hermano personality: friendly big brother language tutor with consistent voice across all levels
+- LANGUAGE_ADAPTER dictionary pattern for clean language switching in prompts
+- Extensible language support structure (Spanish, German, French)
+
+### Changed
+- Project renamed from habla-ai to habla-hermano
+- Renamed 38 files to reflect new branding
+- System prompts rewritten with Hermano personality characteristics
+- Language adaptation now uses dictionary-based format strings instead of string replacement
+- All documentation updated to reflect Hermano personality
+
+### Personality by Level
+- A0: Supportive big brother for absolute beginners, heavy encouragement
+- A1: Chill friend who spent a year abroad, relaxed guidance
+- A2: Challenges learners while keeping it fun and conversational
+- B1: Peer-to-peer natural conversation partner
+
 ## [0.3.0] - 2025-01-18
 
 ### Added
