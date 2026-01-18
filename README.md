@@ -109,14 +109,22 @@ AI:   "Ah, ¿estás cansado? Yo también después del trabajo."
          Spanish uses "estar" not "ser".
 ```
 
-### Scaffolding That Fades
+### Intelligent Scaffolding (A0-A1)
 
-| Level | Support |
-|-------|---------|
-| A0 | Word banks, sentence templates, translations everywhere |
-| A1 | Hints on tap, translation toggles |
-| A2 | Occasional hints, grammar tips contextual |
-| B1 | Minimal scaffolding, just natural conversation |
+<p align="center">
+  <img src="docs/screenshots/phase2-grammar-expanded.png" alt="Scaffolding UI" width="700"/>
+</p>
+
+Beginners get contextual help that fades as they improve:
+
+| Level | Scaffolding Behavior |
+|-------|---------------------|
+| **A0** | Auto-expanded scaffold with word banks, hints, sentence starters, and English translations |
+| **A1** | Collapsed scaffold (expandable on click), same helpful content available on demand |
+| **A2** | No scaffold - occasional grammar tips only |
+| **B1** | No scaffold - natural conversation flow |
+
+The AI uses **conditional routing** to skip scaffolding entirely for A2-B1 learners, keeping responses fast and natural.
 
 ---
 
@@ -126,7 +134,7 @@ AI:   "Ah, ¿estás cansado? Yo también después del trabajo."
 |-----------|------------|
 | **Backend** | FastAPI + Python 3.11 |
 | **Frontend** | HTMX + Jinja2 + Tailwind CSS |
-| **AI Agent** | LangGraph (StateGraph with analyze node) |
+| **AI Agent** | LangGraph (StateGraph with conditional routing) |
 | **LLM** | Claude API via langchain-anthropic |
 | **Testing** | pytest (641 tests, 98% coverage) + Playwright E2E |
 
@@ -147,11 +155,11 @@ make typecheck  # Run MyPy
 ```
 habla-ai/
 ├── src/
-│   ├── agent/          # LangGraph nodes (respond, analyze)
+│   ├── agent/          # LangGraph nodes (respond, analyze, scaffold)
 │   ├── api/            # FastAPI routes and config
 │   ├── templates/      # Jinja2 HTML templates
 │   └── static/         # CSS, JavaScript
-├── tests/              # 641 pytest tests (98% coverage)
+├── tests/              # pytest tests (98% coverage)
 └── docs/               # Product spec, architecture, screenshots
 ```
 
@@ -163,8 +171,8 @@ habla-ai/
 |-------|--------|-------|
 | 1. Basic Chat | ✅ Complete | StateGraph, respond node, HTMX UI |
 | 2. Grammar Feedback | ✅ Complete | Analyze node, collapsible feedback UI |
-| 3. Scaffolding | 🔜 Next | Word banks, sentence templates, conditional routing |
-| 4. Persistence | Planned | Conversation history, vocabulary tracking |
+| 3. Scaffolding | ✅ Complete | Conditional routing, word banks, hints, sentence starters |
+| 4. Persistence | 🔜 Next | Conversation history, vocabulary tracking |
 | 5. Micro-lessons | Planned | 2-3 min focused lessons |
 
 ---
@@ -172,7 +180,8 @@ habla-ai/
 ## Documentation
 
 - [Product Specification](docs/product.md) — Vision, pedagogy, feature details
-- [Technical Architecture](docs/architecture.md) — LangGraph design, API endpoints
+- [Technical Architecture](docs/architecture.md) — LangGraph design, implementation phases
+- [API Reference](docs/api.md) — REST endpoints, data structures, scaffolding
 - [E2E Test Results](docs/playwright-e2e.md) — Playwright test documentation
 
 ---

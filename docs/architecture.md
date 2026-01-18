@@ -10,7 +10,7 @@
 |-------|-------------|--------|
 | **Phase 1** | Minimal Graph - Basic state, single respond node | Completed |
 | **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | Completed |
-| **Phase 3** | Conditional Routing - Branching logic, scaffolding | Planned |
+| **Phase 3** | Conditional Routing - Branching logic, scaffolding | Completed |
 | **Phase 4** | Checkpointing - Persistence, conversation memory | Planned |
 | **Phase 5** | Complex State - Rich state management | Planned |
 | **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
@@ -64,15 +64,15 @@ habla-ai/
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
-│   │   ├── graph.py             # [Implemented] LangGraph: respond → analyze → END
+│   │   ├── graph.py             # [Implemented] LangGraph: respond → scaffold (conditional) → analyze → END
 │   │   ├── state.py             # [Implemented] TypedDict state with GrammarFeedback, VocabWord
 │   │   ├── prompts.py           # [Implemented] System prompts by level
 │   │   └── nodes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── respond.py       # [Implemented] Generate AI response
 │   │       ├── analyze.py       # [Implemented] Grammar/vocab analysis
-│   │       ├── scaffold.py      # Generate scaffolding (hints, word banks)
-│   │       └── feedback.py      # Format corrections
+│   │       ├── scaffold.py      # [Implemented] Generate scaffolding (word banks, hints, sentence starters)
+│   │       └── feedback.py      # [Planned] Format corrections
 │   │
 │   ├── db/
 │   │   ├── __init__.py
@@ -93,7 +93,7 @@ habla-ai/
 │   │       ├── message.html     # [Implemented] Message bubble styling
 │   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
-│   │       ├── scaffold.html    # Word bank, hints UI
+│   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
 │   │       └── vocab_sidebar.html
 │   │
 │   └── static/
@@ -169,32 +169,34 @@ def build_graph():
 - Extending state with new fields (grammar_feedback, new_vocabulary)
 - Using NotRequired for optional state fields
 
-### Phase 3: Conditional Routing (Week 2)
+### Phase 3: Conditional Routing (Week 2) - IMPLEMENTED
 **Learn**: Conditional edges, branching logic
 
+**Status**: This phase is complete. The graph now uses conditional routing to provide scaffolding support (word banks, hints, sentence starters) for beginner levels (A0/A1), while skipping scaffolding for intermediate levels (A2/B1).
+
 ```python
-def needs_scaffolding(state: ConversationState) -> str:
-    """Route based on user level"""
+def needs_scaffold(state: ConversationState) -> str:
+    """Route based on user level - beginners get scaffolding support"""
     if state["level"] in ["A0", "A1"]:
         return "scaffold"
-    return "respond_only"
+    return "analyze"
 
 def build_graph():
     graph = StateGraph(ConversationState)
 
     graph.add_node("respond", respond_node)
+    graph.add_node("scaffold", scaffold_node)  # NEW: Generates contextual help
     graph.add_node("analyze", analyze_node)
-    graph.add_node("scaffold", scaffold_node)  # NEW
 
     graph.set_entry_point("respond")
 
     # Conditional routing based on level
     graph.add_conditional_edges(
         "respond",
-        needs_scaffolding,
+        needs_scaffold,
         {
-            "scaffold": "scaffold",
-            "respond_only": "analyze"
+            "scaffold": "scaffold",  # A0/A1 learners get scaffolding
+            "analyze": "analyze"      # A2/B1 learners skip to analysis
         }
     )
 
@@ -204,10 +206,15 @@ def build_graph():
     return graph.compile()
 ```
 
-**What you'll learn**:
-- Conditional edge functions
-- Routing based on state
-- Branching and merging paths
+**Graph Flow**:
+- **A0/A1 learners**: START -> respond -> scaffold -> analyze -> END
+- **A2/B1 learners**: START -> respond -> analyze -> END
+
+**What you learned**:
+- Conditional edge functions with `add_conditional_edges()`
+- Routing logic based on state fields (user level)
+- Branching paths that merge back together
+- Using Pydantic models for structured LLM outputs (ScaffoldingConfig)
 
 ### Phase 4: Checkpointing (Week 2-3)
 **Learn**: Persistence, conversation memory
@@ -308,17 +315,38 @@ def build_main_graph():
 from typing import TypedDict, Annotated, Optional
 from langgraph.graph import add_messages
 from langchain_core.messages import BaseMessage
+from pydantic import BaseModel, Field
 
-class ScaffoldingConfig(TypedDict):
-    """Scaffolding UI configuration for beginners"""
-    enabled: bool
-    show_word_bank: bool
-    word_bank: list[str]
-    show_hint: bool
-    hint_text: Optional[str]
-    show_translation: bool
-    translation: Optional[str]
-    sentence_starter: Optional[str]
+# === Pydantic Models for Structured LLM Output ===
+
+class ScaffoldingConfig(BaseModel):
+    """Scaffolding UI configuration for beginners (A0-A1 levels)
+
+    Used with LLM structured output to generate contextual learning aids
+    based on the AI tutor's last response.
+    """
+    enabled: bool = Field(
+        default=False,
+        description="Whether scaffolding is active for this response"
+    )
+    word_bank: list[str] = Field(
+        default_factory=list,
+        description="4-6 contextual vocabulary words to help form a response"
+    )
+    hint_text: str | None = Field(
+        default=None,
+        description="A simple hint (1 sentence) to guide the learner's response"
+    )
+    sentence_starter: str | None = Field(
+        default=None,
+        description="Optional sentence beginning to reduce blank-page anxiety"
+    )
+    auto_expand: bool = Field(
+        default=False,
+        description="Whether to auto-expand scaffolding UI (True for A0)"
+    )
+
+# === TypedDict Models for State ===
 
 class GrammarFeedback(TypedDict):
     """A single grammar correction"""
@@ -345,8 +373,8 @@ class ConversationState(TypedDict):
     language: str           # "es" | "de"
     level: str              # "A0" | "A1" | "A2" | "B1"
 
-    # === Scaffolding (populated for A0-A1) ===
-    scaffolding: ScaffoldingConfig
+    # === Scaffolding (populated for A0-A1 via conditional routing) ===
+    scaffolding: ScaffoldingConfig  # Pydantic model for structured LLM output
 
     # === Analysis Results ===
     grammar_feedback: list[GrammarFeedback]
@@ -368,7 +396,7 @@ class ConversationState(TypedDict):
 
 ## Graph Visualization
 
-### MVP Graph (Phases 1-4)
+### Current Graph (Phases 1-3 Implemented)
 
 ```
                     ┌─────────────┐
@@ -380,7 +408,58 @@ class ConversationState(TypedDict):
                     └──────┬──────┘
                            │
               ┌────────────┴────────────┐
-              │ needs_scaffolding?      │
+              │     needs_scaffold()    │
+              │   checks state["level"] │
+              ▼                         ▼
+         A0 or A1                  A2 or B1
+              │                         │
+    ┌─────────▼─────────┐               │
+    │     scaffold      │               │
+    │  - word_bank      │               │
+    │  - hint_text      │               │
+    │  - sentence_start │               │
+    └─────────┬─────────┘               │
+              │                         │
+              └──────────┬──────────────┘
+                         │
+                  ┌──────▼──────┐
+                  │   analyze   │  ← Grammar + vocab extraction
+                  └──────┬──────┘
+                         │
+                  ┌──────▼──────┐
+                  │     END     │
+                  └─────────────┘
+```
+
+**Conditional Routing Logic**:
+
+The `needs_scaffold()` function determines the graph path based on the learner's proficiency level:
+
+```python
+def needs_scaffold(state: ConversationState) -> str:
+    """Route beginners to scaffolding, others directly to analysis"""
+    if state["level"] in ["A0", "A1"]:
+        return "scaffold"
+    return "analyze"
+```
+
+**Flow Paths**:
+- **A0/A1 learners**: START -> respond -> scaffold -> analyze -> END
+- **A2/B1 learners**: START -> respond -> analyze -> END
+
+### Future Graph (Phase 4+ with Feedback Node)
+
+```
+                    ┌─────────────┐
+                    │   START     │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   respond   │  ← Generate AI response
+                    └──────┬──────┘
+                           │
+              ┌────────────┴────────────┐
+              │ needs_scaffold()?       │
               ▼                         ▼
     ┌─────────────────┐       ┌─────────────────┐
     │    scaffold     │       │     (skip)      │
@@ -427,51 +506,91 @@ async def respond_node(state: ConversationState) -> dict:
     return {"messages": [response]}
 ```
 
-### Scaffold Node
+### Scaffold Node (Phase 3)
+
+The scaffold node generates contextual learning aids for beginner learners (A0/A1). It uses an LLM to analyze the AI's last response and create relevant word banks, hints, and sentence starters.
+
+**ScaffoldingConfig Pydantic Model**:
+
+```python
+from pydantic import BaseModel, Field
+
+class ScaffoldingConfig(BaseModel):
+    """Configuration for scaffolding UI elements displayed to beginner learners"""
+
+    enabled: bool = Field(
+        default=False,
+        description="Whether scaffolding is active for this response"
+    )
+    word_bank: list[str] = Field(
+        default_factory=list,
+        description="4-6 contextual vocabulary words to help form a response"
+    )
+    hint_text: str | None = Field(
+        default=None,
+        description="A simple hint (1 sentence) to guide the learner's response"
+    )
+    sentence_starter: str | None = Field(
+        default=None,
+        description="Optional sentence beginning to reduce blank-page anxiety"
+    )
+    auto_expand: bool = Field(
+        default=False,
+        description="Whether to auto-expand scaffolding UI (True for A0)"
+    )
+```
+
+**Node Implementation**:
 
 ```python
 async def scaffold_node(state: ConversationState) -> dict:
-    """Generate scaffolding for A0-A1 learners"""
+    """Generate scaffolding for A0-A1 learners based on AI's last response"""
 
-    if state["level"] not in ["A0", "A1"]:
-        return {"scaffolding": {"enabled": False}}
-
-    # Get the AI's response to analyze
+    # Get the AI's response to analyze for context
     ai_response = state["messages"][-1].content
 
-    # Generate contextual scaffolding
+    # Generate contextual scaffolding using LLM
     scaffolding_prompt = f"""
-    The AI just said: "{ai_response}"
+    The AI tutor just said: "{ai_response}"
     User level: {state["level"]}
     Language: {state["language"]}
 
-    Generate scaffolding to help the user respond:
-    1. A simple hint (1 sentence)
-    2. 4-6 relevant words for a word bank
-    3. A sentence starter if appropriate
+    Generate scaffolding to help the beginner respond:
+    1. A simple hint (1 sentence) that guides without giving the answer
+    2. 4-6 relevant vocabulary words for a word bank
+    3. A sentence starter if appropriate (helps reduce blank-page anxiety)
 
-    Return JSON:
+    Return JSON matching this structure:
     {{
-        "hint": "...",
+        "hint_text": "...",
         "word_bank": ["word1", "word2", ...],
         "sentence_starter": "..." or null
     }}
     """
 
-    result = await llm.ainvoke(scaffolding_prompt)
-    scaffolding_data = parse_json(result.content)
+    # Use structured output with Pydantic model
+    result = await llm.with_structured_output(ScaffoldingConfig).ainvoke(
+        scaffolding_prompt
+    )
 
     return {
-        "scaffolding": {
-            "enabled": True,
-            "show_word_bank": True,
-            "word_bank": scaffolding_data["word_bank"],
-            "show_hint": state["level"] == "A0",  # Auto-show for A0
-            "hint_text": scaffolding_data["hint"],
-            "sentence_starter": scaffolding_data.get("sentence_starter")
-        }
+        "scaffolding": ScaffoldingConfig(
+            enabled=True,
+            word_bank=result.word_bank,
+            hint_text=result.hint_text,
+            sentence_starter=result.sentence_starter,
+            auto_expand=state["level"] == "A0"  # Auto-show for absolute beginners
+        )
     }
 ```
+
+**Key Design Decisions**:
+
+1. **LLM-generated context**: The scaffold node reads the AI's last response to generate relevant vocabulary and hints, making scaffolding contextually appropriate rather than generic.
+
+2. **Level-based auto-expand**: A0 learners see scaffolding expanded by default (`auto_expand=True`), while A1 learners can click to expand.
+
+3. **Pydantic structured output**: Using `with_structured_output()` ensures type-safe responses from the LLM and eliminates JSON parsing errors.
 
 ### Analyze Node
 
