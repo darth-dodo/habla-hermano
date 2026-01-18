@@ -1,6 +1,6 @@
 # HablaAI
 
-**Learn Spanish through conversation, not flashcards.**
+**Learn Spanish, German, or French through conversation, not flashcards.**
 
 An AI conversation partner that takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
 
@@ -100,7 +100,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **4 Proficiency Levels** | A0 → B1 with adaptive AI behavior |
 | **Intelligent Scaffolding** | Word banks, hints, sentence starters for beginners |
 | **Grammar Feedback** | Gentle corrections with expandable explanations |
-| **2 Languages** | Spanish and German, full support A0-B1 |
+| **3 Languages** | Spanish, German, and French — full support A0-B1 |
 | **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
 | **Mobile-First** | Works great on phone, tablet, or desktop |
 
