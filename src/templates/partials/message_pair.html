@@ -1,8 +1,14 @@
 {#
-Message pair partial template - AI response with optional grammar feedback
+Message pair partial template - AI response with optional scaffolding and grammar feedback
 The user message is shown immediately via JavaScript (optimistic UI)
 Variables expected:
   - ai_response: string (the AI's response)
+  - scaffolding: dict (optional) - scaffolding help for A0-A1 learners with:
+    - enabled: boolean
+    - word_bank: list of strings
+    - hint_text: string
+    - sentence_starter: string
+    - auto_expand: boolean
   - grammar_feedback: list (optional) - grammar corrections from analyze node
   - new_vocabulary: list (optional) - vocabulary items from analyze node
 #}
@@ -15,6 +21,11 @@ Variables expected:
         </div>
     </div>
 </div>
+
+<!-- Scaffolding Help (collapsible) - for A0-A1 learners -->
+{% if scaffolding and scaffolding.enabled %}
+{% include "partials/scaffold.html" %}
+{% endif %}
 
 <!-- Grammar Feedback (collapsible) -->
 {% if grammar_feedback %}

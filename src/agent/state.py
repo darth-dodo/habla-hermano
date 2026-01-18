@@ -3,13 +3,40 @@ Conversation state for HablaAI LangGraph.
 
 This module defines the TypedDict state used by the LangGraph conversation flow.
 Phase 2 adds grammar feedback and vocabulary tracking.
+Phase 3 adds scaffolding support for A0-A1 learners.
 """
 
-from typing import Annotated, Literal, NotRequired
+from typing import Annotated, Any, Literal, NotRequired
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
+from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
+
+
+class ScaffoldingConfig(BaseModel):
+    """
+    Scaffolding configuration for A0-A1 learners.
+
+    Provides assistance tools to help beginner learners formulate responses:
+    - Word bank: Relevant vocabulary they can use
+    - Hint text: Guidance on how to respond
+    - Sentence starter: A partial sentence to get them going
+    - Auto-expand: Whether to show scaffolding expanded by default
+
+    Attributes:
+        enabled: Whether scaffolding is active for this response.
+        word_bank: List of relevant words/phrases for the learner to use.
+        hint_text: A brief tip in English on how to respond.
+        sentence_starter: Optional partial sentence to help begin the response.
+        auto_expand: If True (A0), show scaffolding expanded; if False (A1), collapsed.
+    """
+
+    enabled: bool = False
+    word_bank: list[str] = Field(default_factory=list)
+    hint_text: str = ""
+    sentence_starter: str | None = None
+    auto_expand: bool = False  # True for A0, False for A1
 
 
 class GrammarFeedback(TypedDict):
@@ -57,6 +84,9 @@ class ConversationState(TypedDict):
     - grammar_feedback: List of grammar corrections from user's last message
     - new_vocabulary: List of vocabulary words to highlight
 
+    Scaffolding fields (Phase 3):
+    - scaffolding: Dict from ScaffoldingConfig.model_dump() for A0-A1 learners
+
     The add_messages reducer handles message accumulation automatically,
     appending new messages to the existing list.
     """
@@ -66,3 +96,4 @@ class ConversationState(TypedDict):
     language: str  # es, de, fr
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
+    scaffolding: NotRequired[dict[str, Any]]  # ScaffoldingConfig.model_dump() for A0-A1

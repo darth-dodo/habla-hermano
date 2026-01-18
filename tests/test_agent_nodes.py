@@ -484,33 +484,35 @@ class TestScaffoldNodeBeginnerLevels:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
-    async def test_scaffold_returns_disabled_for_beginners(self, level: str) -> None:
-        """Scaffold should return disabled=False for A0/A1 (stub behavior)."""
+    async def test_scaffold_returns_disabled_for_beginners_without_ai_response(
+        self, level: str
+    ) -> None:
+        """Scaffold should return disabled=False for A0/A1 without AI response."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        # Stub returns disabled scaffolding
+        # Without AI response, scaffold returns disabled
         assert result["scaffolding"]["enabled"] is False
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
-    async def test_scaffold_has_word_bank_disabled(self, level: str) -> None:
-        """A0/A1 scaffold should have show_word_bank False (stub)."""
+    async def test_scaffold_has_word_bank_field(self, level: str) -> None:
+        """A0/A1 scaffold should have word_bank field."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        assert result["scaffolding"]["show_word_bank"] is False
+        assert "word_bank" in result["scaffolding"]
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
-    async def test_scaffold_has_empty_word_bank(self, level: str) -> None:
-        """A0/A1 scaffold should have empty word_bank list."""
+    async def test_scaffold_has_empty_word_bank_without_ai_response(self, level: str) -> None:
+        """A0/A1 scaffold should have empty word_bank list without AI response."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
@@ -521,32 +523,32 @@ class TestScaffoldNodeBeginnerLevels:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
-    async def test_scaffold_has_hint_disabled(self, level: str) -> None:
-        """A0/A1 scaffold should have show_hint False."""
+    async def test_scaffold_has_hint_text_field(self, level: str) -> None:
+        """A0/A1 scaffold should have hint_text field."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        assert result["scaffolding"]["show_hint"] is False
+        assert "hint_text" in result["scaffolding"]
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
-    async def test_scaffold_has_no_hint_text(self, level: str) -> None:
-        """A0/A1 scaffold should have hint_text as None."""
+    async def test_scaffold_has_empty_hint_text_without_ai_response(self, level: str) -> None:
+        """A0/A1 scaffold should have empty hint_text without AI response."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        assert result["scaffolding"]["hint_text"] is None
+        assert result["scaffolding"]["hint_text"] == ""
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1"])
     async def test_scaffold_has_no_sentence_starter(self, level: str) -> None:
-        """A0/A1 scaffold should have sentence_starter as None."""
+        """A0/A1 scaffold should have sentence_starter as None without AI response."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
@@ -573,29 +575,27 @@ class TestScaffoldNodeIntermediateLevels:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A2", "B1"])
-    async def test_scaffold_no_word_bank_for_intermediate(self, level: str) -> None:
-        """A2/B1 should have no word bank."""
+    async def test_scaffold_empty_word_bank_for_intermediate(self, level: str) -> None:
+        """A2/B1 should have empty word bank."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        assert result["scaffolding"]["show_word_bank"] is False
         assert result["scaffolding"]["word_bank"] == []
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A2", "B1"])
-    async def test_scaffold_no_hints_for_intermediate(self, level: str) -> None:
-        """A2/B1 should have no hints."""
+    async def test_scaffold_empty_hints_for_intermediate(self, level: str) -> None:
+        """A2/B1 should have empty hint_text."""
         state: ConversationState = {
             "messages": [HumanMessage(content="Hola!")],
             "level": level,
             "language": "es",
         }
         result = await scaffold_node(state)
-        assert result["scaffolding"]["show_hint"] is False
-        assert result["scaffolding"]["hint_text"] is None
+        assert result["scaffolding"]["hint_text"] == ""
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A2", "B1"])
@@ -625,13 +625,12 @@ class TestScaffoldNodeAllLevels:
         result = await scaffold_node(state)
 
         scaffolding = result["scaffolding"]
-        # All levels should have these keys
+        # All levels should have these keys (Phase 3 Pydantic model fields)
         assert "enabled" in scaffolding
-        assert "show_word_bank" in scaffolding
         assert "word_bank" in scaffolding
-        assert "show_hint" in scaffolding
         assert "hint_text" in scaffolding
         assert "sentence_starter" in scaffolding
+        assert "auto_expand" in scaffolding
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("level", ["A0", "A1", "A2", "B1"])
@@ -646,11 +645,10 @@ class TestScaffoldNodeAllLevels:
 
         scaffolding = result["scaffolding"]
         assert isinstance(scaffolding["enabled"], bool)
-        assert isinstance(scaffolding["show_word_bank"], bool)
         assert isinstance(scaffolding["word_bank"], list)
-        assert isinstance(scaffolding["show_hint"], bool)
-        # hint_text and sentence_starter can be None or str
-        assert scaffolding["hint_text"] is None or isinstance(scaffolding["hint_text"], str)
+        assert isinstance(scaffolding["hint_text"], str)
+        assert isinstance(scaffolding["auto_expand"], bool)
+        # sentence_starter can be None or str
         assert scaffolding["sentence_starter"] is None or isinstance(
             scaffolding["sentence_starter"], str
         )

@@ -83,6 +83,10 @@ async def send_message(
     grammar_feedback = result.get("grammar_feedback", [])
     new_vocabulary = result.get("new_vocabulary", [])
 
+    # Extract scaffolding from scaffold node (Phase 3)
+    # Only populated for A0-A1 learners via conditional routing
+    scaffolding = result.get("scaffolding", {})
+
     return templates.TemplateResponse(
         request=request,
         name="partials/message_pair.html",
@@ -91,5 +95,6 @@ async def send_message(
             "ai_response": ai_response,
             "grammar_feedback": grammar_feedback,
             "new_vocabulary": new_vocabulary,
+            "scaffolding": scaffolding,
         },
     )
