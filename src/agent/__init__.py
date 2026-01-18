@@ -1,5 +1,5 @@
 """
-HablaAI Agent - LangGraph-based conversation engine.
+Habla Hermano Agent - LangGraph-based conversation engine.
 
 This module provides the core conversation graph and state management
 for the AI language tutor.

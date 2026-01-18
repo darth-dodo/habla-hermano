@@ -1,7 +1,7 @@
 """Comprehensive tests for agent nodes: respond, feedback, and scaffold.
 
 This module tests the three agent node functions that form the core of the
-HablaAI conversation flow.
+Habla Hermano conversation flow.
 """
 
 import inspect

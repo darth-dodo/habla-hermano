@@ -1,6 +1,6 @@
-# HablaAI Production Dockerfile
+# Habla Hermano Production Dockerfile
 #
-# A simple, single-stage Dockerfile for the HablaAI FastAPI application.
+# A simple, single-stage Dockerfile for the Habla Hermano FastAPI application.
 # Uses Python 3.12-slim base with uv for fast dependency management.
 #
 # Build:   docker build -t habla-ai .

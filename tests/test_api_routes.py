@@ -25,9 +25,9 @@ class TestChatPageEndpoint:
     def test_chat_page_contains_app_name(self, test_client: TestClient) -> None:
         """GET / should include app name in response."""
         response = test_client.get("/")
-        # The app name from mock_settings is "HablaAI-Test" but template might use default
-        # Check for the general HablaAI branding
-        assert "HablaAI" in response.text
+        # The app name from mock_settings is "Habla Hermano-Test" but template might use default
+        # Check for the general Habla Hermano branding
+        assert "Habla Hermano" in response.text
 
     def test_chat_page_contains_title(self, test_client: TestClient) -> None:
         """GET / should include proper HTML title."""
@@ -87,7 +87,7 @@ class TestChatPageEndpoint:
         """GET / should work with async client."""
         response = await async_client.get("/")
         assert response.status_code == 200
-        assert "HablaAI" in response.text
+        assert "Habla Hermano" in response.text
 
 
 class TestSendMessageEndpoint:
@@ -354,7 +354,7 @@ class TestHealthEndpoint:
         data = response.json()
         assert "app" in data
         # App name comes from settings
-        assert "HablaAI" in data["app"]
+        assert "Habla Hermano" in data["app"]
 
     async def test_health_async(self, async_client: AsyncClient) -> None:
         """GET /health should work with async client."""

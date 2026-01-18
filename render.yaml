@@ -1,5 +1,5 @@
 # =============================================================================
-# Render Blueprint for HablaAI FastAPI Application
+# Render Blueprint for Habla Hermano FastAPI Application
 # =============================================================================
 # Documentation: https://render.com/docs/blueprint-spec
 #
@@ -19,7 +19,7 @@ services:
   # Primary Web Service - FastAPI Application
   # ---------------------------------------------------------------------------
   - type: web
-    name: habla-ai
+    name: habla-hermano
     runtime: python
     plan: free
     region: oregon
@@ -76,7 +76,7 @@ services:
       # SQLite will be stored in Render's ephemeral disk
       # For persistent storage, consider upgrading plan or using external DB
       - key: DATABASE_URL
-        value: "sqlite:///data/habla.db"
+        value: "sqlite:///data/hermano.db"
 
       # -----------------------------------------------------------------------
       # Feature Flags

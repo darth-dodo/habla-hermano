@@ -1,6 +1,6 @@
-# HablaAI E2E Testing with Playwright
+# Habla Hermano E2E Testing with Playwright
 
-> End-to-end test documentation for the HablaAI language tutor application.
+> End-to-end test documentation for the Habla Hermano language tutor application.
 
 ## Test Summary
 
@@ -34,10 +34,10 @@
 
 **Steps**:
 1. Navigate to http://127.0.0.1:8000/
-2. Verify page loads with title "Chat - HablaAI"
+2. Verify page loads with title "Chat - Habla Hermano"
 
 **Expected Elements**:
-- Header with "HablaAI" branding
+- Header with "Habla Hermano" branding
 - Level selector dropdown (default: A1)
 - Welcome message adapting to selected level
 - Message input field with placeholder

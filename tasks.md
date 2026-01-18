@@ -1,4 +1,4 @@
-# HablaAI - Task Tracking
+# Habla Hermano - Task Tracking
 
 > **Source of Truth**: This file is the single source of truth for project state.
 
@@ -14,7 +14,7 @@
 
 ## Project Overview
 
-**HablaAI**: AI language tutor taking learners from A0 (absolute beginner) to B1 (intermediate).
+**Habla Hermano**: AI language tutor taking learners from A0 (absolute beginner) to B1 (intermediate).
 
 **Tech Stack**: FastAPI + HTMX + LangGraph + Claude API
 

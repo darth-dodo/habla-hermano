@@ -1,5 +1,5 @@
 [project]
-name = "habla-ai"
+name = "habla-hermano"
 version = "0.1.0"
 description = "AI language tutor: A0 to B1 with LangGraph"
 readme = "README.md"

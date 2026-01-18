@@ -1,5 +1,5 @@
 """
-Scaffold node for the HablaAI conversation graph.
+Scaffold node for the Habla Hermano conversation graph.
 
 This node generates scaffolding (word banks, hints, sentence starters) to help
 A0-A1 learners formulate their responses to the AI tutor.

@@ -1,4 +1,4 @@
-# HablaAI Product Specification
+# Habla Hermano Product Specification
 
 > Take someone from zero to conversational in Spanish, German, or French
 
@@ -6,7 +6,7 @@
 
 ## Vision
 
-HablaAI is an AI conversation partner that takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, HablaAI gets you talking from day one—with intelligent scaffolding that fades as you improve.
+Habla Hermano is an AI conversation partner that takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, Habla Hermano gets you talking from day one—with intelligent scaffolding that fades as you improve.
 
 **Core Belief**: Conversation confidence comes from conversation practice. Grammar and vocabulary stick better when learned in context, not from flashcards.
 
@@ -31,7 +31,7 @@ HablaAI is an AI conversation partner that takes absolute beginners (A0) to conf
 
 ### Style: Communicative Language Teaching (CLT)
 
-HablaAI uses a **Communicative Language Teaching** approach—learning by doing, not by studying rules.
+Habla Hermano uses a **Communicative Language Teaching** approach—learning by doing, not by studying rules.
 
 | Principle | How We Implement It |
 |-----------|---------------------|
@@ -41,7 +41,7 @@ HablaAI uses a **Communicative Language Teaching** approach—learning by doing,
 | **Authentic interaction** | Real conversations, not drill exercises |
 | **Contextual learning** | Grammar and vocabulary learned in conversation context |
 
-### What HablaAI Avoids
+### What Habla Hermano Avoids
 
 - **Grammar-Translation**: No rule memorization → practice sentences
 - **Audio-Lingual**: No repetitive drills

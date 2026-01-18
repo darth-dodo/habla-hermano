@@ -1,5 +1,5 @@
 /**
- * HablaAI - Main JavaScript
+ * Habla Hermano - Main JavaScript
  * Handles chat interactions, HTMX events, and UI behaviors
  */
 
@@ -247,7 +247,7 @@
         // Focus input on load
         focusInput();
 
-        console.log('HablaAI initialized');
+        console.log('Habla Hermano initialized');
     }
 
     // ============================================

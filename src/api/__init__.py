@@ -1,4 +1,4 @@
-"""HablaAI API package.
+"""Habla Hermano API package.
 
 FastAPI application for the AI language tutor.
 """

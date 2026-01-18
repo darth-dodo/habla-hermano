@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 0 establishes the foundation for HablaAI: a modern Python web application stack optimized for rapid development and maintainability. This phase focuses on project scaffolding, development tooling, and infrastructure configuration before any application logic is implemented.
+Phase 0 establishes the foundation for Habla Hermano: a modern Python web application stack optimized for rapid development and maintainability. This phase focuses on project scaffolding, development tooling, and infrastructure configuration before any application logic is implemented.
 
 **Business Value**: A well-configured project foundation reduces friction for future development, ensures code quality from day one, and establishes patterns that scale as the application grows.
 
@@ -62,7 +62,7 @@ Phase 0 establishes the foundation for HablaAI: a modern Python web application 
 ### Project Structure
 
 ```
-habla-ai/
+habla-hermano/
 ├── src/
 │   ├── __init__.py
 │   ├── api/                    # FastAPI application
@@ -197,7 +197,7 @@ The central configuration file containing:
 
 ```toml
 [project]
-name = "habla-ai"
+name = "habla-hermano"
 version = "0.1.0"
 requires-python = ">=3.11"
 
@@ -334,7 +334,7 @@ LLM_MODEL=claude-sonnet-4-20250514
 LLM_TEMPERATURE=0.7
 
 # Database
-DATABASE_URL=sqlite:///data/habla.db
+DATABASE_URL=sqlite:///data/hermano.db
 
 # Application
 DEBUG=true
@@ -354,8 +354,8 @@ ENABLE_SPACED_REPETITION=false
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/darth-dodo/habla-ai.git
-cd habla-ai
+git clone https://github.com/darth-dodo/habla-hermano.git
+cd habla-hermano
 
 # 2. Install dependencies (uses uv)
 make install
@@ -553,7 +553,7 @@ class Settings(BaseSettings):
     )
 
     ANTHROPIC_API_KEY: str
-    APP_NAME: str = "HablaAI"
+    APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
     LLM_MODEL: str = "claude-sonnet-4-20250514"
 
@@ -584,4 +584,4 @@ class Settings(BaseSettings):
 }
 ```
 
-This Phase 0 setup provides a solid foundation for all subsequent phases of HablaAI development.
+This Phase 0 setup provides a solid foundation for all subsequent phases of Habla Hermano development.

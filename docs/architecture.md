@@ -1,4 +1,4 @@
-# HablaAI Technical Architecture
+# Habla Hermano Technical Architecture
 
 > FastAPI + HTMX + LangGraph for conversational language learning
 
@@ -49,7 +49,7 @@ This project is intentionally built with **LangGraph** to learn:
 Legend: Implemented files are marked with a checkmark. Files without a checkmark are planned for future phases.
 
 ```
-habla-ai/
+habla-hermano/
 ├── src/
 │   ├── api/
 │   │   ├── __init__.py          # [Implemented]
@@ -103,7 +103,7 @@ habla-ai/
 │
 ├── tests/
 ├── data/
-│   ├── habla.db
+│   ├── hermano.db
 │   └── lessons/                 # Lesson content (JSON/YAML)
 │
 ├── docs/
@@ -227,7 +227,7 @@ def build_graph():
     # ... nodes and edges ...
 
     # Add checkpointing for conversation persistence
-    checkpointer = SqliteSaver.from_conn_string("data/habla.db")
+    checkpointer = SqliteSaver.from_conn_string("data/hermano.db")
     return graph.compile(checkpointer=checkpointer)
 
 # Usage with thread_id for conversation continuity
@@ -364,7 +364,7 @@ class VocabWord(TypedDict):
     context: str  # The sentence it appeared in
 
 class ConversationState(TypedDict):
-    """Main LangGraph state for HablaAI"""
+    """Main LangGraph state for Habla Hermano"""
 
     # === Core Conversation ===
     messages: Annotated[list[BaseMessage], add_messages]
@@ -850,7 +850,7 @@ clean:
 
 ```toml
 [project]
-name = "habla-ai"
+name = "habla-hermano"
 version = "0.1.0"
 description = "AI language tutor: A0 to B1"
 requires-python = ">=3.11"

@@ -1,5 +1,5 @@
 """
-Analyze node for the HablaAI conversation graph.
+Analyze node for the Habla Hermano conversation graph.
 
 This node analyzes the user's message for grammar errors and vocabulary,
 providing level-appropriate feedback without interrupting the conversation flow.

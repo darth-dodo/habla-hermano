@@ -77,7 +77,7 @@ Output State:
 
 ```python
 class ConversationState(TypedDict):
-    """Main LangGraph state for HablaAI conversations."""
+    """Main LangGraph state for Habla Hermano conversations."""
     messages: Annotated[list[BaseMessage], add_messages]
     level: str  # A0, A1, A2, B1
     language: str  # es, de, fr
@@ -153,7 +153,7 @@ async def send_message(...) -> HTMLResponse:
 
 ```python
 class ConversationState(TypedDict):
-    """Main LangGraph state for HablaAI conversations."""
+    """Main LangGraph state for Habla Hermano conversations."""
 
     # Message history with automatic accumulation
     messages: Annotated[list[BaseMessage], add_messages]
@@ -317,10 +317,10 @@ Alpine.js manages theme state with localStorage persistence:
 
 ```javascript
 x-data="{
-    theme: localStorage.getItem('habla-theme') || 'dark',
+    theme: localStorage.getItem('hermano-theme') || 'dark',
     setTheme(newTheme) {
         this.theme = newTheme;
-        localStorage.setItem('habla-theme', newTheme);
+        localStorage.setItem('hermano-theme', newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
     }
 }"

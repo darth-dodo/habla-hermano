@@ -1,11 +1,11 @@
-# HablaAI
+# Habla Hermano
 
 **Learn Spanish, German, or French through conversation, not flashcards.**
 
 An AI conversation partner that takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-ocean-home.png" alt="HablaAI Desktop" width="700"/>
+  <img src="docs/screenshots/desktop-ocean-home.png" alt="Habla Hermano Desktop" width="700"/>
 </p>
 
 ---
@@ -14,7 +14,7 @@ An AI conversation partner that takes absolute beginners to confident speakers. 
 
 Most language apps drill vocabulary in isolation. You memorize words, ace flashcards, but freeze when someone actually speaks to you. **Conversation confidence comes from conversation practice.**
 
-HablaAI is different:
+Habla Hermano is different:
 
 - **Talk from day one** — Even complete beginners have real conversations
 - **Scaffolding that fades** — Word banks and hints for beginners, natural flow for intermediates
@@ -28,7 +28,7 @@ HablaAI is different:
 ### Real Conversations at Every Level
 
 <p align="center">
-  <img src="docs/screenshots/mobile-ocean-conversation.png" alt="HablaAI Mobile Conversation" width="300"/>
+  <img src="docs/screenshots/mobile-ocean-conversation.png" alt="Habla Hermano Mobile Conversation" width="300"/>
 </p>
 
 The AI adapts its language mix based on your level:
@@ -75,8 +75,8 @@ AI:   "¿Estás cansado? Yo también después del trabajo."
 
 ```bash
 # Clone and install
-git clone https://github.com/darth-dodo/habla-ai.git
-cd habla-ai
+git clone https://github.com/darth-dodo/habla-hermano.git
+cd habla-hermano
 make install
 
 # Configure

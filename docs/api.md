@@ -1,12 +1,12 @@
-# HablaAI API Reference
+# Habla Hermano API Reference
 
-> REST API documentation for HablaAI conversational language learning
+> REST API documentation for Habla Hermano conversational language learning
 
 ---
 
 ## Overview
 
-HablaAI provides an HTMX-driven API that returns HTML partials for seamless UI updates. The primary endpoint processes chat messages through a LangGraph agent and returns rendered HTML including the AI response, scaffolding assistance (for A0-A1 learners), and grammar feedback.
+Habla Hermano provides an HTMX-driven API that returns HTML partials for seamless UI updates. The primary endpoint processes chat messages through a LangGraph agent and returns rendered HTML including the AI response, scaffolding assistance (for A0-A1 learners), and grammar feedback.
 
 **Base URL**: `http://localhost:8000`
 

@@ -1,4 +1,4 @@
-"""Pytest configuration and fixtures for HablaAI tests."""
+"""Pytest configuration and fixtures for Habla Hermano tests."""
 
 import os
 from collections.abc import AsyncGenerator, Generator
@@ -38,7 +38,7 @@ def mock_settings() -> Settings:
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
         ANTHROPIC_API_KEY="test-api-key-12345",  # pragma: allowlist secret
-        APP_NAME="HablaAI-Test",
+        APP_NAME="Habla Hermano-Test",
         DEBUG=True,
         LLM_MODEL="claude-test-model",
         LLM_TEMPERATURE=0.5,

@@ -1,5 +1,5 @@
 """
-Respond node for the HablaAI conversation graph.
+Respond node for the Habla Hermano conversation graph.
 
 This is the core node that generates AI responses appropriate
 to the user's language level.

@@ -373,7 +373,7 @@ wheels = [
 ]
 
 [[package]]
-name = "habla-ai"
+name = "habla-hermano"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

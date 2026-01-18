@@ -1,4 +1,4 @@
-"""Database module for HablaAI."""
+"""Database module for Habla Hermano."""
 
 from src.db.models import (
     Base,
