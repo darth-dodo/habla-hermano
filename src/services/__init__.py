@@ -1,4 +1,8 @@
-"""Services module for Habla Hermano business logic."""
+"""Services module for Habla Hermano business logic.
+
+Note: VocabularyService is temporarily disabled pending Supabase migration.
+The levels service remains fully functional.
+"""
 
 from src.services.levels import (
     CEFRLevel,
@@ -6,18 +10,10 @@ from src.services.levels import (
     LevelService,
     PerformanceMetrics,
 )
-from src.services.vocabulary import (
-    ExtractedWord,
-    VocabularyService,
-    VocabularyStats,
-)
 
 __all__ = [
     "CEFRLevel",
-    "ExtractedWord",
     "LevelAssessment",
     "LevelService",
     "PerformanceMetrics",
-    "VocabularyService",
-    "VocabularyStats",
 ]

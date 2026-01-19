@@ -1,37 +1,31 @@
-"""Database module for Habla Hermano."""
+"""Database module for Habla Hermano.
+
+This module provides data access through Supabase Postgres.
+All repositories are user-scoped to comply with Row Level Security.
+"""
 
 from src.db.models import (
-    Base,
+    LearningSession,
     LessonProgress,
-    Session,
     Setting,
+    UserProfile,
     Vocabulary,
-    async_session_factory,
-    engine,
-    get_session_factory,
-    init_db,
 )
 from src.db.repository import (
+    LearningSessionRepository,
     LessonProgressRepository,
-    SessionRepository,
-    SettingsRepository,
+    UserProfileRepository,
     VocabularyRepository,
 )
-from src.db.seed import seed_database
 
 __all__ = [
-    "Base",
+    "LearningSession",
+    "LearningSessionRepository",
     "LessonProgress",
     "LessonProgressRepository",
-    "Session",
-    "SessionRepository",
     "Setting",
-    "SettingsRepository",
+    "UserProfile",
+    "UserProfileRepository",
     "Vocabulary",
     "VocabularyRepository",
-    "async_session_factory",
-    "engine",
-    "get_session_factory",
-    "init_db",
-    "seed_database",
 ]

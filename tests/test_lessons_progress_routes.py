@@ -2,6 +2,8 @@
 
 Comprehensive tests for the micro-lesson endpoints and progress tracking routes.
 Tests cover route responses, HTML content, HTTP methods, and edge cases.
+
+Phase 5: Updated tests to include authentication mocking.
 """
 
 from collections.abc import Generator
@@ -14,6 +16,7 @@ from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from jinja2 import Environment, FileSystemLoader
 
+from src.api.auth import AuthenticatedUser, get_current_user
 from src.api.routes import lessons, progress
 
 
@@ -160,11 +163,27 @@ class MockJinja2Templates:
 
 
 @pytest.fixture
-def test_app(mock_templates_dir: Path) -> FastAPI:
+def mock_user() -> AuthenticatedUser:
+    """Create a mock authenticated user for testing.
+
+    Returns:
+        AuthenticatedUser: Test user instance.
+    """
+    return AuthenticatedUser(
+        id="test-user-123",
+        email="test@example.com",
+    )
+
+
+@pytest.fixture
+def test_app(mock_templates_dir: Path, mock_user: AuthenticatedUser) -> FastAPI:
     """Create a test FastAPI app with lessons and progress routers mounted.
+
+    Phase 5: Added authentication mocking for protected routes.
 
     Args:
         mock_templates_dir: Path to temporary templates directory.
+        mock_user: Mock authenticated user for auth.
 
     Returns:
         FastAPI: Configured test application.
@@ -177,10 +196,15 @@ def test_app(mock_templates_dir: Path) -> FastAPI:
     def get_test_templates() -> MockJinja2Templates:
         return templates
 
+    # Mock auth dependency
+    async def mock_get_current_user() -> AuthenticatedUser:
+        return mock_user
+
     # Override the dependency in both routers
     from src.api.dependencies import get_cached_templates
 
     app.dependency_overrides[get_cached_templates] = get_test_templates
+    app.dependency_overrides[get_current_user] = mock_get_current_user
 
     # Mount routers with prefixes
     app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
