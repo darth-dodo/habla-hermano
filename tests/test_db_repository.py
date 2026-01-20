@@ -11,7 +11,6 @@ import pytest
 from src.db.models import UserProfile, Vocabulary
 from src.db.repository import UserProfileRepository, VocabularyRepository
 
-
 # =============================================================================
 # Fixtures
 # =============================================================================

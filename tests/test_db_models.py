@@ -6,6 +6,7 @@ Tests for Pydantic models used with Supabase.
 from datetime import datetime
 
 import pytest
+from pydantic import ValidationError
 
 from src.db.models import (
     LearningSession,
@@ -14,7 +15,6 @@ from src.db.models import (
     UserProfile,
     Vocabulary,
 )
-
 
 # =============================================================================
 # UserProfile Tests
@@ -236,15 +236,15 @@ class TestModelValidation:
 
     def test_vocabulary_missing_required_field(self) -> None:
         """Test Vocabulary requires user_id."""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             Vocabulary(word="hola", translation="hello", language="es")  # type: ignore
 
     def test_user_profile_missing_id(self) -> None:
         """Test UserProfile requires id."""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             UserProfile()  # type: ignore
 
     def test_learning_session_missing_required(self) -> None:
         """Test LearningSession requires user_id, language, level."""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             LearningSession(user_id="user-123")  # type: ignore
