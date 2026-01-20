@@ -29,12 +29,7 @@ class UserProfileRepository:
         Returns:
             UserProfile if found, None otherwise.
         """
-        response = (
-            self._client.table("user_profiles")
-            .select("*")
-            .eq("id", self._user_id)
-            .execute()
-        )
+        response = self._client.table("user_profiles").select("*").eq("id", self._user_id).execute()
         if response.data:
             return UserProfile(**response.data[0])
         return None
@@ -156,11 +151,13 @@ class VocabularyRepository:
             # Update existing entry - increment times_seen
             response = (
                 self._client.table("vocabulary")
-                .update({
-                    "translation": translation,
-                    "part_of_speech": part_of_speech,
-                    "times_seen": existing.times_seen + 1,
-                })
+                .update(
+                    {
+                        "translation": translation,
+                        "part_of_speech": part_of_speech,
+                        "times_seen": existing.times_seen + 1,
+                    }
+                )
                 .eq("id", existing.id)
                 .execute()
             )
@@ -168,16 +165,18 @@ class VocabularyRepository:
             # Insert new entry
             response = (
                 self._client.table("vocabulary")
-                .insert({
-                    "user_id": self._user_id,
-                    "word": word,
-                    "translation": translation,
-                    "language": language,
-                    "part_of_speech": part_of_speech,
-                    "first_seen_at": datetime.now(UTC).isoformat(),
-                    "times_seen": 1,
-                    "times_correct": 0,
-                })
+                .insert(
+                    {
+                        "user_id": self._user_id,
+                        "word": word,
+                        "translation": translation,
+                        "language": language,
+                        "part_of_speech": part_of_speech,
+                        "first_seen_at": datetime.now(UTC).isoformat(),
+                        "times_seen": 1,
+                        "times_correct": 0,
+                    }
+                )
                 .execute()
             )
 
@@ -230,9 +229,9 @@ class VocabularyRepository:
         )
         if response.data:
             current = response.data[0].get("times_correct", 0)
-            self._client.table("vocabulary").update({
-                "times_correct": current + 1
-            }).eq("id", word_id).execute()
+            self._client.table("vocabulary").update({"times_correct": current + 1}).eq(
+                "id", word_id
+            ).execute()
 
 
 class LearningSessionRepository:
@@ -259,14 +258,16 @@ class LearningSessionRepository:
         """
         response = (
             self._client.table("learning_sessions")
-            .insert({
-                "user_id": self._user_id,
-                "language": language,
-                "level": level,
-                "started_at": datetime.now(UTC).isoformat(),
-                "messages_count": 0,
-                "words_learned": 0,
-            })
+            .insert(
+                {
+                    "user_id": self._user_id,
+                    "language": language,
+                    "level": level,
+                    "started_at": datetime.now(UTC).isoformat(),
+                    "messages_count": 0,
+                    "words_learned": 0,
+                }
+            )
             .execute()
         )
         return LearningSession(**response.data[0])
@@ -291,9 +292,7 @@ class LearningSessionRepository:
             return LearningSession(**response.data[0])
         return None
 
-    def end_session(
-        self, session_id: int, messages_count: int, words_learned: int
-    ) -> None:
+    def end_session(self, session_id: int, messages_count: int, words_learned: int) -> None:
         """Mark session as ended with statistics.
 
         Args:
@@ -301,11 +300,13 @@ class LearningSessionRepository:
             messages_count: Total messages in the session.
             words_learned: Number of new words learned.
         """
-        self._client.table("learning_sessions").update({
-            "ended_at": datetime.now(UTC).isoformat(),
-            "messages_count": messages_count,
-            "words_learned": words_learned,
-        }).eq("id", session_id).eq("user_id", self._user_id).execute()
+        self._client.table("learning_sessions").update(
+            {
+                "ended_at": datetime.now(UTC).isoformat(),
+                "messages_count": messages_count,
+                "words_learned": words_learned,
+            }
+        ).eq("id", session_id).eq("user_id", self._user_id).execute()
 
     def get_all(self, limit: int = 50) -> list[LearningSession]:
         """Get all sessions ordered by start time.
@@ -394,10 +395,12 @@ class LessonProgressRepository:
         if existing:
             response = (
                 self._client.table("lesson_progress")
-                .update({
-                    "completed_at": completed_at,
-                    "score": score,
-                })
+                .update(
+                    {
+                        "completed_at": completed_at,
+                        "score": score,
+                    }
+                )
                 .eq("user_id", self._user_id)
                 .eq("lesson_id", lesson_id)
                 .execute()
@@ -405,12 +408,14 @@ class LessonProgressRepository:
         else:
             response = (
                 self._client.table("lesson_progress")
-                .insert({
-                    "user_id": self._user_id,
-                    "lesson_id": lesson_id,
-                    "completed_at": completed_at,
-                    "score": score,
-                })
+                .insert(
+                    {
+                        "user_id": self._user_id,
+                        "lesson_id": lesson_id,
+                        "completed_at": completed_at,
+                        "score": score,
+                    }
+                )
                 .execute()
             )
 
@@ -439,9 +444,6 @@ class LessonProgressRepository:
             List of all LessonProgress entries.
         """
         response = (
-            self._client.table("lesson_progress")
-            .select("*")
-            .eq("user_id", self._user_id)
-            .execute()
+            self._client.table("lesson_progress").select("*").eq("user_id", self._user_id).execute()
         )
         return [LessonProgress(**item) for item in response.data]

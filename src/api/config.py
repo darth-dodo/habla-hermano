@@ -81,10 +81,7 @@ class Settings(BaseSettings):
             True if URL and anon key are provided (for auth).
             Note: DB_URL is optional - only needed for Postgres checkpointing.
         """
-        return bool(
-            self.SUPABASE_URL
-            and self.SUPABASE_ANON_KEY
-        )
+        return bool(self.SUPABASE_URL and self.SUPABASE_ANON_KEY)
 
 
 @lru_cache

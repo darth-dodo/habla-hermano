@@ -31,11 +31,13 @@ def ensure_user_profile(user_id: str) -> None:
     if profile is None:
         # Profile should be auto-created by trigger, but create if missing
         client = get_supabase()
-        client.table("user_profiles").insert({
-            "id": user_id,
-            "preferred_language": DEFAULT_USER_SETTINGS["preferred_language"],
-            "current_level": DEFAULT_USER_SETTINGS["current_level"],
-        }).execute()
+        client.table("user_profiles").insert(
+            {
+                "id": user_id,
+                "preferred_language": DEFAULT_USER_SETTINGS["preferred_language"],
+                "current_level": DEFAULT_USER_SETTINGS["current_level"],
+            }
+        ).execute()
 
 
 def reset_user_data(user_id: str) -> None:

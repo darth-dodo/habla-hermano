@@ -50,9 +50,7 @@ class TestGetSupabase:
                 result = get_supabase()
 
                 assert result == mock_client
-                mock_create.assert_called_once_with(
-                    "https://test.supabase.co", "test-anon-key"
-                )
+                mock_create.assert_called_once_with("https://test.supabase.co", "test-anon-key")
 
     def test_caches_client_instance(self) -> None:
         """Test client is cached across calls."""
@@ -116,9 +114,7 @@ class TestGetSupabaseAdmin:
                 result = get_supabase_admin()
 
                 assert result == mock_client
-                mock_create.assert_called_once_with(
-                    "https://test.supabase.co", "service-key"
-                )
+                mock_create.assert_called_once_with("https://test.supabase.co", "service-key")
 
 
 # =============================================================================

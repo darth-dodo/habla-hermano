@@ -63,14 +63,11 @@ def get_supabase_admin() -> SupabaseClient:
 
     if not settings.supabase_configured:
         raise ValueError(
-            "Supabase is not configured. "
-            "Please set all required Supabase environment variables."
+            "Supabase is not configured. Please set all required Supabase environment variables."
         )
 
     if not settings.SUPABASE_SERVICE_KEY:
-        raise ValueError(
-            "SUPABASE_SERVICE_KEY is required for admin operations."
-        )
+        raise ValueError("SUPABASE_SERVICE_KEY is required for admin operations.")
 
     return create_client(
         settings.SUPABASE_URL,

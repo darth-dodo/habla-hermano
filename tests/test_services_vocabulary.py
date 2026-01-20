@@ -117,9 +117,7 @@ class TestVocabularyService:
 
             mock_class.assert_called_once_with("user-123")
 
-    def test_extract_vocabulary_returns_empty_list(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_extract_vocabulary_returns_empty_list(self, mock_repo: MagicMock) -> None:
         """Test extract_vocabulary returns empty list (stub implementation)."""
         service = VocabularyService("user-123")
 
@@ -151,21 +149,15 @@ class TestVocabularyService:
         assert result == 2
         assert mock_repo.upsert.call_count == 2
 
-    def test_save_vocabulary_doesnt_count_existing(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_save_vocabulary_doesnt_count_existing(self, mock_repo: MagicMock) -> None:
         """Test save_vocabulary doesn't count existing words as new."""
         # First word exists, second doesn't
         mock_repo.get_by_word_and_language.side_effect = [MagicMock(), None]
 
         service = VocabularyService("user-123")
         words = [
-            ExtractedWord(
-                word="hola", translation="hello", part_of_speech=None, context=""
-            ),
-            ExtractedWord(
-                word="nuevo", translation="new", part_of_speech=None, context=""
-            ),
+            ExtractedWord(word="hola", translation="hello", part_of_speech=None, context=""),
+            ExtractedWord(word="nuevo", translation="new", part_of_speech=None, context=""),
         ]
 
         result = service.save_vocabulary(words, language="es")
@@ -195,9 +187,7 @@ class TestVocabularyService:
             part_of_speech="interjection",
         )
 
-    def test_get_word_bank_returns_recent_words(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_get_word_bank_returns_recent_words(self, mock_repo: MagicMock) -> None:
         """Test get_word_bank returns recent vocabulary words."""
         mock_vocab = [
             MagicMock(word="hola"),
@@ -244,9 +234,7 @@ class TestVocabularyService:
         assert result.words_by_part_of_speech["verb"] == 1
         assert result.recently_learned == ["nuevo", "reciente"]
 
-    def test_get_statistics_most_seen_sorted(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_get_statistics_most_seen_sorted(self, mock_repo: MagicMock) -> None:
         """Test get_statistics returns most_seen sorted by times_seen."""
         mock_vocab = [
             MagicMock(word="c", part_of_speech=None, times_seen=1),
@@ -264,9 +252,7 @@ class TestVocabularyService:
         assert result.most_seen[1] == ("b", 5)
         assert result.most_seen[2] == ("c", 1)
 
-    def test_get_statistics_handles_empty_vocabulary(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_get_statistics_handles_empty_vocabulary(self, mock_repo: MagicMock) -> None:
         """Test get_statistics handles empty vocabulary."""
         mock_repo.get_all.return_value = []
         mock_repo.get_recent.return_value = []
@@ -279,9 +265,7 @@ class TestVocabularyService:
         assert result.most_seen == []
         assert result.recently_learned == []
 
-    def test_get_statistics_handles_none_part_of_speech(
-        self, mock_repo: MagicMock
-    ) -> None:
+    def test_get_statistics_handles_none_part_of_speech(self, mock_repo: MagicMock) -> None:
         """Test get_statistics skips None part_of_speech in counts."""
         mock_vocab = [
             MagicMock(word="hola", part_of_speech=None, times_seen=1),

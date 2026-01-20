@@ -398,15 +398,11 @@ class TestCheckpointerSupabaseSelection:
 
         with patch("src.agent.checkpointer.get_settings", return_value=mock_settings):
             # Mock the postgres checkpointer to avoid actual connection
-            with patch(
-                "src.agent.checkpointer.get_postgres_checkpointer"
-            ) as mock_postgres:
+            with patch("src.agent.checkpointer.get_postgres_checkpointer") as mock_postgres:
                 from unittest.mock import AsyncMock
 
                 mock_checkpointer = AsyncMock()
-                mock_postgres.return_value.__aenter__ = AsyncMock(
-                    return_value=mock_checkpointer
-                )
+                mock_postgres.return_value.__aenter__ = AsyncMock(return_value=mock_checkpointer)
                 mock_postgres.return_value.__aexit__ = AsyncMock(return_value=None)
 
                 async with get_checkpointer() as checkpointer:

@@ -344,9 +344,7 @@ class TestTypeAliases:
 class TestAuthIntegration:
     """Integration tests for auth dependencies with FastAPI routes."""
 
-    def test_protected_route_with_valid_token(
-        self, client: TestClient, valid_token: str
-    ) -> None:
+    def test_protected_route_with_valid_token(self, client: TestClient, valid_token: str) -> None:
         """Test protected route accepts valid token."""
         response = client.get(
             "/protected",
@@ -375,9 +373,7 @@ class TestAuthIntegration:
 
         assert response.status_code == 401
 
-    def test_optional_route_with_valid_token(
-        self, client: TestClient, valid_token: str
-    ) -> None:
+    def test_optional_route_with_valid_token(self, client: TestClient, valid_token: str) -> None:
         """Test optional route returns user info with valid token."""
         response = client.get(
             "/optional",
@@ -398,9 +394,7 @@ class TestAuthIntegration:
         assert data["authenticated"] is False
         assert data["user_id"] is None
 
-    def test_protected_route_with_cookie(
-        self, client: TestClient, valid_token: str
-    ) -> None:
+    def test_protected_route_with_cookie(self, client: TestClient, valid_token: str) -> None:
         """Test protected route accepts token from cookie."""
         response = client.get(
             "/protected",

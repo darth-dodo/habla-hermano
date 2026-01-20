@@ -128,9 +128,7 @@ class TestGetSupabaseClient:
                 result = get_supabase_client()
 
                 assert result == mock_client
-                mock_create.assert_called_once_with(
-                    "https://test.supabase.co", "test-anon-key"
-                )
+                mock_create.assert_called_once_with("https://test.supabase.co", "test-anon-key")
 
 
 # =============================================================================
@@ -296,9 +294,7 @@ class TestSignupEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock already registered error
-            mock_client.auth.sign_up.side_effect = Exception(
-                "User already registered"
-            )
+            mock_client.auth.sign_up.side_effect = Exception("User already registered")
 
             response = client.post(
                 "/auth/signup",
@@ -418,9 +414,7 @@ class TestLoginEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock email not confirmed error
-            mock_client.auth.sign_in_with_password.side_effect = Exception(
-                "Email not confirmed"
-            )
+            mock_client.auth.sign_in_with_password.side_effect = Exception("Email not confirmed")
 
             response = client.post(
                 "/auth/login",
