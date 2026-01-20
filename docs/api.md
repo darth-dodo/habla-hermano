@@ -16,13 +16,91 @@ Habla Hermano provides an HTMX-driven API that returns HTML partials for seamles
 
 ---
 
-## Endpoints
+## Authentication
+
+All chat routes require authentication via JWT token stored in an httponly cookie (`sb-access-token`).
+
+### GET /auth/login
+
+Render the login page for existing users.
+
+**Response**: Full HTML page with login form.
+
+**Example**:
+```bash
+curl http://localhost:8000/auth/login
+```
+
+---
+
+### POST /auth/login
+
+Authenticate user with email and password.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+| `password` | string | Yes | User's password |
+
+**Response**:
+- Success: Sets `sb-access-token` cookie (7-day expiry), redirects to `/`
+- Error: Returns error message HTML partial
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -d "email=user@example.com" \
+  -d "password=secretpassword"
+```
+
+---
+
+### GET /auth/signup
+
+Render the signup page for new users.
+
+**Response**: Full HTML page with signup form.
+
+---
+
+### POST /auth/signup
+
+Create a new user account.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+| `password` | string | Yes | Password (minimum 8 characters) |
+
+**Response**:
+- Success: Creates user, sets JWT cookie, redirects to `/`
+- Error: Returns error message HTML partial
+
+---
+
+### POST /auth/logout
+
+Clear session and logout user.
+
+**Response**: Clears `sb-access-token` cookie, redirects to `/auth/login`
+
+---
+
+## Protected Endpoints
 
 ### GET /
 
-Render the main chat interface.
+Render the main chat interface. **Requires authentication.**
 
 **Response**: Full HTML page with chat UI, level/language selectors, and theme toggle.
+
+**Authentication**: Requires valid `sb-access-token` JWT cookie.
+
+**Unauthorized**: Returns 401 with `HX-Redirect: /auth/login` header.
 
 **Example**:
 ```bash
@@ -33,7 +111,9 @@ curl http://localhost:8000/
 
 ### POST /chat
 
-Send a message and receive an AI response with optional scaffolding and grammar feedback.
+Send a message and receive an AI response with optional scaffolding and grammar feedback. **Requires authentication.**
+
+**Authentication**: Requires valid `sb-access-token` JWT cookie. Thread ID is derived from user ID (`user:{user_id}`).
 
 #### Request
 
@@ -43,7 +123,7 @@ Send a message and receive an AI response with optional scaffolding and grammar 
 |-----------|------|----------|---------|-------------|
 | `message` | string | Yes | - | User's message in the target language |
 | `level` | string | No | `A1` | CEFR proficiency level: `A0`, `A1`, `A2`, `B1` |
-| `language` | string | No | `es` | Target language code: `es` (Spanish), `de` (German) |
+| `language` | string | No | `es` | Target language code: `es` (Spanish), `de` (German), `fr` (French) |
 
 **Example Request**:
 ```bash

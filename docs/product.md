@@ -215,14 +215,15 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 1** | Basic chat with LangGraph respond node | ✅ Complete |
 | **Phase 2** | Grammar feedback with analyze node | ✅ Complete |
 | **Phase 3** | Scaffolding with conditional routing | ✅ Complete |
+| **Phase 4** | Persistence | PostgreSQL checkpointing, conversation memory | ✅ Complete |
+| **Phase 5** | Authentication | Supabase Auth, multi-user support, JWT tokens | ✅ Complete |
 
 ### Planned
 
 | Phase | Focus | Description |
 |-------|-------|-------------|
-| **Phase 4** | Persistence | Conversation history, vocabulary tracking across sessions |
-| **Phase 5** | Micro-lessons | 2-3 minute focused lessons that unlock conversation abilities |
-| **Phase 6** | Progress tracking | Words learned, patterns mastered, conversation milestones |
+| **Phase 6** | Micro-lessons | 2-3 minute focused lessons that unlock conversation abilities |
+| **Phase 7** | Progress tracking | Words learned, patterns mastered, conversation milestones |
 
 ### Future Ideas
 

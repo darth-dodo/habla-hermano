@@ -17,11 +17,18 @@
 | Analyze Node | `test_analyze_node.py` | 70+ | Phase 2 grammar feedback, vocabulary extraction |
 | API Config | `test_api_config.py` | 30+ | Settings, environment, Pydantic config |
 | API Routes | `test_api_routes.py` | 45+ | Endpoints, HTMX responses, form handling |
-| Database | `test_database.py` | 55+ | SQLAlchemy models, repository layer |
+| Auth | `test_auth.py` | 50+ | JWT validation, signup/login flows, token expiration |
+| Checkpointer | `test_checkpointer.py` | 30+ | PostgresSaver/MemorySaver fallback, thread IDs |
+| Session | `test_session.py` | 20+ | Thread ID management, cookie lifecycle |
+| Persistence | `test_persistence_integration.py` | 25+ | End-to-end auth + persistence workflows |
+| DB Models | `test_db_models.py` | 25+ | Pydantic models for Supabase |
+| DB Repository | `test_db_repository.py` | 30+ | Data access layer with mocked client |
+| Supabase Client | `test_supabase_client.py` | 15+ | Client singleton, cache management |
+| Services Levels | `test_services_levels.py` | 20+ | CEFR level detection |
+| Services Vocab | `test_services_vocabulary.py` | 20+ | Vocabulary tracking |
 | Lessons/Progress | `test_lessons_progress_routes.py` | 50+ | Lesson endpoints, progress tracking |
-| Services | `test_services.py` | 60+ | Business logic, vocabulary service |
 
-**Total**: 641 tests with 98% code coverage
+**Total**: 829+ tests with 86%+ code coverage
 
 ---
 
@@ -465,11 +472,11 @@ def base_state(self) -> ConversationState:
 
 | Module | Current | Target |
 |--------|---------|--------|
-| `src/agent/` | 98% | 95%+ |
-| `src/api/` | 97% | 95%+ |
-| `src/db/` | 95% | 90%+ |
-| `src/services/` | 96% | 90%+ |
-| **Overall** | **98%** | **95%+** |
+| `src/agent/` | 90%+ | 85%+ |
+| `src/api/` | 85%+ | 80%+ |
+| `src/db/` | 85%+ | 80%+ |
+| `src/services/` | 90%+ | 85%+ |
+| **Overall** | **86%+** | **70%+** |
 
 ### Coverage Commands
 

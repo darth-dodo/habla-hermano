@@ -30,9 +30,9 @@
 
 ## Current State
 
-**Branch**: `main`
-**Phase**: Phase 5 In Progress (Supabase Auth)
-**Test Coverage**: 826+ tests, 98% coverage
+**Branch**: `feat/phase4-supabase-persistence`
+**Phase**: Phase 5 Complete (Supabase Auth & Persistence)
+**Test Coverage**: 829+ tests, 86%+ coverage
 
 ### What's Working
 
@@ -46,8 +46,10 @@
 | Word Banks & Hints | ✅ | Contextual help for A0-A1 learners |
 | Sentence Starters | ✅ | Partial sentences to get beginners going |
 | Conditional Routing | ✅ | A0-A1 → scaffold, A2-B1 → skip |
-| Conversation Persistence | ✅ | LangGraph checkpointing with MemorySaver (in-process) |
-| Session Management | ✅ | Thread ID via cookies, 30-day expiry |
+| Conversation Persistence | ✅ | PostgresSaver with MemorySaver fallback |
+| User Authentication | ✅ | Supabase Auth with JWT tokens |
+| Session Management | ✅ | JWT in httponly cookies, 7-day expiry |
+| Multi-User Support | ✅ | User ID → Thread ID isolation |
 | New Conversation | ✅ | Clear session and start fresh |
 | 3 Themes | ✅ | Dark, Light, Ocean |
 | Mobile-First UI | ✅ | Works on all devices |
@@ -59,7 +61,8 @@ START → respond → [needs_scaffold?]
                     ├── A0/A1 → scaffold → analyze → END
                     └── A2/B1 → analyze → END
 
-Persistence: MemorySaver (in-process) → migrating to PostgresSaver (Supabase)
+Persistence: PostgresSaver (Supabase) with MemorySaver fallback for dev
+Auth: Supabase Auth → JWT cookie → Protected routes
 ```
 
 ---
@@ -92,28 +95,25 @@ Persistence: MemorySaver (in-process) → migrating to PostgresSaver (Supabase)
 - [Design Doc](docs/design/phase3-scaffold-node.md)
 
 ### Phase 4: Persistence ✅
-- LangGraph checkpointing with MemorySaver (AsyncSqliteSaver had bug)
-- Thread ID management via cookies (30-day expiry)
-- Conversation history persists within server session
+- LangGraph checkpointing with PostgresSaver (AsyncSqliteSaver had bug)
+- MemorySaver fallback for development without Supabase
+- Thread ID management via user authentication
+- Conversation history persists in PostgreSQL
 - "New Conversation" button with `/new` endpoint
 - [Design Doc](docs/design/phase4-persistence.md)
+
+### Phase 5: Supabase Auth ✅
+- Supabase Auth with email/password authentication
+- JWT token validation with `CurrentUserDep` dependency
+- Protected routes for chat and main interface
+- Login/signup/logout endpoints and UI
+- User ID → Thread ID mapping for conversation isolation
+- 829+ tests, 86%+ coverage
+- [ADR](docs/adr/ADR-001-supabase-integration.md), [Design Doc](docs/design/phase5-supabase-auth.md)
 
 ---
 
 ## Up Next
-
-### Phase 5: Supabase Auth & Production Persistence (Priority: 🔴 High) - IN PROGRESS
-
-| Task | Status | Notes |
-|------|--------|-------|
-| ADR & Design Doc | ✅ | [ADR-001](docs/adr/ADR-001-supabase-integration.md), [Design](docs/design/phase5-supabase-auth.md) |
-| Phase 1: Config + Dependencies | ✅ | Supabase client, env vars, new packages installed |
-| Phase 2: Database Schema | ⏳ | Tables with RLS in Supabase (requires Supabase project) |
-| Phase 3: Auth Module | ⏳ | JWT validation, login/signup routes |
-| Phase 4: PostgresSaver | ⏳ | Replace MemorySaver with PostgresSaver |
-| Phase 5: Protected Routes | ⏳ | Add CurrentUserDep to chat routes |
-| Phase 6: Repository Migration | ⏳ | Supabase client for data access |
-| Phase 7: Tests + Cleanup | ⏳ | Auth tests, remove deprecated code |
 
 ### Phase 6: Micro-lessons (Priority: 🟡 Medium)
 
@@ -446,20 +446,21 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 5 In Progress (Supabase Auth)
+- **Current Phase**: Phase 5 Complete (Supabase Auth & Persistence)
 - **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
 - **Graph Structure**: respond → [conditional] → scaffold OR analyze → END
-- **Persistence**: MemorySaver (migrating to PostgresSaver with Supabase)
-- **Auth**: Anonymous (migrating to email/password with Supabase Auth)
+- **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
+- **Auth**: Email/password via Supabase Auth with JWT tokens
 - **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding
-- **Test Coverage**: 826+ tests, 98% coverage
-- **Branch**: `main`
+- **Test Coverage**: 829+ tests, 86%+ coverage
+- **Branch**: `feat/phase4-supabase-persistence`
 
-### Phase 5 Implementation Notes
+### Phase 4 & 5 Implementation Notes
 - **ADR**: `docs/adr/ADR-001-supabase-integration.md` - Decision rationale
-- **Design**: `docs/design/phase5-supabase-auth.md` - Implementation details
+- **Design**: `docs/design/phase4-persistence.md`, `docs/design/phase5-supabase-auth.md`
 - **Key Pattern**: `user_id` becomes `thread_id` (single conversation per user)
 - **Auth Flow**: JWT in httponly cookie → FastAPI validates → Supabase Postgres
+- **Checkpointer**: PostgresSaver for production, MemorySaver fallback for dev
 - **RLS**: All tables have Row Level Security policies
 
 ### Hermano Personality Guidelines
@@ -491,8 +492,8 @@ The `LANGUAGE_ADAPTER` dict in `src/agent/prompts.py` handles language switching
 | 1. Minimal Graph | ✅ | StateGraph, TypedDict, single node |
 | 2. Multi-node | ✅ | Sequential edges, state passing |
 | 3. Conditional Routing | ✅ | Branching logic, routing functions |
-| 4. Checkpointing | ✅ | MemorySaver, thread IDs, conversation persistence |
-| 5. PostgresSaver | 🔄 | Production persistence with Supabase Postgres |
+| 4. Checkpointing | ✅ | PostgresSaver, thread IDs, conversation persistence |
+| 5. PostgresSaver | ✅ | Production persistence with Supabase Postgres |
 | 6. Complex State | ⏳ | Nested TypedDict, multiple fields |
 | 7. Subgraphs | ⏳ | Graph composition |
 
