@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="min-h-full flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <!-- Logo/Brand -->
+        <div class="flex justify-center">
+            <div class="w-16 h-16 rounded-3xl bg-accent/10 flex items-center justify-center">
+                <svg class="w-10 h-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </div>
+        </div>
+        <h2 class="mt-6 text-center text-3xl font-bold text-text">
+            Welcome back
+        </h2>
+        <p class="mt-2 text-center text-sm text-text-muted">
+            Sign in to continue learning
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-surface-elevated py-8 px-4 shadow-lg border border-border rounded-3xl sm:px-10">
+            <!-- Error Message -->
+            {% if error %}
+            <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm text-red-400">{{ error }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form
+                hx-post="/auth/login"
+                hx-swap="innerHTML"
+                hx-target="closest div.bg-surface-elevated"
+                hx-indicator="#login-indicator"
+                class="space-y-6"
+            >
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-text">
+                        Email address
+                    </label>
+                    <div class="mt-2">
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autocomplete="email"
+                            required
+                            value="{{ email or '' }}"
+                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                            placeholder="you@example.com"
+                        >
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-text">
+                        Password
+                    </label>
+                    <div class="mt-2">
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autocomplete="current-password"
+                            required
+                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                            placeholder="Enter your password"
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div>
+                    <button
+                        type="submit"
+                        class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-elevated"
+                    >
+                        <span>Sign in</span>
+                        <!-- Loading indicator -->
+                        <svg id="login-indicator" class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Divider -->
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-border"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-4 bg-surface-elevated text-text-muted">New to Habla Hermano?</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sign Up Link -->
+            <div class="mt-6">
+                <a
+                    href="/auth/signup"
+                    class="w-full flex justify-center py-3 px-4 border border-border rounded-xl text-sm font-medium text-text hover:bg-surface-overlay transition-all duration-200"
+                >
+                    Create an account
+                </a>
+            </div>
+        </div>
+
+        <!-- Continue Without Account -->
+        <div class="mt-6 text-center">
+            <a href="/" class="text-sm text-text-muted hover:text-accent transition-colors duration-200">
+                Continue as guest
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

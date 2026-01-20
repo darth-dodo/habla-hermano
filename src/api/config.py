@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     # Required settings
     ANTHROPIC_API_KEY: str
 
+    # Supabase settings (required for auth and persistence)
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
+    SUPABASE_DB_URL: str = ""
+    # Optional: Service key for admin operations (bypasses RLS)
+    SUPABASE_SERVICE_KEY: str = ""
+
     # Application settings
     APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
@@ -65,6 +72,16 @@ class Settings(BaseSettings):
     def log_level(self) -> Literal["DEBUG", "INFO", "WARNING", "ERROR"]:
         """Return appropriate log level based on DEBUG setting."""
         return "DEBUG" if self.DEBUG else "INFO"
+
+    @property
+    def supabase_configured(self) -> bool:
+        """Check if Supabase Auth is configured.
+
+        Returns:
+            True if URL and anon key are provided (for auth).
+            Note: DB_URL is optional - only needed for Postgres checkpointing.
+        """
+        return bool(self.SUPABASE_URL and self.SUPABASE_ANON_KEY)
 
 
 @lru_cache

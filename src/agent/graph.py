@@ -2,12 +2,15 @@
 LangGraph definition for HablaAI.
 
 Phase 3: Graph with conditional routing for scaffolding.
+Phase 4: Optional checkpointer support for conversation persistence.
+
 - A0-A1 learners: respond -> scaffold -> analyze -> END
 - A2-B1 learners: respond -> analyze -> END
 """
 
 from typing import Any
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -18,7 +21,9 @@ from src.agent.routing import needs_scaffolding
 from src.agent.state import ConversationState
 
 
-def build_graph() -> CompiledStateGraph[Any]:
+def build_graph(
+    checkpointer: BaseCheckpointSaver[Any] | None = None,
+) -> CompiledStateGraph[Any]:
     """
     Build and compile the conversation graph.
 
@@ -33,16 +38,30 @@ def build_graph() -> CompiledStateGraph[Any]:
     - For A0-A1: scaffold node generates word banks, hints, sentence starters
     - For all levels: analyze node examines the user's message for grammar/vocab
 
+    Args:
+        checkpointer: Optional checkpoint saver for conversation persistence.
+            When provided, enables conversation history to be saved and resumed
+            across sessions using thread_id in the config.
+
     Returns:
         Compiled LangGraph ready for invocation.
 
     Example usage:
+        # Without persistence (stateless)
         graph = build_graph()
         result = await graph.ainvoke({
             "messages": [HumanMessage(content="Hola!")],
             "level": "A1",
             "language": "es"
         })
+
+        # With persistence (Phase 4)
+        async with get_checkpointer() as checkpointer:
+            graph = build_graph(checkpointer=checkpointer)
+            result = await graph.ainvoke(
+                {"messages": [HumanMessage(content="Hola!")], "level": "A1", "language": "es"},
+                config={"configurable": {"thread_id": "user-session-123"}}
+            )
         # result contains: messages, grammar_feedback, new_vocabulary, scaffolding
     """
     # Create the graph with our state type
@@ -70,8 +89,8 @@ def build_graph() -> CompiledStateGraph[Any]:
     # analyze always goes to END
     graph.add_edge("analyze", END)
 
-    # Compile and return
-    return graph.compile()
+    # Compile and return with optional checkpointer for persistence
+    return graph.compile(checkpointer=checkpointer)
 
 
 # Pre-built graph instance for convenience

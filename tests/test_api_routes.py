@@ -493,6 +493,47 @@ class TestResponsePartial:
 class TestDifferentAgentResponses:
     """Tests with different mock agent responses."""
 
+    def _create_mock_context_and_graph(self, result: dict[str, Any]) -> tuple[MagicMock, MagicMock]:
+        """Create mock checkpointer context and graph for testing.
+
+        Phase 4: Updated to use async context manager pattern.
+        """
+        mock_graph = MagicMock()
+        mock_graph.ainvoke = AsyncMock(return_value=result)
+
+        mock_checkpointer = MagicMock()
+        mock_context = MagicMock()
+        mock_context.__aenter__ = AsyncMock(return_value=mock_checkpointer)
+        mock_context.__aexit__ = AsyncMock(return_value=None)
+
+        return mock_context, mock_graph
+
+    def _create_app_with_auth_mocked(
+        self,
+        mock_context: MagicMock,
+        mock_graph: MagicMock,
+    ) -> Any:
+        """Create app with both checkpointer and auth mocked.
+
+        Phase 5: Added auth mocking for tests that create their own app.
+        """
+        from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
+        from src.api.main import create_app
+
+        mock_user = AuthenticatedUser(id="test-user-123", email="test@example.com")
+
+        async def mock_get_current_user():
+            return mock_user
+
+        async def mock_get_current_user_optional():
+            return mock_user
+
+        app = create_app()
+        app.dependency_overrides[get_current_user] = mock_get_current_user
+        app.dependency_overrides[get_current_user_optional] = mock_get_current_user_optional
+
+        return app
+
     def test_empty_ai_response(self, test_client: TestClient) -> None:
         """POST /chat should handle empty AI response."""
         empty_result: dict[str, Any] = {
@@ -502,16 +543,21 @@ class TestDifferentAgentResponses:
             ],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+            "scaffolding": {},
         }
 
-        mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(return_value=empty_result)
+        mock_context, mock_graph = self._create_mock_context_and_graph(empty_result)
 
-        with patch("src.api.routes.chat.compiled_graph", mock_graph):
+        with (
+            patch("src.api.routes.chat.get_checkpointer", return_value=mock_context),
+            patch("src.api.routes.chat.build_graph", return_value=mock_graph),
+        ):
             # Late import inside patch context for proper mocking
-            from src.api.main import create_app
+            app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(create_app()) as client:
+            with TestClient(app) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
 
@@ -526,16 +572,21 @@ class TestDifferentAgentResponses:
             ],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+            "scaffolding": {},
         }
 
-        mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(return_value=long_result)
+        mock_context, mock_graph = self._create_mock_context_and_graph(long_result)
 
-        with patch("src.api.routes.chat.compiled_graph", mock_graph):
+        with (
+            patch("src.api.routes.chat.get_checkpointer", return_value=mock_context),
+            patch("src.api.routes.chat.build_graph", return_value=mock_graph),
+        ):
             # Late import inside patch context for proper mocking
-            from src.api.main import create_app
+            app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(create_app()) as client:
+            with TestClient(app) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
                 assert long_response in response.text
@@ -551,15 +602,20 @@ class TestDifferentAgentResponses:
             ],
             "level": "A1",
             "language": "es",
+            "grammar_feedback": [],
+            "new_vocabulary": [],
+            "scaffolding": {},
         }
 
-        mock_graph = MagicMock()
-        mock_graph.ainvoke = AsyncMock(return_value=html_result)
+        mock_context, mock_graph = self._create_mock_context_and_graph(html_result)
 
-        with patch("src.api.routes.chat.compiled_graph", mock_graph):
+        with (
+            patch("src.api.routes.chat.get_checkpointer", return_value=mock_context),
+            patch("src.api.routes.chat.build_graph", return_value=mock_graph),
+        ):
             # Late import inside patch context for proper mocking
-            from src.api.main import create_app
+            app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(create_app()) as client:
+            with TestClient(app) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200

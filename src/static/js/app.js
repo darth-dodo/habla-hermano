@@ -212,6 +212,16 @@
             }
         }
 
+        // Cmd/Ctrl + Shift + N to start new conversation
+        if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'N') {
+            event.preventDefault();
+            // Find and click the new conversation button
+            const newChatBtn = document.querySelector('[hx-post="/new"]');
+            if (newChatBtn) {
+                htmx.trigger(newChatBtn, 'click');
+            }
+        }
+
         // Escape to blur input
         if (event.key === 'Escape') {
             const { messageInput } = getElements();
@@ -237,6 +247,7 @@
         document.body.addEventListener('htmx:afterRequest', onAfterRequest);
         document.body.addEventListener('htmx:afterSwap', onAfterSwap);
         document.body.addEventListener('htmx:responseError', onResponseError);
+        document.body.addEventListener('htmx:beforeRequest', onNewConversationRequest);
 
         // Keyboard shortcuts
         document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -301,6 +312,50 @@
     }
 
     // ============================================
+    // New Conversation Handler
+    // ============================================
+
+    /**
+     * Handle new conversation button response
+     * Server returns HX-Redirect header, HTMX handles the redirect automatically
+     */
+    function handleNewConversation() {
+        // Clear existing messages (for visual feedback while redirect happens)
+        const { chatMessages, messageInput } = getElements();
+
+        // Optional: Show brief loading state
+        if (chatMessages) {
+            // Keep welcome message, clear the rest
+            const welcomeMessage = chatMessages.querySelector('.message-enter');
+            const allMessages = chatMessages.querySelectorAll('.message-enter, [data-user-message]');
+
+            // If redirect doesn't happen immediately, give visual feedback
+            allMessages.forEach((msg, index) => {
+                if (index > 0) { // Skip first message (welcome)
+                    msg.style.opacity = '0.5';
+                    msg.style.transition = 'opacity 0.2s';
+                }
+            });
+        }
+
+        // Clear input
+        if (messageInput) {
+            messageInput.value = '';
+        }
+    }
+
+    /**
+     * HTMX beforeRequest handler for new conversation
+     */
+    function onNewConversationRequest(event) {
+        // Check if this is a request to /new endpoint
+        const path = event.detail.pathInfo?.requestPath || event.detail.path;
+        if (path === '/new') {
+            handleNewConversation();
+        }
+    }
+
+    // ============================================
     // Global Exports (for inline HTMX handlers)
     // ============================================
     window.showLoading = showLoading;
@@ -310,6 +365,7 @@
     window.focusInput = focusInput;
     window.insertWord = insertWord;
     window.insertStarter = insertStarter;
+    window.handleNewConversation = handleNewConversation;
 
     // ============================================
     // Start

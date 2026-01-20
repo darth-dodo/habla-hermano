@@ -14,16 +14,17 @@ dependencies = [
     "jinja2>=3.1.0",
     "python-multipart>=0.0.12",
 
-    # Database
-    "sqlalchemy>=2.0.0",
-    "aiosqlite>=0.20.0",
+    # Database & Auth (Supabase)
+    "supabase>=2.0.0",
+    "PyJWT>=2.8.0",
+    "psycopg[binary,pool]>=3.1.0",
 
     # LangGraph + LangChain
     "langchain>=0.3.0",
     "langchain-anthropic>=0.3.0",
     "langgraph>=0.2.0",
     "langgraph-checkpoint>=2.0.0",
-    "langgraph-checkpoint-sqlite>=2.0.0",
+    "langgraph-checkpoint-postgres>=2.0.0",
 
     # Configuration
     "pydantic-settings>=2.0.0",
@@ -37,7 +38,6 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "httpx>=0.28.0",
-    "greenlet>=3.0.0",  # Required for async SQLAlchemy testing
 
     # Linting & Formatting
     "ruff>=0.8.0",
@@ -118,6 +118,11 @@ module = [
     "langchain.*",
     "langchain_anthropic.*",
     "langchain_core.*",
+    "supabase.*",
+    "gotrue.*",
+    "postgrest.*",
+    "psycopg.*",
+    "psycopg_pool.*",
 ]
 ignore_missing_imports = true
 

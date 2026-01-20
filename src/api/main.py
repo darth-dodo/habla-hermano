@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from src.api.config import get_settings
-from src.api.routes import chat
+from src.api.routes import auth, chat
 
 # Configure logging
 settings = get_settings()
@@ -71,6 +71,7 @@ def create_app() -> FastAPI:
         logger.warning("Static directory not found: %s", settings.static_dir)
 
     # Include routers
+    app.include_router(auth.router)
     app.include_router(chat.router)
 
     return app

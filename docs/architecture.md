@@ -8,14 +8,14 @@
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| **Phase 1** | Minimal Graph - Basic state, single respond node | Completed |
-| **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | Completed |
-| **Phase 3** | Conditional Routing - Branching logic, scaffolding | Completed |
-| **Phase 4** | Checkpointing - Persistence, conversation memory | Planned |
-| **Phase 5** | Complex State - Rich state management | Planned |
+| **Phase 1** | Minimal Graph - Basic state, single respond node | ✅ Completed |
+| **Phase 2** | Analysis Node - Multi-node graphs, sequential edges | ✅ Completed |
+| **Phase 3** | Conditional Routing - Branching logic, scaffolding | ✅ Completed |
+| **Phase 4** | Checkpointing - PostgreSQL persistence, conversation memory | ✅ Completed |
+| **Phase 5** | Authentication - Supabase Auth, multi-user support | ✅ Completed |
 | **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
 
-**Test Coverage**: 641 tests (98% coverage) covering agent, API, database, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 829+ tests (86%+ coverage) covering agent, API, database, auth, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -129,7 +129,8 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **Frontend** | HTMX + Jinja2 | Server-driven UI, minimal JS, fast iteration |
 | **Agent** | LangGraph | Learning goal: stateful conversations, routing, checkpointing |
 | **LLM** | Claude API | Superior language understanding, structured outputs |
-| **Database** | SQLite + SQLAlchemy | Simple persistence, no server setup |
+| **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
+| **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
 | **Styling** | Tailwind CSS + CSS Variables | Utility-first, 3-theme system (dark/light/ocean) |
 
 ---
@@ -146,9 +147,13 @@ habla-hermano/
 │   │   ├── main.py              # [Implemented] FastAPI app entry
 │   │   ├── config.py            # [Implemented] Settings (Pydantic)
 │   │   ├── dependencies.py      # [Implemented] DI for graph, db session
+│   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep
+│   │   ├── session.py           # [Implemented] Thread ID management
+│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
-│   │       ├── chat.py          # [Implemented] POST /chat, conversation endpoints
+│   │       ├── chat.py          # [Implemented] POST /chat (protected)
+│   │       ├── auth.py          # [Implemented] Login, signup, logout
 │   │       ├── lessons.py       # Micro-lesson endpoints
 │   │       └── progress.py      # Vocabulary, stats endpoints
 │   │
@@ -157,6 +162,7 @@ habla-hermano/
 │   │   ├── graph.py             # [Implemented] LangGraph: respond → scaffold (conditional) → analyze → END
 │   │   ├── state.py             # [Implemented] TypedDict state with GrammarFeedback, VocabWord
 │   │   ├── prompts.py           # [Implemented] System prompts by level
+│   │   ├── checkpointer.py      # [Implemented] PostgresSaver + MemorySaver fallback
 │   │   └── nodes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── respond.py       # [Implemented] Generate AI response
@@ -179,6 +185,9 @@ habla-hermano/
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
 │   │   ├── chat.html            # [Implemented] Chat UI with language/level selectors, theme toggle
 │   │   ├── lessons.html
+│   │   ├── auth/
+│   │   │   ├── login.html       # [Implemented] Login page
+│   │   │   └── signup.html      # [Implemented] Signup page
 │   │   └── partials/
 │   │       ├── message.html     # [Implemented] Message bubble styling
 │   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)

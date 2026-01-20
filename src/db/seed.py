@@ -1,43 +1,67 @@
-"""Seed data for initial database population."""
+"""Seed data utilities for Habla Hermano.
 
-from sqlalchemy.ext.asyncio import AsyncSession
+With Supabase integration, database tables are managed via Supabase migrations
+and user_profiles are auto-created via database triggers on auth.users.
 
-from src.db.models import Base, async_session_factory, engine, init_db
-from src.db.repository import SettingsRepository
+This module provides utilities for initializing user data if needed.
+"""
 
-# Default settings for MVP
-DEFAULT_SETTINGS: dict[str, str] = {
-    "current_language": "es",
-    "current_level": "A0",
-    "scaffolding_enabled": "true",
-    "auto_translate": "true",
+from src.api.supabase_client import get_supabase
+from src.db.repository import UserProfileRepository
+
+# Default settings for new users (stored in user_profiles)
+DEFAULT_USER_SETTINGS = {
+    "preferred_language": "es",
+    "current_level": "A1",
 }
 
 
-async def seed_settings(session: AsyncSession) -> None:
-    """Seed default settings if not present."""
-    repo = SettingsRepository(session)
-    for key, value in DEFAULT_SETTINGS.items():
-        existing = await repo.get(key)
-        if existing is None:
-            await repo.set(key, value)
+def ensure_user_profile(user_id: str) -> None:
+    """Ensure user profile exists with default settings.
+
+    Note: User profiles are normally auto-created via Supabase trigger
+    when a user signs up. This function is for edge cases or testing.
+
+    Args:
+        user_id: Supabase auth user UUID.
+    """
+    repo = UserProfileRepository(user_id)
+    profile = repo.get()
+
+    if profile is None:
+        # Profile should be auto-created by trigger, but create if missing
+        client = get_supabase()
+        client.table("user_profiles").insert(
+            {
+                "id": user_id,
+                "preferred_language": DEFAULT_USER_SETTINGS["preferred_language"],
+                "current_level": DEFAULT_USER_SETTINGS["current_level"],
+            }
+        ).execute()
 
 
-async def seed_database() -> None:
-    """Initialize and seed the database with default data."""
-    await init_db()
+def reset_user_data(user_id: str) -> None:
+    """Reset all user data except profile.
 
-    async with async_session_factory() as session:
-        await seed_settings(session)
+    Useful for testing or when user wants to start fresh.
+
+    Args:
+        user_id: Supabase auth user UUID.
+    """
+    client = get_supabase()
+
+    # Delete all vocabulary
+    client.table("vocabulary").delete().eq("user_id", user_id).execute()
+
+    # Delete all learning sessions
+    client.table("learning_sessions").delete().eq("user_id", user_id).execute()
+
+    # Delete all lesson progress
+    client.table("lesson_progress").delete().eq("user_id", user_id).execute()
 
 
-async def reset_database() -> None:
-    """Reset database to initial state (for development)."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
-    await seed_database()
-
-
-__all__ = ["DEFAULT_SETTINGS", "reset_database", "seed_database", "seed_settings"]
+__all__ = [
+    "DEFAULT_USER_SETTINGS",
+    "ensure_user_profile",
+    "reset_user_data",
+]

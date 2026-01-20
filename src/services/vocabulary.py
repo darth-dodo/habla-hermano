@@ -2,8 +2,6 @@
 
 from dataclasses import dataclass
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from src.db.repository import VocabularyRepository
 
 
@@ -30,11 +28,16 @@ class VocabularyStats:
 class VocabularyService:
     """Service for vocabulary extraction and tracking."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._repo = VocabularyRepository(session)
-        self._session = session
+    def __init__(self, user_id: str) -> None:
+        """Initialize vocabulary service for a user.
 
-    async def extract_vocabulary(
+        Args:
+            user_id: Supabase auth user UUID.
+        """
+        self._user_id = user_id
+        self._repo = VocabularyRepository(user_id)
+
+    def extract_vocabulary(
         self,
         text: str,  # noqa: ARG002
         language: str,  # noqa: ARG002
@@ -56,7 +59,7 @@ class VocabularyService:
         """
         return []
 
-    async def save_vocabulary(
+    def save_vocabulary(
         self,
         words: list[ExtractedWord],
         language: str,
@@ -73,10 +76,10 @@ class VocabularyService:
         """
         new_count = 0
         for word in words:
-            existing = await self._repo.get_by_word_and_language(word.word, language)
+            existing = self._repo.get_by_word_and_language(word.word, language)
             if existing is None:
                 new_count += 1
-            await self._repo.upsert(
+            self._repo.upsert(
                 word=word.word,
                 translation=word.translation,
                 language=language,
@@ -84,7 +87,7 @@ class VocabularyService:
             )
         return new_count
 
-    async def get_word_bank(
+    def get_word_bank(
         self,
         language: str,
         topic: str | None = None,  # noqa: ARG002
@@ -104,10 +107,10 @@ class VocabularyService:
         Returns:
             List of words for the word bank
         """
-        recent = await self._repo.get_recent(language, limit=count)
+        recent = self._repo.get_recent(language, limit=count)
         return [v.word for v in recent]
 
-    async def get_statistics(self, language: str) -> VocabularyStats:
+    def get_statistics(self, language: str) -> VocabularyStats:
         """
         Get vocabulary learning statistics.
 
@@ -117,7 +120,7 @@ class VocabularyService:
         Returns:
             Statistics about vocabulary progress
         """
-        all_vocab = await self._repo.get_all_by_language(language)
+        all_vocab = self._repo.get_all(language=language)
 
         pos_counts: dict[str, int] = {}
         for v in all_vocab:
@@ -127,7 +130,7 @@ class VocabularyService:
         sorted_by_seen = sorted(all_vocab, key=lambda x: x.times_seen, reverse=True)
         most_seen = [(v.word, v.times_seen) for v in sorted_by_seen[:10]]
 
-        recent = await self._repo.get_recent(language, limit=10)
+        recent = self._repo.get_recent(language, limit=10)
         recently_learned = [v.word for v in recent]
 
         return VocabularyStats(
