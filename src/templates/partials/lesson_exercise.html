@@ -1,0 +1,96 @@
+<div class="exercise bg-surface-elevated rounded-xl p-6 border border-border">
+    {% if exercise.type.value == 'multiple_choice' %}
+    <!-- Multiple Choice Exercise -->
+    <div class="space-y-4">
+        <h4 class="font-medium text-text">{{ exercise.question }}</h4>
+        <form
+            hx-post="/lessons/{{ lesson_id }}/exercise/{{ exercise.id }}/submit"
+            hx-target="closest .exercise"
+            hx-swap="innerHTML"
+            class="space-y-3"
+        >
+            {% for option in exercise.options %}
+            <label class="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-accent cursor-pointer transition-colors">
+                <input
+                    type="radio"
+                    name="answer"
+                    value="{{ loop.index0 }}"
+                    class="w-4 h-4 text-accent focus:ring-accent"
+                    required
+                >
+                <span class="text-text">{{ option }}</span>
+            </label>
+            {% endfor %}
+            <button
+                type="submit"
+                class="w-full mt-4 px-4 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-colors"
+            >
+                Check Answer
+            </button>
+        </form>
+    </div>
+
+    {% elif exercise.type.value == 'fill_blank' %}
+    <!-- Fill in the Blank Exercise -->
+    <div class="space-y-4">
+        <p class="text-lg text-text">{{ exercise.sentence_template }}</p>
+        {% if exercise.hint %}
+        <p class="text-sm text-text-muted">Hint: {{ exercise.hint }}</p>
+        {% endif %}
+        <form
+            hx-post="/lessons/{{ lesson_id }}/exercise/{{ exercise.id }}/submit"
+            hx-target="closest .exercise"
+            hx-swap="innerHTML"
+            class="space-y-3"
+        >
+            <input
+                type="text"
+                name="answer"
+                placeholder="Type your answer..."
+                class="w-full px-4 py-3 bg-surface border border-border rounded-lg text-text placeholder-text-subtle focus:outline-none focus:border-accent transition-colors"
+                required
+                autocomplete="off"
+            >
+            <button
+                type="submit"
+                class="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-colors"
+            >
+                Check Answer
+            </button>
+        </form>
+    </div>
+
+    {% elif exercise.type.value == 'translate' %}
+    <!-- Translation Exercise -->
+    <div class="space-y-4">
+        <div>
+            <p class="text-sm text-text-muted mb-1">Translate to {{ exercise.target_language }}:</p>
+            <p class="text-lg font-medium text-accent">{{ exercise.source_text }}</p>
+        </div>
+        <form
+            hx-post="/lessons/{{ lesson_id }}/exercise/{{ exercise.id }}/submit"
+            hx-target="closest .exercise"
+            hx-swap="innerHTML"
+            class="space-y-3"
+        >
+            <input
+                type="text"
+                name="answer"
+                placeholder="Type your translation..."
+                class="w-full px-4 py-3 bg-surface border border-border rounded-lg text-text placeholder-text-subtle focus:outline-none focus:border-accent transition-colors"
+                required
+                autocomplete="off"
+            >
+            <button
+                type="submit"
+                class="w-full px-4 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-colors"
+            >
+                Check Translation
+            </button>
+        </form>
+    </div>
+
+    {% else %}
+    <p class="text-text-muted">Unknown exercise type</p>
+    {% endif %}
+</div>

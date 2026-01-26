@@ -1,0 +1,117 @@
+id: numbers-001
+title: Numbers 1-10
+description: Learn to count from one to ten in Spanish
+language: es
+level: A0
+estimated_minutes: 3
+category: numbers
+tags:
+  - numbers
+  - counting
+  - basics
+  - essential
+vocabulary_count: 10
+icon: "🔢"
+
+steps:
+  - type: instruction
+    content: "Numbers are everywhere! From telling time to shopping, you will use them daily. Let's learn to count from 1 to 10 in Spanish."
+    order: 1
+
+  - type: vocabulary
+    content: "The numbers from 1 to 10:"
+    vocabulary:
+      - word: uno
+        translation: one (1)
+      - word: dos
+        translation: two (2)
+      - word: tres
+        translation: three (3)
+      - word: cuatro
+        translation: four (4)
+      - word: cinco
+        translation: five (5)
+    order: 2
+
+  - type: vocabulary
+    content: "Continuing from 6 to 10:"
+    vocabulary:
+      - word: seis
+        translation: six (6)
+      - word: siete
+        translation: seven (7)
+      - word: ocho
+        translation: eight (8)
+      - word: nueve
+        translation: nine (9)
+      - word: diez
+        translation: ten (10)
+    order: 3
+
+  - type: example
+    content: "Tengo tres hermanos."
+    translation: "I have three siblings."
+    order: 4
+
+  - type: example
+    content: "Quiero dos cafes, por favor."
+    translation: "I want two coffees, please."
+    order: 5
+
+  - type: tip
+    content: "Try counting objects around you in Spanish! Practice makes perfect. Uno, dos, tres..."
+    order: 6
+
+  - type: tip
+    content: "Notice that uno changes to un before masculine nouns: un cafe (one coffee), una mesa (one table)."
+    order: 7
+
+  - type: practice
+    content: "Test your number knowledge!"
+    exercise_id: "ex-mc-num-001"
+    order: 8
+
+exercises:
+  - id: ex-mc-num-001
+    type: multiple_choice
+    question: "What is 'five' in Spanish?"
+    options:
+      - Cuatro
+      - Cinco
+      - Seis
+      - Siete
+    correct_index: 1
+    explanation: "Cinco means 'five' in Spanish. Cuatro is four, seis is six, and siete is seven."
+
+  - id: ex-mc-num-002
+    type: multiple_choice
+    question: "How do you say 'eight' in Spanish?"
+    options:
+      - Seis
+      - Siete
+      - Ocho
+      - Nueve
+    correct_index: 2
+    explanation: "Ocho means 'eight' in Spanish."
+
+  - id: ex-mc-num-003
+    type: multiple_choice
+    question: "What number is 'tres'?"
+    options:
+      - Two
+      - Three
+      - Four
+      - Five
+    correct_index: 1
+    explanation: "Tres means 'three' in Spanish. Dos is two and cuatro is four."
+
+  - id: ex-mc-num-004
+    type: multiple_choice
+    question: "Put these in order: dos, uno, tres"
+    options:
+      - tres, dos, uno
+      - uno, tres, dos
+      - uno, dos, tres
+      - dos, tres, uno
+    correct_index: 2
+    explanation: "The correct order is uno (1), dos (2), tres (3)."

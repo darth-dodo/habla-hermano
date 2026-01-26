@@ -21,7 +21,7 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     {% for lesson in lessons.beginner %}
                     <a
-                        href="/chat?lesson={{ lesson.id }}"
+                        href="/lessons/{{ lesson.id }}/play"
                         class="group block p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 hover:shadow-md transition-all"
                     >
                         <div class="flex items-start gap-3">
@@ -53,7 +53,7 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     {% for lesson in lessons.intermediate %}
                     <a
-                        href="/chat?lesson={{ lesson.id }}"
+                        href="/lessons/{{ lesson.id }}/play"
                         class="group block p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 hover:shadow-md transition-all"
                     >
                         <div class="flex items-start gap-3">

@@ -1,0 +1,104 @@
+id: colors-001
+title: Basic Colors
+description: Learn the names of common colors in Spanish
+language: es
+level: A0
+estimated_minutes: 3
+category: colors
+tags:
+  - colors
+  - basics
+  - adjectives
+  - descriptions
+vocabulary_count: 6
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Colors add life to our descriptions! Whether you are shopping for clothes or describing your favorite things, knowing colors is essential. Let's learn the basic colors in Spanish."
+    order: 1
+
+  - type: vocabulary
+    content: "Basic colors in Spanish:"
+    vocabulary:
+      - word: rojo
+        translation: red
+      - word: azul
+        translation: blue
+      - word: verde
+        translation: green
+      - word: amarillo
+        translation: yellow
+      - word: blanco
+        translation: white
+      - word: negro
+        translation: black
+    order: 2
+
+  - type: example
+    content: "El coche es rojo."
+    translation: "The car is red."
+    order: 3
+
+  - type: example
+    content: "Me gusta el color azul."
+    translation: "I like the color blue."
+    order: 4
+
+  - type: tip
+    content: "In Spanish, colors are adjectives and usually come AFTER the noun: coche rojo (red car), not rojo coche."
+    order: 5
+
+  - type: tip
+    content: "Some colors change with gender: rojo/roja (red), blanco/blanca (white), negro/negra (black). Others stay the same: azul, verde."
+    order: 6
+
+  - type: practice
+    content: "Let's test your color knowledge!"
+    exercise_id: "ex-mc-color-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-color-001
+    type: multiple_choice
+    question: "What color is 'rojo'?"
+    options:
+      - Blue
+      - Green
+      - Red
+      - Yellow
+    correct_index: 2
+    explanation: "Rojo means 'red' in Spanish. Think of it like a red rose!"
+
+  - id: ex-mc-color-002
+    type: multiple_choice
+    question: "How do you say 'blue' in Spanish?"
+    options:
+      - Verde
+      - Azul
+      - Amarillo
+      - Blanco
+    correct_index: 1
+    explanation: "Azul means 'blue' in Spanish. Like the blue sky - el cielo azul!"
+
+  - id: ex-mc-color-003
+    type: multiple_choice
+    question: "What does 'verde' mean?"
+    options:
+      - White
+      - Black
+      - Yellow
+      - Green
+    correct_index: 3
+    explanation: "Verde means 'green' in Spanish. Think of green vegetables - verduras!"
+
+  - id: ex-mc-color-004
+    type: multiple_choice
+    question: "What are the two colors in a zebra? (in Spanish)"
+    options:
+      - Rojo y azul
+      - Blanco y negro
+      - Verde y amarillo
+      - Azul y verde
+    correct_index: 1
+    explanation: "A zebra is blanco y negro (white and black)!"

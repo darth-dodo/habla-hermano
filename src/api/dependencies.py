@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 
 from src.api.config import Settings, get_settings
 from src.api.session import get_thread_id as _get_thread_id
+from src.lessons.service import LessonService, get_lesson_service
 
 
 def get_templates(
@@ -64,3 +65,4 @@ def get_thread_id_dep(request: Request) -> str:
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 TemplatesDep = Annotated[Jinja2Templates, Depends(get_cached_templates)]
 ThreadIdDep = Annotated[str, Depends(get_thread_id_dep)]
+LessonServiceDep = Annotated[LessonService, Depends(get_lesson_service)]

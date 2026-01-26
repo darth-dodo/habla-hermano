@@ -1,0 +1,104 @@
+id: family-001
+title: Family Members
+description: Learn the Spanish words for family members
+language: es
+level: A0
+estimated_minutes: 3
+category: family
+tags:
+  - family
+  - basics
+  - relationships
+  - people
+vocabulary_count: 6
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "Family is important in Spanish-speaking cultures! Let's learn how to talk about your family members. La familia is at the heart of Hispanic traditions."
+    order: 1
+
+  - type: vocabulary
+    content: "Core family members:"
+    vocabulary:
+      - word: madre
+        translation: mother
+      - word: padre
+        translation: father
+      - word: hermano
+        translation: brother
+      - word: hermana
+        translation: sister
+      - word: hijo
+        translation: son
+      - word: hija
+        translation: daughter
+    order: 2
+
+  - type: example
+    content: "Mi madre se llama Ana."
+    translation: "My mother's name is Ana."
+    order: 3
+
+  - type: example
+    content: "Tengo dos hermanos y una hermana."
+    translation: "I have two brothers and one sister."
+    order: 4
+
+  - type: tip
+    content: "Notice the pattern: hermano/hermana, hijo/hija. Words ending in -o are typically masculine, and words ending in -a are typically feminine!"
+    order: 5
+
+  - type: tip
+    content: "You can also say mama and papa for mom and dad - these are more informal and affectionate, just like in English!"
+    order: 6
+
+  - type: practice
+    content: "Test your family vocabulary!"
+    exercise_id: "ex-mc-family-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-family-001
+    type: multiple_choice
+    question: "How do you say 'mother' in Spanish?"
+    options:
+      - Padre
+      - Madre
+      - Hermana
+      - Hija
+    correct_index: 1
+    explanation: "Madre means 'mother' in Spanish. Padre means 'father'."
+
+  - id: ex-mc-family-002
+    type: multiple_choice
+    question: "What does 'hermano' mean?"
+    options:
+      - Sister
+      - Father
+      - Brother
+      - Son
+    correct_index: 2
+    explanation: "Hermano means 'brother' in Spanish. Hermana (with an -a ending) means 'sister'."
+
+  - id: ex-mc-family-003
+    type: multiple_choice
+    question: "If 'hijo' means 'son', what does 'hija' mean?"
+    options:
+      - Mother
+      - Father
+      - Brother
+      - Daughter
+    correct_index: 3
+    explanation: "Hija means 'daughter'. Notice the -o to -a pattern for masculine to feminine!"
+
+  - id: ex-mc-family-004
+    type: multiple_choice
+    question: "How would you say 'my father' in Spanish?"
+    options:
+      - Mi madre
+      - Mi padre
+      - Mi hermano
+      - Mi hijo
+    correct_index: 1
+    explanation: "Mi padre means 'my father'. Mi means 'my' in Spanish."

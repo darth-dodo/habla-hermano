@@ -1,0 +1,93 @@
+id: greetings-001
+title: Basic Greetings
+description: Learn to say hello and goodbye in Spanish
+language: es
+level: A0
+estimated_minutes: 3
+category: greetings
+tags:
+  - greeting
+  - basics
+  - hello
+  - goodbye
+vocabulary_count: 6
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Welcome to your first Spanish lesson! Greetings are the foundation of any conversation. Let's learn how to say hello and goodbye."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: hola
+        translation: hello
+      - word: adios
+        translation: goodbye
+      - word: buenos dias
+        translation: good morning
+      - word: buenas tardes
+        translation: good afternoon
+      - word: buenas noches
+        translation: good night
+      - word: hasta luego
+        translation: see you later
+    order: 2
+
+  - type: example
+    content: "Hola, como estas?"
+    translation: "Hello, how are you?"
+    order: 3
+
+  - type: example
+    content: "Buenos dias, senor Garcia."
+    translation: "Good morning, Mr. Garcia."
+    order: 4
+
+  - type: tip
+    content: "Hola can be used at any time of day and in both formal and informal situations. It is the most versatile greeting in Spanish!"
+    order: 5
+
+  - type: tip
+    content: "Use buenos dias until around noon, buenas tardes from noon until sunset, and buenas noches after dark."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of Spanish greetings!"
+    exercise_id: "ex-mc-greet-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "How do you say 'hello' in Spanish?"
+    options:
+      - Hola
+      - Adios
+      - Gracias
+      - Por favor
+    correct_index: 0
+    explanation: "Hola means 'hello' in Spanish. It is the most common greeting!"
+
+  - id: ex-mc-greet-002
+    type: multiple_choice
+    question: "What greeting would you use at 9 AM?"
+    options:
+      - Buenas noches
+      - Buenas tardes
+      - Buenos dias
+      - Hasta luego
+    correct_index: 2
+    explanation: "Buenos dias (good morning) is used from sunrise until around noon."
+
+  - id: ex-mc-greet-003
+    type: multiple_choice
+    question: "How do you say 'goodbye' in Spanish?"
+    options:
+      - Hola
+      - Buenos dias
+      - Adios
+      - Buenas tardes
+    correct_index: 2
+    explanation: "Adios means 'goodbye' in Spanish."

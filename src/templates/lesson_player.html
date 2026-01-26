@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.metadata.title }} - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="h-full flex flex-col">
+    <!-- Lesson Header -->
+    <header class="bg-surface-elevated border-b border-border px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/lessons/" class="text-text-muted hover:text-text transition-colors" aria-label="Back to lessons">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <span class="text-2xl mr-2" aria-hidden="true">{{ lesson.metadata.icon }}</span>
+                <span class="font-medium text-text">{{ lesson.metadata.title }}</span>
+            </div>
+        </div>
+        <div class="text-sm text-text-muted">
+            Step <span id="current-step-num">{{ current_step + 1 }}</span> of {{ total_steps }}
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="h-1 bg-surface">
+        <div
+            id="progress-bar"
+            class="h-full bg-accent transition-all duration-300"
+            style="width: {{ ((current_step + 1) / total_steps * 100) | round }}%"
+        ></div>
+    </div>
+
+    <!-- Lesson Content Area -->
+    <div class="flex-1 overflow-y-auto">
+        <div class="max-w-2xl mx-auto px-4 py-8">
+            <div id="step-content" class="animate-fade-in">
+                {% include "partials/lesson_step.html" %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Footer -->
+    <footer class="bg-surface-elevated border-t border-border px-4 py-4">
+        <div class="max-w-2xl mx-auto flex items-center justify-between">
+            <button
+                id="prev-btn"
+                hx-post="/lessons/{{ lesson.metadata.id }}/step/prev"
+                hx-target="#step-content"
+                hx-swap="innerHTML"
+                hx-include="#current-step-input"
+                class="px-4 py-2 text-text-muted hover:text-text border border-border rounded-lg hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                {% if current_step == 0 %}disabled{% endif %}
+            >
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Previous
+                </span>
+            </button>
+
+            <input type="hidden" id="current-step-input" name="current_step" value="{{ current_step }}">
+
+            {% if current_step < total_steps - 1 %}
+            <button
+                id="next-btn"
+                hx-post="/lessons/{{ lesson.metadata.id }}/step/next"
+                hx-target="#step-content"
+                hx-swap="innerHTML"
+                hx-include="#current-step-input"
+                class="px-6 py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-colors"
+            >
+                <span class="flex items-center gap-2">
+                    Next
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </span>
+            </button>
+            {% else %}
+            <button
+                id="complete-btn"
+                hx-post="/lessons/{{ lesson.metadata.id }}/complete"
+                hx-target="#step-content"
+                hx-swap="innerHTML"
+                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+            >
+                <span class="flex items-center gap-2">
+                    Complete Lesson
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </span>
+            </button>
+            {% endif %}
+        </div>
+    </footer>
+</div>
+
+<script>
+// Update progress and step count on HTMX swap
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'step-content') {
+        // Extract step info from the response if available
+        const stepInfo = evt.detail.target.querySelector('[data-step-index]');
+        if (stepInfo) {
+            const stepIndex = parseInt(stepInfo.dataset.stepIndex);
+            const totalSteps = parseInt(stepInfo.dataset.totalSteps);
+
+            // Update progress bar
+            const progress = ((stepIndex + 1) / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+
+            // Update step counter
+            document.getElementById('current-step-num').textContent = stepIndex + 1;
+
+            // Update hidden input
+            document.getElementById('current-step-input').value = stepIndex;
+
+            // Update prev button state
+            const prevBtn = document.getElementById('prev-btn');
+            if (prevBtn) {
+                prevBtn.disabled = stepIndex === 0;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+id: introductions-001
+title: Introducing Yourself
+description: Learn to introduce yourself and ask someone's name in Spanish
+language: es
+level: A0
+estimated_minutes: 3
+category: introductions
+tags:
+  - introduction
+  - name
+  - basics
+  - conversation
+vocabulary_count: 6
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Now that you know how to say hello, let's learn to introduce yourself! Being able to share your name and ask others their name is essential for making new friends."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for introducing yourself:"
+    vocabulary:
+      - word: me llamo
+        translation: my name is (I call myself)
+      - word: mucho gusto
+        translation: nice to meet you
+      - word: como te llamas
+        translation: what is your name (informal)
+      - word: como se llama
+        translation: what is your name (formal)
+      - word: soy
+        translation: I am
+      - word: encantado/encantada
+        translation: pleased to meet you (male/female)
+    order: 2
+
+  - type: example
+    content: "Hola, me llamo Maria. Mucho gusto!"
+    translation: "Hello, my name is Maria. Nice to meet you!"
+    order: 3
+
+  - type: example
+    content: "Como te llamas? - Me llamo Carlos."
+    translation: "What is your name? - My name is Carlos."
+    order: 4
+
+  - type: tip
+    content: "Use me llamo (literally 'I call myself') or soy (I am) followed by your name. Both are correct and commonly used!"
+    order: 5
+
+  - type: tip
+    content: "If you are male, say encantado. If you are female, say encantada. The ending changes based on gender!"
+    order: 6
+
+  - type: practice
+    content: "Let's practice introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "How do you say 'my name is' in Spanish?"
+    options:
+      - Mucho gusto
+      - Me llamo
+      - Como te llamas
+      - Adios
+    correct_index: 1
+    explanation: "Me llamo literally means 'I call myself' and is used to say 'my name is' in Spanish."
+
+  - id: ex-mc-intro-002
+    type: multiple_choice
+    question: "What does 'mucho gusto' mean?"
+    options:
+      - Goodbye
+      - Good morning
+      - Nice to meet you
+      - What is your name
+    correct_index: 2
+    explanation: "Mucho gusto means 'nice to meet you' and is said when meeting someone new."
+
+  - id: ex-mc-intro-003
+    type: multiple_choice
+    question: "How do you ask 'What is your name?' informally?"
+    options:
+      - Me llamo
+      - Como te llamas
+      - Mucho gusto
+      - Soy
+    correct_index: 1
+    explanation: "Como te llamas is the informal way to ask someone's name, used with friends or people your age."
