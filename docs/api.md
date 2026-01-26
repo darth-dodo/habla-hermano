@@ -418,6 +418,560 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
+## Lesson Endpoints
+
+The lesson system provides structured learning experiences with guided steps, exercises, and progress tracking. Lessons support guest access (no authentication required) and are designed for HTMX-driven partial page updates.
+
+### GET /lessons/
+
+List available lessons with optional filtering by language and level.
+
+**Authentication**: Optional. Guest users can browse and play lessons.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | - | Filter by target language code: `es`, `de`, `fr` |
+| `level` | string | No | - | Filter by CEFR level: `A0`, `A1`, `A2`, `B1` |
+
+**Response**: Full HTML page with lesson cards grid.
+
+**Example**:
+```bash
+# List all lessons
+curl http://localhost:8000/lessons/
+
+# Filter by Spanish A1 lessons
+curl "http://localhost:8000/lessons/?language=es&level=A1"
+```
+
+---
+
+### GET /lessons/{lesson_id}/play
+
+Render the lesson player page for a specific lesson.
+
+**Authentication**: Optional. Guest users can play lessons.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+
+**Response**: Full HTML page with lesson player interface including:
+- Lesson title and description
+- Progress indicator
+- Step content area
+- Navigation controls
+
+**Example**:
+```bash
+curl http://localhost:8000/lessons/spanish-greetings-a0/play
+```
+
+---
+
+### GET /lessons/{lesson_id}/step/{step_index}
+
+Get a specific lesson step content as an HTML partial.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+| `step_index` | integer | Zero-based step index |
+
+**Response**: HTML partial (`partials/lesson_step.html`) containing:
+- Step instruction text
+- Example content (if applicable)
+- Exercise component (if step includes exercise)
+- Navigation buttons
+
+**HTMX Integration**:
+```html
+<div hx-get="/lessons/spanish-greetings-a0/step/0"
+     hx-trigger="load"
+     hx-target="#step-content">
+</div>
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/lessons/spanish-greetings-a0/step/0
+```
+
+---
+
+### POST /lessons/{lesson_id}/step/next
+
+Navigate to the next step in the lesson.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+
+**Request Body** (form data):
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `current_step` | integer | Yes | Current step index |
+
+**Response**: HTML partial for the next step, or completion partial if at end.
+
+**Response Headers**:
+- `HX-Trigger`: `stepChanged` event for progress bar updates
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/step/next \
+  -d "current_step=0"
+```
+
+---
+
+### POST /lessons/{lesson_id}/step/prev
+
+Navigate to the previous step in the lesson.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+
+**Request Body** (form data):
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `current_step` | integer | Yes | Current step index |
+
+**Response**: HTML partial for the previous step.
+
+**Response Headers**:
+- `HX-Trigger`: `stepChanged` event for progress bar updates
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/step/prev \
+  -d "current_step=2"
+```
+
+---
+
+### GET /lessons/{lesson_id}/exercise/{exercise_id}
+
+Get a specific exercise component as an HTML partial.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+| `exercise_id` | string | Unique exercise identifier within the lesson |
+
+**Response**: HTML partial (`partials/exercise.html`) containing the exercise UI based on type:
+- Multiple choice options
+- Fill-in-the-blank input
+- Matching pairs interface
+- Audio response recorder
+
+**Example**:
+```bash
+curl http://localhost:8000/lessons/spanish-greetings-a0/exercise/greeting-choice-1
+```
+
+---
+
+### POST /lessons/{lesson_id}/exercise/{exercise_id}/submit
+
+Submit an answer for an exercise.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+| `exercise_id` | string | Unique exercise identifier |
+
+**Request Body** (form data):
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `answer` | string | Yes | User's submitted answer |
+
+**Response**: HTML partial (`partials/exercise_result.html`) containing:
+- Correct/incorrect indicator
+- Feedback message
+- Correct answer (if incorrect)
+- Continue button
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/exercise/greeting-choice-1/submit \
+  -d "answer=hola"
+```
+
+**Response Example (correct)**:
+```html
+<div class="exercise-result correct">
+  <span class="icon">✓</span>
+  <p class="feedback">Excellent! "Hola" is the standard greeting.</p>
+  <button hx-post="/lessons/spanish-greetings-a0/step/next">Continue</button>
+</div>
+```
+
+**Response Example (incorrect)**:
+```html
+<div class="exercise-result incorrect">
+  <span class="icon">✗</span>
+  <p class="feedback">Not quite. The correct answer is "hola".</p>
+  <button hx-get="/lessons/spanish-greetings-a0/exercise/greeting-choice-1">Try Again</button>
+</div>
+```
+
+---
+
+### POST /lessons/{lesson_id}/complete
+
+Mark a lesson as complete. For authenticated users, this records progress in the database.
+
+**Authentication**: Optional. Progress is only persisted for authenticated users.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+
+**Response**: HTML partial (`partials/lesson_complete.html`) containing:
+- Completion celebration
+- Summary statistics (exercises completed, accuracy)
+- Recommended next lessons
+- Handoff to chat option
+
+**Response Headers**:
+- `HX-Trigger`: `lessonComplete` event for UI updates
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/complete
+```
+
+---
+
+### POST /lessons/{lesson_id}/handoff
+
+Transition from lesson to free chat practice with lesson context.
+
+**Authentication**: Required. The chat requires authentication for conversation persistence.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+
+**Response**: Redirects to chat with lesson context pre-loaded.
+
+**Response Headers**:
+- `HX-Redirect`: `/` with lesson context query parameters
+
+**Behavior**:
+1. Validates user authentication
+2. Prepares chat context with lesson vocabulary and topics
+3. Sets initial chat prompt based on lesson theme
+4. Redirects to main chat interface
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/handoff \
+  --cookie "sb-access-token=<jwt_token>"
+```
+
+**Unauthenticated Response**:
+```html
+<!-- Returns login prompt partial -->
+<div class="auth-prompt">
+  <p>Sign in to continue practicing in chat mode.</p>
+  <a href="/auth/login" class="btn-primary">Sign In</a>
+</div>
+```
+
+---
+
+## Lesson Data Structures
+
+### LessonMetadata
+
+Metadata describing a lesson for listing and filtering.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique lesson identifier (URL-safe slug) |
+| `title` | string | Display title of the lesson |
+| `description` | string | Brief description of lesson content |
+| `language` | string | Target language code: `es`, `de`, `fr` |
+| `level` | string | CEFR proficiency level: `A0`, `A1`, `A2`, `B1` |
+| `duration_minutes` | integer | Estimated completion time in minutes |
+| `step_count` | integer | Total number of steps in the lesson |
+| `topics` | array[string] | Learning topics covered (e.g., `["greetings", "introductions"]`) |
+| `thumbnail_url` | string | URL to lesson thumbnail image |
+
+**Example LessonMetadata**:
+```json
+{
+  "id": "spanish-greetings-a0",
+  "title": "Basic Greetings",
+  "description": "Learn to say hello and introduce yourself in Spanish.",
+  "language": "es",
+  "level": "A0",
+  "duration_minutes": 10,
+  "step_count": 5,
+  "topics": ["greetings", "introductions", "basic phrases"],
+  "thumbnail_url": "/static/lessons/thumbnails/greetings.png"
+}
+```
+
+---
+
+### LessonStep
+
+A single step within a lesson.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `index` | integer | Zero-based position in the lesson |
+| `type` | string | Step type: `instruction`, `example`, `exercise`, `summary` |
+| `content` | string | Main text content (supports Markdown) |
+| `audio_url` | string or null | URL to audio pronunciation (if applicable) |
+| `exercise` | Exercise or null | Exercise component (if type is `exercise`) |
+| `vocabulary` | array[VocabWord] | Vocabulary introduced in this step |
+
+**Example LessonStep (instruction type)**:
+```json
+{
+  "index": 0,
+  "type": "instruction",
+  "content": "In Spanish, 'hola' is the most common way to say hello. It can be used in both formal and informal situations.",
+  "audio_url": "/static/audio/es/hola.mp3",
+  "exercise": null,
+  "vocabulary": [
+    {
+      "word": "hola",
+      "translation": "hello",
+      "part_of_speech": "interjection"
+    }
+  ]
+}
+```
+
+**Example LessonStep (exercise type)**:
+```json
+{
+  "index": 2,
+  "type": "exercise",
+  "content": "Choose the correct greeting for the morning:",
+  "audio_url": null,
+  "exercise": {
+    "id": "morning-greeting-mc",
+    "type": "multiple_choice",
+    "question": "How do you say 'good morning' in Spanish?",
+    "options": ["Buenos dias", "Buenas noches", "Buenas tardes", "Hola"],
+    "correct_answer": "Buenos dias",
+    "feedback": {
+      "correct": "Excellent! 'Buenos dias' is used until around noon.",
+      "incorrect": "Not quite. 'Buenos dias' means 'good morning'."
+    }
+  },
+  "vocabulary": []
+}
+```
+
+---
+
+### Exercise Types
+
+Lessons support multiple exercise types, each with specific data structures.
+
+#### Multiple Choice
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique exercise identifier |
+| `type` | string | Always `multiple_choice` |
+| `question` | string | Question text |
+| `options` | array[string] | Answer choices (2-4 options) |
+| `correct_answer` | string | The correct option |
+| `feedback` | object | Feedback messages for correct/incorrect |
+
+**Example**:
+```json
+{
+  "id": "greeting-mc-1",
+  "type": "multiple_choice",
+  "question": "Which greeting is appropriate for the evening?",
+  "options": ["Buenos dias", "Buenas tardes", "Buenas noches"],
+  "correct_answer": "Buenas noches",
+  "feedback": {
+    "correct": "Correct! 'Buenas noches' is used in the evening and night.",
+    "incorrect": "Remember, 'noches' means 'nights', so 'Buenas noches' is for evening."
+  }
+}
+```
+
+#### Fill in the Blank
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique exercise identifier |
+| `type` | string | Always `fill_blank` |
+| `sentence` | string | Sentence with `___` placeholder |
+| `correct_answer` | string | Expected answer |
+| `acceptable_answers` | array[string] | Alternative correct answers |
+| `hint` | string | Optional hint text |
+| `feedback` | object | Feedback messages |
+
+**Example**:
+```json
+{
+  "id": "intro-fill-1",
+  "type": "fill_blank",
+  "sentence": "Me ___ Maria.",
+  "correct_answer": "llamo",
+  "acceptable_answers": ["llamo"],
+  "hint": "This verb means 'to call oneself'",
+  "feedback": {
+    "correct": "Perfect! 'Me llamo' means 'I am called' or 'My name is'.",
+    "incorrect": "The answer is 'llamo'. 'Me llamo' literally means 'I call myself'."
+  }
+}
+```
+
+#### Matching
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique exercise identifier |
+| `type` | string | Always `matching` |
+| `instruction` | string | Exercise instruction |
+| `pairs` | array[object] | Array of `{left, right}` pairs to match |
+| `feedback` | object | Feedback messages |
+
+**Example**:
+```json
+{
+  "id": "greetings-match-1",
+  "type": "matching",
+  "instruction": "Match the Spanish greeting with its English meaning:",
+  "pairs": [
+    {"left": "Hola", "right": "Hello"},
+    {"left": "Buenos dias", "right": "Good morning"},
+    {"left": "Buenas noches", "right": "Good night"},
+    {"left": "Adios", "right": "Goodbye"}
+  ],
+  "feedback": {
+    "correct": "Excellent! You matched all the greetings correctly.",
+    "incorrect": "Some matches were incorrect. Review and try again."
+  }
+}
+```
+
+#### Audio Response
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique exercise identifier |
+| `type` | string | Always `audio_response` |
+| `prompt` | string | What the user should say |
+| `expected_phrase` | string | Expected spoken phrase |
+| `audio_example_url` | string | URL to example pronunciation |
+| `feedback` | object | Feedback messages |
+
+**Example**:
+```json
+{
+  "id": "pronunciation-1",
+  "type": "audio_response",
+  "prompt": "Say 'Mucho gusto' (Nice to meet you)",
+  "expected_phrase": "Mucho gusto",
+  "audio_example_url": "/static/audio/es/mucho-gusto.mp3",
+  "feedback": {
+    "correct": "Great pronunciation! 'Mucho gusto' is perfect for introductions.",
+    "incorrect": "Try again. Listen to the example and match the pronunciation."
+  }
+}
+```
+
+---
+
+## Lesson HTMX Integration
+
+### Lesson Player Structure
+
+```html
+<div id="lesson-player">
+  <!-- Progress bar -->
+  <div id="progress-bar"
+       hx-get="/lessons/spanish-greetings-a0/progress"
+       hx-trigger="stepChanged from:body">
+    <div class="progress" style="width: 20%"></div>
+  </div>
+
+  <!-- Step content area -->
+  <div id="step-content"
+       hx-get="/lessons/spanish-greetings-a0/step/0"
+       hx-trigger="load">
+  </div>
+
+  <!-- Navigation -->
+  <div id="lesson-nav">
+    <button hx-post="/lessons/spanish-greetings-a0/step/prev"
+            hx-target="#step-content"
+            hx-include="[name='current_step']">
+      Previous
+    </button>
+    <button hx-post="/lessons/spanish-greetings-a0/step/next"
+            hx-target="#step-content"
+            hx-include="[name='current_step']">
+      Next
+    </button>
+  </div>
+</div>
+```
+
+### Exercise Submission
+
+```html
+<form hx-post="/lessons/spanish-greetings-a0/exercise/greeting-mc-1/submit"
+      hx-target="#exercise-result"
+      hx-swap="innerHTML">
+  <input type="hidden" name="answer" id="selected-answer">
+  <div class="options">
+    <button type="button" onclick="selectOption('hola')">Hola</button>
+    <button type="button" onclick="selectOption('adios')">Adios</button>
+  </div>
+  <button type="submit">Check Answer</button>
+</form>
+<div id="exercise-result"></div>
+```
+
+---
+
 ## Related Documentation
 
 - [Product Specification](./product.md) - Vision, pedagogy, and feature details

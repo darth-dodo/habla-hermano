@@ -409,10 +409,10 @@ async def submit_exercise(
 
     # Build feedback response
     feedback_html = f"""
-    <div class="exercise-feedback {'correct' if is_correct else 'incorrect'}">
-        <p class="result">{'Correct!' if is_correct else 'Incorrect - try again'}</p>
-        {f'<p class="correct-answer">Correct answer: {correct_answer}</p>' if not is_correct else ''}
-        {f'<p class="explanation">{exercise.explanation}</p>' if exercise.explanation else ''}
+    <div class="exercise-feedback {"correct" if is_correct else "incorrect"}">
+        <p class="result">{"Correct!" if is_correct else "Incorrect - try again"}</p>
+        {f'<p class="correct-answer">Correct answer: {correct_answer}</p>' if not is_correct else ""}
+        {f'<p class="explanation">{exercise.explanation}</p>' if exercise.explanation else ""}
     </div>
     """
 

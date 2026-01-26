@@ -13,9 +13,10 @@
 | **Phase 3** | Conditional Routing - Branching logic, scaffolding | ✅ Completed |
 | **Phase 4** | Checkpointing - PostgreSQL persistence, conversation memory | ✅ Completed |
 | **Phase 5** | Authentication - Supabase Auth, multi-user support | ✅ Completed |
-| **Phase 6** | Subgraphs - Graph composition, reusability | Planned |
+| **Phase 6** | Micro-Lessons - Structured lesson content, exercises, progress | ✅ Completed |
+| **Phase 7** | Subgraphs - Graph composition, reusability | Planned |
 
-**Test Coverage**: 829+ tests (86%+ coverage) covering agent, API, database, auth, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 918+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -154,8 +155,8 @@ habla-hermano/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] POST /chat (protected)
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
-│   │       ├── lessons.py       # Micro-lesson endpoints
-│   │       └── progress.py      # Vocabulary, stats endpoints
+│   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
+│   │       └── progress.py      # [Implemented] Vocabulary, stats endpoints
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
@@ -169,6 +170,11 @@ habla-hermano/
 │   │       ├── analyze.py       # [Implemented] Grammar/vocab analysis
 │   │       ├── scaffold.py      # [Implemented] Generate scaffolding (word banks, hints, sentence starters)
 │   │       └── feedback.py      # [Planned] Format corrections
+│   │
+│   ├── lessons/
+│   │   ├── __init__.py          # [Implemented] Module exports
+│   │   ├── models.py            # [Implemented] Lesson, Step, Exercise, Progress models
+│   │   └── service.py           # [Implemented] Lesson loading, filtering, vocabulary extraction
 │   │
 │   ├── db/
 │   │   ├── __init__.py
@@ -184,13 +190,17 @@ habla-hermano/
 │   ├── templates/               # [Implemented] All template files
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
 │   │   ├── chat.html            # [Implemented] Chat UI with language/level selectors, theme toggle
-│   │   ├── lessons.html
+│   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
+│   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
 │   │   ├── auth/
 │   │   │   ├── login.html       # [Implemented] Login page
 │   │   │   └── signup.html      # [Implemented] Signup page
 │   │   └── partials/
 │   │       ├── message.html     # [Implemented] Message bubble styling
 │   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)
+│   │       ├── lesson_step.html # [Implemented] Step content by type (instruction, vocabulary, example, tip, practice)
+│   │       ├── lesson_exercise.html # [Implemented] Exercise forms (multiple choice, fill blank, translate)
+│   │       ├── lesson_complete.html # [Implemented] Completion celebration with handoff to chat
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
 │   │       └── vocab_sidebar.html
@@ -203,7 +213,14 @@ habla-hermano/
 ├── tests/
 ├── data/
 │   ├── hermano.db
-│   └── lessons/                 # Lesson content (JSON/YAML)
+│   └── lessons/                 # [Implemented] Lesson content (YAML)
+│       └── es/                  # Spanish lessons
+│           └── A0/              # Absolute beginner lessons
+│               ├── greetings-001.yaml
+│               ├── introductions-001.yaml
+│               ├── numbers-001.yaml
+│               ├── colors-001.yaml
+│               └── family-001.yaml
 │
 ├── docs/
 ├── pyproject.toml
@@ -385,7 +402,84 @@ class ConversationState(TypedDict):
 - Multiple state fields updated by different nodes
 - State as the single source of truth
 
-### Phase 6: Subgraphs (Future)
+### Phase 6: Micro-Lessons (Week 4) - IMPLEMENTED
+**Learn**: Structured content delivery, YAML-based data, service patterns
+
+**Status**: This phase is complete. The application now includes a full micro-lessons system with structured content, interactive exercises, and lesson-to-chat handoff.
+
+**Key Components**:
+
+1. **Lesson Models** (`src/lessons/models.py`):
+```python
+class LessonLevel(str, Enum):
+    A0 = "A0"  # Absolute beginner
+    A1 = "A1"  # Beginner
+    A2 = "A2"  # Elementary
+    B1 = "B1"  # Intermediate
+
+class LessonStepType(str, Enum):
+    INSTRUCTION = "instruction"  # Text explanation
+    VOCABULARY = "vocabulary"    # Word list with translations
+    EXAMPLE = "example"          # Example sentence/phrase
+    TIP = "tip"                  # Cultural note or learning tip
+    PRACTICE = "practice"        # Exercise reference
+
+class ExerciseType(str, Enum):
+    MULTIPLE_CHOICE = "multiple_choice"
+    FILL_BLANK = "fill_blank"
+    TRANSLATE = "translate"
+```
+
+2. **Lesson Service** (`src/lessons/service.py`):
+```python
+class LessonService:
+    """Service for loading and managing lessons from YAML files."""
+
+    def get_lesson(self, lesson_id: str) -> Lesson | None
+    def get_lessons(self, language: str, level: LessonLevel) -> list[Lesson]
+    def get_lesson_vocabulary(self, lesson_id: str) -> list[dict]
+    def get_next_recommended(self, user_id: str, ...) -> Lesson | None
+```
+
+3. **YAML Lesson Format** (`data/lessons/es/A0/greetings-001.yaml`):
+```yaml
+id: greetings-001
+title: Basic Greetings
+language: es
+level: A0
+category: greetings
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Welcome to your first Spanish lesson!"
+    order: 1
+  - type: vocabulary
+    vocabulary:
+      - word: hola
+        translation: hello
+    order: 2
+  - type: practice
+    exercise_id: "ex-mc-greet-001"
+    order: 3
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "How do you say 'hello' in Spanish?"
+    options: [Hola, Adios, Gracias]
+    correct_index: 0
+```
+
+**What you learned**:
+- YAML-based content loading with validation
+- Pydantic models for structured lesson data
+- Service layer pattern for data access
+- Step-based content navigation with HTMX
+- Exercise answer validation with multiple types
+- Lesson-to-chat handoff for practice reinforcement
+
+### Phase 7: Subgraphs (Future)
 **Learn**: Graph composition, reusability
 
 ```python
@@ -583,6 +677,101 @@ def needs_scaffold(state: ConversationState) -> str:
                  ┌──────▼──────┐
                  │     END     │
                  └─────────────┘
+```
+
+---
+
+## Micro-Lessons Data Flow (Phase 6)
+
+The micro-lessons system operates independently from the LangGraph conversation graph, providing structured learning content that complements free-form chat practice.
+
+### Lesson Flow Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        LESSONS PAGE                              │
+│  /lessons/                                                       │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │
+│  │ Greetings   │ │ Numbers     │ │ Colors      │                │
+│  │ 👋 A0       │ │ 🔢 A0       │ │ 🎨 A0       │                │
+│  └──────┬──────┘ └─────────────┘ └─────────────┘                │
+└─────────┼───────────────────────────────────────────────────────┘
+          │ Click "Play"
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      LESSON PLAYER                               │
+│  /lessons/{id}/play                                              │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Progress: [████████░░░░░░░░░░░░] Step 3 of 7              │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │               STEP CONTENT (HTMX Swap)                     │ │
+│  │  ┌──────────────────────────────────────────────────────┐  │ │
+│  │  │ instruction │ vocabulary │ example │ tip │ practice  │  │ │
+│  │  └──────────────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌──────────┐                                    ┌──────────┐   │
+│  │ Previous │ ◄──── HTMX POST ────► │   Next   │           │   │
+│  └──────────┘                                    └──────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+          │ Final Step: "Complete Lesson"
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    COMPLETION VIEW                               │
+│  🎉 Lesson Complete!                                             │
+│  Score: 100%  |  Words Learned: 6                               │
+│                                                                  │
+│  ┌────────────────────┐  ┌────────────────────┐                 │
+│  │ Practice with      │  │ More Lessons       │                 │
+│  │ Hermano           │  │                    │                 │
+│  └─────────┬──────────┘  └────────────────────┘                 │
+└────────────┼────────────────────────────────────────────────────┘
+             │ Handoff (HX-Redirect)
+             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        CHAT PAGE                                 │
+│  /chat?lesson={id}&topic={category}                              │
+│  Chat with Hermano using vocabulary from the lesson              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Step Types and Templates
+
+| Step Type | Template Rendering | Purpose |
+|-----------|-------------------|---------|
+| `instruction` | Text block with prose styling | Introduce concepts |
+| `vocabulary` | Grid of word/translation cards | Present new words |
+| `example` | Highlighted target text + translation | Show usage in context |
+| `tip` | Yellow info box with lightbulb icon | Cultural notes, learning tips |
+| `practice` | Dynamic exercise form (HTMX load) | Interactive practice |
+
+### Exercise Types and Validation
+
+| Exercise Type | Input | Validation Logic |
+|--------------|-------|------------------|
+| `multiple_choice` | Radio button index | `selected_index == correct_index` |
+| `fill_blank` | Text input | Case-insensitive match with alternatives |
+| `translate` | Text input | Case-insensitive match with alternatives |
+
+### Data Loading Pipeline
+
+```
+YAML Files (data/lessons/)
+        │
+        ▼
+LessonService._load_all_lessons()
+        │
+        ├── Parse YAML with yaml.safe_load()
+        ├── Validate with Pydantic models
+        └── Cache in _lessons dict
+        │
+        ▼
+Dependency Injection (LessonServiceDep)
+        │
+        ▼
+API Routes (src/api/routes/lessons.py)
 ```
 
 ---
@@ -867,6 +1056,64 @@ async def set_level(
     ...
 ```
 
+### Lessons (Phase 6)
+
+The lessons module provides a complete API for structured micro-lessons with step navigation, exercises, and progress tracking.
+
+**Lesson List**:
+```python
+@router.get("/")
+async def get_lessons_page(
+    language: str | None = None,
+    level: str | None = None,
+) -> HTMLResponse:
+    """Render lessons catalog with filtering by language and level."""
+```
+
+**Lesson Player**:
+```python
+@router.get("/{lesson_id}/play")
+async def get_lesson_player(lesson_id: str) -> HTMLResponse:
+    """Render interactive lesson player with step navigation."""
+```
+
+**Step Navigation**:
+```python
+@router.get("/{lesson_id}/step/{step_index}")
+async def get_lesson_step(lesson_id: str, step_index: int) -> HTMLResponse:
+    """Get specific step content as partial HTML for HTMX navigation."""
+
+@router.post("/{lesson_id}/step/next")
+async def next_lesson_step(lesson_id: str, current_step: int) -> HTMLResponse:
+    """Navigate to next step."""
+
+@router.post("/{lesson_id}/step/prev")
+async def previous_lesson_step(lesson_id: str, current_step: int) -> HTMLResponse:
+    """Navigate to previous step."""
+```
+
+**Exercise Handling**:
+```python
+@router.get("/{lesson_id}/exercise/{exercise_id}")
+async def get_exercise(lesson_id: str, exercise_id: str) -> HTMLResponse:
+    """Render exercise form based on type (multiple choice, fill blank, translate)."""
+
+@router.post("/{lesson_id}/exercise/{exercise_id}/submit")
+async def submit_exercise(lesson_id: str, exercise_id: str, answer: str) -> HTMLResponse:
+    """Validate answer and return feedback HTML."""
+```
+
+**Lesson Completion and Handoff**:
+```python
+@router.post("/{lesson_id}/complete")
+async def complete_lesson(lesson_id: str, score: int) -> HTMLResponse:
+    """Mark lesson complete and show celebration view."""
+
+@router.post("/{lesson_id}/handoff")
+async def handoff_to_chat(lesson_id: str) -> Response:
+    """Redirect to chat with lesson context for practice."""
+```
+
 ---
 
 ## Database Schema (Simplified for MVP)
@@ -997,14 +1244,25 @@ asyncio_mode = "auto"
 3. Checkpointing for conversation persistence
 4. Vocabulary tracking and display
 
-### Week 3: Polish + Learning Features
-1. Micro-lessons (start with 3-5)
-2. Progress view (words learned, sessions)
-3. Grammar feedback UI
-4. Mobile responsiveness
+### Week 3: Authentication + Persistence (Phase 4-5)
+1. PostgreSQL checkpointing with Supabase
+2. Supabase Auth integration
+3. JWT cookie authentication
+4. Multi-user conversation isolation
 
-### Week 4+: Iterate
+### Week 4: Micro-Lessons (Phase 6) - COMPLETED
+1. Lesson data models (Pydantic: Lesson, Step, Exercise, Progress)
+2. YAML content format and 5 Spanish A0 lessons
+3. LessonService for loading and filtering
+4. Lessons API routes (list, play, steps, exercises, complete)
+5. HTMX-powered lesson player with step navigation
+6. Exercise templates (multiple choice, fill blank, translate)
+7. Lesson completion and chat handoff
+8. 918+ tests with comprehensive coverage
+
+### Week 5+: Iterate
 1. Test with real beginners
 2. Tune scaffolding based on feedback
-3. Add more lessons
-4. German support (if time)
+3. Add more lessons (A1, A2, B1)
+4. German/French support (if time)
+5. Phase 7: Subgraphs for lesson integration
