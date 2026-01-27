@@ -3,99 +3,140 @@
 {% block title %}Chat - Habla Hermano{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}' }">
+<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}', menuOpen: false }">
     <!-- Header -->
-    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-4 sm:px-6 shadow-sm">
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
-            <!-- Logo/Brand -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center">
-                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <!-- Left: Hamburger Menu -->
+            <div class="relative" x-data="{ open: false }">
+                <button
+                    @click="open = !open"
+                    @click.away="open = false"
+                    class="p-2 rounded-xl bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-text transition-all duration-200"
+                    aria-label="Menu"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
+                </button>
+
+                <!-- Menu Dropdown -->
+                <div
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
+                    x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
+                    x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
+                    class="absolute left-0 mt-2 w-56 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                >
+                    <div class="p-2">
+                        <!-- Lessons Link -->
+                        <a
+                            href="/lessons/"
+                            class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3 text-text hover:bg-surface-overlay"
+                        >
+                            <span class="text-xl">📚</span>
+                            <span class="font-medium">Lessons</span>
+                        </a>
+                        <!-- New Chat -->
+                        <button
+                            hx-post="/new"
+                            hx-swap="none"
+                            @click="open = false"
+                            class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3 text-text hover:bg-surface-overlay"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span class="font-medium">New Chat</span>
+                        </button>
+                        <!-- Divider -->
+                        <div class="my-2 border-t border-border"></div>
+                        <!-- Theme Options -->
+                        <div class="px-4 py-2 text-xs text-text-muted uppercase tracking-wide">Theme</div>
+                        <button
+                            @click="setTheme('dark'); open = false"
+                            class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                            :class="theme === 'dark' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                            <span>Dark</span>
+                        </button>
+                        <button
+                            @click="setTheme('light'); open = false"
+                            class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                            :class="theme === 'light' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <span>Light</span>
+                        </button>
+                        <button
+                            @click="setTheme('ocean'); open = false"
+                            class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                            :class="theme === 'ocean' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                            </svg>
+                            <span>Ocean</span>
+                        </button>
+                        <!-- Divider -->
+                        <div class="my-2 border-t border-border"></div>
+                        <!-- Auth -->
+                        {% if user %}
+                        <a
+                            href="/auth/logout"
+                            class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3 text-text hover:bg-surface-overlay"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            <span class="font-medium">Logout</span>
+                        </a>
+                        {% else %}
+                        <a
+                            href="/auth/login"
+                            class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3 text-accent hover:bg-accent/10"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                            </svg>
+                            <span class="font-medium">Login</span>
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
-                <h1 class="text-xl font-semibold text-text">Habla Hermano</h1>
             </div>
 
-            <!-- Right Side Controls -->
+            <!-- Center: Logo/Brand -->
+            <a href="/chat" class="flex items-center gap-2">
+                <span class="text-xl">🗣️</span>
+                <h1 class="text-lg font-semibold text-text">Habla Hermano</h1>
+            </a>
+
+            <!-- Right: Language & Level -->
             <div class="flex items-center gap-2">
-                <!-- Auth Button -->
-                {% if user %}
-                <a
-                    href="/auth/logout"
-                    class="flex items-center gap-2 px-3 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 text-text-muted hover:text-text"
-                    title="Logout ({{ user.email }})"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span class="hidden sm:inline">Logout</span>
-                </a>
-                {% else %}
-                <a
-                    href="/auth/login"
-                    class="flex items-center gap-2 px-3 py-2.5 bg-accent/10 hover:bg-accent/20 rounded-xl text-sm font-medium transition-all duration-200 text-accent"
-                    title="Login for persistent conversations"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    <span class="hidden sm:inline">Login</span>
-                </a>
-                {% endif %}
-
-                <!-- New Conversation Button -->
-                <button
-                    hx-post="/new"
-                    hx-swap="none"
-                    class="p-2.5 rounded-xl bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-text transition-all duration-200"
-                    aria-label="Start new conversation"
-                    title="New Chat"
-                >
-                    <!-- Plus/New Icon -->
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
-
-                <!-- Theme Toggle Button -->
-                <button
-                    @click="setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'ocean' : 'dark')"
-                    class="p-2.5 rounded-xl bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-text transition-all duration-200"
-                    :aria-label="'Current theme: ' + theme + '. Click to switch theme.'"
-                    :title="'Theme: ' + theme"
-                >
-                    <!-- Dark theme icon (moon) -->
-                    <svg x-show="theme === 'dark'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                    <!-- Light theme icon (sun) -->
-                    <svg x-show="theme === 'light'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <!-- Ocean theme icon (wave) -->
-                    <svg x-show="theme === 'ocean'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-                    </svg>
-                </button>
-
                 <!-- Language Selector -->
                 <div class="relative" x-data="{ open: false }">
                     <button
                         @click="open = !open"
                         @click.away="open = false"
-                        class="flex items-center gap-2 px-3 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
                         aria-label="Select language"
                     >
                         <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
                         <span x-show="language === 'de'" class="text-lg">🇩🇪</span>
                         <span x-show="language === 'fr'" class="text-lg">🇫🇷</span>
-                        <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 text-text-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-
                     <!-- Language Dropdown -->
                     <div
                         x-show="open"
@@ -105,32 +146,32 @@
                         x-transition:leave="transition ease-in duration-100"
                         x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
                         x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
-                        class="absolute right-0 mt-2 w-44 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                        class="absolute right-0 mt-2 w-40 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
                     >
                         <div class="p-2">
                             <button
                                 @click="language = 'es'; open = false; $refs.languageInput.value = 'es'"
-                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2"
                                 :class="language === 'es' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
-                                <span class="text-xl">🇪🇸</span>
-                                <span class="font-medium">Spanish</span>
+                                <span class="text-lg">🇪🇸</span>
+                                <span class="text-sm">Spanish</span>
                             </button>
                             <button
                                 @click="language = 'de'; open = false; $refs.languageInput.value = 'de'"
-                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2"
                                 :class="language === 'de' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
-                                <span class="text-xl">🇩🇪</span>
-                                <span class="font-medium">German</span>
+                                <span class="text-lg">🇩🇪</span>
+                                <span class="text-sm">German</span>
                             </button>
                             <button
                                 @click="language = 'fr'; open = false; $refs.languageInput.value = 'fr'"
-                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2"
                                 :class="language === 'fr' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
-                                <span class="text-xl">🇫🇷</span>
-                                <span class="font-medium">French</span>
+                                <span class="text-lg">🇫🇷</span>
+                                <span class="text-sm">French</span>
                             </button>
                         </div>
                     </div>
@@ -141,17 +182,15 @@
                     <button
                         @click="open = !open"
                         @click.away="open = false"
-                        class="flex items-center gap-2 px-3.5 py-2.5 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
-                        aria-label="Select language level"
+                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        aria-label="Select level"
                     >
-                        <span class="text-text-muted">Level:</span>
                         <span x-text="level" class="text-accent font-semibold"></span>
-                        <svg class="w-4 h-4 text-text-subtle transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 text-text-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-
-                    <!-- Dropdown Menu -->
+                    <!-- Level Dropdown -->
                     <div
                         x-show="open"
                         x-transition:enter="transition ease-out duration-150"
@@ -160,17 +199,17 @@
                         x-transition:leave="transition ease-in duration-100"
                         x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
                         x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
-                        class="absolute right-0 mt-2 w-56 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                        class="absolute right-0 mt-2 w-48 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
                     >
                         <div class="p-2">
                             {% for lvl, desc in [('A0', 'Complete Beginner'), ('A1', 'Beginner'), ('A2', 'Elementary'), ('B1', 'Intermediate')] %}
                             <button
                                 @click="level = '{{ lvl }}'; open = false; $refs.levelInput.value = '{{ lvl }}'"
-                                class="w-full px-4 py-3 text-left rounded-xl transition-all duration-150"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150"
                                 :class="level === '{{ lvl }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
                                 <span class="font-semibold">{{ lvl }}</span>
-                                <span class="text-text-muted text-sm ml-2">{{ desc }}</span>
+                                <span class="text-text-muted text-xs ml-1">{{ desc }}</span>
                             </button>
                             {% endfor %}
                         </div>
