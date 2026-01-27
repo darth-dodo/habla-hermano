@@ -189,7 +189,7 @@ habla-hermano/
 │   │
 │   ├── templates/               # [Implemented] All template files
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
-│   │   ├── chat.html            # [Implemented] Chat UI with language/level selectors, theme toggle
+│   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu (Lessons, New Chat, Theme, Auth), language/level selectors
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
 │   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
 │   │   ├── auth/

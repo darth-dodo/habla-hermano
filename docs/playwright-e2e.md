@@ -16,6 +16,11 @@
 | A1 Scaffold | ✅ Pass | Collapsed scaffold, expandable on click |
 | B1 No Scaffold | ✅ Pass | Conditional routing skips scaffold for higher levels |
 | Word Bank Insert | ✅ Pass | Click word to insert into input field |
+| Lesson Catalog | ✅ Pass | Lessons page renders with grouped lesson cards |
+| Lesson Player | ✅ Pass | Step navigation, progress bar, content rendering |
+| Exercise Submission | ✅ Pass | Multiple choice, fill blank answer validation |
+| Lesson Completion | ✅ Pass | Completion view with score and handoff option |
+| Hamburger Menu | ✅ Pass | Menu opens with Lessons, New Chat, Theme, Auth links |
 
 ---
 
@@ -23,8 +28,8 @@
 
 - **URL**: http://127.0.0.1:8000
 - **Browser**: Chromium (via Playwright MCP)
-- **Date**: 2025-01-18 (Phase 3 update)
-- **Previous Dates**: 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
+- **Date**: 2026-01-27 (Phase 6 + UI update)
+- **Previous Dates**: 2025-01-18 (Phase 3), 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
 
 ---
 
@@ -407,12 +412,63 @@ B1: "Ayer fui al cine con mis amigos y vimos una película muy interesante sobre
 
 ---
 
+### 8. Lesson Catalog and Player (Phase 6)
+
+**Purpose**: Verify micro-lessons system renders correctly with browsing, navigation, exercises, and completion.
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8765/lessons/
+2. Verify lesson cards render grouped by difficulty (Beginner/Intermediate)
+3. Click a lesson card to open the player
+4. Navigate through steps using Next/Previous buttons
+5. Complete an exercise with correct answer
+6. Reach completion view
+
+**Expected Behavior**:
+- Lesson cards show title, icon, level badge
+- Player renders step content based on type (instruction, vocabulary, example, tip, practice)
+- Progress bar updates on each step
+- Exercises validate answers with feedback
+- Completion view shows score and vocabulary count
+- "Practice with Hermano" button redirects to chat
+
+**Result**: ✅ Pass
+
+---
+
+### 9. Hamburger Menu Navigation
+
+**Purpose**: Verify the consolidated header with hamburger menu works correctly.
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8765/
+2. Click the hamburger menu icon (3 horizontal lines)
+3. Verify dropdown contains: Lessons, New Chat, Theme options, Login/Logout
+4. Click "Lessons" link
+5. Verify navigation to /lessons/ page
+
+**Expected Behavior**:
+- Hamburger icon renders on the left side of header
+- Menu dropdown appears with smooth transition on click
+- Menu items: 📚 Lessons, New Chat, Theme (Dark/Light/Ocean), Login
+- Active theme is highlighted
+- Click outside closes the menu
+- Logo centered: 🗣️ Habla Hermano
+- Language and Level selectors on the right side
+
+**Result**: ✅ Pass
+
+---
+
 ## Next Steps
 
 1. **Automated Test Suite**: Convert manual tests to Playwright test scripts
 2. **Mobile Testing**: Test on 375px viewport
 3. **Error Handling**: Test API failures, network issues
-4. **Conversation Persistence**: Test when checkpointing is added (Phase 4)
+4. ~~**Conversation Persistence**: Test when checkpointing is added (Phase 4)~~ ✅ Complete
 5. ~~**Grammar Feedback**: Test analyze node when added (Phase 2)~~ ✅ Complete
 6. ~~**Scaffold Node**: Test word bank and scaffolding UI (Phase 3)~~ ✅ Complete
-7. **Vocabulary Tracking**: Test vocabulary display and persistence
+7. ~~**Micro-Lessons**: Test lesson player and exercises (Phase 6)~~ ✅ Complete
+8. ~~**Hamburger Menu**: Test navigation consolidation~~ ✅ Complete
+9. **Vocabulary Tracking**: Test vocabulary display and persistence
+10. **German/French Lessons**: Test lesson content for additional languages

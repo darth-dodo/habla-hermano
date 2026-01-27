@@ -66,6 +66,9 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
 | **3 Themes** | ✅ Complete | Dark, Light, Ocean |
 | **Mobile-First UI** | ✅ Complete | Works on all devices |
+| **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
+| **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
+| **Guest Access** | ✅ Complete | Lessons and chat work without authentication |
 
 ---
 
@@ -217,13 +220,14 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 3** | Scaffolding with conditional routing | ✅ Complete |
 | **Phase 4** | Persistence | PostgreSQL checkpointing, conversation memory | ✅ Complete |
 | **Phase 5** | Authentication | Supabase Auth, multi-user support, JWT tokens | ✅ Complete |
+| **Phase 6** | Micro-Lessons | Structured lessons with exercises, guest access, chat handoff | ✅ Complete |
 
 ### Planned
 
 | Phase | Focus | Description |
 |-------|-------|-------------|
-| **Phase 6** | Micro-lessons | 2-3 minute focused lessons that unlock conversation abilities |
-| **Phase 7** | Progress tracking | Words learned, patterns mastered, conversation milestones |
+| **Phase 7** | Subgraphs | Graph composition, reusability, lesson subgraphs |
+| **Phase 8** | Progress tracking | Words learned, patterns mastered, conversation milestones |
 
 ### Future Ideas
 
@@ -270,3 +274,4 @@ See [Architecture Documentation](architecture.md) for details.
 - [Testing](testing.md) — Test coverage and strategy
 - [E2E Tests](playwright-e2e.md) — Playwright test documentation
 - [Design Documents](design/) — Phase-by-phase implementation details
+- [Phase 6 Design](design/phase6-micro-lessons.md) — Micro-lessons design document

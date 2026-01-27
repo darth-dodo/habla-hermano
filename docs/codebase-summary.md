@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.0 | **Tests**: 829 | **Coverage**: 86%+ | **Date**: January 2026
+**Version**: 1.1 | **Tests**: 918 | **Coverage**: 86%+ | **Date**: January 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This crash course documents everything about **Habla Hermano** — an AI-powered conversational language tutor that teaches languages from complete beginner (A0) to intermediate level (B1) through real conversations, not flashcards.
+This crash course documents everything about **Habla Hermano** — an AI-powered conversational language tutor that teaches languages from complete beginner (A0) to intermediate level (B1) through real conversations, structured micro-lessons, and interactive exercises.
 
 ### What We Built
 
@@ -25,6 +25,8 @@ block-beta
         K["Persistence"] L["PostgreSQL checkpointing (LangGraph)"]
         M["Config"] N["Environment-based Pydantic Settings"]
         O["Deployment"] P["Docker + Render.com"]
+        Q["Lessons"] R["YAML micro-lessons with exercises (5 Spanish A0)"]
+        S["UI"] T["Hamburger menu, lesson player, step navigation"]
     end
 ```
 
@@ -38,8 +40,11 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 829 tests with 86%+ coverage, strict typing
+- ✅ 918 tests with 86%+ coverage, strict typing
 - ✅ 3 themes: Dark, Light, Ocean
+- ✅ Micro-lessons system: 5 Spanish A0 lessons with exercises
+- ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
+- ✅ Guest access for lessons and chat
 
 ---
 
@@ -165,7 +170,7 @@ habla-hermano/
 │   │   └── routes/
 │   │       ├── chat.py               # POST /chat, GET /
 │   │       ├── auth.py               # Signup, login, logout
-│   │       ├── lessons.py            # Micro-lessons (planned)
+│   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
 │   │       └── progress.py           # Stats endpoints (planned)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
@@ -180,6 +185,10 @@ habla-hermano/
 │   │       ├── analyze.py            # Grammar & vocab extraction
 │   │       └── feedback.py           # Format corrections
 │   │
+│   ├── lessons/                      # Micro-lessons system
+│   │   ├── models.py                 # Pydantic lesson, step, exercise models
+│   │   └── service.py               # YAML loading, filtering, vocabulary extraction
+│   │
 │   ├── db/                           # Database layer
 │   │   ├── models.py                 # Pydantic models
 │   │   ├── repository.py             # Data access layer
@@ -191,29 +200,47 @@ habla-hermano/
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes
-│   │   ├── chat.html                 # Main chat interface
+│   │   ├── chat.html                 # Chat interface with hamburger menu
+│   │   ├── lessons.html              # Lesson catalog page
+│   │   ├── lesson_player.html        # Interactive lesson player
 │   │   └── partials/
 │   │       ├── message_pair.html     # User + AI message
 │   │       ├── grammar_feedback.html # Collapsible tips
-│   │       └── scaffold.html         # Word bank, hints
+│   │       ├── scaffold.html         # Word bank, hints
+│   │       ├── lesson_step.html      # Step content by type
+│   │       ├── lesson_exercise.html  # Exercise forms
+│   │       └── lesson_complete.html  # Completion celebration
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/app.js                 # HTMX handlers
 │
-├── tests/                            # 829 tests, 86%+ coverage
+├── tests/                            # 918 tests, 86%+ coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── test_agent_*.py               # LangGraph tests
 │   ├── test_api_*.py                 # API route tests
 │   ├── test_auth*.py                 # Auth tests
 │   ├── test_db_*.py                  # Database tests
 │   └── test_services_*.py            # Service tests
+│   ├── test_lesson_models.py         # Lesson data model tests
+│   ├── test_lesson_service.py        # Lesson service tests
+│   ├── test_lesson_routes.py         # Lesson API endpoint tests
+│   └── test_lessons_progress_routes.py # Lesson progress tests
 │
 ├── docs/
 │   ├── architecture.md
 │   ├── api.md
 │   ├── product.md
 │   └── design/phase*.md
+│
+├── data/
+│   └── lessons/                      # YAML lesson content
+│       └── es/A0/                    # Spanish beginner lessons
+│           ├── greetings-001.yaml
+│           ├── introductions-001.yaml
+│           ├── numbers-001.yaml
+│           ├── colors-001.yaml
+│           └── family-001.yaml
 │
 ├── pyproject.toml
 ├── .env.example
@@ -384,6 +411,12 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
 | POST | `/auth/logout` | Sign out |
 | GET | `/lessons` | List lessons |
 | GET | `/progress` | User statistics |
+| GET | `/lessons/` | Lesson catalog |
+| GET | `/lessons/{id}/play` | Lesson player |
+| POST | `/lessons/{id}/step/next` | Next step navigation |
+| POST | `/lessons/{id}/exercise/{id}/submit` | Submit exercise answer |
+| POST | `/lessons/{id}/complete` | Mark lesson complete |
+| POST | `/lessons/{id}/handoff` | Chat handoff |
 
 ### Chat Request/Response
 
@@ -544,7 +577,7 @@ class Settings(BaseSettings):
 
 ## 11. Testing Strategy
 
-### Coverage: 86%+ (829 tests)
+### Coverage: 86%+ (918 tests)
 
 ### Test Categories
 
@@ -556,6 +589,7 @@ class Settings(BaseSettings):
 | Database | 3 | Models, repository |
 | Services | 2 | Vocabulary, levels |
 | Integration | 3 | End-to-end flows |
+| Lessons | 4 | Models, service, routes, progress |
 
 ### Key Fixtures
 
@@ -563,7 +597,7 @@ class Settings(BaseSettings):
 @pytest.fixture
 def mock_settings():
     """Mock settings for tests."""
-    return Settings(ANTHROPIC_API_KEY="test-key")
+    return Settings(ANTHROPIC_API_KEY="test-key")  # pragma: allowlist secret
 
 @pytest.fixture
 def mock_compiled_graph():
@@ -687,4 +721,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.0 — Habla Hermano (829 tests, 86%+ coverage, LangGraph Pipeline)*
+*Crash Course v1.1 — Habla Hermano (918 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons)*

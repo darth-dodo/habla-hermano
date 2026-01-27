@@ -361,7 +361,7 @@ The `/chat` endpoint is designed for HTMX requests. The recommended HTMX attribu
 
 The `level` parameter is validated to accept only: `A0`, `A1`, `A2`, `B1`.
 
-The `language` parameter is validated to accept only: `es`, `de`.
+The `language` parameter is validated to accept only: `es`, `de`, `fr`.
 
 ---
 
