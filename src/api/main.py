@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from src.api.config import get_settings
-from src.api.routes import auth, chat
+from src.api.routes import auth, chat, lessons, progress
 
 # Configure logging
 settings = get_settings()
@@ -73,6 +73,8 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(auth.router)
     app.include_router(chat.router)
+    app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
+    app.include_router(progress.router, prefix="/progress", tags=["progress"])
 
     return app
 

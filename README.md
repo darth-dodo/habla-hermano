@@ -102,9 +102,25 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **4 Proficiency Levels** | A0 → B1 with adaptive behavior from Hermano |
 | **Intelligent Scaffolding** | Word banks, hints, sentence starters for beginners |
 | **Grammar Feedback** | Gentle corrections with expandable explanations |
+| **Micro-Lessons** | Structured lessons with vocabulary, exercises, and completion tracking |
+| **Guest Access** | Start learning immediately — no sign-up required |
 | **3 Languages** | Spanish, German, and French — full support A0-B1 |
 | **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
 | **Mobile-First** | Works great on phone, tablet, or desktop |
+
+---
+
+## Micro-Lessons
+
+Beyond freeform conversation, Hermano offers **structured micro-lessons** — bite-sized units that teach vocabulary and grammar through interactive exercises.
+
+Each lesson includes:
+- **Vocabulary steps** with translations and example sentences
+- **Exercises** — multiple choice, fill-in-the-blank, and translation
+- **Completion tracking** with score and vocabulary count
+- **Chat handoff** — finish a lesson and jump into conversation to practice what you learned
+
+5 Spanish A0 lessons are available now, covering greetings, introductions, and basic phrases. No account required — guests can start learning immediately.
 
 ---
 
@@ -113,13 +129,17 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - [Product Vision](docs/product.md) — Pedagogy and feature philosophy
 - [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
 - [API Reference](docs/api.md) — Endpoints and data structures
+- [Testing](docs/testing.md) — 918 tests, 86%+ coverage, test strategy
+- [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
+- [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
+- [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document
 - [Changelog](CHANGELOG.md) — Release history
 
 ---
 
 ## Built With
 
-FastAPI • HTMX • Tailwind CSS • LangGraph • Claude API
+FastAPI • HTMX • Alpine.js • Tailwind CSS • LangGraph • Claude API • Supabase Auth • PostgreSQL
 
 ---
 

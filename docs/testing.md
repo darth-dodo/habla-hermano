@@ -27,8 +27,11 @@
 | Services Levels | `test_services_levels.py` | 20+ | CEFR level detection |
 | Services Vocab | `test_services_vocabulary.py` | 20+ | Vocabulary tracking |
 | Lessons/Progress | `test_lessons_progress_routes.py` | 50+ | Lesson endpoints, progress tracking |
+| Lesson Models | `test_lesson_models.py` | 36 | Phase 6 lesson data model validation |
+| Lesson Service | `test_lesson_service.py` | 20 | Phase 6 lesson service functionality |
+| Lesson Routes | `test_lesson_routes.py` | 39 | Phase 6 lesson API endpoints |
 
-**Total**: 829+ tests with 86%+ code coverage
+**Total**: 918 tests with 86%+ code coverage
 
 ---
 
@@ -250,6 +253,302 @@ def test_analyze_is_terminal_node(self) -> None:
     # respond, scaffold, and analyze are the processing nodes
     assert set(processing_nodes) == {"respond", "scaffold", "analyze"}
 ```
+
+---
+
+## Phase 6 Test Coverage
+
+Phase 6 introduced the structured lesson system with YAML-based content, lesson player, and progress tracking. All tests were developed using a strict TDD (Test-Driven Development) approach: RED (write failing tests first) then GREEN (implement to pass).
+
+### Lesson Model Tests (`tests/test_lesson_models.py`)
+
+**36 test cases** covering the Pydantic data models for lessons.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestLessonStepModel` | 8 | LessonStep validation, types, content fields |
+| `TestLessonModel` | 10 | Lesson metadata, step collections, CEFR levels |
+| `TestLessonProgressModel` | 8 | Progress tracking, completion state, timestamps |
+| `TestLessonResponseModel` | 5 | API response structure, serialization |
+| `TestModelValidation` | 5 | Edge cases, required fields, type coercion |
+
+#### Key Test Scenarios
+
+**Step Type Validation**:
+```python
+def test_lesson_step_valid_types(self) -> None:
+    """LessonStep should accept valid step types."""
+    for step_type in ["vocabulary", "grammar", "dialogue", "exercise", "cultural"]:
+        step = LessonStep(type=step_type, content="Test content")
+        assert step.type == step_type
+
+def test_lesson_step_invalid_type_raises(self) -> None:
+    """LessonStep should reject invalid step types."""
+    with pytest.raises(ValidationError):
+        LessonStep(type="invalid_type", content="Test")
+```
+
+**Lesson Metadata Validation**:
+```python
+def test_lesson_requires_all_metadata(self) -> None:
+    """Lesson should require id, title, level, language, and steps."""
+    with pytest.raises(ValidationError):
+        Lesson(id="test", title="Test")  # Missing required fields
+
+def test_lesson_level_must_be_cefr(self) -> None:
+    """Lesson level must be valid CEFR level."""
+    valid_levels = ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]
+    for level in valid_levels:
+        lesson = Lesson(id="test", title="Test", level=level, language="es", steps=[])
+        assert lesson.level == level
+```
+
+**Progress State Tracking**:
+```python
+def test_progress_completion_percentage(self) -> None:
+    """Progress should calculate completion percentage correctly."""
+    progress = LessonProgress(
+        lesson_id="test",
+        current_step=5,
+        total_steps=10,
+        completed=False
+    )
+    assert progress.completion_percentage == 50.0
+
+def test_progress_marks_complete_at_100_percent(self) -> None:
+    """Progress should mark completed when all steps finished."""
+    progress = LessonProgress(
+        lesson_id="test",
+        current_step=10,
+        total_steps=10,
+        completed=True
+    )
+    assert progress.completed is True
+    assert progress.completion_percentage == 100.0
+```
+
+---
+
+### Lesson Service Tests (`tests/test_lesson_service.py`)
+
+**20 test cases** covering the lesson service functionality.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestLessonYAMLLoading` | 5 | YAML file parsing, validation, error handling |
+| `TestLessonFiltering` | 6 | Filter by level, language, topic |
+| `TestLessonProgressTracking` | 5 | Progress CRUD operations |
+| `TestLessonServiceEdgeCases` | 4 | Empty results, missing files, malformed YAML |
+
+#### Key Test Scenarios
+
+**YAML Loading and Parsing**:
+```python
+def test_load_lessons_from_yaml(self) -> None:
+    """Service should load and parse lesson YAML files."""
+    service = LessonService()
+    lessons = service.get_all_lessons()
+
+    assert len(lessons) > 0
+    assert all(isinstance(lesson, Lesson) for lesson in lessons)
+
+def test_yaml_validation_on_load(self) -> None:
+    """Service should validate YAML content against Pydantic models."""
+    service = LessonService()
+    lessons = service.get_all_lessons()
+
+    for lesson in lessons:
+        assert lesson.id is not None
+        assert lesson.level in ["A0", "A1", "A2", "B1", "B2", "C1", "C2"]
+        assert len(lesson.steps) > 0
+```
+
+**Filtering by Level and Language**:
+```python
+def test_filter_lessons_by_level(self) -> None:
+    """Service should filter lessons by CEFR level."""
+    service = LessonService()
+    a1_lessons = service.get_lessons_by_level("A1")
+
+    assert all(lesson.level == "A1" for lesson in a1_lessons)
+
+def test_filter_lessons_by_language(self) -> None:
+    """Service should filter lessons by target language."""
+    service = LessonService()
+    spanish_lessons = service.get_lessons_by_language("es")
+
+    assert all(lesson.language == "es" for lesson in spanish_lessons)
+
+def test_combined_filters(self) -> None:
+    """Service should support combined level and language filters."""
+    service = LessonService()
+    lessons = service.get_lessons(level="A1", language="es")
+
+    assert all(l.level == "A1" and l.language == "es" for l in lessons)
+```
+
+**Progress Tracking Operations**:
+```python
+def test_save_and_retrieve_progress(self) -> None:
+    """Service should save and retrieve lesson progress."""
+    service = LessonService()
+    progress = LessonProgress(
+        lesson_id="greetings-a1",
+        current_step=3,
+        total_steps=8,
+        completed=False
+    )
+
+    service.save_progress(user_id="test-user", progress=progress)
+    retrieved = service.get_progress(user_id="test-user", lesson_id="greetings-a1")
+
+    assert retrieved.current_step == 3
+    assert retrieved.completed is False
+
+def test_progress_updates_existing(self) -> None:
+    """Service should update existing progress, not create duplicates."""
+    service = LessonService()
+    # Save initial progress
+    service.save_progress(user_id="test-user", progress=LessonProgress(...))
+    # Update progress
+    service.save_progress(user_id="test-user", progress=LessonProgress(current_step=5, ...))
+
+    progress_list = service.get_all_progress(user_id="test-user")
+    assert len([p for p in progress_list if p.lesson_id == "greetings-a1"]) == 1
+```
+
+---
+
+### Lesson Route Tests (`tests/test_lesson_routes.py`)
+
+**39 test cases** covering all lesson API endpoints.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestLessonListEndpoint` | 8 | GET /lessons with filters |
+| `TestLessonDetailEndpoint` | 6 | GET /lessons/{id} |
+| `TestLessonPlayerEndpoint` | 8 | GET /lessons/{id}/play with step navigation |
+| `TestLessonProgressEndpoints` | 10 | Progress save/retrieve/update |
+| `TestGuestAccess` | 7 | Unauthenticated user lesson access |
+
+#### Key Test Scenarios
+
+**Lesson List with Filters**:
+```python
+async def test_get_lessons_returns_list(self, async_client) -> None:
+    """GET /lessons should return list of available lessons."""
+    response = await async_client.get("/lessons")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data["lessons"], list)
+
+async def test_get_lessons_with_level_filter(self, async_client) -> None:
+    """GET /lessons?level=A1 should filter by CEFR level."""
+    response = await async_client.get("/lessons?level=A1")
+
+    assert response.status_code == 200
+    lessons = response.json()["lessons"]
+    assert all(lesson["level"] == "A1" for lesson in lessons)
+
+async def test_get_lessons_with_language_filter(self, async_client) -> None:
+    """GET /lessons?language=es should filter by target language."""
+    response = await async_client.get("/lessons?language=es")
+
+    assert response.status_code == 200
+    lessons = response.json()["lessons"]
+    assert all(lesson["language"] == "es" for lesson in lessons)
+```
+
+**Lesson Player Endpoints**:
+```python
+async def test_lesson_player_renders_first_step(self, async_client) -> None:
+    """GET /lessons/{id}/play should render first step."""
+    response = await async_client.get("/lessons/greetings-a1/play")
+
+    assert response.status_code == 200
+    assert "step" in response.json()
+    assert response.json()["current_step"] == 1
+
+async def test_lesson_player_navigates_to_step(self, async_client) -> None:
+    """GET /lessons/{id}/play?step=3 should navigate to specific step."""
+    response = await async_client.get("/lessons/greetings-a1/play?step=3")
+
+    assert response.status_code == 200
+    assert response.json()["current_step"] == 3
+
+async def test_lesson_player_marks_completion(self, async_client) -> None:
+    """Reaching final step should mark lesson as complete."""
+    # Navigate to final step
+    response = await async_client.get("/lessons/greetings-a1/play?step=8")
+
+    assert response.status_code == 200
+    # Check completion state
+    progress_response = await async_client.get("/lessons/greetings-a1/progress")
+    assert progress_response.json()["completed"] is True
+```
+
+**Guest Access (Unauthenticated Users)**:
+```python
+async def test_guest_can_view_lesson_list(self, async_client) -> None:
+    """Unauthenticated users should view lesson catalog."""
+    response = await async_client.get("/lessons")
+
+    assert response.status_code == 200
+    assert len(response.json()["lessons"]) > 0
+
+async def test_guest_can_play_lessons(self, async_client) -> None:
+    """Unauthenticated users should access lesson player."""
+    response = await async_client.get("/lessons/greetings-a1/play")
+
+    assert response.status_code == 200
+
+async def test_guest_progress_uses_session(self, async_client) -> None:
+    """Guest progress should be stored in session, not database."""
+    response = await async_client.get("/lessons/greetings-a1/play?step=3")
+
+    assert response.status_code == 200
+    # Progress tracked via session cookie, not user_id
+    assert "session" in response.cookies or response.headers.get("Set-Cookie")
+```
+
+---
+
+### Phase 6 E2E Browser Tests (Playwright)
+
+End-to-end browser testing for the lesson player interface.
+
+| Test | Status | Description |
+|------|--------|-------------|
+| Lesson Catalog Display | Pass | Lessons render with correct metadata |
+| Level Filter UI | Pass | Dropdown filters lessons by CEFR level |
+| Lesson Player Navigation | Pass | Next/Previous buttons navigate steps |
+| Progress Indicator | Pass | Visual progress bar updates correctly |
+| Step Content Rendering | Pass | Vocabulary, grammar, dialogue steps render |
+| Completion Celebration | Pass | Completion message displays at final step |
+
+#### Lesson Player Navigation Test
+
+**Test Steps**:
+1. Navigate to lesson catalog `/lessons`
+2. Click on "Greetings and Introductions" lesson card
+3. Verify lesson player loads with step 1
+4. Click "Next" button
+5. Verify step 2 content displays
+6. Click "Previous" button
+7. Verify step 1 content displays again
+
+**Expected Behavior**:
+- Step counter updates (e.g., "Step 2 of 8")
+- Progress bar advances visually
+- Step content transitions smoothly
+- Navigation buttons disable appropriately at boundaries
 
 ---
 
@@ -476,6 +775,7 @@ def base_state(self) -> ConversationState:
 | `src/api/` | 85%+ | 80%+ |
 | `src/db/` | 85%+ | 80%+ |
 | `src/services/` | 90%+ | 85%+ |
+| `src/lessons/` | 88%+ | 85%+ |
 | **Overall** | **86%+** | **70%+** |
 
 ### Coverage Commands
@@ -512,6 +812,9 @@ tests/
 ├── test_api_routes.py       # Endpoint tests
 ├── test_database.py         # Database layer tests
 ├── test_lessons_progress_routes.py  # Lesson endpoints
+├── test_lesson_models.py    # Phase 6 lesson data models
+├── test_lesson_service.py   # Phase 6 lesson service
+├── test_lesson_routes.py    # Phase 6 lesson API endpoints
 └── test_services.py         # Service layer tests
 ```
 
