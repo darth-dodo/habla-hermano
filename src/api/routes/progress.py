@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import TemplatesDep
-from src.api.supabase_client import get_supabase_admin
+from src.api.supabase_client import SupabaseClient, get_supabase_admin
 from src.db.repository import VocabularyRepository
 from src.services.progress import ProgressService
 
@@ -28,7 +28,7 @@ router = APIRouter()
 def _resolve_identity(
     user: AuthenticatedUser | None,
     session_id: str | None,
-) -> tuple[str | None, object | None]:
+) -> tuple[str | None, SupabaseClient | None]:
     """Resolve effective user ID and Supabase client for auth or guest users.
 
     Returns (effective_id, client) where client is the admin client for guests
