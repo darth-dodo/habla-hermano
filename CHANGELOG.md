@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-01-28
+
+### Added
+- Phase 8: Guest session support for unauthenticated users
+- Session-based guest tracking via session_id cookie (httponly, 7-day expiry)
+- Guest data stored in same Supabase tables using admin client to bypass RLS
+- GuestDataMergeService for merging guest vocabulary and progress data on signup/login
+- _resolve_identity() helper for unified auth/guest handling across routes
+- Fire-and-forget pattern for data capture (failures don't block responses)
+
+### Changed
+- Chat and lesson routes now capture data for both authenticated users and guests
+- Schema migration to drop FK constraints for guest UUIDs
+- Progress tracking works identically for guests and authenticated users
+
+## [0.5.0] - 2025-01-25
+
+### Added
+- Phase 7: Progress tracking dashboard with vocabulary and session analytics
+- ProgressService for dashboard stats computation and chart data generation
+- VocabularyRepository for storing and retrieving learned vocabulary items
+- LearningSessionRepository for tracking learning session metadata
+- LessonProgressRepository for micro-lesson completion tracking
+- Progress dashboard page with vocabulary list, stats summary, and interactive charts
+- Chart.js integration for visualizing learning progress over time
+- Vocabulary and session data capture in chat and lesson routes
+- HTMX partials: progress_vocab.html and stats_summary.html for dynamic updates
+
+### Changed
+- Navigation updated to include progress dashboard link
+- User profile extended with progress statistics
+
 ## [0.4.0] - 2025-01-18
 
 ### Added

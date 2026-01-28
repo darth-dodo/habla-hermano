@@ -1,0 +1,43 @@
+<div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-text-muted">Recent Vocabulary</h3>
+        <span class="text-xs bg-accent-muted text-accent px-2 py-1 rounded-full">
+            {{ vocabulary|length }} words
+        </span>
+    </div>
+
+    {% if vocabulary %}
+    <div class="space-y-2">
+        {% for word in vocabulary %}
+        <div class="flex items-center justify-between p-3 bg-surface-overlay rounded-xl group"
+             id="vocab-item-{{ word.id }}">
+            <div>
+                <p class="font-medium text-text">{{ word.word }}</p>
+                <p class="text-sm text-text-muted">{{ word.translation }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-text-subtle">
+                    {{ word.times_seen }}x seen
+                </span>
+                <button
+                    hx-delete="/progress/vocabulary/{{ word.id }}"
+                    hx-target="#vocab-item-{{ word.id }}"
+                    hx-swap="outerHTML"
+                    class="opacity-0 group-hover:opacity-100 text-text-subtle hover:text-accent transition-all p-1"
+                    aria-label="Remove {{ word.word }}"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-8">
+        <p class="text-text-muted text-sm">No vocabulary yet</p>
+        <p class="text-text-subtle text-xs mt-1">Chat with Hermano to start learning words!</p>
+    </div>
+    {% endif %}
+</div>

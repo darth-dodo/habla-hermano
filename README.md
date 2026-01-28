@@ -103,7 +103,9 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Intelligent Scaffolding** | Word banks, hints, sentence starters for beginners |
 | **Grammar Feedback** | Gentle corrections with expandable explanations |
 | **Micro-Lessons** | Structured lessons with vocabulary, exercises, and completion tracking |
+| **Progress Dashboard** | Track vocabulary learned, session history, learning streaks, and accuracy trends with Chart.js visualizations |
 | **Guest Access** | Start learning immediately — no sign-up required |
+| **Guest Progress** | Session-based progress tracking for unauthenticated users (vocabulary and lesson completion persisted via cookies) |
 | **3 Languages** | Spanish, German, and French — full support A0-B1 |
 | **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
 | **Mobile-First** | Works great on phone, tablet, or desktop |

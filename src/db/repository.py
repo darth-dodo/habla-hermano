@@ -4,10 +4,15 @@ Provides typed data access classes for each table, handling CRUD operations
 through the Supabase client. All repositories are user-scoped for RLS compliance.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.api.supabase_client import get_supabase
+
+if TYPE_CHECKING:
+    from supabase import Client as SupabaseClient
 from src.db.models import LearningSession, LessonProgress, UserProfile, Vocabulary
 
 
@@ -73,14 +78,16 @@ class UserProfileRepository:
 class VocabularyRepository:
     """Data access for vocabulary table."""
 
-    def __init__(self, user_id: str) -> None:
+    def __init__(self, user_id: str, client: SupabaseClient | None = None) -> None:
         """Initialize repository for a specific user.
 
         Args:
-            user_id: Supabase auth user UUID.
+            user_id: Supabase auth user UUID or guest session UUID.
+            client: Optional Supabase client. Defaults to anon client.
+                    Pass admin client for guest (session-based) access.
         """
         self._user_id = user_id
-        self._client = get_supabase()
+        self._client = client or get_supabase()
 
     def get_all(self, language: str | None = None) -> list[Vocabulary]:
         """Get all vocabulary for the user.
@@ -237,14 +244,16 @@ class VocabularyRepository:
 class LearningSessionRepository:
     """Data access for learning_sessions table."""
 
-    def __init__(self, user_id: str) -> None:
+    def __init__(self, user_id: str, client: SupabaseClient | None = None) -> None:
         """Initialize repository for a specific user.
 
         Args:
-            user_id: Supabase auth user UUID.
+            user_id: Supabase auth user UUID or guest session UUID.
+            client: Optional Supabase client. Defaults to anon client.
+                    Pass admin client for guest (session-based) access.
         """
         self._user_id = user_id
-        self._client = get_supabase()
+        self._client = client or get_supabase()
 
     def create(self, language: str, level: str) -> LearningSession:
         """Create a new learning session.
@@ -350,14 +359,16 @@ class LearningSessionRepository:
 class LessonProgressRepository:
     """Data access for lesson_progress table."""
 
-    def __init__(self, user_id: str) -> None:
+    def __init__(self, user_id: str, client: SupabaseClient | None = None) -> None:
         """Initialize repository for a specific user.
 
         Args:
-            user_id: Supabase auth user UUID.
+            user_id: Supabase auth user UUID or guest session UUID.
+            client: Optional Supabase client. Defaults to anon client.
+                    Pass admin client for guest (session-based) access.
         """
         self._user_id = user_id
-        self._client = get_supabase()
+        self._client = client or get_supabase()
 
     def get_by_lesson_id(self, lesson_id: str) -> LessonProgress | None:
         """Get lesson progress by ID.

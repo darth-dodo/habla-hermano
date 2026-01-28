@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.1 | **Tests**: 918 | **Coverage**: 86%+ | **Date**: January 2026
+**Version**: 1.2 | **Tests**: 918 | **Coverage**: 86%+ | **Date**: January 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -45,6 +45,8 @@ block-beta
 - ✅ Micro-lessons system: 5 Spanish A0 lessons with exercises
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
 - ✅ Guest access for lessons and chat
+- ✅ Progress tracking dashboard with Chart.js visualizations
+- ✅ Guest session persistence for unauthenticated users
 
 ---
 
@@ -56,14 +58,15 @@ block-beta
 4. [Data Flow Pipeline](#4-data-flow-pipeline)
 5. [LangGraph Pipeline](#5-langgraph-pipeline)
 6. [Hermano Personality System](#6-hermano-personality-system)
-7. [API Design](#7-api-design)
-8. [Database Schema](#8-database-schema)
-9. [Frontend Architecture](#9-frontend-architecture)
-10. [Configuration](#10-configuration)
-11. [Testing Strategy](#11-testing-strategy)
-12. [Development Workflow](#12-development-workflow)
-13. [Deployment](#13-deployment)
-14. [Quick Reference](#14-quick-reference)
+7. [Progress Tracking System](#7-progress-tracking-system)
+8. [API Design](#8-api-design-continued)
+9. [Database Schema](#9-database-schema)
+10. [Frontend Architecture](#10-frontend-architecture)
+11. [Configuration](#11-configuration)
+12. [Testing Strategy](#12-testing-strategy)
+13. [Development Workflow](#13-development-workflow)
+14. [Deployment](#14-deployment)
+15. [Quick Reference](#15-quick-reference)
 
 ---
 
@@ -171,7 +174,7 @@ habla-hermano/
 │   │       ├── chat.py               # POST /chat, GET /
 │   │       ├── auth.py               # Signup, login, logout
 │   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
-│   │       └── progress.py           # Stats endpoints (planned)
+│   │       └── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -196,20 +199,25 @@ habla-hermano/
 │   │
 │   ├── services/                     # Business logic
 │   │   ├── vocabulary.py             # Vocab tracking
-│   │   └── levels.py                 # Level detection
+│   │   ├── levels.py                 # Level detection
+│   │   ├── progress.py               # ProgressService: dashboard aggregation
+│   │   └── merge.py                  # GuestDataMergeService: auth merge
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes
 │   │   ├── chat.html                 # Chat interface with hamburger menu
 │   │   ├── lessons.html              # Lesson catalog page
 │   │   ├── lesson_player.html        # Interactive lesson player
+│   │   ├── progress.html             # Progress dashboard with charts
 │   │   └── partials/
 │   │       ├── message_pair.html     # User + AI message
 │   │       ├── grammar_feedback.html # Collapsible tips
 │   │       ├── scaffold.html         # Word bank, hints
 │   │       ├── lesson_step.html      # Step content by type
 │   │       ├── lesson_exercise.html  # Exercise forms
-│   │       └── lesson_complete.html  # Completion celebration
+│   │       ├── lesson_complete.html  # Completion celebration
+│   │       ├── progress_vocab.html   # Vocabulary list partial
+│   │       └── stats_summary.html    # Stats card partial
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
@@ -259,6 +267,7 @@ sequenceDiagram
     participant G as LangGraph
     participant AI as Claude
     participant DB as PostgreSQL
+    participant PS as ProgressService
 
     U->>API: POST /chat {message, level, language}
     API->>G: Start pipeline with state
@@ -285,8 +294,16 @@ sequenceDiagram
 
     G->>DB: Save checkpoint
     G-->>API: Final state
+    API->>PS: Record vocabulary & session activity
+    PS->>DB: Upsert vocabulary, update session
     API-->>U: HTML partial (message_pair.html)
 ```
+
+### Progress Capture
+
+After each chat interaction, `ProgressService.record_chat_activity()` persists:
+- **Vocabulary**: New words extracted by analyze_node (upsert with times_seen counter)
+- **Sessions**: Active learning session tracking (language, level, message count)
 
 ---
 
@@ -397,7 +414,58 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
 
 ---
 
-## 7. API Design
+## 7. Progress Tracking System
+
+### ProgressService Architecture
+
+The `ProgressService` aggregates data from vocabulary, session, and lesson repositories into dashboard-ready statistics and chart data structures.
+
+```python
+class ProgressService:
+    """Read-heavy service for dashboard rendering."""
+
+    def __init__(self, user_id: str, client: SupabaseClient | None = None):
+        self._vocab_repo = VocabularyRepository(user_id, client=client)
+        self._session_repo = LearningSessionRepository(user_id, client=client)
+        self._lesson_repo = LessonProgressRepository(user_id, client=client)
+
+    def get_dashboard_stats(self, language: str = "es") -> DashboardStats
+    def get_chart_data(self, language: str = "es", days: int = 30) -> ChartData
+    def record_chat_activity(self, language: str, level: str, new_vocab: list) -> None
+```
+
+### Dashboard Data Structures
+
+| Structure | Fields | Purpose |
+|-----------|--------|---------|
+| `DashboardStats` | total_words, total_sessions, lessons_completed, current_streak, accuracy_rate, words_learned_today, messages_today | Summary cards |
+| `ChartData` | vocab_growth[], accuracy_trend[] | Chart.js visualization |
+| `VocabGrowthPoint` | date, cumulative_words | Vocabulary growth line chart |
+| `AccuracyPoint` | date, accuracy | Accuracy trend line chart |
+
+### Guest Session Persistence
+
+The `GuestDataMergeService` handles data transfer when guests authenticate:
+
+```python
+class GuestDataMergeService:
+    """Merges guest session data into authenticated account on login/signup."""
+
+    def __init__(self, guest_session_id: str, authenticated_user_id: str):
+        self._client = get_supabase_admin()  # Bypasses RLS
+
+    def merge_all(self) -> dict[str, int]:
+        # Returns: {"vocabulary": N, "sessions": N, "lessons": N}
+```
+
+**Merge Strategy**:
+- **Vocabulary**: Duplicate words merge counters (times_seen, times_correct); keeps earliest first_seen_at
+- **Sessions**: Transferred directly (no deduplication needed)
+- **Lessons**: Duplicate lessons keep higher score
+
+---
+
+## 8. API Design (continued)
 
 ### Core Endpoints
 
@@ -409,14 +477,17 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
 | POST | `/auth/signup` | Register user |
 | POST | `/auth/login` | Authenticate |
 | POST | `/auth/logout` | Sign out |
-| GET | `/lessons` | List lessons |
-| GET | `/progress` | User statistics |
 | GET | `/lessons/` | Lesson catalog |
 | GET | `/lessons/{id}/play` | Lesson player |
 | POST | `/lessons/{id}/step/next` | Next step navigation |
 | POST | `/lessons/{id}/exercise/{id}/submit` | Submit exercise answer |
 | POST | `/lessons/{id}/complete` | Mark lesson complete |
 | POST | `/lessons/{id}/handoff` | Chat handoff |
+| GET | `/progress/` | Progress dashboard page |
+| GET | `/progress/vocabulary` | Vocabulary list partial (HTMX) |
+| GET | `/progress/stats` | Stats summary partial (HTMX) |
+| GET | `/progress/chart-data` | JSON chart data for Chart.js |
+| DELETE | `/progress/vocabulary/{id}` | Remove word from vocabulary |
 
 ### Chat Request/Response
 
@@ -437,7 +508,7 @@ language: str = "es"  # Language code
 
 ---
 
-## 8. Database Schema
+## 9. Database Schema
 
 ### Supabase Tables
 
@@ -486,7 +557,7 @@ score: INT
 
 ---
 
-## 9. Frontend Architecture
+## 10. Frontend Architecture
 
 ### Technologies
 
@@ -531,7 +602,7 @@ score: INT
 
 ---
 
-## 10. Configuration
+## 11. Configuration
 
 ### Environment Variables
 
@@ -575,7 +646,7 @@ class Settings(BaseSettings):
 
 ---
 
-## 11. Testing Strategy
+## 12. Testing Strategy
 
 ### Coverage: 86%+ (918 tests)
 
@@ -614,7 +685,7 @@ def auth_headers():
 
 ---
 
-## 12. Development Workflow
+## 13. Development Workflow
 
 ### Quick Start
 
@@ -647,7 +718,7 @@ make dev
 
 ---
 
-## 13. Deployment
+## 14. Deployment
 
 ### Render.com
 
@@ -686,7 +757,7 @@ CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", 
 
 ---
 
-## 14. Quick Reference
+## 15. Quick Reference
 
 ### Key Files
 
@@ -694,9 +765,12 @@ CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", 
 src/api/main.py              # FastAPI app entry
 src/api/config.py            # Settings
 src/api/routes/chat.py       # Chat endpoint
+src/api/routes/progress.py   # Progress dashboard endpoints
 src/agent/graph.py           # LangGraph pipeline
 src/agent/nodes/*.py         # Pipeline nodes
 src/agent/prompts.py         # Level-specific prompts
+src/services/progress.py     # ProgressService: dashboard aggregation
+src/services/merge.py        # GuestDataMergeService: auth merge
 ```
 
 ### Commands
@@ -721,4 +795,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.1 — Habla Hermano (918 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons)*
+*Crash Course v1.2 — Habla Hermano (918 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + Progress Tracking)*

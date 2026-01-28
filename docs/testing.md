@@ -30,8 +30,12 @@
 | Lesson Models | `test_lesson_models.py` | 36 | Phase 6 lesson data model validation |
 | Lesson Service | `test_lesson_service.py` | 20 | Phase 6 lesson service functionality |
 | Lesson Routes | `test_lesson_routes.py` | 39 | Phase 6 lesson API endpoints |
+| Progress Service | `test_progress_service.py` | 25+ | Phase 7 dashboard stats, chart data |
+| Data Capture | `test_data_capture.py` | 20+ | Phase 7 vocabulary/session capture integration |
+| Merge Service | `test_merge_service.py` | 30+ | Phase 8 guest data merge operations |
+| Guest Progress | `test_guest_progress.py` | 23+ | Phase 8 E2E guest flow tests |
 
-**Total**: 918 tests with 86%+ code coverage
+**Total**: 1016+ tests with 86%+ code coverage
 
 ---
 
@@ -552,6 +556,535 @@ End-to-end browser testing for the lesson player interface.
 
 ---
 
+## Phase 7 Test Coverage
+
+Phase 7 introduced the progress dashboard with learning statistics, vocabulary tracking visualization, and session history. Tests validate the ProgressService and data capture integration.
+
+### Progress Service Tests (`tests/test_progress_service.py`)
+
+**25+ test cases** covering the ProgressService for dashboard data aggregation.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestProgressServiceDashboardStats` | 8 | Dashboard statistics aggregation |
+| `TestProgressServiceChartData` | 7 | Time-series data for charts |
+| `TestProgressServiceRecordActivity` | 6 | Chat activity recording |
+| `TestProgressServiceEdgeCases` | 4 | Empty data, missing user, error handling |
+
+#### Key Test Scenarios
+
+**Dashboard Statistics Aggregation**:
+```python
+async def test_get_dashboard_stats_returns_complete_data(self) -> None:
+    """Dashboard stats should include all required metrics."""
+    service = ProgressService()
+    stats = await service.get_dashboard_stats(user_id="test-user")
+
+    assert "total_vocabulary" in stats
+    assert "total_sessions" in stats
+    assert "total_lessons_completed" in stats
+    assert "current_streak" in stats
+    assert "level_progress" in stats
+
+async def test_dashboard_stats_calculates_streak_correctly(self) -> None:
+    """Streak calculation should count consecutive activity days."""
+    service = ProgressService()
+    # Setup user with 5 consecutive days of activity
+    stats = await service.get_dashboard_stats(user_id="active-user")
+
+    assert stats["current_streak"] == 5
+```
+
+**Chart Data Generation**:
+```python
+async def test_get_vocabulary_chart_data(self) -> None:
+    """Chart data should return time-series vocabulary counts."""
+    service = ProgressService()
+    chart_data = await service.get_vocabulary_chart_data(
+        user_id="test-user",
+        days=7
+    )
+
+    assert len(chart_data) == 7
+    assert all("date" in point and "count" in point for point in chart_data)
+
+async def test_get_session_chart_data(self) -> None:
+    """Chart data should return time-series session counts."""
+    service = ProgressService()
+    chart_data = await service.get_session_chart_data(
+        user_id="test-user",
+        days=30
+    )
+
+    assert len(chart_data) == 30
+    assert all("date" in point and "duration" in point for point in chart_data)
+```
+
+**Record Chat Activity**:
+```python
+async def test_record_chat_activity_creates_session(self) -> None:
+    """Recording activity should create or update session record."""
+    service = ProgressService()
+    await service.record_chat_activity(
+        user_id="test-user",
+        message_count=5,
+        vocabulary_learned=["hola", "adios"]
+    )
+
+    stats = await service.get_dashboard_stats(user_id="test-user")
+    assert stats["total_sessions"] >= 1
+
+async def test_record_chat_activity_increments_vocabulary(self) -> None:
+    """Recording activity should add new vocabulary to user total."""
+    service = ProgressService()
+    initial_stats = await service.get_dashboard_stats(user_id="test-user")
+    initial_vocab = initial_stats["total_vocabulary"]
+
+    await service.record_chat_activity(
+        user_id="test-user",
+        message_count=3,
+        vocabulary_learned=["gracias", "por favor"]
+    )
+
+    updated_stats = await service.get_dashboard_stats(user_id="test-user")
+    assert updated_stats["total_vocabulary"] == initial_vocab + 2
+```
+
+---
+
+### Data Capture Integration Tests (`tests/test_data_capture.py`)
+
+**20+ test cases** covering vocabulary and session capture in chat and lesson routes.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestChatVocabularyCapture` | 8 | Vocabulary extraction during chat |
+| `TestLessonSessionCapture` | 7 | Session tracking during lesson play |
+| `TestCaptureIntegration` | 5 | End-to-end capture verification |
+
+#### Key Test Scenarios
+
+**Chat Vocabulary Capture**:
+```python
+async def test_chat_captures_vocabulary_from_response(self, async_client) -> None:
+    """Chat endpoint should capture vocabulary from AI response analysis."""
+    response = await async_client.post(
+        "/chat",
+        data={"message": "Hola, como estas?"},
+        cookies={"session_id": "test-session"}
+    )
+
+    assert response.status_code == 200
+    # Verify vocabulary was captured
+    vocab_response = await async_client.get("/progress/vocabulary")
+    assert len(vocab_response.json()["vocabulary"]) > 0
+
+async def test_chat_captures_vocabulary_with_auth_user(self, async_client) -> None:
+    """Authenticated user vocabulary should be stored in database."""
+    response = await async_client.post(
+        "/chat",
+        data={"message": "Me llamo Carlos"},
+        headers={"Authorization": "Bearer valid-token"}
+    )
+
+    assert response.status_code == 200
+    # Vocabulary persisted to user account
+```
+
+**Lesson Session Capture**:
+```python
+async def test_lesson_play_creates_session_record(self, async_client) -> None:
+    """Playing a lesson should create a session record."""
+    response = await async_client.get("/lessons/greetings-a1/play")
+
+    assert response.status_code == 200
+    # Session record created
+    sessions = await async_client.get("/progress/sessions")
+    assert any(s["lesson_id"] == "greetings-a1" for s in sessions.json()["sessions"])
+
+async def test_lesson_completion_records_vocabulary(self, async_client) -> None:
+    """Completing a lesson should record vocabulary from lesson content."""
+    # Navigate through all lesson steps
+    for step in range(1, 9):
+        await async_client.get(f"/lessons/greetings-a1/play?step={step}")
+
+    # Verify vocabulary captured from lesson
+    vocab_response = await async_client.get("/progress/vocabulary")
+    vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
+    assert "hola" in vocab_words or "buenos dias" in vocab_words
+```
+
+---
+
+## Phase 8 Test Coverage
+
+Phase 8 introduced guest-to-user data migration with the GuestDataMergeService. Tests validate vocabulary merge, session transfer, and lesson progress migration during signup and login flows.
+
+### Merge Service Tests (`tests/test_merge_service.py`)
+
+**30+ test cases** covering the GuestDataMergeService operations.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestVocabularyMerge` | 8 | Vocabulary deduplication and merge |
+| `TestSessionTransfer` | 7 | Session record ownership transfer |
+| `TestLessonProgressMerge` | 6 | Lesson progress conflict resolution |
+| `TestSignupMergeTrigger` | 5 | Merge on new user registration |
+| `TestLoginMergeTrigger` | 4 | Merge on existing user login |
+
+#### Key Test Scenarios
+
+**Vocabulary Merge Operations**:
+```python
+async def test_merge_vocabulary_deduplicates(self) -> None:
+    """Merging vocabulary should deduplicate words already learned."""
+    service = GuestDataMergeService()
+
+    # Guest learned: hola, adios, gracias
+    # User already knows: hola, por favor
+    await service.merge_vocabulary(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    user_vocab = await service.get_user_vocabulary(user_id="user-456")
+    vocab_words = [v["word"] for v in user_vocab]
+
+    # Should have all unique words: hola, adios, gracias, por favor
+    assert len(vocab_words) == 4
+    assert "hola" in vocab_words
+    assert "adios" in vocab_words
+
+async def test_merge_vocabulary_preserves_learning_dates(self) -> None:
+    """Merged vocabulary should preserve earliest learning date."""
+    service = GuestDataMergeService()
+
+    await service.merge_vocabulary(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    user_vocab = await service.get_user_vocabulary(user_id="user-456")
+    hola_entry = next(v for v in user_vocab if v["word"] == "hola")
+
+    # Should use the earlier of guest or user learning date
+    assert hola_entry["learned_at"] is not None
+```
+
+**Session Transfer**:
+```python
+async def test_transfer_sessions_updates_ownership(self) -> None:
+    """Transferring sessions should update user_id on all records."""
+    service = GuestDataMergeService()
+
+    await service.transfer_sessions(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    # Guest sessions should now belong to user
+    guest_sessions = await service.get_sessions(guest_id="guest-123")
+    user_sessions = await service.get_sessions(user_id="user-456")
+
+    assert len(guest_sessions) == 0
+    assert len(user_sessions) >= 1
+
+async def test_transfer_sessions_preserves_timestamps(self) -> None:
+    """Transferred sessions should retain original timestamps."""
+    service = GuestDataMergeService()
+    original_sessions = await service.get_sessions(guest_id="guest-123")
+    original_timestamps = [s["created_at"] for s in original_sessions]
+
+    await service.transfer_sessions(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    user_sessions = await service.get_sessions(user_id="user-456")
+    transferred_timestamps = [s["created_at"] for s in user_sessions]
+
+    assert all(ts in transferred_timestamps for ts in original_timestamps)
+```
+
+**Lesson Progress Merge**:
+```python
+async def test_merge_lesson_progress_takes_higher_completion(self) -> None:
+    """Merging lesson progress should keep higher completion percentage."""
+    service = GuestDataMergeService()
+
+    # Guest: lesson at step 5/8
+    # User: same lesson at step 3/8
+    await service.merge_lesson_progress(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    user_progress = await service.get_lesson_progress(
+        user_id="user-456",
+        lesson_id="greetings-a1"
+    )
+
+    # Should keep guest progress (step 5) as it's higher
+    assert user_progress["current_step"] == 5
+
+async def test_merge_lesson_progress_preserves_completion_status(self) -> None:
+    """Completed lessons should remain completed after merge."""
+    service = GuestDataMergeService()
+
+    # Guest completed the lesson
+    await service.merge_lesson_progress(
+        guest_id="guest-123",
+        user_id="user-456"
+    )
+
+    user_progress = await service.get_lesson_progress(
+        user_id="user-456",
+        lesson_id="greetings-a1"
+    )
+
+    assert user_progress["completed"] is True
+```
+
+**Signup/Login Merge Triggers**:
+```python
+async def test_signup_triggers_merge(self, async_client) -> None:
+    """New user signup should trigger guest data merge."""
+    # Create guest activity first
+    await async_client.post(
+        "/chat",
+        data={"message": "Hola"},
+        cookies={"guest_id": "guest-123"}
+    )
+
+    # Signup with same session
+    response = await async_client.post(
+        "/auth/signup",
+        data={"email": "new@example.com", "password": "secure123"},  # pragma: allowlist secret
+        cookies={"guest_id": "guest-123"}
+    )
+
+    assert response.status_code == 200
+
+    # Verify guest data merged to new user
+    vocab_response = await async_client.get(
+        "/progress/vocabulary",
+        headers={"Authorization": f"Bearer {response.json()['token']}"}
+    )
+    assert len(vocab_response.json()["vocabulary"]) > 0
+
+async def test_login_triggers_merge(self, async_client) -> None:
+    """Existing user login should trigger guest data merge."""
+    # Create guest activity
+    await async_client.post(
+        "/chat",
+        data={"message": "Buenos dias"},
+        cookies={"guest_id": "guest-456"}
+    )
+
+    # Login with same session
+    response = await async_client.post(
+        "/auth/login",
+        data={"email": "existing@example.com", "password": "password123"},  # pragma: allowlist secret
+        cookies={"guest_id": "guest-456"}
+    )
+
+    assert response.status_code == 200
+
+    # Guest vocabulary should be merged
+    vocab_response = await async_client.get(
+        "/progress/vocabulary",
+        headers={"Authorization": f"Bearer {response.json()['token']}"}
+    )
+    vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
+    assert "buenos" in vocab_words or "dias" in vocab_words
+```
+
+---
+
+### Guest Progress E2E Tests (`tests/test_guest_progress.py`)
+
+**23+ test cases** covering end-to-end guest flow scenarios.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestGuestChatCapture` | 6 | Guest vocabulary capture during chat |
+| `TestGuestLessonCompletion` | 6 | Guest lesson progress tracking |
+| `TestGuestProgressView` | 6 | Guest progress dashboard access |
+| `TestGuestEmptyState` | 5 | Empty state for new guests |
+
+#### Key Test Scenarios
+
+**Guest Chat Captures Vocabulary**:
+```python
+async def test_guest_chat_captures_vocabulary(self, async_client) -> None:
+    """Guest chat should capture vocabulary without authentication."""
+    # No auth header, just guest cookie
+    response = await async_client.post(
+        "/chat",
+        data={"message": "Hola, me llamo Ana"},
+        cookies={"guest_id": "guest-new-user"}
+    )
+
+    assert response.status_code == 200
+
+    # Guest can view their captured vocabulary
+    vocab_response = await async_client.get(
+        "/progress/vocabulary",
+        cookies={"guest_id": "guest-new-user"}
+    )
+
+    assert vocab_response.status_code == 200
+    assert len(vocab_response.json()["vocabulary"]) > 0
+
+async def test_guest_vocabulary_persists_across_requests(self, async_client) -> None:
+    """Guest vocabulary should persist across multiple chat requests."""
+    guest_cookie = {"guest_id": "guest-persistent"}
+
+    # First chat
+    await async_client.post(
+        "/chat",
+        data={"message": "Hola"},
+        cookies=guest_cookie
+    )
+
+    # Second chat
+    await async_client.post(
+        "/chat",
+        data={"message": "Adios"},
+        cookies=guest_cookie
+    )
+
+    # Vocabulary from both chats should be captured
+    vocab_response = await async_client.get(
+        "/progress/vocabulary",
+        cookies=guest_cookie
+    )
+
+    vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
+    assert len(vocab_words) >= 2
+```
+
+**Guest Completes Lesson**:
+```python
+async def test_guest_completes_lesson(self, async_client) -> None:
+    """Guest should be able to complete a lesson and track progress."""
+    guest_cookie = {"guest_id": "guest-lesson-user"}
+
+    # Navigate through entire lesson
+    for step in range(1, 9):
+        response = await async_client.get(
+            f"/lessons/greetings-a1/play?step={step}",
+            cookies=guest_cookie
+        )
+        assert response.status_code == 200
+
+    # Verify lesson marked as complete
+    progress_response = await async_client.get(
+        "/lessons/greetings-a1/progress",
+        cookies=guest_cookie
+    )
+
+    assert progress_response.json()["completed"] is True
+    assert progress_response.json()["completion_percentage"] == 100.0
+
+async def test_guest_lesson_progress_saves_to_session(self, async_client) -> None:
+    """Guest lesson progress should be stored in session storage."""
+    guest_cookie = {"guest_id": "guest-session-user"}
+
+    # Partial lesson completion
+    await async_client.get(
+        "/lessons/greetings-a1/play?step=4",
+        cookies=guest_cookie
+    )
+
+    # Progress should be retrievable
+    progress_response = await async_client.get(
+        "/lessons/greetings-a1/progress",
+        cookies=guest_cookie
+    )
+
+    assert progress_response.json()["current_step"] == 4
+```
+
+**Guest Views Progress Dashboard**:
+```python
+async def test_guest_views_progress_dashboard(self, async_client) -> None:
+    """Guest should access progress dashboard with their session data."""
+    guest_cookie = {"guest_id": "guest-dashboard-user"}
+
+    # Create some activity
+    await async_client.post(
+        "/chat",
+        data={"message": "Hola, como estas?"},
+        cookies=guest_cookie
+    )
+
+    # Access progress dashboard
+    dashboard_response = await async_client.get(
+        "/progress",
+        cookies=guest_cookie
+    )
+
+    assert dashboard_response.status_code == 200
+    stats = dashboard_response.json()
+    assert stats["total_vocabulary"] >= 1
+    assert stats["total_sessions"] >= 1
+
+async def test_guest_dashboard_shows_signup_prompt(self, async_client) -> None:
+    """Guest progress dashboard should prompt signup to save data."""
+    guest_cookie = {"guest_id": "guest-prompt-user"}
+
+    response = await async_client.get(
+        "/progress",
+        cookies=guest_cookie
+    )
+
+    assert response.status_code == 200
+    # Response should include signup prompt indicator
+    assert response.json().get("is_guest") is True
+```
+
+**Empty State for New Guest**:
+```python
+async def test_new_guest_empty_vocabulary(self, async_client) -> None:
+    """New guest with no activity should see empty vocabulary."""
+    response = await async_client.get(
+        "/progress/vocabulary",
+        cookies={"guest_id": "brand-new-guest"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["vocabulary"] == []
+
+async def test_no_cookie_returns_empty_state(self, async_client) -> None:
+    """Request without guest cookie should return empty state."""
+    response = await async_client.get("/progress/vocabulary")
+
+    assert response.status_code == 200
+    assert response.json()["vocabulary"] == []
+    assert response.json().get("is_guest") is True
+
+async def test_no_cookie_progress_dashboard_empty(self, async_client) -> None:
+    """Progress dashboard without cookie should show zero stats."""
+    response = await async_client.get("/progress")
+
+    assert response.status_code == 200
+    stats = response.json()
+    assert stats["total_vocabulary"] == 0
+    assert stats["total_sessions"] == 0
+    assert stats["current_streak"] == 0
+```
+
+---
+
 ## E2E Tests (Playwright)
 
 End-to-end tests are documented in [docs/playwright-e2e.md](./playwright-e2e.md).
@@ -776,6 +1309,8 @@ def base_state(self) -> ConversationState:
 | `src/db/` | 85%+ | 80%+ |
 | `src/services/` | 90%+ | 85%+ |
 | `src/lessons/` | 88%+ | 85%+ |
+| `src/progress/` | 88%+ | 85%+ |
+| `src/merge/` | 90%+ | 85%+ |
 | **Overall** | **86%+** | **70%+** |
 
 ### Coverage Commands
@@ -815,6 +1350,10 @@ tests/
 ├── test_lesson_models.py    # Phase 6 lesson data models
 ├── test_lesson_service.py   # Phase 6 lesson service
 ├── test_lesson_routes.py    # Phase 6 lesson API endpoints
+├── test_progress_service.py # Phase 7 progress dashboard service
+├── test_data_capture.py     # Phase 7 vocabulary/session capture
+├── test_merge_service.py    # Phase 8 guest data merge
+├── test_guest_progress.py   # Phase 8 E2E guest flows
 └── test_services.py         # Service layer tests
 ```
 

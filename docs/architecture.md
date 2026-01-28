@@ -14,7 +14,8 @@
 | **Phase 4** | Checkpointing - PostgreSQL persistence, conversation memory | ✅ Completed |
 | **Phase 5** | Authentication - Supabase Auth, multi-user support | ✅ Completed |
 | **Phase 6** | Micro-Lessons - Structured lesson content, exercises, progress | ✅ Completed |
-| **Phase 7** | Subgraphs - Graph composition, reusability | Planned |
+| **Phase 7** | Progress Tracking - Dashboard stats, vocabulary tracking, chart data | ✅ Completed |
+| **Phase 8** | Guest Sessions - Anonymous progress, data merge on signup/login | ✅ Completed |
 
 **Test Coverage**: 918+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
@@ -148,9 +149,9 @@ habla-hermano/
 │   │   ├── main.py              # [Implemented] FastAPI app entry
 │   │   ├── config.py            # [Implemented] Settings (Pydantic)
 │   │   ├── dependencies.py      # [Implemented] DI for graph, db session
-│   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep
+│   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep, OptionalUserDep
 │   │   ├── session.py           # [Implemented] Thread ID management
-│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton
+│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + admin)
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] POST /chat (protected)
@@ -177,21 +178,24 @@ habla-hermano/
 │   │   └── service.py           # [Implemented] Lesson loading, filtering, vocabulary extraction
 │   │
 │   ├── db/
-│   │   ├── __init__.py
-│   │   ├── models.py            # SQLAlchemy models
-│   │   ├── repository.py        # Data access layer
-│   │   └── seed.py              # Initial data
+│   │   ├── __init__.py          # [Implemented] Module exports
+│   │   ├── models.py            # [Implemented] Pydantic models (Vocabulary, LearningSession, LessonProgress)
+│   │   ├── repository.py        # [Implemented] Repository classes for Supabase data access
+│   │   └── seed.py              # [Implemented] Initial data seeding
 │   │
 │   ├── services/
-│   │   ├── __init__.py
-│   │   ├── vocabulary.py        # Vocab extraction logic
-│   │   └── levels.py            # Level detection/adjustment
+│   │   ├── __init__.py          # [Implemented] Module exports
+│   │   ├── vocabulary.py        # [Implemented] Vocab extraction logic
+│   │   ├── levels.py            # [Implemented] Level detection/adjustment
+│   │   ├── progress.py          # [Implemented] ProgressService for dashboard aggregation
+│   │   └── merge.py             # [Implemented] GuestDataMergeService for auth data transfer
 │   │
 │   ├── templates/               # [Implemented] All template files
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
 │   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu (Lessons, New Chat, Theme, Auth), language/level selectors
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
 │   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
+│   │   ├── progress.html        # [Implemented] Progress dashboard with stats, vocabulary, charts
 │   │   ├── auth/
 │   │   │   ├── login.html       # [Implemented] Login page
 │   │   │   └── signup.html      # [Implemented] Signup page
@@ -203,7 +207,9 @@ habla-hermano/
 │   │       ├── lesson_complete.html # [Implemented] Completion celebration with handoff to chat
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
-│   │       └── vocab_sidebar.html
+│   │       ├── vocab_sidebar.html
+│   │       ├── progress_vocab.html  # [Implemented] Vocabulary list partial
+│   │       └── stats_summary.html   # [Implemented] Stats summary partial
 │   │
 │   └── static/
 │       ├── css/
@@ -479,7 +485,132 @@ exercises:
 - Exercise answer validation with multiple types
 - Lesson-to-chat handoff for practice reinforcement
 
-### Phase 7: Subgraphs (Future)
+### Phase 7: Progress Tracking (Week 5) - IMPLEMENTED
+**Learn**: Dashboard aggregation, repository pattern, service layer composition
+
+**Status**: This phase is complete. The application now includes comprehensive progress tracking with dashboard statistics, vocabulary management, and chart data generation.
+
+**Key Components**:
+
+1. **ProgressService** (`src/services/progress.py`):
+```python
+class ProgressService:
+    """Aggregates data from repositories into dashboard-ready structures."""
+
+    def __init__(self, user_id: str, client: SupabaseClient | None = None) -> None:
+        self._vocab_repo = VocabularyRepository(user_id, client=client)
+        self._session_repo = LearningSessionRepository(user_id, client=client)
+        self._lesson_repo = LessonProgressRepository(user_id, client=client)
+
+    def get_dashboard_stats(self, language: str = "es") -> DashboardStats:
+        """Aggregate stats: total_words, sessions, lessons, streak, accuracy."""
+
+    def get_chart_data(self, language: str = "es", days: int = 30) -> ChartData:
+        """Generate vocab_growth and accuracy_trend time series."""
+
+    def record_chat_activity(self, language: str, level: str, new_vocab: list) -> None:
+        """Fire-and-forget vocabulary capture from chat interactions."""
+```
+
+2. **Dashboard Stats** aggregation from 3 repositories:
+```python
+@dataclass(frozen=True)
+class DashboardStats:
+    total_words: int          # From VocabularyRepository
+    total_sessions: int       # From LearningSessionRepository
+    lessons_completed: int    # From LessonProgressRepository
+    current_streak: int       # Computed from session dates
+    accuracy_rate: float      # times_correct / times_seen
+    words_learned_today: int  # Filtered by date
+    messages_today: int       # Aggregated from sessions
+```
+
+3. **Chart Data** generation:
+```python
+@dataclass(frozen=True)
+class ChartData:
+    vocab_growth: list[VocabGrowthPoint]     # Cumulative word count over time
+    accuracy_trend: list[AccuracyPoint]      # Accuracy percentage over time
+```
+
+**What you learned**:
+- Service layer pattern for aggregating multiple repositories
+- Dataclass-based DTOs for dashboard data structures
+- Streak calculation algorithm (consecutive days from today)
+- Fire-and-forget logging pattern for non-critical persistence
+
+### Phase 8: Guest Sessions (Week 5-6) - IMPLEMENTED
+**Learn**: Anonymous user support, data migration, RLS bypass patterns
+
+**Status**: This phase is complete. The application now supports anonymous guest usage with progress tracking, and seamlessly merges guest data when users sign up or log in.
+
+**Key Components**:
+
+1. **Session ID Cookie Mechanism**:
+```python
+# Guest identification via session_id cookie (UUID)
+# Set on first visit, used as user_id for database operations
+session_id: Annotated[str | None, Cookie()] = None
+```
+
+2. **Admin Client for RLS Bypass** (`src/api/supabase_client.py`):
+```python
+def get_supabase_admin() -> SupabaseClient:
+    """Service role client that bypasses Row Level Security.
+
+    Required for guest data access since session_id != auth.uid().
+    """
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+```
+
+3. **Identity Resolution Pattern** (`src/api/routes/progress.py`):
+```python
+def _resolve_identity(user, session_id) -> tuple[str | None, SupabaseClient | None]:
+    """Resolve effective user ID and client for auth or guest users.
+
+    Returns:
+        (user_id, None) for authenticated users (uses anon client with RLS)
+        (session_id, admin_client) for guests (bypasses RLS)
+        (None, None) when neither available
+    """
+    if user:
+        return user.id, None
+    if session_id:
+        return session_id, get_supabase_admin()
+    return None, None
+```
+
+4. **GuestDataMergeService** (`src/services/merge.py`):
+```python
+class GuestDataMergeService:
+    """Merges guest session data into authenticated account on signup/login."""
+
+    def merge_all(self) -> dict[str, int]:
+        """Transfer vocabulary, sessions, and lessons from guest to auth user."""
+        return {
+            "vocabulary": self._merge_vocabulary(),   # Sum counters, keep earliest
+            "sessions": self._merge_sessions(),       # Transfer all
+            "lessons": self._merge_lessons(),         # Keep higher score
+        }
+```
+
+5. **Merge Integration in Auth Routes** (`src/api/routes/auth.py`):
+```python
+# On signup/login success:
+guest_session_id = request.cookies.get("session_id")
+if guest_session_id and auth_response.user:
+    merge_service = GuestDataMergeService(guest_session_id, auth_response.user.id)
+    merge_service.merge_all()
+    response.delete_cookie(key="session_id")  # Clear guest cookie
+```
+
+**What you learned**:
+- Anonymous user support with cookie-based session identification
+- Row Level Security bypass patterns using service role client
+- Data migration strategies (merge vs transfer) for different entity types
+- Fire-and-forget merge operations that don't block authentication flow
+
+### Phase 9: Subgraphs (Future)
 **Learn**: Graph composition, reusability
 
 ```python
@@ -772,6 +903,169 @@ Dependency Injection (LessonServiceDep)
         │
         ▼
 API Routes (src/api/routes/lessons.py)
+```
+
+---
+
+## Progress Data Flow (Phase 7-8)
+
+The progress system aggregates data from three repositories through the ProgressService, supporting both authenticated and guest users.
+
+### Progress Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        PROGRESS PAGE REQUEST                             │
+│  GET /progress/                                                          │
+│  Cookies: sb-access-token (auth) OR session_id (guest)                  │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       IDENTITY RESOLUTION                                │
+│  _resolve_identity(user, session_id)                                    │
+│  ┌─────────────────┐         ┌─────────────────┐                        │
+│  │ Authenticated?  │───Yes──►│ user_id = JWT   │                        │
+│  │                 │         │ client = None   │                        │
+│  └────────┬────────┘         │ (uses anon+RLS) │                        │
+│           │ No               └─────────────────┘                        │
+│           ▼                                                             │
+│  ┌─────────────────┐         ┌─────────────────┐                        │
+│  │ Has session_id? │───Yes──►│ user_id = UUID  │                        │
+│  │                 │         │ client = admin  │                        │
+│  └────────┬────────┘         │ (bypasses RLS)  │                        │
+│           │ No               └─────────────────┘                        │
+│           ▼                                                             │
+│  ┌─────────────────┐                                                    │
+│  │ Return empty    │                                                    │
+│  │ stats (new user)│                                                    │
+│  └─────────────────┘                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        PROGRESS SERVICE                                  │
+│  ProgressService(user_id, client)                                       │
+│                                                                         │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐            │
+│  │ VocabularyRepo │  │ SessionRepo    │  │ LessonRepo     │            │
+│  │ .get_all()     │  │ .get_all()     │  │ .get_completed │            │
+│  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘            │
+│          │                   │                   │                      │
+│          └───────────────────┼───────────────────┘                      │
+│                              ▼                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                    AGGREGATION LAYER                             │   │
+│  │  DashboardStats:                                                 │   │
+│  │  - total_words = len(vocab)                                      │   │
+│  │  - total_sessions = len(sessions)                                │   │
+│  │  - lessons_completed = len(completed)                            │   │
+│  │  - current_streak = _calculate_streak(sessions)                  │   │
+│  │  - accuracy_rate = sum(correct) / sum(seen) * 100                │   │
+│  │  - words_learned_today = filter by date                          │   │
+│  │  - messages_today = sum(session.messages) by date                │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        TEMPLATE RENDERING                                │
+│  progress.html                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ Stats Cards: Words | Sessions | Streak | Lessons                 │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ Vocabulary List (HTMX partial load from /progress/vocabulary)    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ Charts: vocab_growth (line) | accuracy_trend (line)              │   │
+│  │ Data loaded via /progress/chart-data as JSON                     │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Guest Data Merge Flow
+
+When a guest user signs up or logs in, their progress data is transferred to their authenticated account.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        LOGIN/SIGNUP SUCCESS                              │
+│  auth_response.session != None                                          │
+│  Cookies: session_id (guest UUID) exists                                │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    GUEST DATA MERGE SERVICE                              │
+│  GuestDataMergeService(guest_session_id, authenticated_user_id)         │
+│  Uses admin client (service role) to bypass RLS                         │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ _merge_vocabulary()                                              │   │
+│  │ - Query guest vocabulary entries                                 │   │
+│  │ - For each entry:                                                │   │
+│  │   - If auth user has same word+language:                         │   │
+│  │     - Sum times_seen and times_correct                           │   │
+│  │     - Keep earliest first_seen_at                                │   │
+│  │     - Delete guest entry                                         │   │
+│  │   - Else: Update user_id to auth user                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ _merge_sessions()                                                │   │
+│  │ - Transfer all guest sessions (no dedup needed)                  │   │
+│  │ - Bulk update: SET user_id = auth_id WHERE user_id = guest_id    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ _merge_lessons()                                                 │   │
+│  │ - For duplicate lessons: keep higher score                       │   │
+│  │ - Otherwise: transfer ownership                                  │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  Returns: {"vocabulary": N, "sessions": N, "lessons": N}                │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        CLEANUP                                           │
+│  response.delete_cookie(key="session_id")                               │
+│  Guest continues as authenticated user with all their progress          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Chat Vocabulary Capture
+
+When users chat with Hermano, new vocabulary extracted by the analyze node is persisted via `record_chat_activity()`.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        CHAT INTERACTION                                  │
+│  POST /chat with message                                                │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        LANGGRAPH EXECUTION                               │
+│  respond → scaffold (A0/A1) → analyze → END                             │
+│                                  │                                       │
+│                                  ▼                                       │
+│  Analyze node extracts: new_vocabulary: list[VocabWord]                 │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        PROGRESS SERVICE                                  │
+│  ProgressService.record_chat_activity(language, level, new_vocab)       │
+│                                                                         │
+│  Fire-and-forget (logs errors, never blocks response):                  │
+│  1. For each word in new_vocab:                                         │
+│     - VocabularyRepository.upsert(word, translation, language)          │
+│     - Increments times_seen if exists, creates if not                   │
+│  2. Ensure active session exists:                                       │
+│     - LearningSessionRepository.get_active() or .create()               │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -1114,47 +1408,131 @@ async def handoff_to_chat(lesson_id: str) -> Response:
     """Redirect to chat with lesson context for practice."""
 ```
 
+### Progress (Phase 7-8)
+
+The progress module provides endpoints for dashboard statistics, vocabulary management, and chart data. All endpoints support both authenticated and guest users.
+
+**Dashboard Page**:
+```python
+@router.get("/")
+async def get_progress_page(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Render progress overview with stats from ProgressService."""
+```
+
+**Vocabulary Management**:
+```python
+@router.get("/vocabulary")
+async def get_vocabulary(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
+) -> HTMLResponse:
+    """Render vocabulary list partial for HTMX loading."""
+
+@router.delete("/vocabulary/{word_id}")
+async def remove_vocabulary_word(
+    user: OptionalUserDep,
+    word_id: int,
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Remove word from vocabulary (returns empty for HTMX swap)."""
+```
+
+**Statistics and Charts**:
+```python
+@router.get("/stats")
+async def get_stats(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Render stats summary partial with DashboardStats."""
+
+@router.get("/chart-data")
+async def get_chart_data(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
+    days: int = 30,
+) -> JSONResponse:
+    """Return vocab_growth and accuracy_trend as JSON for charts."""
+```
+
 ---
 
-## Database Schema (Simplified for MVP)
+## Database Schema (Supabase PostgreSQL)
+
+The application uses Supabase PostgreSQL with Row Level Security (RLS) policies. All tables include a `user_id` column that references either an authenticated user's UUID or a guest session UUID.
 
 ```sql
--- Vocabulary learned across all sessions
-CREATE TABLE vocabulary (
-    id INTEGER PRIMARY KEY,
-    word TEXT NOT NULL,
-    translation TEXT NOT NULL,
-    language TEXT NOT NULL,  -- 'es' or 'de'
-    part_of_speech TEXT,
-    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    times_seen INTEGER DEFAULT 1,
-    UNIQUE(word, language)
+-- User profiles (auto-created via database trigger on auth.users insert)
+CREATE TABLE user_profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id),
+    display_name TEXT,
+    preferred_language TEXT DEFAULT 'es',
+    current_level TEXT DEFAULT 'A1',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Session statistics
-CREATE TABLE sessions (
-    id INTEGER PRIMARY KEY,
-    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ended_at TIMESTAMP,
+-- Vocabulary learned across all sessions
+CREATE TABLE vocabulary (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,  -- auth.users UUID or guest session UUID
+    word TEXT NOT NULL,
+    translation TEXT NOT NULL,
+    language TEXT NOT NULL,  -- 'es', 'de', 'fr'
+    part_of_speech TEXT,
+    first_seen_at TIMESTAMPTZ DEFAULT NOW(),
+    times_seen INTEGER DEFAULT 1,
+    times_correct INTEGER DEFAULT 0,  -- For accuracy tracking
+    UNIQUE(user_id, word, language)
+);
+
+-- Learning session statistics
+CREATE TABLE learning_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    ended_at TIMESTAMPTZ,
     language TEXT NOT NULL,
-    level TEXT NOT NULL,
+    level TEXT NOT NULL,  -- A0, A1, A2, B1
     messages_count INTEGER DEFAULT 0,
     words_learned INTEGER DEFAULT 0
 );
 
--- User settings (single user for MVP)
-CREATE TABLE settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+-- Lesson completion tracking
+CREATE TABLE lesson_progress (
+    user_id UUID NOT NULL,
+    lesson_id TEXT NOT NULL,
+    completed_at TIMESTAMPTZ,
+    score INTEGER,  -- 0-100 percentage
+    PRIMARY KEY (user_id, lesson_id)
 );
 
--- Lesson progress
-CREATE TABLE lesson_progress (
-    lesson_id TEXT PRIMARY KEY,
-    completed_at TIMESTAMP,
-    score INTEGER  -- Optional: how well they did
-);
+-- RLS Policies (example for vocabulary table)
+ALTER TABLE vocabulary ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own vocabulary"
+    ON vocabulary FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own vocabulary"
+    ON vocabulary FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own vocabulary"
+    ON vocabulary FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own vocabulary"
+    ON vocabulary FOR DELETE
+    USING (auth.uid() = user_id);
 ```
+
+**RLS Bypass for Guest Users**: Guest users store data using their session UUID as `user_id`. Since this doesn't match `auth.uid()`, the service role client (admin) is used to bypass RLS for guest data access. On signup/login, the `GuestDataMergeService` transfers guest data to the authenticated user's account.
 
 ---
 
@@ -1260,9 +1638,26 @@ asyncio_mode = "auto"
 7. Lesson completion and chat handoff
 8. 918+ tests with comprehensive coverage
 
-### Week 5+: Iterate
+### Week 5: Progress Tracking (Phase 7) - COMPLETED
+1. Repository pattern for vocabulary, sessions, and lesson progress
+2. ProgressService for dashboard aggregation
+3. DashboardStats and ChartData dataclasses
+4. Streak calculation algorithm
+5. Progress API endpoints (page, vocabulary, stats, chart-data)
+6. Vocabulary capture from chat via record_chat_activity()
+7. Progress page template with HTMX partial loading
+
+### Week 5-6: Guest Sessions (Phase 8) - COMPLETED
+1. Session ID cookie mechanism for anonymous users
+2. Admin Supabase client for RLS bypass
+3. Identity resolution pattern in progress routes
+4. GuestDataMergeService for data transfer on auth
+5. Merge integration in signup/login routes
+6. Merge strategies: sum counters, transfer sessions, keep higher score
+
+### Week 7+: Iterate
 1. Test with real beginners
 2. Tune scaffolding based on feedback
 3. Add more lessons (A1, A2, B1)
 4. German/French support (if time)
-5. Phase 7: Subgraphs for lesson integration
+5. Phase 9: Subgraphs for lesson integration
