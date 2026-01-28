@@ -972,6 +972,296 @@ Lessons support multiple exercise types, each with specific data structures.
 
 ---
 
+## Progress Tracking
+
+The progress tracking system provides a dashboard for viewing learning statistics, vocabulary growth, and session history. All endpoints support both authenticated users and guest sessions.
+
+**Guest Session Support**: Guest users are identified by a `session_id` cookie. No authentication is required to view your own progress. Authenticated users have their progress linked to their user account.
+
+---
+
+### GET /progress/
+
+Render the progress dashboard page.
+
+**Authentication**: Optional. Supports both authenticated users and guests.
+
+**Response**: Full HTML page with progress dashboard including:
+- Statistics summary cards
+- Vocabulary list with filtering
+- Progress charts
+- Session history
+
+**Example**:
+```bash
+curl http://localhost:8000/progress/
+```
+
+---
+
+### GET /progress/stats
+
+Get the statistics summary as an HTML partial.
+
+**Authentication**: Optional. Returns stats for the current user (authenticated) or guest session.
+
+**Response**: HTML partial (`partials/progress_stats.html`) containing statistics cards.
+
+**HTMX Integration**:
+```html
+<div hx-get="/progress/stats"
+     hx-trigger="load"
+     hx-target="#stats-container">
+</div>
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/progress/stats
+```
+
+---
+
+### GET /progress/vocabulary
+
+Get the vocabulary list as an HTML partial.
+
+**Authentication**: Optional.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Filter by target language code: `es`, `de`, `fr` |
+
+**Response**: HTML partial (`partials/vocabulary_list.html`) containing vocabulary table with:
+- Word and translation
+- Part of speech
+- Date learned
+- Delete button
+
+**HTMX Integration**:
+```html
+<div hx-get="/progress/vocabulary?language=es"
+     hx-trigger="load, languageChanged from:body"
+     hx-target="#vocabulary-container">
+</div>
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/progress/vocabulary?language=es"
+```
+
+---
+
+### GET /progress/chart-data
+
+Get chart data for progress visualization.
+
+**Authentication**: Optional.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Filter by target language code: `es`, `de`, `fr` |
+| `days` | integer | No | `30` | Number of days of history to include (max 90) |
+
+**Response**: JSON object containing chart datasets.
+
+**Example**:
+```bash
+curl "http://localhost:8000/progress/chart-data?language=es&days=30"
+```
+
+**Response Example**:
+```json
+{
+  "vocab_growth": [
+    {"date": "2025-01-01", "count": 5},
+    {"date": "2025-01-02", "count": 8},
+    {"date": "2025-01-03", "count": 12}
+  ],
+  "accuracy_trend": [
+    {"date": "2025-01-01", "accuracy": 0.75},
+    {"date": "2025-01-02", "accuracy": 0.82},
+    {"date": "2025-01-03", "accuracy": 0.88}
+  ]
+}
+```
+
+---
+
+### DELETE /progress/vocabulary/{word_id}
+
+Remove a vocabulary word from the user's learned words.
+
+**Authentication**: Optional. Removes from current user or guest session.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `word_id` | string | Unique identifier for the vocabulary word |
+
+**Response**: Empty response with 200 status on success, or error message.
+
+**Response Headers**:
+- `HX-Trigger`: `vocabularyUpdated` event for UI refresh
+
+**HTMX Integration**:
+```html
+<button hx-delete="/progress/vocabulary/abc123"
+        hx-target="closest tr"
+        hx-swap="outerHTML swap:1s"
+        hx-confirm="Remove this word from your vocabulary?">
+  Remove
+</button>
+```
+
+**Example**:
+```bash
+curl -X DELETE http://localhost:8000/progress/vocabulary/abc123
+```
+
+---
+
+## Progress Data Structures
+
+### DashboardStats
+
+Statistics summary for the progress dashboard.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_words` | integer | Total vocabulary words learned across all languages |
+| `total_sessions` | integer | Total number of chat and lesson sessions |
+| `lessons_completed` | integer | Number of lessons marked as complete |
+| `current_streak` | integer | Current consecutive days of activity |
+| `accuracy_rate` | float | Overall exercise accuracy (0.0 to 1.0) |
+| `words_learned_today` | integer | Vocabulary words added today |
+| `messages_today` | integer | Chat messages sent today |
+
+**Example DashboardStats**:
+```json
+{
+  "total_words": 127,
+  "total_sessions": 45,
+  "lessons_completed": 8,
+  "current_streak": 5,
+  "accuracy_rate": 0.84,
+  "words_learned_today": 3,
+  "messages_today": 12
+}
+```
+
+---
+
+### ChartData
+
+Time-series data for progress visualization charts.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `vocab_growth` | array[VocabGrowthPoint] | Daily vocabulary count over time |
+| `accuracy_trend` | array[AccuracyTrendPoint] | Daily accuracy rate over time |
+
+#### VocabGrowthPoint
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | Date in ISO format (YYYY-MM-DD) |
+| `count` | integer | Cumulative vocabulary count on this date |
+
+#### AccuracyTrendPoint
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string | Date in ISO format (YYYY-MM-DD) |
+| `accuracy` | float | Accuracy rate for exercises on this date (0.0 to 1.0) |
+
+**Example ChartData**:
+```json
+{
+  "vocab_growth": [
+    {"date": "2025-01-25", "count": 115},
+    {"date": "2025-01-26", "count": 120},
+    {"date": "2025-01-27", "count": 124},
+    {"date": "2025-01-28", "count": 127}
+  ],
+  "accuracy_trend": [
+    {"date": "2025-01-25", "accuracy": 0.80},
+    {"date": "2025-01-26", "accuracy": 0.85},
+    {"date": "2025-01-27", "accuracy": 0.82},
+    {"date": "2025-01-28", "accuracy": 0.88}
+  ]
+}
+```
+
+---
+
+## Progress HTMX Integration
+
+### Dashboard Page Structure
+
+```html
+<div id="progress-dashboard">
+  <!-- Statistics Cards -->
+  <div id="stats-container"
+       hx-get="/progress/stats"
+       hx-trigger="load">
+  </div>
+
+  <!-- Language Filter -->
+  <select name="language"
+          hx-get="/progress/vocabulary"
+          hx-target="#vocabulary-container"
+          hx-trigger="change"
+          hx-vals='{"language": this.value}'>
+    <option value="es">Spanish</option>
+    <option value="de">German</option>
+    <option value="fr">French</option>
+  </select>
+
+  <!-- Vocabulary Table -->
+  <div id="vocabulary-container"
+       hx-get="/progress/vocabulary?language=es"
+       hx-trigger="load, vocabularyUpdated from:body">
+  </div>
+
+  <!-- Progress Chart -->
+  <canvas id="progress-chart"></canvas>
+  <script>
+    // Fetch chart data and render with Chart.js
+    fetch('/progress/chart-data?language=es&days=30')
+      .then(res => res.json())
+      .then(data => renderChart(data));
+  </script>
+</div>
+```
+
+### Vocabulary Item Actions
+
+```html
+<tr id="vocab-{{ word.id }}">
+  <td>{{ word.word }}</td>
+  <td>{{ word.translation }}</td>
+  <td>{{ word.part_of_speech }}</td>
+  <td>{{ word.learned_date }}</td>
+  <td>
+    <button hx-delete="/progress/vocabulary/{{ word.id }}"
+            hx-target="#vocab-{{ word.id }}"
+            hx-swap="outerHTML swap:0.5s"
+            hx-confirm="Remove '{{ word.word }}' from your vocabulary?">
+      Remove
+    </button>
+  </td>
+</tr>
+```
+
+---
+
 ## Related Documentation
 
 - [Product Specification](./product.md) - Vision, pedagogy, and feature details

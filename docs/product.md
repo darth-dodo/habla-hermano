@@ -69,6 +69,8 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
 | **Guest Access** | ✅ Complete | Lessons and chat work without authentication |
+| **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats |
+| **Guest Sessions** | ✅ Complete | Full functionality for unauthenticated users with session persistence |
 
 ---
 
@@ -221,13 +223,8 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 4** | Persistence | PostgreSQL checkpointing, conversation memory | ✅ Complete |
 | **Phase 5** | Authentication | Supabase Auth, multi-user support, JWT tokens | ✅ Complete |
 | **Phase 6** | Micro-Lessons | Structured lessons with exercises, guest access, chat handoff | ✅ Complete |
-
-### Planned
-
-| Phase | Focus | Description |
-|-------|-------|-------------|
-| **Phase 7** | Subgraphs | Graph composition, reusability, lesson subgraphs |
-| **Phase 8** | Progress tracking | Words learned, patterns mastered, conversation milestones |
+| **Phase 7** | Progress Tracking | Words learned, patterns mastered, conversation milestones, dashboard UI | ✅ Complete |
+| **Phase 8** | Guest Session Support | Full guest functionality, session persistence, seamless auth upgrade | ✅ Complete |
 
 ### Future Ideas
 
@@ -254,6 +251,19 @@ See [Architecture Documentation](architecture.md) for details.
 ### Satisfaction
 - "I feel more confident speaking" (self-report)
 - Would recommend to friend
+
+### Phase 7: Progress Tracking Metrics
+- Words learned per session (target: 5-10 new words)
+- Grammar patterns mastered over time
+- Conversation milestone completion rate
+- Dashboard engagement (views per user per week)
+- Progress data accuracy and consistency
+
+### Phase 8: Guest Session Metrics
+- Guest-to-authenticated conversion rate (target: >20%)
+- Guest session retention (return within 7 days)
+- Session data preservation rate during auth upgrade (target: 100%)
+- Guest feature usage parity with authenticated users
 
 ---
 
