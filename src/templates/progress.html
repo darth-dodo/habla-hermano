@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Progress - Habla Hermano{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- Header with back to chat link -->
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-text-muted hover:text-text transition-colors" aria-label="Back to Chat">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back to Chat</span>
+            </a>
+            <h1 class="text-lg font-semibold text-text">Your Progress</h1>
+            <div class="w-20"></div> <!-- Spacer for centering -->
+        </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto bg-surface">
+        <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+            <!-- Stats Cards Row (loaded via HTMX) -->
+            <div id="stats-container"
+                 hx-get="/progress/stats"
+                 hx-trigger="load"
+                 hx-swap="innerHTML"
+                 role="region"
+                 aria-label="Learning statistics">
+                <!-- Loading skeleton -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {% for i in range(4) %}
+                    <div class="bg-surface-elevated rounded-2xl p-4 border border-border animate-pulse">
+                        <div class="h-4 bg-surface-overlay rounded w-20 mb-2"></div>
+                        <div class="h-8 bg-surface-overlay rounded w-12"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Vocabulary Growth Chart -->
+                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                    <h3 class="text-sm font-medium text-text-muted mb-4">Vocabulary Growth</h3>
+                    <div class="h-48">
+                        <canvas id="vocab-growth-chart" aria-label="Line chart showing vocabulary growth over time" role="img"></canvas>
+                    </div>
+                </div>
+                <!-- Accuracy Trend Chart -->
+                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                    <h3 class="text-sm font-medium text-text-muted mb-4">Accuracy Trend</h3>
+                    <div class="h-48">
+                        <canvas id="accuracy-trend-chart" aria-label="Bar chart showing accuracy trend over time" role="img"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary List (loaded via HTMX) -->
+            <div id="vocab-container"
+                 hx-get="/progress/vocabulary"
+                 hx-trigger="load"
+                 hx-swap="innerHTML"
+                 role="region"
+                 aria-label="Vocabulary list">
+                <div class="bg-surface-elevated rounded-2xl p-5 border border-border animate-pulse">
+                    <div class="h-4 bg-surface-overlay rounded w-32 mb-4"></div>
+                    <div class="space-y-3">
+                        {% for i in range(3) %}
+                        <div class="h-12 bg-surface-overlay rounded"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Fetch chart data and render charts
+async function initCharts() {
+    try {
+        const response = await fetch('/progress/chart-data');
+        const data = await response.json();
+
+        // Get theme colors from CSS variables
+        const style = getComputedStyle(document.documentElement);
+        const accentColor = style.getPropertyValue('--accent').trim();
+        const borderColor = style.getPropertyValue('--border').trim();
+        const textMuted = style.getPropertyValue('--text-muted').trim();
+
+        // Common chart options
+        const commonScaleOptions = {
+            x: {
+                ticks: { color: textMuted, maxTicksLimit: 7 },
+                grid: { color: borderColor + '30' }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: textMuted },
+                grid: { color: borderColor + '30' }
+            }
+        };
+
+        // Vocabulary Growth - Line Chart
+        const vocabCtx = document.getElementById('vocab-growth-chart');
+        if (vocabCtx && data.vocab_growth) {
+            new Chart(vocabCtx, {
+                type: 'line',
+                data: {
+                    labels: data.vocab_growth.map(function(p) { return p.date; }),
+                    datasets: [{
+                        label: 'Words Learned',
+                        data: data.vocab_growth.map(function(p) { return p.cumulative_words; }),
+                        borderColor: accentColor,
+                        backgroundColor: accentColor + '20',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: commonScaleOptions
+                }
+            });
+        }
+
+        // Accuracy Trend - Bar Chart
+        const accCtx = document.getElementById('accuracy-trend-chart');
+        if (accCtx && data.accuracy_trend) {
+            new Chart(accCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.accuracy_trend.map(function(p) { return p.date; }),
+                    datasets: [{
+                        label: 'Accuracy %',
+                        data: data.accuracy_trend.map(function(p) { return p.accuracy; }),
+                        backgroundColor: accentColor + '60',
+                        borderColor: accentColor,
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: Object.assign({}, commonScaleOptions, {
+                        y: Object.assign({}, commonScaleOptions.y, { max: 100 })
+                    })
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Failed to load chart data:', e);
+    }
+}
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', initCharts);
+</script>
+{% endblock %}

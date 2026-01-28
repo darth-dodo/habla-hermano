@@ -2,6 +2,7 @@
 
 Provides JWT token validation using Supabase's JWKS endpoint and
 a FastAPI dependency for extracting the current authenticated user.
+Also provides EffectiveUser for unified authenticated/guest identity.
 """
 
 import time
@@ -10,6 +11,8 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
+
+from src.api.supabase_client import SupabaseClient, get_supabase, get_supabase_admin
 
 
 @dataclass(frozen=True)
@@ -133,3 +136,69 @@ async def get_current_user_optional(request: Request) -> AuthenticatedUser | Non
 # Type aliases for FastAPI dependency injection
 CurrentUserDep = Annotated[AuthenticatedUser, Depends(get_current_user)]
 OptionalUserDep = Annotated[AuthenticatedUser | None, Depends(get_current_user_optional)]
+
+
+@dataclass(frozen=True)
+class EffectiveUser:
+    """Represents either an authenticated user or an anonymous guest session.
+
+    Provides a unified identity for both logged-in users (identified by
+    Supabase Auth UUID) and guests (identified by a client-generated
+    session UUID stored in a cookie).
+
+    Attributes:
+        id: User UUID (from Supabase Auth) or session UUID (from cookie).
+        is_guest: True if the identity comes from a session cookie, not a JWT.
+        email: User's email address if authenticated, None for guests.
+    """
+
+    id: str
+    is_guest: bool
+    email: str | None = None
+
+
+async def get_effective_user(
+    request: Request,
+    user: OptionalUserDep,
+) -> EffectiveUser | None:
+    """FastAPI dependency to resolve the effective user identity.
+
+    Checks for an authenticated JWT user first. If none is found, falls back
+    to a guest session identified by the ``session_id`` cookie.
+
+    Args:
+        request: FastAPI request object.
+        user: Optionally resolved authenticated user (injected by FastAPI).
+
+    Returns:
+        EffectiveUser if an identity can be determined, None otherwise.
+    """
+    if user is not None:
+        return EffectiveUser(id=user.id, is_guest=False, email=user.email)
+
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        return EffectiveUser(id=session_id, is_guest=True)
+
+    return None
+
+
+def get_client_for_user(effective_user: EffectiveUser) -> SupabaseClient:
+    """Return the appropriate Supabase client for the given user identity.
+
+    Guests require the admin (service-role) client because they have no
+    JWT and therefore cannot pass RLS policies with the anon client.
+    Authenticated users use the standard anon client which respects RLS.
+
+    Args:
+        effective_user: The resolved effective user identity.
+
+    Returns:
+        Supabase client instance appropriate for the user type.
+    """
+    if effective_user.is_guest:
+        return get_supabase_admin()
+    return get_supabase()
+
+
+EffectiveUserDep = Annotated[EffectiveUser | None, Depends(get_effective_user)]

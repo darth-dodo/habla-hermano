@@ -5,12 +5,13 @@ Tests cover route responses, HTML content, HTTP methods, and edge cases.
 
 Phase 5: Updated tests to include authentication mocking.
 Phase 6: Updated tests to match new lesson API design with LessonService.
+Phase 7: Updated progress route tests for real ProgressService/VocabularyRepository.
 """
 
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -18,7 +19,7 @@ from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from jinja2 import Environment, FileSystemLoader
 
-from src.api.auth import AuthenticatedUser, get_current_user
+from src.api.auth import AuthenticatedUser, get_current_user_optional
 from src.api.routes import lessons, progress
 from src.lessons.models import (
     Lesson,
@@ -29,6 +30,7 @@ from src.lessons.models import (
     LessonStepType,
 )
 from src.lessons.service import get_lesson_service
+from src.services.progress import DashboardStats
 
 
 @pytest.fixture
@@ -90,6 +92,7 @@ def mock_templates_dir(tmp_path: Path) -> Generator[Path, None, None]:
 <p>Total Words: {{ total_words }}</p>
 <p>Sessions: {{ sessions_count }}</p>
 <p>Current Streak: {{ current_streak }}</p>
+<p>Lessons Completed: {{ lessons_completed }}</p>
 </div>
 <div class="vocabulary-list">
 {% for word in vocabulary %}
@@ -127,8 +130,8 @@ def mock_templates_dir(tmp_path: Path) -> Generator[Path, None, None]:
 </div>"""
     )
 
-    (partials_path / "vocab_sidebar.html").write_text(
-        """<div class="vocab-sidebar">
+    (partials_path / "progress_vocab.html").write_text(
+        """<div class="progress-vocab">
 <h3>Vocabulary ({{ language }})</h3>
 <ul>
 {% for word in vocabulary %}
@@ -143,6 +146,8 @@ def mock_templates_dir(tmp_path: Path) -> Generator[Path, None, None]:
 <p>Messages Today: {{ messages_today }}</p>
 <p>Words Learned Today: {{ words_learned_today }}</p>
 <p>Accuracy: {{ accuracy_rate }}%</p>
+<p>Total Words: {{ total_words }}</p>
+<p>Total Sessions: {{ total_sessions }}</p>
 </div>"""
     )
 
@@ -216,7 +221,7 @@ def sample_lesson() -> Lesson:
             category="test",
             tags=["test"],
             vocabulary_count=2,
-            icon="📚",
+            icon="test-icon",
         ),
         content=LessonContent(
             steps=[
@@ -230,7 +235,7 @@ def sample_lesson() -> Lesson:
                     content="Key vocabulary:",
                     vocabulary=[
                         {"word": "hola", "translation": "hello"},
-                        {"word": "adiós", "translation": "goodbye"},
+                        {"word": "adios", "translation": "goodbye"},
                     ],
                     order=2,
                 ),
@@ -249,9 +254,63 @@ def mock_lesson_service(sample_lesson: Lesson) -> MagicMock:
     service.get_lessons_metadata.return_value = [sample_lesson.metadata]
     service.get_lesson_vocabulary.return_value = [
         {"word": "hola", "translation": "hello"},
-        {"word": "adiós", "translation": "goodbye"},
+        {"word": "adios", "translation": "goodbye"},
     ]
     return service
+
+
+@pytest.fixture
+def mock_dashboard_stats() -> DashboardStats:
+    """Create mock dashboard stats for testing.
+
+    Returns:
+        DashboardStats: Stats with known test values.
+    """
+    return DashboardStats(
+        total_words=42,
+        total_sessions=10,
+        lessons_completed=5,
+        current_streak=3,
+        accuracy_rate=87.5,
+        words_learned_today=7,
+        messages_today=15,
+    )
+
+
+@pytest.fixture
+def mock_progress_service(mock_dashboard_stats: DashboardStats) -> MagicMock:
+    """Create a mock ProgressService instance.
+
+    Args:
+        mock_dashboard_stats: Dashboard stats to return from the mock.
+
+    Returns:
+        MagicMock: Mock ProgressService.
+    """
+    service = MagicMock()
+    service.get_dashboard_stats.return_value = mock_dashboard_stats
+    service.get_chart_data.return_value = MagicMock(
+        to_dict=MagicMock(
+            return_value={
+                "vocab_growth": [{"date": "2026-01-27", "cumulative_words": 42}],
+                "accuracy_trend": [{"date": "2026-01-27", "accuracy": 87.5}],
+            }
+        )
+    )
+    return service
+
+
+@pytest.fixture
+def mock_vocab_repo() -> MagicMock:
+    """Create a mock VocabularyRepository instance.
+
+    Returns:
+        MagicMock: Mock VocabularyRepository.
+    """
+    repo = MagicMock()
+    repo.get_all.return_value = []
+    repo.delete.return_value = None
+    return repo
 
 
 @pytest.fixture
@@ -259,16 +318,21 @@ def test_app(
     mock_templates_dir: Path,
     mock_user: AuthenticatedUser,
     mock_lesson_service: MagicMock,
+    mock_progress_service: MagicMock,
+    mock_vocab_repo: MagicMock,
 ) -> FastAPI:
     """Create a test FastAPI app with lessons and progress routers mounted.
 
     Phase 5: Added authentication mocking for protected routes.
     Phase 6: Added LessonService mocking.
+    Phase 7: Added ProgressService and VocabularyRepository mocking.
 
     Args:
         mock_templates_dir: Path to temporary templates directory.
         mock_user: Mock authenticated user for auth.
         mock_lesson_service: Mock lesson service.
+        mock_progress_service: Mock progress service.
+        mock_vocab_repo: Mock vocabulary repository.
 
     Returns:
         FastAPI: Configured test application.
@@ -293,12 +357,30 @@ def test_app(
     from src.api.dependencies import get_cached_templates
 
     app.dependency_overrides[get_cached_templates] = get_test_templates
-    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.dependency_overrides[get_current_user_optional] = mock_get_current_user
     app.dependency_overrides[get_lesson_service] = get_mock_lesson_service
 
     # Mount routers with prefixes
     app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
+
+    # Patch ProgressService and VocabularyRepository where they are imported in the routes
+    app._progress_service_patcher = patch(
+        "src.api.routes.progress.ProgressService",
+        return_value=mock_progress_service,
+    )
+    app._vocab_repo_patcher = patch(
+        "src.api.routes.progress.VocabularyRepository",
+        return_value=mock_vocab_repo,
+    )
+    # Patch LessonProgressRepository in lessons routes for complete_lesson endpoint
+    app._lesson_progress_repo_patcher = patch(
+        "src.api.routes.lessons.LessonProgressRepository",
+        return_value=MagicMock(),
+    )
+    app._progress_service_patcher.start()
+    app._vocab_repo_patcher.start()
+    app._lesson_progress_repo_patcher.start()
 
     return app
 
@@ -316,6 +398,11 @@ def client(test_app: FastAPI) -> Generator[TestClient, None, None]:
     with TestClient(test_app) as c:
         yield c
 
+    # Stop patchers after client is done
+    test_app._progress_service_patcher.stop()
+    test_app._vocab_repo_patcher.stop()
+    test_app._lesson_progress_repo_patcher.stop()
+
 
 @pytest.fixture
 async def async_client(test_app: FastAPI) -> AsyncClient:
@@ -330,6 +417,11 @@ async def async_client(test_app: FastAPI) -> AsyncClient:
     transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+    # Stop patchers after client is done
+    test_app._progress_service_patcher.stop()
+    test_app._vocab_repo_patcher.stop()
+    test_app._lesson_progress_repo_patcher.stop()
 
 
 # =============================================================================
@@ -536,14 +628,20 @@ class TestGetProgressPage:
     def test_get_progress_page_contains_stats(self, client: TestClient) -> None:
         """GET /progress should include statistics section."""
         response = client.get("/progress/")
-        # Based on route context: total_words, sessions_count, current_streak
         assert "Total Words" in response.text or "stats" in response.text
 
-    def test_get_progress_page_default_values(self, client: TestClient) -> None:
-        """GET /progress should show default zero values for stats."""
+    def test_get_progress_page_shows_real_stats(self, client: TestClient) -> None:
+        """GET /progress should show real stats from ProgressService."""
         response = client.get("/progress/")
-        # Route returns: total_words=0, sessions_count=0, current_streak=0
-        assert "0" in response.text
+        # Mock DashboardStats has total_words=42, current_streak=3
+        assert "42" in response.text
+        assert "3" in response.text
+
+    def test_get_progress_page_shows_lessons_completed(self, client: TestClient) -> None:
+        """GET /progress should show lessons completed count."""
+        response = client.get("/progress/")
+        # Mock DashboardStats has lessons_completed=5
+        assert "5" in response.text
 
     async def test_get_progress_page_async(self, async_client: AsyncClient) -> None:
         """GET /progress should work with async client."""
@@ -553,7 +651,7 @@ class TestGetProgressPage:
 
 
 class TestGetVocabulary:
-    """Tests for GET /progress/vocabulary - Vocabulary sidebar partial."""
+    """Tests for GET /progress/vocabulary - Vocabulary partial."""
 
     def test_get_vocabulary_returns_200(self, client: TestClient) -> None:
         """GET /progress/vocabulary should return 200 OK."""
@@ -570,10 +668,10 @@ class TestGetVocabulary:
         response = client.get("/progress/vocabulary")
         assert "<!DOCTYPE html>" not in response.text
 
-    def test_get_vocabulary_contains_sidebar_class(self, client: TestClient) -> None:
-        """GET /progress/vocabulary should include vocab-sidebar class."""
+    def test_get_vocabulary_contains_vocab_class(self, client: TestClient) -> None:
+        """GET /progress/vocabulary should include progress-vocab class."""
         response = client.get("/progress/vocabulary")
-        assert "vocab-sidebar" in response.text
+        assert "progress-vocab" in response.text
 
     def test_get_vocabulary_contains_language(self, client: TestClient) -> None:
         """GET /progress/vocabulary should include language in context."""
@@ -586,6 +684,20 @@ class TestGetVocabulary:
         response = client.get("/progress/vocabulary")
         # Should still return 200 with empty list
         assert response.status_code == 200
+
+    def test_get_vocabulary_calls_repo(
+        self, client: TestClient, mock_vocab_repo: MagicMock
+    ) -> None:
+        """GET /progress/vocabulary should call VocabularyRepository.get_all."""
+        client.get("/progress/vocabulary")
+        mock_vocab_repo.get_all.assert_called_once_with(language="es")
+
+    def test_get_vocabulary_with_language_param(
+        self, client: TestClient, mock_vocab_repo: MagicMock
+    ) -> None:
+        """GET /progress/vocabulary?language=de should filter by language."""
+        client.get("/progress/vocabulary?language=de")
+        mock_vocab_repo.get_all.assert_called_once_with(language="de")
 
     async def test_get_vocabulary_async(self, async_client: AsyncClient) -> None:
         """GET /progress/vocabulary should work with async client."""
@@ -631,15 +743,70 @@ class TestGetStats:
         response = client.get("/progress/stats")
         assert "Accuracy" in response.text
 
-    def test_get_stats_default_values(self, client: TestClient) -> None:
-        """GET /progress/stats should show default zero values."""
+    def test_get_stats_shows_real_values(self, client: TestClient) -> None:
+        """GET /progress/stats should show real values from ProgressService."""
         response = client.get("/progress/stats")
-        # Route returns: messages_today=0, words_learned_today=0, accuracy_rate=0.0
-        assert "0" in response.text
+        # Mock DashboardStats has messages_today=15, words_learned_today=7, accuracy_rate=87.5
+        assert "15" in response.text
+        assert "7" in response.text
+        assert "87.5" in response.text
+
+    def test_get_stats_shows_total_words(self, client: TestClient) -> None:
+        """GET /progress/stats should show total_words from ProgressService."""
+        response = client.get("/progress/stats")
+        # Mock DashboardStats has total_words=42
+        assert "42" in response.text
 
     async def test_get_stats_async(self, async_client: AsyncClient) -> None:
         """GET /progress/stats should work with async client."""
         response = await async_client.get("/progress/stats")
+        assert response.status_code == 200
+
+
+class TestGetChartData:
+    """Tests for GET /progress/chart-data - Chart data JSON endpoint."""
+
+    def test_get_chart_data_returns_200(self, client: TestClient) -> None:
+        """GET /progress/chart-data should return 200 OK."""
+        response = client.get("/progress/chart-data")
+        assert response.status_code == 200
+
+    def test_get_chart_data_returns_json(self, client: TestClient) -> None:
+        """GET /progress/chart-data should return JSON content type."""
+        response = client.get("/progress/chart-data")
+        assert "application/json" in response.headers["content-type"]
+
+    def test_get_chart_data_contains_vocab_growth(self, client: TestClient) -> None:
+        """GET /progress/chart-data should include vocab_growth."""
+        response = client.get("/progress/chart-data")
+        data = response.json()
+        assert "vocab_growth" in data
+        assert len(data["vocab_growth"]) > 0
+
+    def test_get_chart_data_contains_accuracy_trend(self, client: TestClient) -> None:
+        """GET /progress/chart-data should include accuracy_trend."""
+        response = client.get("/progress/chart-data")
+        data = response.json()
+        assert "accuracy_trend" in data
+        assert len(data["accuracy_trend"]) > 0
+
+    def test_get_chart_data_with_language_param(
+        self, client: TestClient, mock_progress_service: MagicMock
+    ) -> None:
+        """GET /progress/chart-data?language=de should pass language to service."""
+        client.get("/progress/chart-data?language=de")
+        mock_progress_service.get_chart_data.assert_called_once_with(language="de", days=30)
+
+    def test_get_chart_data_with_days_param(
+        self, client: TestClient, mock_progress_service: MagicMock
+    ) -> None:
+        """GET /progress/chart-data?days=7 should pass days to service."""
+        client.get("/progress/chart-data?days=7")
+        mock_progress_service.get_chart_data.assert_called_once_with(language="es", days=7)
+
+    async def test_get_chart_data_async(self, async_client: AsyncClient) -> None:
+        """GET /progress/chart-data should work with async client."""
+        response = await async_client.get("/progress/chart-data")
         assert response.status_code == 200
 
 
@@ -661,6 +828,13 @@ class TestRemoveVocabularyWord:
         response = client.delete("/progress/vocabulary/1")
         # Based on route implementation, returns empty string
         assert response.text == ""
+
+    def test_remove_vocabulary_word_calls_repo(
+        self, client: TestClient, mock_vocab_repo: MagicMock
+    ) -> None:
+        """DELETE /progress/vocabulary/{word_id} should call VocabularyRepository.delete."""
+        client.delete("/progress/vocabulary/42")
+        mock_vocab_repo.delete.assert_called_once_with(42)
 
     @pytest.mark.parametrize("word_id", [1, 10, 100, 999999])
     def test_remove_vocabulary_word_various_ids(self, client: TestClient, word_id: int) -> None:
@@ -721,7 +895,7 @@ class TestLessonsAndProgressIntegration:
         progress_response = client.get("/progress/")
         assert progress_response.status_code == 200
 
-        # View vocabulary sidebar
+        # View vocabulary partial
         vocab_response = client.get("/progress/vocabulary")
         assert vocab_response.status_code == 200
 

@@ -1,5 +1,6 @@
 """Chat router for handling conversation interactions.
 
+Phase 7: Added vocabulary and session data capture for authenticated users.
 Phase 5: Added user authentication with Supabase.
 Phase 4: Added conversation persistence with LangGraph checkpointing.
 
@@ -15,6 +16,7 @@ Thread IDs are user-scoped for authenticated users (persistent across sessions),
 and session-based for anonymous users (cookie-based).
 """
 
+import logging
 import uuid
 from typing import Annotated
 
@@ -26,6 +28,10 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
+from src.api.supabase_client import get_supabase_admin
+from src.services.progress import ProgressService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
 
@@ -136,6 +142,29 @@ async def send_message(
     # Extract scaffolding from scaffold node (Phase 3)
     # Only populated for A0-A1 learners via conditional routing
     scaffolding = result.get("scaffolding", {})
+
+    # Capture vocabulary and session data for any user with identity (fire-and-forget)
+    if new_vocabulary:
+        effective_id: str | None = None
+
+        if user:
+            effective_id = user.id
+        elif session_id:
+            effective_id = session_id
+        elif new_session_id:
+            effective_id = new_session_id
+
+        if effective_id:
+            try:
+                client = get_supabase_admin() if not user else None
+                progress_service = ProgressService(effective_id, client=client)
+                progress_service.record_chat_activity(
+                    language=language,
+                    level=level,
+                    new_vocab=new_vocabulary,
+                )
+            except Exception:
+                logger.exception("Failed to capture chat activity for user %s", effective_id)
 
     # Create template response
     template_response = templates.TemplateResponse(

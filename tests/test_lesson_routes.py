@@ -9,7 +9,7 @@ Phase 6: Micro-lessons feature - API endpoints.
 import html
 from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -117,8 +117,15 @@ def app(
     mock_user: AuthenticatedUser,
     mock_lesson_service: MagicMock,
     tmp_path: Path,
-) -> FastAPI:
-    """Create test FastAPI app with mocked dependencies."""
+) -> Generator[FastAPI, None, None]:
+    """Create test FastAPI app with mocked dependencies.
+
+    Patches LessonProgressRepository and get_supabase_admin to prevent
+    Supabase connections during tests. The authenticated user path uses
+    LessonProgressRepository(user.id, client=None), which internally
+    calls get_supabase(). Patching at the import location in the lessons
+    module ensures no real database calls are made.
+    """
     from fastapi import FastAPI
     from fastapi.templating import Jinja2Templates
 
@@ -247,7 +254,16 @@ def app(
 
     app.include_router(lessons_router, prefix="/lessons")
 
-    return app
+    # Patch Supabase-dependent objects in the lessons route module to prevent
+    # real database connections during tests. LessonProgressRepository is called
+    # in the complete_lesson endpoint for progress persistence.
+    with (
+        patch("src.api.routes.lessons.LessonProgressRepository") as mock_repo_cls,
+        patch("src.api.routes.lessons.get_supabase_admin") as mock_admin,
+    ):
+        mock_repo_cls.return_value = MagicMock()
+        mock_admin.return_value = MagicMock()
+        yield app
 
 
 @pytest.fixture

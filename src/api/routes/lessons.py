@@ -1,5 +1,6 @@
 """Micro-lesson endpoints for structured learning content.
 
+Phase 7: Added lesson completion persistence for authenticated users.
 Phase 6: Full implementation of lesson API routes.
 
 Provides lesson listing, content delivery, step navigation, exercises,
@@ -7,18 +8,25 @@ and progress tracking. Supports both authenticated users and guests.
 """
 
 import contextlib
+import logging
+import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import LessonServiceDep, TemplatesDep
+from src.api.supabase_client import get_supabase_admin
+from src.db.repository import LessonProgressRepository
 from src.lessons.models import (
     FillBlankExercise,
     LessonLevel,
     MultipleChoiceExercise,
     TranslateExercise,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -432,6 +440,7 @@ async def complete_lesson(
     lesson_service: LessonServiceDep,
     lesson_id: str,
     score: int = Form(default=100),
+    session_id: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Mark a lesson as completed and show completion view.
 
@@ -460,7 +469,30 @@ async def complete_lesson(
     vocabulary = lesson_service.get_lesson_vocabulary(lesson_id)
     vocab_count = len(vocabulary)
 
-    return templates.TemplateResponse(
+    # Persist lesson completion for any user with identity
+    effective_id: str | None = None
+    new_session_id: str | None = None
+
+    if user:
+        effective_id = user.id
+    elif session_id:
+        effective_id = session_id
+    else:
+        # First-time guest completing a lesson — create session cookie
+        new_session_id = str(uuid.uuid4())
+        effective_id = new_session_id
+
+    if effective_id:
+        try:
+            client = None
+            if not user:
+                client = get_supabase_admin()
+            repo = LessonProgressRepository(effective_id, client=client)
+            repo.complete_lesson(lesson_id, score=score)
+        except Exception:
+            logger.exception("Failed to persist lesson completion for user %s", effective_id)
+
+    response = templates.TemplateResponse(
         request=request,
         name="partials/lesson_complete.html",
         context={
@@ -472,6 +504,18 @@ async def complete_lesson(
             "user": user,
         },
     )
+
+    # Set session cookie for first-time guests
+    if new_session_id:
+        response.set_cookie(
+            key="session_id",
+            value=new_session_id,
+            httponly=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 7,  # 7 days
+        )
+
+    return response
 
 
 # =============================================================================

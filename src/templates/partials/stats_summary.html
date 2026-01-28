@@ -1,0 +1,22 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- Total Words -->
+    <div class="bg-surface-elevated rounded-2xl p-4 border border-border">
+        <p class="text-xs text-text-muted uppercase tracking-wide">Words</p>
+        <p class="text-2xl font-bold text-text mt-1">{{ total_words }}</p>
+    </div>
+    <!-- Total Sessions -->
+    <div class="bg-surface-elevated rounded-2xl p-4 border border-border">
+        <p class="text-xs text-text-muted uppercase tracking-wide">Sessions</p>
+        <p class="text-2xl font-bold text-text mt-1">{{ total_sessions }}</p>
+    </div>
+    <!-- Lessons Completed -->
+    <div class="bg-surface-elevated rounded-2xl p-4 border border-border">
+        <p class="text-xs text-text-muted uppercase tracking-wide">Lessons</p>
+        <p class="text-2xl font-bold text-text mt-1">{{ lessons_completed }}</p>
+    </div>
+    <!-- Current Streak -->
+    <div class="bg-surface-elevated rounded-2xl p-4 border border-border">
+        <p class="text-xs text-text-muted uppercase tracking-wide">Streak</p>
+        <p class="text-2xl font-bold text-accent mt-1">{{ current_streak }} <span class="text-sm">days</span></p>
+    </div>
+</div>

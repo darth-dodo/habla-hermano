@@ -13,6 +13,7 @@ from supabase import Client, create_client
 
 from src.api.config import get_settings
 from src.api.dependencies import SettingsDep, TemplatesDep
+from src.services.merge import GuestDataMergeService
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,21 @@ async def signup(
         # Session created - set cookie and redirect
         response = Response(status_code=status.HTTP_200_OK)
         set_auth_cookie(response, auth_response.session.access_token)
+
+        # Merge guest data if session_id cookie exists (fire-and-forget)
+        guest_session_id = request.cookies.get("session_id")
+        if guest_session_id and auth_response.user:
+            try:
+                merge_service = GuestDataMergeService(
+                    guest_session_id=guest_session_id,
+                    authenticated_user_id=auth_response.user.id,
+                )
+                result = merge_service.merge_all()
+                logger.info("Merged guest data on signup: %s", result)
+                response.delete_cookie(key="session_id")
+            except Exception:
+                logger.exception("Failed to merge guest data on signup")
+
         response.headers["HX-Redirect"] = "/"
         return response
 
@@ -270,6 +286,21 @@ async def login(
         # Set cookie and redirect via HTMX
         response = Response(status_code=status.HTTP_200_OK)
         set_auth_cookie(response, auth_response.session.access_token)
+
+        # Merge guest data if session_id cookie exists (fire-and-forget)
+        guest_session_id = request.cookies.get("session_id")
+        if guest_session_id and auth_response.user:
+            try:
+                merge_service = GuestDataMergeService(
+                    guest_session_id=guest_session_id,
+                    authenticated_user_id=auth_response.user.id,
+                )
+                result = merge_service.merge_all()
+                logger.info("Merged guest data on login: %s", result)
+                response.delete_cookie(key="session_id")
+            except Exception:
+                logger.exception("Failed to merge guest data on login")
+
         response.headers["HX-Redirect"] = "/"
         return response
 
