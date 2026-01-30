@@ -1,10 +1,15 @@
 """Micro-lesson endpoints for structured learning content.
 
+Phase 9: Added AI-enhanced endpoints using LangGraph subgraphs.
 Phase 7: Added lesson completion persistence for authenticated users.
 Phase 6: Full implementation of lesson API routes.
 
 Provides lesson listing, content delivery, step navigation, exercises,
 and progress tracking. Supports both authenticated users and guests.
+
+AI-Enhanced endpoints (Phase 9):
+- GET /{lesson_id}/step/{step_index}/enhanced - AI-enhanced step content
+- POST /{lesson_id}/exercise/{exercise_id}/submit/enhanced - AI-enhanced feedback
 """
 
 import contextlib
@@ -425,6 +430,165 @@ async def submit_exercise(
     """
 
     return HTMLResponse(content=feedback_html)
+
+
+# =============================================================================
+# AI-Enhanced Endpoints (Phase 9)
+# =============================================================================
+
+
+@router.get("/{lesson_id}/step/{step_index}/enhanced", response_class=HTMLResponse)
+async def get_enhanced_lesson_step(
+    request: Request,
+    templates: TemplatesDep,
+    _user: OptionalUserDep,
+    lesson_service: LessonServiceDep,
+    lesson_id: str,
+    step_index: int,
+    level: str = "A1",
+    language: str = "es",
+) -> HTMLResponse:
+    """Get AI-enhanced lesson step content.
+
+    Uses the lesson subgraph to:
+    1. Load the step from YAML
+    2. Have Hermano enhance it with dynamic, personalized content
+
+    Args:
+        request: FastAPI request for template context.
+        templates: Jinja2 template engine.
+        _user: User if authenticated, None for guests.
+        lesson_service: Lesson service for validation.
+        lesson_id: Unique identifier for the lesson.
+        step_index: Zero-based index of the step.
+        level: CEFR level for content adaptation (A0, A1, A2, B1).
+        language: Target language code (es, de, fr).
+
+    Returns:
+        HTMLResponse: Enhanced step content with Hermano's additions.
+
+    Raises:
+        HTTPException: 404 if lesson or step not found.
+    """
+    # Validate lesson exists
+    lesson = lesson_service.get_lesson(lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
+
+    steps = lesson.content.get_ordered_steps()
+    if step_index < 0 or step_index >= len(steps):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Step {step_index} not found. Lesson has {len(steps)} steps.",
+        )
+
+    # Import and invoke the lesson subgraph
+    from src.agent.lesson_graph import lesson_subgraph
+
+    result = await lesson_subgraph.ainvoke(
+        {
+            "lesson_id": lesson_id,
+            "step_index": step_index,
+            "level": level,
+            "language": language,
+            "messages": [],
+        }
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/lesson_step_enhanced.html",
+        context={
+            "step_type": result.get("step_type", "instruction"),
+            "step_content": result.get("step_content", ""),
+            "step_vocabulary": result.get("step_vocabulary", []),
+            "step_target_text": result.get("step_target_text"),
+            "step_translation": result.get("step_translation"),
+            "enhanced_content": result.get("enhanced_content", ""),
+            "hermano_intro": result.get("hermano_intro", ""),
+            "step_index": step_index,
+            "lesson_id": lesson_id,
+            "total_steps": len(steps),
+            "level": level,
+            "language": language,
+        },
+    )
+
+
+@router.post("/{lesson_id}/exercise/{exercise_id}/submit/enhanced", response_class=HTMLResponse)
+async def submit_exercise_enhanced(
+    request: Request,
+    templates: TemplatesDep,
+    _user: OptionalUserDep,
+    lesson_service: LessonServiceDep,
+    lesson_id: str,
+    exercise_id: str,
+    answer: str = Form(...),
+    level: str = Form("A1"),
+    language: str = Form("es"),
+) -> HTMLResponse:
+    """Submit exercise with AI-generated personalized feedback from Hermano.
+
+    Goes beyond simple correct/incorrect to provide:
+    - Enthusiastic celebration on correct answers
+    - Helpful hints and encouragement on incorrect answers
+    - Cultural context when relevant
+
+    Args:
+        request: FastAPI request for template context.
+        templates: Jinja2 template engine.
+        _user: User if authenticated, None for guests.
+        lesson_service: Lesson service for validation.
+        lesson_id: Unique identifier for the lesson.
+        exercise_id: Unique identifier for the exercise.
+        answer: User's submitted answer.
+        level: CEFR level for feedback adaptation.
+        language: Target language code.
+
+    Returns:
+        HTMLResponse: Enhanced feedback with Hermano's personalized response.
+
+    Raises:
+        HTTPException: 404 if lesson or exercise not found.
+    """
+    # Validate lesson and exercise exist
+    lesson = lesson_service.get_lesson(lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
+
+    exercise = lesson.content.get_exercise_by_id(exercise_id)
+    if not exercise:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Exercise not found: {exercise_id}",
+        )
+
+    # Import and invoke the exercise validation graph
+    from src.agent.lesson_graph import exercise_validation_graph
+
+    result = await exercise_validation_graph.ainvoke(
+        {
+            "lesson_id": lesson_id,
+            "exercise_id": exercise_id,
+            "user_answer": answer,
+            "level": level,
+            "language": language,
+            "messages": [],
+        }
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/exercise_feedback_enhanced.html",
+        context={
+            "is_correct": result.get("is_correct", False),
+            "feedback": result.get("exercise_feedback", ""),
+            "lesson_id": lesson_id,
+            "exercise_id": exercise_id,
+            "level": level,
+            "language": language,
+        },
+    )
 
 
 # =============================================================================

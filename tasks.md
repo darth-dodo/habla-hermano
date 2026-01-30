@@ -30,9 +30,9 @@
 
 ## Current State
 
-**Branch**: `feat/phase4-supabase-persistence`
-**Phase**: Phase 5 Complete (Supabase Auth & Persistence)
-**Test Coverage**: 829+ tests, 86%+ coverage
+**Branch**: `main`
+**Phase**: Phase 9 Complete (AI-Enhanced Lessons)
+**Test Coverage**: 1016+ tests, 86%+ coverage
 
 ### What's Working
 
@@ -53,13 +53,25 @@
 | New Conversation | ✅ | Clear session and start fresh |
 | 3 Themes | ✅ | Dark, Light, Ocean |
 | Mobile-First UI | ✅ | Works on all devices |
+| Micro-Lessons | ✅ | 5 Spanish A0 lessons with exercises |
+| Lesson Player | ✅ | Step-through with HTMX navigation |
+| Progress Dashboard | ✅ | Stats, vocabulary, charts |
+| Guest Sessions | ✅ | Anonymous progress, merge on signup |
+| AI-Enhanced Lessons | ✅ | LangGraph subgraphs, Hermano personalization |
 
 ### LangGraph Flow
 
 ```
+Main Graph:
 START → respond → [needs_scaffold?]
                     ├── A0/A1 → scaffold → analyze → END
                     └── A2/B1 → analyze → END
+
+Lesson Subgraph (Phase 9):
+START → load_step → enhance_step → END
+
+Exercise Validation Subgraph (Phase 9):
+START → validate_exercise → END
 
 Persistence: PostgresSaver (Supabase) with MemorySaver fallback for dev
 Auth: Supabase Auth → JWT cookie → Protected routes
@@ -113,29 +125,140 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 
 ---
 
+## Completed Phases (6-8)
+
+### Phase 6: Micro-lessons ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Lesson data model | ✅ | Pydantic models: Lesson, Step, Exercise |
+| 5 A0 Spanish lessons | ✅ | Greetings, introductions, numbers, colors, family |
+| Lesson UI | ✅ | Step-through with HTMX navigation |
+| Lesson → conversation handoff | ✅ | Redirect to chat with lesson context |
+| [Design Doc](docs/design/phase6-micro-lessons.md) | ✅ | Full architecture documented |
+
+### Phase 7: Progress Tracking ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Words learned display | ✅ | VocabularyRepository + progress_vocab.html |
+| Dashboard stats | ✅ | ProgressService aggregation |
+| Charts | ✅ | vocab_growth, accuracy_trend JSON endpoint |
+| Streak calculation | ✅ | Consecutive days algorithm |
+
+### Phase 8: Guest Sessions ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Session ID cookie | ✅ | Anonymous user identification |
+| Admin client bypass | ✅ | RLS bypass for guest data |
+| Data merge on auth | ✅ | GuestDataMergeService |
+
+### Phase 9: AI-Enhanced Lessons ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| LessonState TypedDict | ✅ | State for lesson subgraph |
+| Lesson subgraph | ✅ | load_step → enhance_step → END |
+| Exercise validation subgraph | ✅ | validate_exercise → END with AI feedback |
+| Hermano lesson enhancement | ✅ | Personalized intros, tips, examples |
+| AI-enhanced API endpoints | ✅ | /step/{index}/enhanced, /exercise/{id}/submit/enhanced |
+| Lesson prompts | ✅ | get_lesson_enhance_prompt, get_exercise_feedback_prompt |
+| E2E testing | ✅ | Playwright validation of AI-enhanced endpoints |
+
+---
+
 ## Up Next
 
-### Phase 6: Micro-lessons (Priority: 🟡 Medium)
+### Phase 10: More Lesson Content (Priority: 🟡 Medium)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Lesson data model | ⏳ | Structure for 2-3 min lessons |
-| 5-10 A0-A1 lessons | ⏳ | Introductions, food, daily routine |
-| Lesson UI | ⏳ | Step-through with practice |
-| Lesson → conversation handoff | ⏳ | Use learned patterns in chat |
+| A1 Spanish lessons | ⏳ | Daily routines, food, weather |
+| German A0 lessons | ⏳ | Greetings, introductions |
+| French A0 lessons | ⏳ | Greetings, introductions |
 
-### Phase 7: Progress Tracking (Priority: 🟢 Low)
+### Phase 11: Advanced Features (Priority: 🟢 Low)
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Words learned display | ⏳ | Vocabulary list with categories |
-| Patterns mastered | ⏳ | Grammar patterns used correctly |
-| Conversation milestones | ⏳ | "First 5-min conversation!" |
-| Progress visualization | ⏳ | Charts/graphs |
+| Spaced repetition | ⏳ | Vocabulary review scheduling |
+| Speech input | ⏳ | Voice-based practice |
+| Mobile app | ⏳ | React Native or PWA |
 
 ---
 
 ## Session Logs
+
+### Session Log: 2026-01-30 (Phase 9 Implementation - AI-Enhanced Lessons)
+
+**Session Focus**: Implement AI-enhanced lesson delivery via LangGraph subgraphs
+
+**Context**: User requested Phase 9 implementation to add AI personalization to the micro-lessons system using LangGraph subgraphs.
+
+**Key Changes**:
+
+1. **Created LessonState** (`src/agent/lesson_state.py`):
+   - TypedDict for lesson subgraph state
+   - Fields for step data, AI enhancement, and exercise validation
+
+2. **Created lesson nodes** (`src/agent/nodes/lesson.py`):
+   - `load_step_node`: Loads step data from YAML lessons
+   - `enhance_step_node`: Hermano enhances with personalized intros, tips, examples
+   - `validate_exercise_node`: AI-generated feedback for exercise answers
+
+3. **Created lesson subgraphs** (`src/agent/lesson_graph.py`):
+   - `build_lesson_subgraph()`: load_step → enhance_step → END
+   - `build_exercise_validation_graph()`: validate → END
+
+4. **Added lesson prompts** (`src/agent/prompts.py`):
+   - `get_lesson_enhance_prompt()`: Generates context-aware enhancement prompts
+   - `get_exercise_feedback_prompt()`: Generates personalized exercise feedback
+
+5. **Added API endpoints** (`src/api/routes/lessons.py`):
+   - GET `/lessons/{id}/step/{index}/enhanced`: AI-enhanced step content
+   - POST `/lessons/{id}/exercise/{id}/submit/enhanced`: AI feedback on answers
+
+6. **Added templates**:
+   - `partials/lesson_step_enhanced.html`: Enhanced step display
+   - `partials/exercise_result_enhanced.html`: AI feedback display
+
+**Bug Fixes During Implementation**:
+- **Circular imports**: Fixed lazy imports in analyze.py, respond.py, scaffold.py, lesson.py
+- **Anthropic API error**: Added HumanMessage to LLM calls (Anthropic requires at least one)
+- **Test mock locations**: Updated patch targets from module-level to src.api.config.get_settings
+
+**E2E Testing** (Playwright MCP):
+- ✅ Lessons page loads correctly
+- ✅ Lesson player navigates through steps
+- ✅ AI-enhanced endpoint returns personalized content
+- ✅ Exercise validation with AI feedback works
+- ✅ Chat functionality verified
+
+**Quality Gates**:
+- ✅ All 1016 tests passing
+- ✅ Playwright E2E tests passing
+- ✅ Documentation updated
+
+**Files Created**:
+- `src/agent/lesson_state.py`
+- `src/agent/nodes/lesson.py`
+- `src/agent/lesson_graph.py`
+- `src/templates/partials/lesson_step_enhanced.html`
+- `src/templates/partials/exercise_result_enhanced.html`
+
+**Files Modified**:
+- `src/agent/prompts.py` (added lesson prompts)
+- `src/api/routes/lessons.py` (added enhanced endpoints)
+- `src/agent/nodes/analyze.py` (lazy import fix)
+- `src/agent/nodes/respond.py` (lazy import fix)
+- `src/agent/nodes/scaffold.py` (lazy import fix)
+- `tests/test_agent_nodes.py` (mock patch fix)
+- `tests/test_analyze_node.py` (mock patch fix)
+
+**Branch**: `main`
+
+---
 
 ### Session Log: 2025-01-18 (Phase 5 Planning - Supabase Integration)
 
@@ -446,22 +569,42 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 5 Complete (Supabase Auth & Persistence)
+- **Current Phase**: Phase 9 Complete (AI-Enhanced Lessons)
 - **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
-- **Graph Structure**: respond → [conditional] → scaffold OR analyze → END
+- **Graph Structure**: Main: respond → [conditional] → scaffold OR analyze → END; Lesson: load_step → enhance_step → END
 - **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
-- **Auth**: Email/password via Supabase Auth with JWT tokens
-- **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding
-- **Test Coverage**: 829+ tests, 86%+ coverage
-- **Branch**: `feat/phase4-supabase-persistence`
+- **Auth**: Email/password via Supabase Auth with JWT tokens + guest sessions
+- **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding, AI-enhanced lessons, progress dashboard
+- **Test Coverage**: 1016+ tests, 86%+ coverage
+- **Branch**: `main`
 
-### Phase 4 & 5 Implementation Notes
+### Key Implementation Notes
 - **ADR**: `docs/adr/ADR-001-supabase-integration.md` - Decision rationale
-- **Design**: `docs/design/phase4-persistence.md`, `docs/design/phase5-supabase-auth.md`
+- **Design Docs**: `docs/design/phase*.md` - Phase-by-phase architecture
 - **Key Pattern**: `user_id` becomes `thread_id` (single conversation per user)
 - **Auth Flow**: JWT in httponly cookie → FastAPI validates → Supabase Postgres
+- **Guest Flow**: session_id cookie → admin client → RLS bypass → merge on auth
 - **Checkpointer**: PostgresSaver for production, MemorySaver fallback for dev
 - **RLS**: All tables have Row Level Security policies
+
+### Lesson System (Phase 6)
+- **Models**: `src/lessons/models.py` - Lesson, Step, Exercise, Progress
+- **Service**: `src/lessons/service.py` - YAML loading, filtering, vocabulary extraction
+- **Content**: `data/lessons/es/A0/*.yaml` - 5 Spanish A0 lessons
+- **Routes**: `src/api/routes/lessons.py` - Full HTMX lesson player
+- **Templates**: `lesson_player.html`, `partials/lesson_step.html`, `partials/lesson_exercise.html`
+
+### Progress System (Phase 7-8)
+- **Service**: `src/services/progress.py` - ProgressService aggregation
+- **Repository**: `src/db/repository.py` - VocabularyRepository, LessonProgressRepository
+- **Merge**: `src/services/merge.py` - GuestDataMergeService for auth data transfer
+
+### AI-Enhanced Lessons (Phase 9)
+- **State**: `src/agent/lesson_state.py` - LessonState TypedDict
+- **Graph**: `src/agent/lesson_graph.py` - lesson_subgraph, exercise_validation_graph
+- **Nodes**: `src/agent/nodes/lesson.py` - load_step_node, enhance_step_node, validate_exercise_node
+- **Prompts**: `src/agent/prompts.py` - get_lesson_enhance_prompt, get_exercise_feedback_prompt
+- **Templates**: `partials/lesson_step_enhanced.html`, `partials/exercise_result_enhanced.html`
 
 ### Hermano Personality Guidelines
 When modifying prompts or adding new features, maintain Hermano's voice:
@@ -494,8 +637,8 @@ The `LANGUAGE_ADAPTER` dict in `src/agent/prompts.py` handles language switching
 | 3. Conditional Routing | ✅ | Branching logic, routing functions |
 | 4. Checkpointing | ✅ | PostgresSaver, thread IDs, conversation persistence |
 | 5. PostgresSaver | ✅ | Production persistence with Supabase Postgres |
-| 6. Complex State | ⏳ | Nested TypedDict, multiple fields |
-| 7. Subgraphs | ⏳ | Graph composition |
+| 6. Complex State | ✅ | Lesson models, progress tracking, multiple TypedDicts |
+| 7. Subgraphs | ✅ | Graph composition, lesson subgraph as callable node |
 
 ### Quick Commands
 
@@ -518,5 +661,5 @@ cp .env.example .env
 # SUPABASE_ANON_KEY=your-anon-key
 # SUPABASE_SERVICE_KEY=your-service-key
 # SUPABASE_JWT_SECRET=your-jwt-secret
-# SUPABASE_DB_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
+# SUPABASE_DB_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres  # pragma: allowlist secret
 ```

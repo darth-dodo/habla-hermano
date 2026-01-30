@@ -1,0 +1,105 @@
+<div
+    class="lesson-step enhanced"
+    data-step-index="{{ step_index }}"
+    data-total-steps="{{ total_steps }}"
+>
+    <!-- Hermano's Introduction -->
+    {% if hermano_intro %}
+    <div class="bg-accent/10 border border-accent/30 rounded-xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl flex-shrink-0" aria-hidden="true">&#129305;</span>
+            <p class="text-text italic leading-relaxed">{{ hermano_intro }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Original Step Content -->
+    {% if step_type == 'instruction' %}
+    <!-- Instruction Step -->
+    <div class="bg-surface-elevated rounded-xl p-6 border border-border mb-4">
+        <div class="prose prose-invert max-w-none">
+            <p class="text-lg text-text leading-relaxed">{{ step_content }}</p>
+        </div>
+    </div>
+
+    {% elif step_type == 'vocabulary' %}
+    <!-- Vocabulary Step -->
+    <div class="space-y-4 mb-4">
+        <h3 class="text-lg font-semibold text-text flex items-center gap-2">
+            <span class="text-xl" aria-hidden="true">&#128218;</span>
+            Vocabulary
+        </h3>
+        <p class="text-text-muted">{{ step_content }}</p>
+        <div class="grid gap-3">
+            {% for item in step_vocabulary %}
+            <div class="flex items-center justify-between bg-surface-elevated rounded-lg p-4 border border-border hover:border-accent transition-colors">
+                <span class="font-medium text-accent text-lg">{{ item.word }}</span>
+                <span class="text-text-muted">{{ item.translation }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% elif step_type == 'example' %}
+    <!-- Example Step -->
+    <div class="space-y-4 mb-4">
+        <div class="bg-surface-elevated rounded-xl p-6 border border-border">
+            {% if step_target_text %}
+            <p class="text-2xl font-medium text-accent mb-2">{{ step_target_text }}</p>
+            {% endif %}
+            {% if step_translation %}
+            <p class="text-text-muted">{{ step_translation }}</p>
+            {% endif %}
+            <p class="mt-4 text-text">{{ step_content }}</p>
+        </div>
+    </div>
+
+    {% elif step_type == 'tip' %}
+    <!-- Tip Step -->
+    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-4">
+        <div class="flex items-start gap-3">
+            <span class="text-2xl" aria-hidden="true">&#128161;</span>
+            <div>
+                <h3 class="font-semibold text-yellow-400 mb-2">Pro Tip</h3>
+                <p class="text-text leading-relaxed">{{ step_content }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% elif step_type == 'practice' %}
+    <!-- Practice Step (links to exercise) -->
+    <div class="space-y-4 mb-4">
+        <p class="text-text-muted">{{ step_content }}</p>
+        {% if exercise_id %}
+        <div
+            hx-get="/lessons/{{ lesson_id }}/exercise/{{ exercise_id }}"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+            class="exercise-container"
+        >
+            <div class="flex items-center justify-center py-8">
+                <div class="animate-pulse text-text-muted">Loading exercise...</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <!-- Default/Unknown Step Type -->
+    <div class="bg-surface-elevated rounded-xl p-6 border border-border mb-4">
+        <p class="text-text">{{ step_content }}</p>
+    </div>
+    {% endif %}
+
+    <!-- AI-Enhanced Additions -->
+    {% if enhanced_content %}
+    <div class="bg-green-500/10 border-l-4 border-green-500 rounded-r-xl p-4 mt-4">
+        <p class="text-sm text-text-muted mb-2 flex items-center gap-2">
+            <span class="font-medium text-green-400">Hermano adds:</span>
+        </p>
+        <div class="text-text prose prose-sm prose-invert max-w-none leading-relaxed">
+            {{ enhanced_content | safe }}
+        </div>
+    </div>
+    {% endif %}
+</div>

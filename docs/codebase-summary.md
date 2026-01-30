@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.2 | **Tests**: 918 | **Coverage**: 86%+ | **Date**: January 2026
+**Version**: 1.3 | **Tests**: 1016 | **Coverage**: 86%+ | **Date**: January 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -40,13 +40,14 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 918 tests with 86%+ coverage, strict typing
+- ✅ 1016 tests with 86%+ coverage, strict typing
 - ✅ 3 themes: Dark, Light, Ocean
 - ✅ Micro-lessons system: 5 Spanish A0 lessons with exercises
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
 - ✅ Guest access for lessons and chat
 - ✅ Progress tracking dashboard with Chart.js visualizations
 - ✅ Guest session persistence for unauthenticated users
+- ✅ AI-enhanced lessons via LangGraph subgraphs (Phase 9)
 
 ---
 
@@ -186,7 +187,12 @@ habla-hermano/
 │   │       ├── respond.py            # Generate AI response
 │   │       ├── scaffold.py           # Word banks & hints (A0-A1)
 │   │       ├── analyze.py            # Grammar & vocab extraction
+│   │       ├── lesson.py             # AI-enhanced lesson nodes
 │   │       └── feedback.py           # Format corrections
+│   │
+│   ├── agent/
+│   │   ├── lesson_state.py           # LessonState for lesson subgraph
+│   │   └── lesson_graph.py           # Lesson and exercise subgraphs
 │   │
 │   ├── lessons/                      # Micro-lessons system
 │   │   ├── models.py                 # Pydantic lesson, step, exercise models
@@ -223,7 +229,7 @@ habla-hermano/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/app.js                 # HTMX handlers
 │
-├── tests/                            # 918 tests, 86%+ coverage
+├── tests/                            # 1016 tests, 86%+ coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── test_agent_*.py               # LangGraph tests
 │   ├── test_api_*.py                 # API route tests
@@ -354,6 +360,14 @@ class ConversationState(TypedDict):
 | `respond_node` | Generate AI response using level prompt | AIMessage |
 | `scaffold_node` | Create word bank, hints, sentence starters | ScaffoldingConfig |
 | `analyze_node` | Extract grammar errors and vocabulary | GrammarFeedback[], VocabWord[] |
+
+### Lesson Subgraph Nodes (Phase 9)
+
+| Node | Purpose | Output |
+|------|---------|--------|
+| `load_step_node` | Load step data from YAML lessons | step_type, step_content, vocabulary |
+| `enhance_step_node` | Hermano enhances with personalized content | enhanced_content, hermano_intro |
+| `validate_exercise_node` | Validate answer with AI feedback | is_correct, exercise_feedback |
 
 ### Conditional Routing
 
@@ -648,7 +662,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 86%+ (918 tests)
+### Coverage: 86%+ (1016 tests)
 
 ### Test Categories
 
@@ -795,4 +809,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.2 — Habla Hermano (918 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + Progress Tracking)*
+*Crash Course v1.3 — Habla Hermano (1016 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking)*

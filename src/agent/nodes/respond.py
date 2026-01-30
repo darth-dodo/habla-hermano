@@ -12,7 +12,6 @@ from langchain_core.messages import SystemMessage
 
 from src.agent.prompts import get_prompt_for_level
 from src.agent.state import ConversationState
-from src.api.config import get_settings
 
 
 def _get_llm() -> ChatAnthropic:
@@ -22,6 +21,9 @@ def _get_llm() -> ChatAnthropic:
     Uses claude-sonnet-4-20250514 for good balance of quality and speed.
     API key is read from application settings.
     """
+    # Import here to avoid circular import through src.api.config
+    from src.api.config import get_settings
+
     settings = get_settings()
     return ChatAnthropic(
         model=settings.LLM_MODEL,  # type: ignore[call-arg]

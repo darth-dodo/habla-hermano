@@ -16,8 +16,9 @@
 | **Phase 6** | Micro-Lessons - Structured lesson content, exercises, progress | ✅ Completed |
 | **Phase 7** | Progress Tracking - Dashboard stats, vocabulary tracking, chart data | ✅ Completed |
 | **Phase 8** | Guest Sessions - Anonymous progress, data merge on signup/login | ✅ Completed |
+| **Phase 9** | AI-Enhanced Lessons - LangGraph subgraphs for personalized lesson delivery | ✅ Completed |
 
-**Test Coverage**: 918+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1016+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -170,7 +171,12 @@ habla-hermano/
 │   │       ├── respond.py       # [Implemented] Generate AI response
 │   │       ├── analyze.py       # [Implemented] Grammar/vocab analysis
 │   │       ├── scaffold.py      # [Implemented] Generate scaffolding (word banks, hints, sentence starters)
+│   │       ├── lesson.py        # [Implemented] AI-enhanced lesson nodes (load_step, enhance_step, validate_exercise)
 │   │       └── feedback.py      # [Planned] Format corrections
+│   │
+│   ├── agent/
+│   │   ├── lesson_state.py      # [Implemented] LessonState TypedDict for lesson subgraph
+│   │   └── lesson_graph.py      # [Implemented] Lesson subgraph with AI enhancement
 │   │
 │   ├── lessons/
 │   │   ├── __init__.py          # [Implemented] Module exports
@@ -610,26 +616,100 @@ if guest_session_id and auth_response.user:
 - Data migration strategies (merge vs transfer) for different entity types
 - Fire-and-forget merge operations that don't block authentication flow
 
-### Phase 9: Subgraphs (Future)
-**Learn**: Graph composition, reusability
+### Phase 9: AI-Enhanced Lessons (Week 7) - IMPLEMENTED
+**Learn**: Graph composition, subgraphs, AI personalization
 
+**Status**: This phase is complete. Lessons are now enhanced with Hermano's personalized teaching through a dedicated LangGraph subgraph.
+
+**Key Components**:
+
+1. **LessonState** (`src/agent/lesson_state.py`):
 ```python
-# Lesson subgraph - reusable for different lesson types
-def build_lesson_graph():
+class LessonState(TypedDict):
+    """State for the lesson delivery subgraph."""
+    lesson_id: str
+    step_index: int
+    language: str
+    level: str
+
+    # Step data (loaded from YAML)
+    step_type: NotRequired[str]
+    step_content: NotRequired[str]
+    step_vocabulary: NotRequired[list[dict]]
+    step_target_text: NotRequired[str]
+    step_translation: NotRequired[str]
+    exercise_id: NotRequired[str]
+
+    # AI enhancement
+    enhanced_content: NotRequired[str]
+    hermano_intro: NotRequired[str]
+
+    # Exercise validation
+    user_answer: NotRequired[str]
+    is_correct: NotRequired[bool]
+    exercise_feedback: NotRequired[str]
+```
+
+2. **Lesson Subgraph** (`src/agent/lesson_graph.py`):
+```python
+def build_lesson_subgraph() -> CompiledGraph:
+    """Build the lesson delivery subgraph."""
     graph = StateGraph(LessonState)
-    graph.add_node("present", present_content_node)
-    graph.add_node("practice", practice_node)
-    graph.add_node("evaluate", evaluate_node)
-    # ...
+
+    graph.add_node("load_step", load_step_node)
+    graph.add_node("enhance_step", enhance_step_node)
+
+    graph.set_entry_point("load_step")
+    graph.add_edge("load_step", "enhance_step")
+    graph.add_edge("enhance_step", END)
+
     return graph.compile()
 
-# Main graph can invoke lesson subgraph
-def build_main_graph():
-    graph = StateGraph(ConversationState)
-    graph.add_node("chat", chat_subgraph)
-    graph.add_node("lesson", build_lesson_graph())  # Subgraph as node
-    # ...
+def build_exercise_validation_graph() -> CompiledGraph:
+    """Build the exercise validation subgraph."""
+    graph = StateGraph(LessonState)
+
+    graph.add_node("validate", validate_exercise_node)
+
+    graph.set_entry_point("validate")
+    graph.add_edge("validate", END)
+
+    return graph.compile()
 ```
+
+3. **Lesson Nodes** (`src/agent/nodes/lesson.py`):
+```python
+async def load_step_node(state: LessonState) -> dict[str, Any]:
+    """Load step data from YAML lesson files."""
+
+async def enhance_step_node(state: LessonState) -> dict[str, Any]:
+    """Hermano enhances step with personalized content."""
+
+async def validate_exercise_node(state: LessonState) -> dict[str, Any]:
+    """Validate exercise answer with AI-generated feedback."""
+```
+
+**Lesson Enhancement Flow**:
+```
+┌─────────────────┐
+│   load_step     │ ← Read YAML lesson data
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│  enhance_step   │ ← Hermano adds personalized intro, tips, examples
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│      END        │
+└─────────────────┘
+```
+
+**What you learned**:
+- Building dedicated subgraphs for specific workflows
+- Composing subgraphs as callable nodes
+- Passing state between subgraph and parent graph
+- AI personalization of static YAML content
+- Separate validation subgraphs for exercise feedback
 
 ---
 
@@ -1655,9 +1735,16 @@ asyncio_mode = "auto"
 5. Merge integration in signup/login routes
 6. Merge strategies: sum counters, transfer sessions, keep higher score
 
-### Week 7+: Iterate
+### Week 7: AI-Enhanced Lessons (Phase 9) - COMPLETED
+1. LessonState TypedDict for subgraph state management
+2. Lesson subgraph: load_step → enhance_step → END
+3. Exercise validation subgraph with AI feedback
+4. Hermano personality in lesson delivery (intros, tips, examples)
+5. API endpoints for AI-enhanced step content and exercise validation
+6. 1016+ tests with comprehensive coverage
+
+### Week 8+: Iterate
 1. Test with real beginners
-2. Tune scaffolding based on feedback
+2. Tune scaffolding and AI enhancement based on feedback
 3. Add more lessons (A1, A2, B1)
 4. German/French support (if time)
-5. Phase 9: Subgraphs for lesson integration
