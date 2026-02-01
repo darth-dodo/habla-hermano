@@ -1,0 +1,103 @@
+id: colors-001
+title: Colors and Agreement
+description: Learn colors and how they agree with nouns
+language: es
+level: A1
+estimated_minutes: 5
+category: colors
+tags:
+  - colors
+  - adjectives
+  - gender
+  - agreement
+vocabulary_count: 8
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Colors in Spanish are adjectives that usually come AFTER the noun they describe. Most colors change form based on the gender of the noun. Let's learn this important grammar rule!"
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: "rojo/roja"
+        translation: "red (m/f)"
+      - word: "amarillo/amarilla"
+        translation: "yellow (m/f)"
+      - word: "blanco/blanca"
+        translation: "white (m/f)"
+      - word: "negro/negra"
+        translation: "black (m/f)"
+      - word: "azul"
+        translation: "blue (no change)"
+      - word: "verde"
+        translation: "green (no change)"
+      - word: "naranja"
+        translation: "orange (no change)"
+      - word: "marrón"
+        translation: "brown (no change)"
+    order: 2
+
+  - type: example
+    content: "La casa blanca"
+    translation: "The white house"
+    order: 3
+
+  - type: example
+    content: "El coche rojo"
+    translation: "The red car"
+    order: 4
+
+  - type: tip
+    content: "Colors ending in -o change to -a for feminine nouns: 'el libro rojo' (the red book) but 'la manzana roja' (the red apple)."
+    order: 5
+
+  - type: tip
+    content: "Colors ending in -e or a consonant (azul, verde, naranja, marrón) stay the same for both genders: 'el cielo azul', 'la puerta azul'."
+    order: 6
+
+  - type: practice
+    content: "Practice colors and gender agreement!"
+    exercise_id: "ex-mc-color-a1-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-color-a1-001
+    type: multiple_choice
+    question: "How do you say 'the yellow flower' (la flor)?"
+    options:
+      - "la flor amarillo"
+      - "la flor amarilla"
+      - "el flor amarillo"
+      - "el flor amarilla"
+    correct_index: 1
+    explanation: "'Flor' is feminine, so we use 'amarilla' (feminine form) and 'la' (feminine article)."
+
+  - id: ex-mc-color-a1-002
+    type: multiple_choice
+    question: "Which color does NOT change for gender?"
+    options:
+      - "rojo"
+      - "blanco"
+      - "verde"
+      - "negro"
+    correct_index: 2
+    explanation: "'Verde' ends in -e and stays the same for both masculine and feminine nouns."
+
+  - id: ex-fb-color-a1-001
+    type: fill_blank
+    sentence_template: "La camisa _____ (black, feminine)"
+    correct_answer: "negra"
+    alternatives:
+      - "Negra"
+    hint: "Black, feminine form"
+
+  - id: ex-fb-color-a1-002
+    type: fill_blank
+    sentence_template: "El zapato _____ (brown)"
+    correct_answer: "marrón"
+    alternatives:
+      - "Marrón"
+      - "marron"
+    hint: "Brown doesn't change for gender"

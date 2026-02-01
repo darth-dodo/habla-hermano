@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-02-01
+
+### Added
+- Phase 10: Lesson content expansion from 5 to 60 lessons
+- German lessons: 20 lessons (A0-B1) with noun genders, umlauts, formal/informal distinction
+- French lessons: 20 lessons (A0-B1) with accents, liaison rules, formal/informal distinction
+- Spanish A1-B1 lessons: 15 new lessons building on existing A0 content
+- Composite key system for LessonService (`lang/level/id` format)
+- Level-appropriate exercise types: A0 (MC only) → B1 (MC + fill + translate)
+
+### Changed
+- LessonService now uses composite keys for unique lesson identification
+- get_lesson() supports scoped lookups by language and level
+
 ## [0.6.0] - 2025-01-28
 
 ### Added

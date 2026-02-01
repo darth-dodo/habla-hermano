@@ -1,0 +1,103 @@
+id: family-001
+title: Family Events and Relationships
+description: Discuss family events, relationships, and describe family members
+language: de
+level: A2
+estimated_minutes: 7
+category: family
+tags:
+  - family
+  - events
+  - relationships
+  - perfekt
+vocabulary_count: 10
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "Let's talk about family events and relationships! You'll learn vocabulary for life events and practice describing what happened using the Perfekt tense."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: die Hochzeit
+        translation: the wedding (feminine)
+      - word: der Geburtstag
+        translation: the birthday (masculine)
+      - word: heiraten
+        translation: to marry
+      - word: Wir haben geheiratet
+        translation: We got married (Perfekt)
+      - word: die Schwiegermutter
+        translation: the mother-in-law (feminine)
+      - word: der Schwiegervater
+        translation: the father-in-law (masculine)
+      - word: das Enkelkind
+        translation: the grandchild (neuter)
+      - word: sich verloben
+        translation: to get engaged
+      - word: Meine Eltern sind geschieden
+        translation: My parents are divorced
+      - word: die Verwandten
+        translation: the relatives (plural)
+    order: 2
+
+  - type: example
+    content: "Meine Schwester hat letztes Jahr geheiratet."
+    translation: "My sister got married last year."
+    order: 3
+
+  - type: example
+    content: "Wir haben den Geburtstag meiner Großmutter gefeiert."
+    translation: "We celebrated my grandmother's birthday."
+    order: 4
+
+  - type: tip
+    content: "Compound family words: Schwieger- (in-law), Stief- (step-), Ur- (great-). Examples: Schwiegermutter (mother-in-law), Stiefvater (stepfather), Urgroßmutter (great-grandmother)."
+    order: 5
+
+  - type: tip
+    content: "Reflexive verbs like 'sich verloben' (to get engaged) use reflexive pronouns: Wir haben uns verlobt. (We got engaged.)"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German family vocabulary!"
+    exercise_id: "ex-mc-fam-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-fam-001
+    type: multiple_choice
+    question: "What does 'die Schwiegermutter' mean?"
+    options:
+      - stepmother
+      - grandmother
+      - mother-in-law
+      - aunt
+    correct_index: 2
+    explanation: "Schwiegermutter means 'mother-in-law'. 'Schwieger-' prefix indicates in-law relationships."
+
+  - id: ex-fb-fam-001
+    type: fill_blank
+    sentence_template: "Mein Bruder hat letzten Monat _____. (got married)"
+    correct_answer: "geheiratet"
+    alternatives:
+      - Geheiratet
+    hint: "Past participle of 'heiraten' (to marry)"
+
+  - id: ex-tr-fam-001
+    type: translate
+    source_text: "We celebrated my grandfather's birthday."
+    target_language: "de"
+    correct_translation: "Wir haben den Geburtstag meines Großvaters gefeiert."
+    alternatives:
+      - "Wir haben meines Großvaters Geburtstag gefeiert."
+
+  - id: ex-tr-fam-002
+    type: translate
+    source_text: "My parents got divorced last year."
+    target_language: "de"
+    correct_translation: "Meine Eltern haben sich letztes Jahr scheiden lassen."
+    alternatives:
+      - "Meine Eltern sind seit letztem Jahr geschieden."

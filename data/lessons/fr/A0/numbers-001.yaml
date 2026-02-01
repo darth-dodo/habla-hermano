@@ -1,0 +1,92 @@
+id: numbers-001
+title: Numbers 1-10
+description: Learn to count from one to ten in French
+language: fr
+level: A0
+estimated_minutes: 3
+category: numbers
+tags:
+  - numbers
+  - counting
+  - basics
+vocabulary_count: 6
+icon: "🔢"
+
+steps:
+  - type: instruction
+    content: "Let's learn numbers in French! Counting is essential for everyday conversations."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: un / une
+        translation: one (masculine / feminine)
+      - word: deux
+        translation: two
+      - word: trois
+        translation: three
+      - word: quatre
+        translation: four
+      - word: cinq
+        translation: five
+      - word: six
+        translation: six
+    order: 2
+
+  - type: example
+    content: "J'ai deux frères."
+    translation: "I have two brothers."
+    order: 3
+
+  - type: example
+    content: "Il y a trois chaises."
+    translation: "There are three chairs."
+    order: 4
+
+  - type: tip
+    content: "The 'x' in deux and six is silent when the word stands alone. Say 'duh' and 'sees'."
+    order: 5
+
+  - type: tip
+    content: "Cinq has a silent 'q' - pronounce it like 'sank'. The final consonant is pronounced!"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French numbers!"
+    exercise_id: "ex-mc-num-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-num-001
+    type: multiple_choice
+    question: "What is 'three' in French?"
+    options:
+      - deux
+      - trois
+      - quatre
+      - cinq
+    correct_index: 1
+    explanation: "Trois means 'three' in French."
+
+  - id: ex-mc-num-002
+    type: multiple_choice
+    question: "What number is 'cinq'?"
+    options:
+      - four
+      - three
+      - five
+      - six
+    correct_index: 2
+    explanation: "Cinq means 'five' in French."
+
+  - id: ex-mc-num-003
+    type: multiple_choice
+    question: "How do you say 'one' (feminine) in French?"
+    options:
+      - un
+      - une
+      - deux
+      - premier
+    correct_index: 1
+    explanation: "Une is the feminine form of 'one' in French. Un is masculine."

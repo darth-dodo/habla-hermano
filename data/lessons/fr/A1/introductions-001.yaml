@@ -1,0 +1,104 @@
+id: introductions-001
+title: Personal Information
+description: Learn to share personal information like nationality and occupation in French
+language: fr
+level: A1
+estimated_minutes: 4
+category: introductions
+tags:
+  - introduction
+  - nationality
+  - occupation
+  - personal
+vocabulary_count: 8
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Let's learn to share more about yourself! You'll describe your nationality and occupation."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Je suis français(e)
+        translation: I am French (masc./fem.)
+      - word: Je suis américain(e)
+        translation: I am American (masc./fem.)
+      - word: Je suis étudiant(e)
+        translation: I am a student (masc./fem.)
+      - word: Je travaille
+        translation: I work
+      - word: J'habite à
+        translation: I live in
+      - word: D'où venez-vous?
+        translation: where are you from? (formal)
+      - word: Quelle est votre profession?
+        translation: what is your profession?
+      - word: Je viens de
+        translation: I come from
+    order: 2
+
+  - type: example
+    content: "Je suis américaine et j'habite à Paris."
+    translation: "I am American (fem.) and I live in Paris."
+    order: 3
+
+  - type: example
+    content: "D'où venez-vous? - Je viens du Canada."
+    translation: "Where are you from? - I come from Canada."
+    order: 4
+
+  - type: tip
+    content: "Nationalities change form: français (masc.) → française (fem.), américain → américaine. Add 'e' for feminine."
+    order: 5
+
+  - type: tip
+    content: "Notice 'J'habite' - the 'Je' contracts before a vowel! Same with 'J'ai' (I have)."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of personal introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "How does a woman say 'I am French'?"
+    options:
+      - Je suis français
+      - Je suis française
+      - Je suis américaine
+      - Je suis étudiant
+    correct_index: 1
+    explanation: "Française is the feminine form. Add 'e' to make nationalities feminine."
+
+  - id: ex-mc-intro-002
+    type: multiple_choice
+    question: "What does 'J'habite à' mean?"
+    options:
+      - I work at
+      - I come from
+      - I live in
+      - I am from
+    correct_index: 2
+    explanation: "J'habite à means 'I live in' followed by a city name."
+
+  - id: ex-fb-intro-001
+    type: fill_blank
+    sentence_template: "Je _____ de France."
+    correct_answer: "viens"
+    alternatives:
+      - suis
+    hint: "I come from France"
+
+  - id: ex-fb-intro-002
+    type: fill_blank
+    sentence_template: "Je suis _____ et je travaille à Lyon."
+    correct_answer: "étudiant"
+    alternatives:
+      - étudiante
+      - français
+      - française
+    hint: "I am a student (male)"

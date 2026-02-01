@@ -1,0 +1,102 @@
+id: greetings-001
+title: Greetings and Responses
+description: Learn to greet people and respond appropriately in German
+language: de
+level: A1
+estimated_minutes: 5
+category: greetings
+tags:
+  - greeting
+  - responses
+  - polite
+  - conversation
+vocabulary_count: 8
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Now let's expand your greetings! You'll learn how to ask 'How are you?' and respond politely. Remember the formal Sie vs informal du distinction!"
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Wie geht es Ihnen?
+        translation: How are you? (formal)
+      - word: Wie geht's?
+        translation: How are you? (informal)
+      - word: Mir geht es gut
+        translation: I'm doing well
+      - word: Danke
+        translation: thank you
+      - word: Bitte
+        translation: please/you're welcome
+      - word: Und Ihnen?
+        translation: And you? (formal)
+      - word: Sehr gut
+        translation: very well
+      - word: Es geht
+        translation: so-so/okay
+    order: 2
+
+  - type: example
+    content: "Guten Tag! Wie geht es Ihnen?"
+    translation: "Good day! How are you? (formal)"
+    order: 3
+
+  - type: example
+    content: "Mir geht es gut, danke. Und Ihnen?"
+    translation: "I'm doing well, thank you. And you?"
+    order: 4
+
+  - type: tip
+    content: "The word 'Bitte' is versatile: it means 'please', 'you're welcome', and 'here you go'. Context determines its meaning!"
+    order: 5
+
+  - type: tip
+    content: "In German, 'Mir geht es...' literally means 'To me it goes...' - the Dative case (mir) is used for the person experiencing the feeling."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German greetings and responses!"
+    exercise_id: "ex-mc-greet-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "How do you formally ask 'How are you?' in German?"
+    options:
+      - Wie geht's?
+      - Wie heißt du?
+      - Wie geht es Ihnen?
+      - Was machst du?
+    correct_index: 2
+    explanation: "Wie geht es Ihnen? is the formal way to ask 'How are you?' Use it with strangers and in professional settings."
+
+  - id: ex-mc-greet-002
+    type: multiple_choice
+    question: "What does 'Danke' mean?"
+    options:
+      - please
+      - sorry
+      - thank you
+      - goodbye
+    correct_index: 2
+    explanation: "Danke means 'thank you' in German. You can also say 'Vielen Dank' for 'many thanks'."
+
+  - id: ex-fb-greet-001
+    type: fill_blank
+    sentence_template: "Mir geht es _____, danke."
+    correct_answer: "gut"
+    alternatives:
+      - Gut
+    hint: "How do you say 'well' or 'good' in German?"
+
+  - id: ex-fb-greet-002
+    type: fill_blank
+    sentence_template: "Guten Tag! Wie geht es _____?"
+    correct_answer: "Ihnen"
+    alternatives:
+      - ihnen
+    hint: "This is the formal 'you' in Dative case"

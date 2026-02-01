@@ -1,0 +1,102 @@
+id: colors-001
+title: Colors with Articles
+description: Learn more colors and how to use them with nouns
+language: de
+level: A1
+estimated_minutes: 5
+category: colors
+tags:
+  - colors
+  - adjectives
+  - articles
+  - description
+vocabulary_count: 8
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Let's expand your color vocabulary and learn how colors change when used with articles! In German, adjectives like colors need endings when they come before a noun."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: braun
+        translation: brown
+      - word: grau
+        translation: gray
+      - word: orange
+        translation: orange
+      - word: rosa
+        translation: pink
+      - word: lila
+        translation: purple
+      - word: hellblau
+        translation: light blue
+      - word: dunkelgrün
+        translation: dark green
+      - word: ein roter Apfel
+        translation: a red apple
+    order: 2
+
+  - type: example
+    content: "Der Hund ist braun."
+    translation: "The dog is brown."
+    order: 3
+
+  - type: example
+    content: "Ich möchte einen grünen Pullover."
+    translation: "I would like a green sweater."
+    order: 4
+
+  - type: tip
+    content: "Add 'hell-' (light) or 'dunkel-' (dark) before any color: hellblau (light blue), dunkelrot (dark red), hellgrün (light green)."
+    order: 5
+
+  - type: tip
+    content: "With 'ein/eine', colors get an ending: 'ein roter Apfel' (masculine), 'eine rote Tomate' (feminine), 'ein rotes Auto' (neuter)."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German colors!"
+    exercise_id: "ex-mc-col-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-col-001
+    type: multiple_choice
+    question: "What does 'dunkelblau' mean?"
+    options:
+      - light blue
+      - dark blue
+      - dark green
+      - light green
+    correct_index: 1
+    explanation: "Dunkelblau means 'dark blue'. 'Dunkel' means dark, 'hell' means light."
+
+  - id: ex-mc-col-002
+    type: multiple_choice
+    question: "How do you say 'a brown dog' (masculine) with the indefinite article?"
+    options:
+      - ein braun Hund
+      - eine braune Hund
+      - ein brauner Hund
+      - einen braunen Hund
+    correct_index: 2
+    explanation: "Ein brauner Hund - with 'ein' + masculine noun, the adjective gets '-er' ending in Nominative case."
+
+  - id: ex-fb-col-001
+    type: fill_blank
+    sentence_template: "Die Katze ist _____. (gray)"
+    correct_answer: "grau"
+    alternatives:
+      - Grau
+    hint: "This color is similar to English 'gray'!"
+
+  - id: ex-fb-col-002
+    type: fill_blank
+    sentence_template: "Ich habe eine _____ Blume. (pink)"
+    correct_answer: "rosa"
+    alternatives:
+      - Rosa
+    hint: "This color doesn't change its form - it stays the same before nouns!"

@@ -1,0 +1,115 @@
+id: numbers-001
+title: Numbers in Business and Statistics
+description: Learn to discuss statistics, percentages, and financial figures
+language: de
+level: B1
+estimated_minutes: 10
+category: numbers
+tags:
+  - numbers
+  - statistics
+  - business
+  - percentages
+vocabulary_count: 12
+icon: "🔢"
+
+steps:
+  - type: instruction
+    content: "Numbers are crucial in professional contexts! Let's learn to discuss statistics, percentages, increases/decreases, and financial figures. We'll also practice the Dative case with numbers."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: der Prozent
+        translation: the percent
+      - word: die Hälfte
+        translation: the half (feminine)
+      - word: das Drittel
+        translation: the third (1/3) (neuter)
+      - word: das Viertel
+        translation: the quarter (1/4) (neuter)
+      - word: steigen um
+        translation: to increase by
+      - word: sinken um
+        translation: to decrease by
+      - word: verdoppeln
+        translation: to double
+      - word: Die Kosten betragen
+        translation: The costs amount to
+      - word: im Vergleich zu
+        translation: compared to (+ Dative)
+      - word: etwa / ungefähr
+        translation: approximately
+      - word: die Mehrheit
+        translation: the majority (feminine)
+      - word: Die Zahlen zeigen
+        translation: The numbers show
+    order: 2
+
+  - type: example
+    content: "Die Umsätze sind um 15 Prozent gestiegen."
+    translation: "Sales have increased by 15 percent."
+    order: 3
+
+  - type: example
+    content: "Im Vergleich zum letzten Jahr haben sich die Kosten verdoppelt."
+    translation: "Compared to last year, the costs have doubled."
+    order: 4
+
+  - type: tip
+    content: "With percentages, use 'um' for the amount of change: 'um 10% steigen' (increase by 10%). Use 'auf' for the resulting level: 'auf 50% steigen' (rise to 50%)."
+    order: 5
+
+  - type: tip
+    content: "'Im Vergleich zu' requires Dative: 'im Vergleich zum (zu + dem) letzten Jahr', 'im Vergleich zur (zu + der) Konkurrenz'."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German numbers in business!"
+    exercise_id: "ex-mc-num-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-num-001
+    type: multiple_choice
+    question: "How do you say 'The prices decreased by 20%'?"
+    options:
+      - Die Preise sind auf 20% gesunken
+      - Die Preise sind um 20% gesunken
+      - Die Preise haben 20% gesunken
+      - Die Preise sinken 20%
+    correct_index: 1
+    explanation: "'Um' indicates the amount of change. 'Auf' would indicate the final percentage level."
+
+  - id: ex-fb-num-001
+    type: fill_blank
+    sentence_template: "Die Gewinne haben sich im letzten Jahr _____."
+    correct_answer: "verdoppelt"
+    alternatives:
+      - Verdoppelt
+    hint: "What verb means 'to double'?"
+
+  - id: ex-tr-num-001
+    type: translate
+    source_text: "Approximately half of the employees work from home."
+    target_language: "de"
+    correct_translation: "Ungefähr die Hälfte der Mitarbeiter arbeitet von zu Hause."
+    alternatives:
+      - "Etwa die Hälfte der Mitarbeiter arbeitet im Homeoffice."
+
+  - id: ex-tr-num-002
+    type: translate
+    source_text: "The costs amount to three thousand euros."
+    target_language: "de"
+    correct_translation: "Die Kosten betragen dreitausend Euro."
+    alternatives:
+      - "Die Kosten belaufen sich auf dreitausend Euro."
+
+  - id: ex-tr-num-003
+    type: translate
+    source_text: "Compared to last month, sales increased by 25%."
+    target_language: "de"
+    correct_translation: "Im Vergleich zum letzten Monat sind die Umsätze um 25% gestiegen."
+    alternatives:
+      - "Verglichen mit dem letzten Monat sind die Umsätze um 25% gestiegen."

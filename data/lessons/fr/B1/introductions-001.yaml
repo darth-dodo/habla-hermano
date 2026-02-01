@@ -1,0 +1,114 @@
+id: introductions-001
+title: Professional Self-Presentation
+description: Learn to present yourself professionally, discuss experience, and express goals in French
+language: fr
+level: B1
+estimated_minutes: 6
+category: introductions
+tags:
+  - introduction
+  - professional
+  - career
+  - experience
+vocabulary_count: 12
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Let's learn professional self-presentation! You'll express your experience, skills, and career aspirations."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: J'ai acquis de l'expérience en
+        translation: I have gained experience in
+      - word: Je suis diplômé(e) de
+        translation: I graduated from
+      - word: Je possède des compétences en
+        translation: I have skills in
+      - word: J'aspire à
+        translation: I aspire to
+      - word: Mon parcours professionnel
+        translation: my career path
+      - word: Je suis actuellement en poste
+        translation: I am currently employed
+      - word: Je suis à la recherche de
+        translation: I am looking for
+      - word: J'ai eu l'opportunité de
+        translation: I had the opportunity to
+      - word: Ce qui me motive, c'est
+        translation: what motivates me is
+      - word: Je m'épanouis dans
+        translation: I thrive in
+      - word: Il est essentiel que je
+        translation: it is essential that I (+ subjunctive)
+      - word: Bien que j'aie
+        translation: although I have (+ subjunctive)
+    order: 2
+
+  - type: example
+    content: "Je suis diplômée d'une école de commerce. J'ai acquis de l'expérience en marketing digital."
+    translation: "I graduated from a business school. I have gained experience in digital marketing."
+    order: 3
+
+  - type: example
+    content: "Bien que j'aie travaillé dans la finance, j'aspire à une carrière dans l'entrepreneuriat."
+    translation: "Although I have worked in finance, I aspire to a career in entrepreneurship."
+    order: 4
+
+  - type: tip
+    content: "The subjunctive is used after expressions like 'bien que' (although) and 'il est essentiel que' (it is essential that)."
+    order: 5
+
+  - type: tip
+    content: "Use 'j'ai eu l'opportunité de' + infinitive to describe professional opportunities you've had."
+    order: 6
+
+  - type: practice
+    content: "Test your professional French vocabulary!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "Which form uses the subjunctive correctly?"
+    options:
+      - Bien que j'ai travaillé
+      - Bien que j'aie travaillé
+      - Bien que je travaille
+      - Bien que j'avais travaillé
+    correct_index: 1
+    explanation: "After 'bien que', use the subjunctive: 'aie' is the subjunctive of 'avoir'."
+
+  - id: ex-fb-intro-001
+    type: fill_blank
+    sentence_template: "J'ai _____ de l'expérience en gestion de projet."
+    correct_answer: "acquis"
+    alternatives: []
+    hint: "I have gained experience in project management"
+
+  - id: ex-tr-intro-001
+    type: translate
+    source_text: "I am looking for a new challenge."
+    target_language: "fr"
+    correct_translation: "Je suis à la recherche d'un nouveau défi."
+    alternatives:
+      - "Je cherche un nouveau défi."
+
+  - id: ex-tr-intro-002
+    type: translate
+    source_text: "What motivates me is working with people."
+    target_language: "fr"
+    correct_translation: "Ce qui me motive, c'est le travail avec les gens."
+    alternatives:
+      - "Ce qui me motive, c'est travailler avec les gens."
+
+  - id: ex-tr-intro-003
+    type: translate
+    source_text: "I have skills in data analysis."
+    target_language: "fr"
+    correct_translation: "Je possède des compétences en analyse de données."
+    alternatives:
+      - "J'ai des compétences en analyse de données."

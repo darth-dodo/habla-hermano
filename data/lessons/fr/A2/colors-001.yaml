@@ -1,0 +1,102 @@
+id: colors-001
+title: Colors in Context
+description: Learn to use colors in descriptions, comparisons, and idiomatic expressions
+language: fr
+level: A2
+estimated_minutes: 5
+category: colors
+tags:
+  - colors
+  - adjectives
+  - idioms
+  - descriptions
+vocabulary_count: 10
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Let's use colors in richer contexts! You'll learn compound colors and color idioms."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: bleu marine
+        translation: navy blue
+      - word: bleu ciel
+        translation: sky blue
+      - word: vert olive
+        translation: olive green
+      - word: rouge vif
+        translation: bright red
+      - word: être vert de jalousie
+        translation: to be green with envy
+      - word: voir la vie en rose
+        translation: to see life through rose-colored glasses
+      - word: être dans le rouge
+        translation: to be in the red (debt)
+      - word: une peur bleue
+        translation: an intense fear
+      - word: un cordon bleu
+        translation: an excellent cook
+      - word: la nuit blanche
+        translation: sleepless night (white night)
+    order: 2
+
+  - type: example
+    content: "Elle voit la vie en rose depuis qu'elle est amoureuse."
+    translation: "She sees life through rose-colored glasses since she fell in love."
+    order: 3
+
+  - type: example
+    content: "J'ai passé une nuit blanche à réviser pour mon examen."
+    translation: "I pulled an all-nighter studying for my exam."
+    order: 4
+
+  - type: tip
+    content: "Compound colors don't change form: 'des yeux bleu ciel' (sky-blue eyes), not 'bleus ciels'."
+    order: 5
+
+  - type: tip
+    content: "Many French idioms use colors differently than English: 'une peur bleue' (blue fear) means intense fear!"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French color expressions!"
+    exercise_id: "ex-mc-col-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-col-001
+    type: multiple_choice
+    question: "What does 'voir la vie en rose' mean?"
+    options:
+      - to see pink colors
+      - to be optimistic / see things positively
+      - to be in debt
+      - to be jealous
+    correct_index: 1
+    explanation: "This idiom means to see life optimistically, as if through rose-colored glasses."
+
+  - id: ex-fb-col-001
+    type: fill_blank
+    sentence_template: "Il est _____ de jalousie en voyant sa réussite."
+    correct_answer: "vert"
+    alternatives: []
+    hint: "He is green with envy"
+
+  - id: ex-tr-col-001
+    type: translate
+    source_text: "I'm wearing a navy blue jacket."
+    target_language: "fr"
+    correct_translation: "Je porte une veste bleu marine."
+    alternatives:
+      - "Je porte une veste bleu-marine."
+
+  - id: ex-tr-col-002
+    type: translate
+    source_text: "My grandmother is an excellent cook."
+    target_language: "fr"
+    correct_translation: "Ma grand-mère est un cordon bleu."
+    alternatives:
+      - "Ma grand-mère est une cordon bleu."

@@ -57,6 +57,17 @@ class LessonService:
         self._lessons: dict[str, Lesson] = {}
         self._load_all_lessons()
 
+    def _get_lesson_key(self, lesson: Lesson) -> str:
+        """Generate a unique key for a lesson based on language, level, and id.
+
+        Args:
+            lesson: The lesson to generate a key for.
+
+        Returns:
+            A unique string key in format: {language}/{level}/{id}
+        """
+        return f"{lesson.metadata.language}/{lesson.metadata.level.value}/{lesson.metadata.id}"
+
     def _load_all_lessons(self) -> None:
         """Load all lessons from the lessons directory."""
         if not self.lessons_dir.exists():
@@ -67,7 +78,8 @@ class LessonService:
             try:
                 lesson = self._load_lesson_file(yaml_file)
                 if lesson:
-                    self._lessons[lesson.metadata.id] = lesson
+                    key = self._get_lesson_key(lesson)
+                    self._lessons[key] = lesson
             except Exception as e:
                 # Log but continue loading other lessons
                 print(f"Warning: Failed to load lesson from {yaml_file}: {e}")
@@ -77,7 +89,8 @@ class LessonService:
             try:
                 lesson = self._load_lesson_file(yaml_file)
                 if lesson:
-                    self._lessons[lesson.metadata.id] = lesson
+                    key = self._get_lesson_key(lesson)
+                    self._lessons[key] = lesson
             except Exception as e:
                 print(f"Warning: Failed to load lesson from {yaml_file}: {e}")
 
@@ -181,16 +194,38 @@ class LessonService:
     # Public API
     # =========================================================================
 
-    def get_lesson(self, lesson_id: str) -> Lesson | None:
-        """Get a lesson by ID.
+    def get_lesson(
+        self,
+        lesson_id: str,
+        language: str | None = None,
+        level: LessonLevel | str | None = None,
+    ) -> Lesson | None:
+        """Get a lesson by ID, optionally scoped to language and level.
 
         Args:
-            lesson_id: The lesson identifier.
+            lesson_id: The lesson identifier (e.g., "greetings-001").
+            language: Optional language code to scope the search.
+            level: Optional CEFR level to scope the search.
 
         Returns:
             Lesson or None if not found.
         """
-        return self._lessons.get(lesson_id)
+        # If language and level provided, construct full key
+        if language and level:
+            level_value = level.value if isinstance(level, LessonLevel) else level
+            key = f"{language}/{level_value}/{lesson_id}"
+            return self._lessons.get(key)
+
+        # Try direct lookup (full key format)
+        if lesson_id in self._lessons:
+            return self._lessons[lesson_id]
+
+        # Fallback: search by lesson ID suffix (for backwards compatibility)
+        for _key, lesson in self._lessons.items():
+            if lesson.metadata.id == lesson_id:
+                return lesson
+
+        return None
 
     def get_all_lessons(self) -> list[Lesson]:
         """Get all loaded lessons.

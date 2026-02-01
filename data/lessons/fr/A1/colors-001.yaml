@@ -1,0 +1,103 @@
+id: colors-001
+title: Colors and Descriptions
+description: Learn more colors and how to use them with gender agreement
+language: fr
+level: A1
+estimated_minutes: 4
+category: colors
+tags:
+  - colors
+  - adjectives
+  - gender
+  - descriptions
+vocabulary_count: 8
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Let's expand your color vocabulary! You'll learn how colors agree with the gender of nouns."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: gris / grise
+        translation: gray (masc. / fem.)
+      - word: rose
+        translation: pink
+      - word: orange
+        translation: orange
+      - word: violet / violette
+        translation: purple (masc. / fem.)
+      - word: marron
+        translation: brown
+      - word: clair(e)
+        translation: light (color)
+      - word: foncé(e)
+        translation: dark (color)
+      - word: coloré(e)
+        translation: colorful
+    order: 2
+
+  - type: example
+    content: "Elle porte une robe violette."
+    translation: "She is wearing a purple dress."
+    order: 3
+
+  - type: example
+    content: "Le chat gris dort sur le lit."
+    translation: "The gray cat is sleeping on the bed."
+    order: 4
+
+  - type: tip
+    content: "Colors that come from nouns (orange, marron) don't change form: une chemise orange, des chaussures marron."
+    order: 5
+
+  - type: tip
+    content: "Rose stays the same for both genders: un pull rose, une jupe rose."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French colors and gender agreement!"
+    exercise_id: "ex-mc-col-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-col-001
+    type: multiple_choice
+    question: "Which color does NOT change for feminine?"
+    options:
+      - gris
+      - violet
+      - orange
+      - vert
+    correct_index: 2
+    explanation: "Orange comes from the fruit noun and stays the same for both genders."
+
+  - id: ex-mc-col-002
+    type: multiple_choice
+    question: "How do you say 'dark blue'?"
+    options:
+      - bleu clair
+      - bleu foncé
+      - bleu coloré
+      - bleu rose
+    correct_index: 1
+    explanation: "Foncé means 'dark', so bleu foncé is 'dark blue'."
+
+  - id: ex-fb-col-001
+    type: fill_blank
+    sentence_template: "La voiture est _____ foncé."
+    correct_answer: "grise"
+    alternatives:
+      - gris
+    hint: "The (feminine) car is dark gray"
+
+  - id: ex-fb-col-002
+    type: fill_blank
+    sentence_template: "J'aime les fleurs _____."
+    correct_answer: "violettes"
+    alternatives:
+      - roses
+      - bleues
+    hint: "I like purple flowers (feminine plural)"

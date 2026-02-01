@@ -1,0 +1,119 @@
+id: family-001
+title: Family Dynamics and Life Events
+description: Discuss family relationships, conflicts, and major life events
+language: es
+level: B1
+estimated_minutes: 8
+category: family
+tags:
+  - family
+  - relationships
+  - life-events
+  - emotions
+vocabulary_count: 12
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "At B1 level, you can discuss complex family dynamics, express emotions about relationships, and talk about significant life events using more sophisticated vocabulary and grammar."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: "llevarse bien/mal con"
+        translation: "to get along well/badly with"
+      - word: "discutir"
+        translation: "to argue / discuss"
+      - word: "reconciliarse"
+        translation: "to reconcile / make up"
+      - word: "heredar"
+        translation: "to inherit"
+      - word: "criar"
+        translation: "to raise (children)"
+      - word: "el nacimiento"
+        translation: "the birth"
+      - word: "el fallecimiento"
+        translation: "the passing/death (formal)"
+      - word: "el divorcio"
+        translation: "the divorce"
+      - word: "la herencia"
+        translation: "the inheritance"
+      - word: "estar orgulloso/a de"
+        translation: "to be proud of"
+      - word: "parecerse a"
+        translation: "to resemble / look like"
+      - word: "salir a"
+        translation: "to take after (personality)"
+    order: 2
+
+  - type: example
+    content: "Me llevo muy bien con mi cuñada, aunque al principio no nos entendíamos."
+    translation: "I get along very well with my sister-in-law, although at first we didn't understand each other."
+    order: 3
+
+  - type: example
+    content: "Si tuviera más tiempo, visitaría a mis abuelos con más frecuencia."
+    translation: "If I had more time, I would visit my grandparents more often."
+    order: 4
+
+  - type: tip
+    content: "The conditional sentence 'Si tuviera... visitaría' uses imperfect subjunctive (tuviera) + conditional (visitaría) for hypothetical situations. This is a key B1 grammar structure."
+    order: 5
+
+  - type: tip
+    content: "'Parecerse a' refers to physical appearance, while 'salir a' refers to personality or behavior: 'Me parezco a mi madre pero salgo a mi padre' (I look like my mother but take after my father)."
+    order: 6
+
+  - type: practice
+    content: "Practice discussing family dynamics!"
+    exercise_id: "ex-mc-fam-b1-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-fam-b1-001
+    type: multiple_choice
+    question: "How do you say 'We get along well'?"
+    options:
+      - "Nos vamos bien"
+      - "Nos llevamos bien"
+      - "Estamos bien"
+      - "Nos sentimos bien"
+    correct_index: 1
+    explanation: "'Llevarse bien' is the idiomatic expression for getting along with someone."
+
+  - id: ex-fb-fam-b1-001
+    type: fill_blank
+    sentence_template: "Si _____ más cerca, nos veríamos todos los fines de semana."
+    correct_answer: "vivieran"
+    alternatives:
+      - "viviesen"
+      - "Vivieran"
+    hint: "Imperfect subjunctive of 'vivir' (they)"
+
+  - id: ex-tr-fam-b1-001
+    type: translate
+    source_text: "I'm proud of my daughter. She takes after her grandmother."
+    target_language: "es"
+    correct_translation: "Estoy orgullosa de mi hija. Sale a su abuela."
+    alternatives:
+      - "Estoy orgulloso de mi hija. Sale a su abuela."
+      - "Me siento orgullosa de mi hija. Ha salido a su abuela."
+
+  - id: ex-tr-fam-b1-002
+    type: translate
+    source_text: "My parents argued a lot but finally reconciled."
+    target_language: "es"
+    correct_translation: "Mis padres discutían mucho pero finalmente se reconciliaron."
+    alternatives:
+      - "Mis padres discutieron mucho pero al final se reconciliaron."
+      - "Mis padres peleaban mucho pero finalmente hicieron las paces."
+
+  - id: ex-tr-fam-b1-003
+    type: translate
+    source_text: "If my grandparents were alive, they would be very proud."
+    target_language: "es"
+    correct_translation: "Si mis abuelos estuvieran vivos, estarían muy orgullosos."
+    alternatives:
+      - "Si mis abuelos vivieran, estarían muy orgullosos."
+      - "Si mis abuelos estuviesen vivos, se sentirían muy orgullosos."

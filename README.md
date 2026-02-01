@@ -106,7 +106,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Progress Dashboard** | Track vocabulary learned, session history, learning streaks, and accuracy trends with Chart.js visualizations |
 | **Guest Access** | Start learning immediately — no sign-up required |
 | **Guest Progress** | Session-based progress tracking for unauthenticated users (vocabulary and lesson completion persisted via cookies) |
-| **3 Languages** | Spanish, German, and French — full support A0-B1 |
+| **3 Languages** | Spanish, German, and French — 60 lessons across all levels A0-B1 |
 | **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
 | **Mobile-First** | Works great on phone, tablet, or desktop |
 
@@ -122,7 +122,15 @@ Each lesson includes:
 - **Completion tracking** with score and vocabulary count
 - **Chat handoff** — finish a lesson and jump into conversation to practice what you learned
 
-5 Spanish A0 lessons are available now, covering greetings, introductions, and basic phrases. No account required — guests can start learning immediately.
+**60 lessons** are available across all languages and levels:
+
+| Language | A0 | A1 | A2 | B1 | Total |
+|----------|----|----|----|----|-------|
+| 🇪🇸 Spanish | 5 | 5 | 5 | 5 | 20 |
+| 🇩🇪 German | 5 | 5 | 5 | 5 | 20 |
+| 🇫🇷 French | 5 | 5 | 5 | 5 | 20 |
+
+Each level covers 5 categories: greetings, introductions, numbers, colors, and family. No account required — guests can start learning immediately.
 
 ---
 
@@ -131,7 +139,7 @@ Each lesson includes:
 - [Product Vision](docs/product.md) — Pedagogy and feature philosophy
 - [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
 - [API Reference](docs/api.md) — Endpoints and data structures
-- [Testing](docs/testing.md) — 918 tests, 86%+ coverage, test strategy
+- [Testing](docs/testing.md) — 1016 tests, 86%+ coverage, test strategy
 - [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
 - [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
 - [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document

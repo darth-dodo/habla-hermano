@@ -1,0 +1,114 @@
+id: family-001
+title: Family Dynamics and Life Milestones
+description: Discuss complex family relationships, life stages, and family milestones in French
+language: fr
+level: B1
+estimated_minutes: 6
+category: family
+tags:
+  - family
+  - relationships
+  - milestones
+  - life stages
+vocabulary_count: 12
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "Let's discuss family life in depth! You'll learn to describe complex relationships, conflicts, and life milestones."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: la famille recomposée
+        translation: blended family
+      - word: la garde partagée
+        translation: shared custody
+      - word: le foyer
+        translation: household / home
+      - word: hériter de
+        translation: to inherit (from)
+      - word: s'occuper de
+        translation: to take care of
+      - word: être brouillé(e) avec
+        translation: to be estranged from / on bad terms with
+      - word: se réconcilier avec
+        translation: to reconcile with
+      - word: les liens familiaux
+        translation: family ties
+      - word: une famille monoparentale
+        translation: single-parent family
+      - word: le congé parental
+        translation: parental leave
+      - word: Bien qu'ils se soient séparés
+        translation: although they separated (+ subjunctive)
+      - word: Il est important que les enfants
+        translation: it is important that the children (+ subjunctive)
+    order: 2
+
+  - type: example
+    content: "Bien qu'ils se soient séparés, ils ont opté pour la garde partagée."
+    translation: "Although they separated, they opted for shared custody."
+    order: 3
+
+  - type: example
+    content: "Il est important que les enfants maintiennent des liens avec les deux parents."
+    translation: "It is important that the children maintain ties with both parents."
+    order: 4
+
+  - type: tip
+    content: "Use the passé composé of reflexive verbs in subjunctive: 'qu'ils se soient séparés' (that they separated)."
+    order: 5
+
+  - type: tip
+    content: "After 'il est important que', use the subjunctive: 'maintiennent' (subjunctive of 'maintenir')."
+    order: 6
+
+  - type: practice
+    content: "Test your advanced family vocabulary!"
+    exercise_id: "ex-mc-fam-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-fam-001
+    type: multiple_choice
+    question: "What is 'la famille recomposée'?"
+    options:
+      - nuclear family
+      - blended family
+      - extended family
+      - single-parent family
+    correct_index: 1
+    explanation: "La famille recomposée is a blended family - one with step-parents and step-siblings."
+
+  - id: ex-fb-fam-001
+    type: fill_blank
+    sentence_template: "Après des années, elle s'est _____ avec son frère."
+    correct_answer: "réconciliée"
+    alternatives: []
+    hint: "After years, she reconciled with her brother (feminine past participle)"
+
+  - id: ex-tr-fam-001
+    type: translate
+    source_text: "She takes care of her elderly parents."
+    target_language: "fr"
+    correct_translation: "Elle s'occupe de ses parents âgés."
+    alternatives:
+      - "Elle prend soin de ses parents âgés."
+
+  - id: ex-tr-fam-002
+    type: translate
+    source_text: "He inherited the house from his grandmother."
+    target_language: "fr"
+    correct_translation: "Il a hérité de la maison de sa grand-mère."
+    alternatives:
+      - "Il a hérité la maison de sa grand-mère."
+
+  - id: ex-tr-fam-003
+    type: translate
+    source_text: "Although they are estranged, family ties remain important."
+    target_language: "fr"
+    correct_translation: "Bien qu'ils soient brouillés, les liens familiaux restent importants."
+    alternatives:
+      - "Bien qu'ils soient brouillés, les liens de famille restent importants."

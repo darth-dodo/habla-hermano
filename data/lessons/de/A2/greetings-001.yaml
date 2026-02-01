@@ -1,0 +1,104 @@
+id: greetings-001
+title: Polite Expressions and Small Talk
+description: Master polite phrases and casual conversation starters in German
+language: de
+level: A2
+estimated_minutes: 7
+category: greetings
+tags:
+  - greeting
+  - polite
+  - small talk
+  - conversation
+vocabulary_count: 10
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Let's learn polite expressions and small talk! Germans value politeness, and these phrases will help you navigate social situations smoothly. We'll also practice the Perfekt tense!"
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Entschuldigung
+        translation: excuse me / sorry
+      - word: Es tut mir leid
+        translation: I'm sorry (for something serious)
+      - word: Keine Ursache
+        translation: no problem / you're welcome
+      - word: Wie war Ihr Wochenende?
+        translation: How was your weekend? (formal)
+      - word: Es hat geregnet
+        translation: It rained (Perfekt)
+      - word: Ich habe gearbeitet
+        translation: I worked (Perfekt)
+      - word: Das freut mich
+        translation: I'm glad / that pleases me
+      - word: Schönen Tag noch
+        translation: Have a nice day
+      - word: Gleichfalls
+        translation: likewise / same to you
+      - word: Bis bald
+        translation: see you soon
+    order: 2
+
+  - type: example
+    content: "Entschuldigung, können Sie mir helfen?"
+    translation: "Excuse me, can you help me?"
+    order: 3
+
+  - type: example
+    content: "Ich habe am Wochenende viel gearbeitet."
+    translation: "I worked a lot on the weekend."
+    order: 4
+
+  - type: tip
+    content: "The Perfekt tense uses 'haben' or 'sein' + past participle (Partizip II). Most verbs use 'haben': Ich habe gearbeitet. Movement verbs use 'sein': Ich bin gegangen."
+    order: 5
+
+  - type: tip
+    content: "'Es tut mir leid' is for genuine apologies. 'Entschuldigung' is lighter - use it to get attention or for minor inconveniences."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German polite expressions!"
+    exercise_id: "ex-mc-greet-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "What is the appropriate response to 'Schönen Tag noch'?"
+    options:
+      - Keine Ursache
+      - Bis bald
+      - Gleichfalls
+      - Es tut mir leid
+    correct_index: 2
+    explanation: "Gleichfalls means 'likewise' - the perfect response to wish someone the same nice day!"
+
+  - id: ex-fb-greet-001
+    type: fill_blank
+    sentence_template: "Ich _____ gestern ins Kino gegangen."
+    correct_answer: "bin"
+    alternatives:
+      - Bin
+    hint: "Movement verbs use this auxiliary in Perfekt"
+
+  - id: ex-tr-greet-001
+    type: translate
+    source_text: "I worked on the weekend."
+    target_language: "de"
+    correct_translation: "Ich habe am Wochenende gearbeitet."
+    alternatives:
+      - "Am Wochenende habe ich gearbeitet."
+      - "Ich habe gearbeitet am Wochenende."
+
+  - id: ex-tr-greet-002
+    type: translate
+    source_text: "Excuse me, where is the train station?"
+    target_language: "de"
+    correct_translation: "Entschuldigung, wo ist der Bahnhof?"
+    alternatives:
+      - "Entschuldigen Sie, wo ist der Bahnhof?"

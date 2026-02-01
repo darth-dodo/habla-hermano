@@ -1,0 +1,104 @@
+id: greetings-001
+title: Social Greetings and Small Talk
+description: Learn conversational greetings and how to make small talk in French
+language: fr
+level: A2
+estimated_minutes: 5
+category: greetings
+tags:
+  - greeting
+  - conversation
+  - small talk
+  - social
+vocabulary_count: 10
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Let's learn how to have natural conversations! You'll master small talk and social greetings used by native speakers."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Quoi de neuf?
+        translation: what's new?
+      - word: Pas grand-chose
+        translation: not much
+      - word: Je me porte bien
+        translation: I'm doing well (formal)
+      - word: Ça fait longtemps!
+        translation: it's been a long time!
+      - word: Content(e) de te voir
+        translation: happy to see you
+      - word: À la prochaine!
+        translation: until next time!
+      - word: Bonne journée!
+        translation: have a nice day!
+      - word: Bonne soirée!
+        translation: have a nice evening!
+      - word: Prends soin de toi
+        translation: take care of yourself
+      - word: On se rappelle
+        translation: we'll call each other / let's keep in touch
+    order: 2
+
+  - type: example
+    content: "Ça fait longtemps! Quoi de neuf?"
+    translation: "It's been a long time! What's new?"
+    order: 3
+
+  - type: example
+    content: "Je dois y aller. À la prochaine! - Bonne journée, prends soin de toi!"
+    translation: "I have to go. Until next time! - Have a nice day, take care!"
+    order: 4
+
+  - type: tip
+    content: "Content uses gender agreement: 'Content de te voir' (masc.) vs 'Contente de te voir' (fem.)."
+    order: 5
+
+  - type: tip
+    content: "Use reflexive verbs naturally: 'Je me porte bien' (I carry myself well) is more formal than 'Je vais bien'."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French small talk!"
+    exercise_id: "ex-mc-greet-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "What is the casual way to respond to 'Quoi de neuf?'"
+    options:
+      - Très bien, merci
+      - Pas grand-chose
+      - Enchanté
+      - Bonsoir
+    correct_index: 1
+    explanation: "Pas grand-chose (not much) is the casual response to 'What's new?'"
+
+  - id: ex-fb-greet-001
+    type: fill_blank
+    sentence_template: "Ça fait _____! Comment vas-tu?"
+    correct_answer: "longtemps"
+    alternatives: []
+    hint: "It's been a long time!"
+
+  - id: ex-tr-greet-001
+    type: translate
+    source_text: "Have a nice day!"
+    target_language: "fr"
+    correct_translation: "Bonne journée!"
+    alternatives:
+      - "Bonne journée"
+
+  - id: ex-tr-greet-002
+    type: translate
+    source_text: "Happy to see you!"
+    target_language: "fr"
+    correct_translation: "Content de te voir!"
+    alternatives:
+      - "Contente de te voir!"
+      - "Content de te voir"
+      - "Contente de te voir"

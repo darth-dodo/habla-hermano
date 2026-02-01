@@ -1,0 +1,93 @@
+id: introductions-001
+title: Introducing Yourself
+description: Learn to introduce yourself and ask someone's name in French
+language: fr
+level: A0
+estimated_minutes: 3
+category: introductions
+tags:
+  - introduction
+  - basics
+  - name
+  - meeting
+vocabulary_count: 6
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Let's learn how to introduce yourself in French! These phrases will help you meet new people."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Je m'appelle
+        translation: my name is (I call myself)
+      - word: Comment vous appelez-vous?
+        translation: what is your name? (formal)
+      - word: Comment tu t'appelles?
+        translation: what is your name? (informal)
+      - word: Enchanté(e)
+        translation: nice to meet you
+      - word: Je suis
+        translation: I am
+      - word: Et vous? / Et toi?
+        translation: and you? (formal / informal)
+    order: 2
+
+  - type: example
+    content: "Je m'appelle Marie. Et vous?"
+    translation: "My name is Marie. And you? (formal)"
+    order: 3
+
+  - type: example
+    content: "Bonjour, je suis Pierre. Enchanté!"
+    translation: "Hello, I am Pierre. Nice to meet you!"
+    order: 4
+
+  - type: tip
+    content: "Enchanté is for men, Enchantée (with extra 'e') is for women. The pronunciation is the same!"
+    order: 5
+
+  - type: tip
+    content: "In 'Je m'appelle', the final 'e' is silent. Say 'zhuh ma-PEL'."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "How do you say 'My name is' in French?"
+    options:
+      - Je suis
+      - Je m'appelle
+      - Comment
+      - Enchanté
+    correct_index: 1
+    explanation: "Je m'appelle literally means 'I call myself' and is used to say your name."
+
+  - id: ex-mc-intro-002
+    type: multiple_choice
+    question: "Which phrase means 'Nice to meet you'?"
+    options:
+      - Au revoir
+      - Je m'appelle
+      - Enchanté
+      - Bonjour
+    correct_index: 2
+    explanation: "Enchanté (or Enchantée for women) means 'nice to meet you' or 'delighted'."
+
+  - id: ex-mc-intro-003
+    type: multiple_choice
+    question: "How do you formally ask 'What is your name?'"
+    options:
+      - Je m'appelle comment?
+      - Comment tu t'appelles?
+      - Comment vous appelez-vous?
+      - Et vous?
+    correct_index: 2
+    explanation: "Comment vous appelez-vous? is the formal way to ask someone's name using 'vous'."

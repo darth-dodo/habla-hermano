@@ -1,0 +1,93 @@
+id: family-001
+title: Family Members
+description: Learn the words for family members in German
+language: de
+level: A0
+estimated_minutes: 3
+category: family
+tags:
+  - family
+  - basics
+  - nouns
+  - relationships
+vocabulary_count: 6
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "Family is important! Let's learn the German words for family members. Pay attention to the articles - they tell you the gender of each noun!"
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: die Mutter
+        translation: the mother (feminine)
+      - word: der Vater
+        translation: the father (masculine)
+      - word: die Schwester
+        translation: the sister (feminine)
+      - word: der Bruder
+        translation: the brother (masculine)
+      - word: die Familie
+        translation: the family (feminine)
+      - word: das Kind
+        translation: the child (neuter)
+    order: 2
+
+  - type: example
+    content: "Das ist meine Mutter."
+    translation: "This is my mother."
+    order: 3
+
+  - type: example
+    content: "Mein Bruder heißt Max."
+    translation: "My brother is called Max."
+    order: 4
+
+  - type: tip
+    content: "German has three genders: der (masculine), die (feminine), das (neuter). Family words often match the natural gender: der Vater (male), die Mutter (female)."
+    order: 5
+
+  - type: tip
+    content: "Das Kind is neuter because it refers to any child regardless of gender. The plural is 'die Kinder' (the children)."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German family words!"
+    exercise_id: "ex-mc-fam-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-fam-001
+    type: multiple_choice
+    question: "What does 'die Mutter' mean?"
+    options:
+      - the father
+      - the mother
+      - the sister
+      - the brother
+    correct_index: 1
+    explanation: "Die Mutter means 'the mother' in German. Die indicates it's a feminine noun."
+
+  - id: ex-mc-fam-002
+    type: multiple_choice
+    question: "Which article goes with 'Vater'?"
+    options:
+      - die
+      - das
+      - der
+      - ein
+    correct_index: 2
+    explanation: "Der Vater - 'Vater' is masculine, so it uses 'der' as its definite article."
+
+  - id: ex-mc-fam-003
+    type: multiple_choice
+    question: "How do you say 'the child' in German?"
+    options:
+      - der Kind
+      - die Kind
+      - das Kind
+      - den Kind
+    correct_index: 2
+    explanation: "Das Kind - 'Kind' is a neuter noun, so it uses 'das' as its definite article."

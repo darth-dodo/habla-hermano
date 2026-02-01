@@ -1,0 +1,93 @@
+id: introductions-001
+title: Introducing Yourself
+description: Learn to introduce yourself and ask someone's name in German
+language: de
+level: A0
+estimated_minutes: 3
+category: introductions
+tags:
+  - introduction
+  - basics
+  - name
+  - meeting
+vocabulary_count: 6
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Now let's learn how to introduce yourself! In German, there are formal (Sie) and informal (du) ways to speak to people."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Ich
+        translation: I
+      - word: der Name
+        translation: the name (masculine)
+      - word: heißen
+        translation: to be called
+      - word: Wie
+        translation: how
+      - word: Freut mich
+        translation: pleased to meet you
+      - word: und
+        translation: and
+    order: 2
+
+  - type: example
+    content: "Wie heißt du?"
+    translation: "What is your name? (informal)"
+    order: 3
+
+  - type: example
+    content: "Ich heiße Anna."
+    translation: "My name is Anna."
+    order: 4
+
+  - type: tip
+    content: "Use 'Wie heißt du?' with friends and children, but 'Wie heißen Sie?' in formal situations. The verb changes with Sie!"
+    order: 5
+
+  - type: tip
+    content: "All nouns in German are capitalized, and they have genders: der (masculine), die (feminine), das (neuter). Der Name is masculine!"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "How do you say 'My name is...' in German?"
+    options:
+      - Wie heißt du?
+      - Ich heiße...
+      - Freut mich
+      - Guten Tag
+    correct_index: 1
+    explanation: "Ich heiße means 'My name is' or literally 'I am called'."
+
+  - id: ex-mc-intro-002
+    type: multiple_choice
+    question: "Which question asks for someone's name informally?"
+    options:
+      - Wie heißen Sie?
+      - Wie geht's?
+      - Wie heißt du?
+      - Freut mich
+    correct_index: 2
+    explanation: "Wie heißt du? is the informal way to ask someone's name. Use it with friends, family, and children."
+
+  - id: ex-mc-intro-003
+    type: multiple_choice
+    question: "What does 'Freut mich' mean?"
+    options:
+      - Goodbye
+      - My name is
+      - Pleased to meet you
+      - How are you?
+    correct_index: 2
+    explanation: "Freut mich means 'Pleased to meet you' and is used when meeting someone for the first time."

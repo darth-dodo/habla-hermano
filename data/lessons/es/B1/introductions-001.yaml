@@ -1,0 +1,118 @@
+id: introductions-001
+title: Professional Introductions and Networking
+description: Learn to introduce yourself professionally and network in Spanish
+language: es
+level: B1
+estimated_minutes: 8
+category: introductions
+tags:
+  - introduction
+  - professional
+  - networking
+  - career
+vocabulary_count: 12
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Networking in Spanish-speaking countries requires finesse. Learn to introduce yourself professionally, discuss your career, and make meaningful business connections."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: "Me dedico a..."
+        translation: "I work in / I'm involved in..."
+      - word: "Trabajo como..."
+        translation: "I work as..."
+      - word: "Estoy a cargo de..."
+        translation: "I'm in charge of..."
+      - word: "Mi especialidad es..."
+        translation: "My specialty is..."
+      - word: "Llevo... años en el sector"
+        translation: "I've been in the field for... years"
+      - word: "Mi trayectoria profesional"
+        translation: "My professional trajectory/career path"
+      - word: "¿A qué se dedica usted?"
+        translation: "What do you do? (formal)"
+      - word: "¿En qué empresa trabaja?"
+        translation: "What company do you work for?"
+      - word: "Me interesaría colaborar con..."
+        translation: "I would be interested in collaborating with..."
+      - word: "Le dejo mi tarjeta"
+        translation: "Here's my (business) card"
+      - word: "Quedemos en contacto"
+        translation: "Let's stay in touch"
+      - word: "Fue un placer conversar con usted"
+        translation: "It was a pleasure talking with you"
+    order: 2
+
+  - type: example
+    content: "Me dedico al desarrollo de software. Llevo diez años en el sector tecnológico."
+    translation: "I work in software development. I've been in the tech sector for ten years."
+    order: 3
+
+  - type: example
+    content: "Me interesaría colaborar con su empresa. ¿Podríamos concertar una reunión?"
+    translation: "I would be interested in collaborating with your company. Could we arrange a meeting?"
+    order: 4
+
+  - type: tip
+    content: "'Llevo + time + gerund' expresses ongoing duration: 'Llevo tres años trabajando aquí' (I've been working here for three years). This is more natural than direct translation of 'I have been.'"
+    order: 5
+
+  - type: tip
+    content: "The conditional 'me interesaría' (I would be interested) is softer and more professional than 'quiero' (I want) in business contexts."
+    order: 6
+
+  - type: practice
+    content: "Practice professional introductions!"
+    exercise_id: "ex-mc-intro-b1-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-b1-001
+    type: multiple_choice
+    question: "How do you politely ask 'What do you do for a living?' formally?"
+    options:
+      - "¿Qué haces?"
+      - "¿A qué te dedicas?"
+      - "¿A qué se dedica usted?"
+      - "¿Cuál es tu trabajo?"
+    correct_index: 2
+    explanation: "'¿A qué se dedica usted?' uses the formal 'usted' and is appropriate for professional settings."
+
+  - id: ex-fb-intro-b1-001
+    type: fill_blank
+    sentence_template: "_____ cinco años trabajando en esta empresa."
+    correct_answer: "Llevo"
+    alternatives:
+      - "llevo"
+    hint: "Verb for expressing duration with present tense"
+
+  - id: ex-tr-intro-b1-001
+    type: translate
+    source_text: "I'm in charge of the sales department."
+    target_language: "es"
+    correct_translation: "Estoy a cargo del departamento de ventas."
+    alternatives:
+      - "Soy responsable del departamento de ventas."
+      - "Dirijo el departamento de ventas."
+
+  - id: ex-tr-intro-b1-002
+    type: translate
+    source_text: "I would be interested in learning more about your project."
+    target_language: "es"
+    correct_translation: "Me interesaría conocer más sobre su proyecto."
+    alternatives:
+      - "Me gustaría saber más sobre su proyecto."
+      - "Estaría interesado en aprender más sobre su proyecto."
+
+  - id: ex-tr-intro-b1-003
+    type: translate
+    source_text: "Let's stay in touch. Here's my card."
+    target_language: "es"
+    correct_translation: "Quedemos en contacto. Le dejo mi tarjeta."
+    alternatives:
+      - "Mantengamos el contacto. Aquí tiene mi tarjeta."
+      - "Sigamos en contacto. Le doy mi tarjeta."

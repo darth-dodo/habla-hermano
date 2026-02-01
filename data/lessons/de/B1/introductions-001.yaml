@@ -1,0 +1,115 @@
+id: introductions-001
+title: Professional Introductions
+description: Learn to introduce yourself in professional settings and discuss qualifications
+language: de
+level: B1
+estimated_minutes: 10
+category: introductions
+tags:
+  - introduction
+  - professional
+  - qualifications
+  - passive voice
+vocabulary_count: 12
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Let's master professional introductions! You'll learn to discuss your background, qualifications, and experience using more complex grammar including passive voice and Dative constructions."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Ich bin für ... zuständig
+        translation: I am responsible for...
+      - word: Ich bin tätig als
+        translation: I work as / I am employed as
+      - word: der Abschluss
+        translation: the degree/diploma (masculine)
+      - word: die Qualifikation
+        translation: the qualification (feminine)
+      - word: Ich wurde eingestellt
+        translation: I was hired (passive)
+      - word: Das Projekt wird geleitet von
+        translation: The project is led by (passive)
+      - word: Mir wurde mitgeteilt
+        translation: I was informed (Dative passive)
+      - word: die Berufserfahrung
+        translation: professional experience (feminine)
+      - word: der Lebenslauf
+        translation: the CV/resume (masculine)
+      - word: das Vorstellungsgespräch
+        translation: the job interview (neuter)
+      - word: Ich habe einen Master in
+        translation: I have a master's degree in
+      - word: sich bewerben um
+        translation: to apply for
+    order: 2
+
+  - type: example
+    content: "Ich bin für die Marketingabteilung zuständig."
+    translation: "I am responsible for the marketing department."
+    order: 3
+
+  - type: example
+    content: "Das Projekt wird von unserem Team geleitet."
+    translation: "The project is led by our team."
+    order: 4
+
+  - type: tip
+    content: "German passive voice: werden + past participle. Present: 'Das Buch wird gelesen.' (The book is being read.) Past: 'Das Buch wurde gelesen.' (The book was read.)"
+    order: 5
+
+  - type: tip
+    content: "Dative is often used with passive for the person affected: 'Mir wurde gesagt...' (I was told...), 'Ihm wurde geholfen.' (He was helped.)"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of professional German introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "Which is correct passive voice for 'The report was written'?"
+    options:
+      - Der Bericht hat geschrieben
+      - Der Bericht wurde geschrieben
+      - Der Bericht ist geschrieben
+      - Der Bericht wird schreiben
+    correct_index: 1
+    explanation: "Wurde + past participle forms the passive past tense: Der Bericht wurde geschrieben."
+
+  - id: ex-fb-intro-001
+    type: fill_blank
+    sentence_template: "Ich bin _____ die Finanzen zuständig."
+    correct_answer: "für"
+    alternatives:
+      - Für
+    hint: "Which preposition goes with 'zuständig' (responsible)?"
+
+  - id: ex-tr-intro-001
+    type: translate
+    source_text: "I was hired last year."
+    target_language: "de"
+    correct_translation: "Ich wurde letztes Jahr eingestellt."
+    alternatives:
+      - "Ich bin letztes Jahr eingestellt worden."
+
+  - id: ex-tr-intro-002
+    type: translate
+    source_text: "The meeting is being led by the director."
+    target_language: "de"
+    correct_translation: "Die Besprechung wird vom Direktor geleitet."
+    alternatives:
+      - "Das Meeting wird vom Direktor geleitet."
+
+  - id: ex-tr-intro-003
+    type: translate
+    source_text: "I have five years of professional experience."
+    target_language: "de"
+    correct_translation: "Ich habe fünf Jahre Berufserfahrung."
+    alternatives:
+      - "Ich verfüge über fünf Jahre Berufserfahrung."
