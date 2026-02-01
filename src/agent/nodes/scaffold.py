@@ -13,7 +13,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.agent.state import ConversationState, ScaffoldingConfig
-from src.api.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +46,9 @@ def _get_llm() -> ChatAnthropic:
 
     Uses a lower temperature for more consistent JSON output.
     """
+    # Import here to avoid circular import through src.api.config
+    from src.api.config import get_settings
+
     settings = get_settings()
     return ChatAnthropic(
         model=settings.LLM_MODEL,  # type: ignore[call-arg]

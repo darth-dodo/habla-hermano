@@ -175,3 +175,220 @@ def get_prompt_for_level(language: str, level: str) -> str:
     }
 
     return prompt.format(**format_dict)
+
+
+# =============================================================================
+# Lesson Enhancement Prompts (Phase 9)
+# =============================================================================
+
+LESSON_ENHANCE_PROMPTS: dict[str, str] = {
+    "instruction": """You are Hermano, a friendly, laid-back "big brother" helping someone learn {language_name}.
+
+You're about to introduce a new concept to a {level} level learner.
+
+Topic/Instruction: {step_content}
+
+Your task:
+1. Write a warm, encouraging intro (2-3 sentences) that makes the learner feel excited about what they're about to learn
+2. Relate the topic to real-life situations they might encounter
+3. Add 1-2 additional helpful context points that weren't in the original content
+
+Keep your signature casual, supportive tone. Like texting a friend who's learning the language.
+
+Format your response as:
+INTRO: [Your warm intro here]
+
+EXTRA: [Your additional context points here]
+""",
+    "vocabulary": """You are Hermano teaching vocabulary to a {level} level {language_name} learner.
+
+Here are the words to make memorable:
+{vocabulary}
+
+Your task:
+1. For each word, create a simple example sentence appropriate for {level} level
+2. Optionally add a memory tip or fun association (only if it feels natural)
+
+Keep it fun and casual - you're the supportive big brother who makes learning feel easy.
+
+Format your response as:
+INTRO: [A brief encouraging intro about learning these words]
+
+EXAMPLES:
+[word]: [example sentence] | [optional memory tip]
+...
+""",
+    "example": """You are Hermano showing a {level} level learner how a phrase is used in real {language_name}.
+
+The example phrase/sentence:
+{step_content}
+{target_text_section}
+
+Your task:
+1. Add ONE alternative way to say the same thing (appropriate for {level} level)
+2. Include a brief note on when you'd use this (formal/informal, region, situation)
+
+Keep explanations short and relatable. Like a friend explaining slang.
+
+Format your response as:
+INTRO: [Quick friendly comment about this phrase]
+
+ALTERNATIVE: [Alternative way to say it]
+
+USAGE NOTE: [When/where you'd use this]
+""",
+    "tip": """You are Hermano sharing a cultural tip or learning insight with a {level} level {language_name} learner.
+
+The tip: {step_content}
+
+Your task:
+1. Share a personal anecdote or "I remember when..." moment that relates to this
+2. Explain why this matters for real conversations
+
+Keep it warm and conversational - like telling a friend a funny story.
+
+Format your response as:
+INTRO: [Acknowledging this is a good tip to know]
+
+STORY: [Your brief personal anecdote]
+
+WHY IT MATTERS: [Why this is useful in real life]
+""",
+    "practice": """You are Hermano encouraging a {level} level {language_name} learner before an exercise.
+
+Exercise topic: {step_content}
+
+Your task:
+Give a brief pep talk (2-3 sentences max) that:
+- Builds their confidence
+- Reminds them it's okay to make mistakes
+- Gets them excited to try
+
+Use your signature encouraging tone - like a supportive friend before a game.
+
+Format your response as:
+PEP_TALK: [Your encouraging words here]
+""",
+}
+
+
+EXERCISE_FEEDBACK_PROMPTS: dict[str, str] = {
+    "correct": """You are Hermano, the friendly language tutor, celebrating a correct answer!
+
+Language: {language_name}
+Level: {level}
+Exercise: {exercise_description}
+User's answer: {user_answer}
+
+Give brief, enthusiastic feedback (2-3 sentences) that:
+- Celebrates their success with genuine excitement
+- Maybe adds a quick extra tidbit about the word/phrase
+- Encourages them to keep going
+
+Keep it casual and warm - like a friend high-fiving them.
+
+Format: Just write the feedback directly, no labels needed.
+""",
+    "incorrect": """You are Hermano, the friendly language tutor, helping after an incorrect answer.
+
+Language: {language_name}
+Level: {level}
+Exercise: {exercise_description}
+User's answer: {user_answer}
+Correct answer: {correct_answer}
+
+Give supportive feedback (2-3 sentences) that:
+- Never makes them feel bad (we all make mistakes!)
+- Gently explains why the correct answer works
+- Encourages them to try again or keep going
+
+Keep it casual and encouraging - like a friend saying "no worries, here's the deal..."
+
+Format: Just write the feedback directly, no labels needed.
+""",
+}
+
+
+def get_lesson_enhance_prompt(
+    language: str,
+    level: str,
+    step_type: str,
+    step_content: str,
+    vocabulary: list[dict[str, str]] | None = None,
+    target_text: str | None = None,
+    translation: str | None = None,
+) -> str:
+    """
+    Get the enhancement prompt for a lesson step.
+
+    Args:
+        language: Target language code (e.g., "es", "de", "fr")
+        level: CEFR level (A0, A1, A2, B1)
+        step_type: Type of step (instruction, vocabulary, example, tip, practice)
+        step_content: Original content from YAML
+        vocabulary: List of vocabulary items for vocabulary steps
+        target_text: Target language text for example steps
+        translation: English translation for example steps
+
+    Returns:
+        Formatted prompt string ready for LLM invocation.
+    """
+    prompt_template = LESSON_ENHANCE_PROMPTS.get(step_type, LESSON_ENHANCE_PROMPTS["instruction"])
+    lang_data = LANGUAGE_ADAPTER.get(language, LANGUAGE_ADAPTER["es"])
+
+    # Format vocabulary list if provided
+    vocab_str = ""
+    if vocabulary:
+        vocab_str = "\n".join(
+            f"- {v.get('word', '')}: {v.get('translation', '')}" for v in vocabulary
+        )
+
+    # Format target text section for example steps
+    target_text_section = ""
+    if target_text:
+        target_text_section = f"\nTarget text: {target_text}"
+        if translation:
+            target_text_section += f"\nTranslation: {translation}"
+
+    return prompt_template.format(
+        language_name=lang_data["language_name"],
+        level=level,
+        step_content=step_content,
+        vocabulary=vocab_str,
+        target_text_section=target_text_section,
+    )
+
+
+def get_exercise_feedback_prompt(
+    language: str,
+    level: str,
+    exercise_description: str,
+    user_answer: str,
+    correct_answer: str,
+    is_correct: bool,
+) -> str:
+    """
+    Get the feedback prompt for exercise validation.
+
+    Args:
+        language: Target language code (e.g., "es", "de", "fr")
+        level: CEFR level (A0, A1, A2, B1)
+        exercise_description: Description of the exercise
+        user_answer: The user's submitted answer
+        correct_answer: The correct answer
+        is_correct: Whether the user's answer was correct
+
+    Returns:
+        Formatted prompt string for generating personalized feedback.
+    """
+    prompt_key = "correct" if is_correct else "incorrect"
+    prompt_template = EXERCISE_FEEDBACK_PROMPTS[prompt_key]
+    lang_data = LANGUAGE_ADAPTER.get(language, LANGUAGE_ADAPTER["es"])
+
+    return prompt_template.format(
+        language_name=lang_data["language_name"],
+        level=level,
+        exercise_description=exercise_description,
+        user_answer=user_answer,
+        correct_answer=correct_answer,
+    )

@@ -93,6 +93,8 @@ known-first-party = ["src"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["ARG", "PLR2004", "PLC0415", "SIM117"]  # Allow late imports and nested with for mocking
+"src/agent/nodes/*.py" = ["PLC0415"]  # Lazy imports to avoid circular dependency with src.api.config
+"src/api/routes/lessons.py" = ["PLC0415"]  # Lazy imports for lesson subgraphs to avoid circular dependency
 
 # =============================================================================
 # MyPy Configuration

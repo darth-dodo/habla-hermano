@@ -714,6 +714,171 @@ curl -X POST http://localhost:8000/lessons/spanish-greetings-a0/handoff \
 
 ---
 
+## AI-Enhanced Lesson Endpoints (Phase 9)
+
+Phase 9 introduces AI-enhanced lesson delivery through LangGraph subgraphs. These endpoints provide personalized content from Hermano for each lesson step.
+
+### GET /lessons/{lesson_id}/step/{step_index}/enhanced
+
+Get an AI-enhanced lesson step with Hermano's personalized intro and additional content.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+| `step_index` | integer | Zero-based step index |
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Target language code: `es`, `de`, `fr` |
+| `level` | string | No | `A0` | CEFR level: `A0`, `A1`, `A2`, `B1` |
+
+**Response**: HTML partial (`partials/lesson_step_enhanced.html`) containing:
+- Original step content
+- Hermano's personalized intro
+- Enhanced explanations and examples
+- Cultural tips and memory aids
+
+**Example**:
+```bash
+curl "http://localhost:8000/lessons/numbers-001/step/1/enhanced?language=es&level=A0"
+```
+
+**Response Example**:
+```html
+<div class="enhanced-step">
+  <div class="hermano-intro">
+    <p>¡Hola! Let me share a memory trick for numbers - Spanish numbers
+    actually sound like their meanings when you say them fast!</p>
+  </div>
+  <div class="step-content">
+    <!-- Original step content -->
+  </div>
+  <div class="enhanced-content">
+    <!-- Additional examples, tips, and cultural context -->
+  </div>
+</div>
+```
+
+---
+
+### POST /lessons/{lesson_id}/exercise/{exercise_id}/submit/enhanced
+
+Submit an exercise answer and receive AI-generated personalized feedback from Hermano.
+
+**Authentication**: Optional.
+
+**Path Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `lesson_id` | string | Unique lesson identifier |
+| `exercise_id` | string | Unique exercise identifier |
+
+**Request Body** (form data):
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `answer` | string | Yes | User's submitted answer |
+| `language` | string | No | Target language (default: `es`) |
+| `level` | string | No | CEFR level (default: `A0`) |
+
+**Response**: HTML partial (`partials/exercise_result_enhanced.html`) containing:
+- Correct/incorrect indicator
+- Hermano's personalized feedback
+- Encouragement or helpful hints
+- Cultural context when relevant
+
+**Example**:
+```bash
+curl -X POST "http://localhost:8000/lessons/numbers-001/exercise/ex-mc-num-001/submit/enhanced" \
+  -d "answer=0" \
+  -d "language=es" \
+  -d "level=A0"
+```
+
+**Response Example (correct answer)**:
+```html
+<div class="exercise-result correct">
+  <span class="icon">✓</span>
+  <p class="hermano-feedback">
+    ¡Excelente! You nailed it! "Uno" is indeed number one.
+    Fun fact: in Spanish, we often use "uno" to mean "someone" too,
+    like "uno nunca sabe" (one never knows). Keep up the great work!
+  </p>
+  <button hx-post="/lessons/numbers-001/step/next">Continue</button>
+</div>
+```
+
+**Response Example (incorrect answer)**:
+```html
+<div class="exercise-result incorrect">
+  <span class="icon">✗</span>
+  <p class="hermano-feedback">
+    Almost! The correct answer was "uno". Don't worry - this is a common
+    mix-up at first. Think of it this way: "uno" sounds like "ooh-no" -
+    as in "ooh no, there's only ONE left!" Try the next one!
+  </p>
+  <button hx-get="/lessons/numbers-001/exercise/ex-mc-num-001">Try Again</button>
+</div>
+```
+
+---
+
+## AI Enhancement Data Structures
+
+### EnhancedStepContent
+
+Content returned by the AI-enhanced step endpoint.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `hermano_intro` | string | Hermano's personalized introduction to the step |
+| `enhanced_content` | string | Full enhanced content with additional examples |
+| `step_type` | string | Original step type: `instruction`, `vocabulary`, `example`, `tip`, `practice` |
+| `step_content` | string | Original step content |
+| `vocabulary` | array[VocabWord] | Vocabulary items with translations |
+
+**Example EnhancedStepContent**:
+```json
+{
+  "hermano_intro": "¡Hola! Numbers are super useful - you'll use these every day for prices, phone numbers, and addresses!",
+  "enhanced_content": "INTRO: Let me show you the first ten numbers...\nEXTRA: Notice how uno, dos, tres have a nice rhythm...",
+  "step_type": "vocabulary",
+  "step_content": "Learn numbers 1-10 in Spanish",
+  "vocabulary": [
+    {"word": "uno", "translation": "one"},
+    {"word": "dos", "translation": "two"}
+  ]
+}
+```
+
+### ExerciseFeedback
+
+AI-generated feedback for exercise submissions.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_correct` | boolean | Whether the answer was correct |
+| `exercise_feedback` | string | Hermano's personalized feedback message |
+| `correct_answer` | string | The correct answer (shown when incorrect) |
+
+**Example ExerciseFeedback**:
+```json
+{
+  "is_correct": false,
+  "exercise_feedback": "Not quite! The answer is 'tres' for three. Remember: 'tres' sounds like 'trace' - imagine tracing three lines!",
+  "correct_answer": "tres"
+}
+```
+
+---
+
 ## Lesson Data Structures
 
 ### LessonMetadata
