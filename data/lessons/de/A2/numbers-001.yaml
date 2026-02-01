@@ -1,0 +1,103 @@
+id: numbers-001
+title: Numbers in Context
+description: Learn to use numbers for dates, prices, and phone numbers
+language: de
+level: A2
+estimated_minutes: 7
+category: numbers
+tags:
+  - numbers
+  - dates
+  - prices
+  - ordinal
+vocabulary_count: 10
+icon: "🔢"
+
+steps:
+  - type: instruction
+    content: "Numbers are everywhere in daily life! Let's learn ordinal numbers (first, second...), dates, prices, and phone numbers. We'll also practice asking questions about quantities."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: der erste
+        translation: the first (1st)
+      - word: der zweite
+        translation: the second (2nd)
+      - word: der dritte
+        translation: the third (3rd)
+      - word: am fünften Mai
+        translation: on the fifth of May
+      - word: Wie viel kostet das?
+        translation: How much does this cost?
+      - word: Das kostet zwanzig Euro
+        translation: That costs twenty euros
+      - word: die Telefonnummer
+        translation: the phone number (feminine)
+      - word: das Datum
+        translation: the date (neuter)
+      - word: tausend
+        translation: thousand (1000)
+      - word: eine Million
+        translation: one million
+    order: 2
+
+  - type: example
+    content: "Heute ist der dritte Oktober."
+    translation: "Today is the third of October."
+    order: 3
+
+  - type: example
+    content: "Meine Telefonnummer ist null eins sieben zwei..."
+    translation: "My phone number is 0172..."
+    order: 4
+
+  - type: tip
+    content: "Ordinal numbers add '-te' up to 19 (erste, zweite, dritte, vierte...) and '-ste' from 20 (zwanzigste, einundzwanzigste). Exceptions: erste (1st), dritte (3rd), siebte (7th)."
+    order: 5
+
+  - type: tip
+    content: "For dates, Germans use ordinal numbers with 'der' or 'am': 'der 3. Oktober' or 'am 3. Oktober' (on October 3rd). Phone numbers are often read digit by digit."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German numbers in context!"
+    exercise_id: "ex-mc-num-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-num-001
+    type: multiple_choice
+    question: "How do you say 'the third' (ordinal) in German?"
+    options:
+      - der drei
+      - der dritte
+      - der dreite
+      - der dritten
+    correct_index: 1
+    explanation: "Der dritte is 'the third' - it's an irregular ordinal number (not 'dreite')."
+
+  - id: ex-fb-num-001
+    type: fill_blank
+    sentence_template: "Heute ist der _____ Januar. (15th)"
+    correct_answer: "fünfzehnte"
+    alternatives:
+      - Fünfzehnte
+    hint: "Add '-te' to numbers 4-19 to make them ordinal"
+
+  - id: ex-tr-num-001
+    type: translate
+    source_text: "How much does this cost?"
+    target_language: "de"
+    correct_translation: "Wie viel kostet das?"
+    alternatives:
+      - "Was kostet das?"
+
+  - id: ex-tr-num-002
+    type: translate
+    source_text: "Today is the first of December."
+    target_language: "de"
+    correct_translation: "Heute ist der erste Dezember."
+    alternatives:
+      - "Heute ist der 1. Dezember."

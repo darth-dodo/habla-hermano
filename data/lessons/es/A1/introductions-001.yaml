@@ -1,0 +1,102 @@
+id: introductions-001
+title: Introducing Yourself
+description: Learn to introduce yourself and ask others their name
+language: es
+level: A1
+estimated_minutes: 5
+category: introductions
+tags:
+  - introduction
+  - name
+  - origin
+  - basics
+vocabulary_count: 8
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Learning to introduce yourself is essential for meeting new people. In this lesson, you'll learn how to say your name, ask others their name, and share where you're from."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: "Me llamo..."
+        translation: "My name is... (I call myself)"
+      - word: "¿Cómo te llamas?"
+        translation: "What's your name? (informal)"
+      - word: "¿Cómo se llama?"
+        translation: "What's your name? (formal)"
+      - word: "Soy de..."
+        translation: "I'm from..."
+      - word: "¿De dónde eres?"
+        translation: "Where are you from? (informal)"
+      - word: "Mucho gusto"
+        translation: "Nice to meet you"
+      - word: "Encantado/Encantada"
+        translation: "Pleased to meet you (m/f)"
+      - word: "Igualmente"
+        translation: "Likewise"
+    order: 2
+
+  - type: example
+    content: "¡Hola! Me llamo María. ¿Cómo te llamas?"
+    translation: "Hi! My name is María. What's your name?"
+    order: 3
+
+  - type: example
+    content: "Mucho gusto. Soy de España. ¿De dónde eres?"
+    translation: "Nice to meet you. I'm from Spain. Where are you from?"
+    order: 4
+
+  - type: tip
+    content: "Use 'Encantado' if you're male and 'Encantada' if you're female. This reflects Spanish gender agreement."
+    order: 5
+
+  - type: tip
+    content: "'Soy' comes from 'ser' and is used for permanent characteristics like nationality and origin. 'Soy de México' means you're from Mexico."
+    order: 6
+
+  - type: practice
+    content: "Practice introducing yourself!"
+    exercise_id: "ex-mc-intro-a1-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-a1-001
+    type: multiple_choice
+    question: "How do you say 'My name is...' in Spanish?"
+    options:
+      - "Yo soy..."
+      - "Me llamo..."
+      - "Estoy..."
+      - "Tengo..."
+    correct_index: 1
+    explanation: "'Me llamo...' literally means 'I call myself...' and is the most common way to say your name."
+
+  - id: ex-mc-intro-a1-002
+    type: multiple_choice
+    question: "What does 'Mucho gusto' mean?"
+    options:
+      - "See you later"
+      - "How are you?"
+      - "Nice to meet you"
+      - "Where are you from?"
+    correct_index: 2
+    explanation: "'Mucho gusto' literally means 'much pleasure' and is used to say 'Nice to meet you.'"
+
+  - id: ex-fb-intro-a1-001
+    type: fill_blank
+    sentence_template: "_____ llamo Carlos. Mucho gusto."
+    correct_answer: "Me"
+    alternatives:
+      - "me"
+    hint: "The reflexive pronoun for 'I'"
+
+  - id: ex-fb-intro-a1-002
+    type: fill_blank
+    sentence_template: "Soy _____ Argentina."
+    correct_answer: "de"
+    alternatives:
+      - "De"
+    hint: "The word for 'from'"

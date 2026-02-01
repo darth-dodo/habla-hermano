@@ -1,0 +1,114 @@
+id: colors-001
+title: Colors in Abstract and Figurative Language
+description: Master color idioms, metaphors, and figurative expressions in French
+language: fr
+level: B1
+estimated_minutes: 6
+category: colors
+tags:
+  - colors
+  - idioms
+  - figurative
+  - expressions
+vocabulary_count: 12
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Let's explore colors in figurative language! You'll learn sophisticated idioms and metaphorical expressions using colors."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: broyer du noir
+        translation: to be depressed (to crush black)
+      - word: rire jaune
+        translation: to force a laugh / laugh nervously
+      - word: être blanc comme un linge
+        translation: to be white as a sheet (pale from fear)
+      - word: voir rouge
+        translation: to see red (become angry)
+      - word: avoir carte blanche
+        translation: to have free rein
+      - word: être la bête noire de
+        translation: to be the bane of / pet peeve
+      - word: une colère noire
+        translation: a terrible anger
+      - word: faire grise mine
+        translation: to look unhappy / sulk
+      - word: des idées noires
+        translation: dark thoughts / depression
+      - word: le marché noir
+        translation: the black market
+      - word: donner le feu vert
+        translation: to give the green light
+      - word: Il serait préférable que
+        translation: it would be preferable that (+ subjunctive)
+    order: 2
+
+  - type: example
+    content: "Depuis qu'il a perdu son travail, il broie du noir et a des idées noires."
+    translation: "Since he lost his job, he's been depressed and has dark thoughts."
+    order: 3
+
+  - type: example
+    content: "Il serait préférable que tu lui donnes carte blanche pour ce projet."
+    translation: "It would be preferable that you give him free rein for this project."
+    order: 4
+
+  - type: tip
+    content: "After 'il serait préférable que', use the subjunctive: 'donnes' (subjunctive) not 'donnes' (indicative - same form here!)."
+    order: 5
+
+  - type: tip
+    content: "Many color idioms are similar to English: 'voir rouge' (see red), 'le feu vert' (green light), but some differ!"
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French color idioms!"
+    exercise_id: "ex-mc-col-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-col-001
+    type: multiple_choice
+    question: "What does 'broyer du noir' mean?"
+    options:
+      - to paint in black
+      - to be depressed
+      - to be angry
+      - to laugh nervously
+    correct_index: 1
+    explanation: "Broyer du noir literally means 'to crush black' but means 'to be depressed' or 'to have the blues'."
+
+  - id: ex-fb-col-001
+    type: fill_blank
+    sentence_template: "Mon patron m'a donné _____ blanche pour organiser l'événement."
+    correct_answer: "carte"
+    alternatives: []
+    hint: "My boss gave me free rein / a blank card"
+
+  - id: ex-tr-col-001
+    type: translate
+    source_text: "She was white as a sheet when she heard the news."
+    target_language: "fr"
+    correct_translation: "Elle était blanche comme un linge quand elle a appris la nouvelle."
+    alternatives:
+      - "Elle était blanche comme un linge en apprenant la nouvelle."
+
+  - id: ex-tr-col-002
+    type: translate
+    source_text: "The committee gave the green light for the project."
+    target_language: "fr"
+    correct_translation: "Le comité a donné le feu vert pour le projet."
+    alternatives:
+      - "Le comité a donné le feu vert au projet."
+
+  - id: ex-tr-col-003
+    type: translate
+    source_text: "He looked unhappy when I told him."
+    target_language: "fr"
+    correct_translation: "Il a fait grise mine quand je lui ai dit."
+    alternatives:
+      - "Il faisait grise mine quand je lui ai dit."

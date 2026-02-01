@@ -1,0 +1,102 @@
+id: introductions-001
+title: Extended Introductions
+description: Learn to share more about yourself and ask about others
+language: de
+level: A1
+estimated_minutes: 5
+category: introductions
+tags:
+  - introduction
+  - personal
+  - origin
+  - residence
+vocabulary_count: 8
+icon: "🙋"
+
+steps:
+  - type: instruction
+    content: "Let's expand your introduction skills! You'll learn to say where you're from and where you live using the verbs 'kommen' (to come) and 'wohnen' (to live)."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Woher kommen Sie?
+        translation: Where are you from? (formal)
+      - word: Ich komme aus
+        translation: I come from
+      - word: Wo wohnen Sie?
+        translation: Where do you live? (formal)
+      - word: Ich wohne in
+        translation: I live in
+      - word: Deutschland
+        translation: Germany
+      - word: die Stadt
+        translation: the city (feminine)
+      - word: das Land
+        translation: the country (neuter)
+      - word: auch
+        translation: also/too
+    order: 2
+
+  - type: example
+    content: "Woher kommen Sie? - Ich komme aus Deutschland."
+    translation: "Where are you from? - I come from Germany."
+    order: 3
+
+  - type: example
+    content: "Ich wohne in Berlin. Und Sie?"
+    translation: "I live in Berlin. And you?"
+    order: 4
+
+  - type: tip
+    content: "Use 'aus' (from) with countries and cities for origin: 'Ich komme aus Berlin.' Use 'in' (in) for where you live: 'Ich wohne in München.'"
+    order: 5
+
+  - type: tip
+    content: "Most country names don't need an article: Deutschland, Frankreich, Italien. But some do: die Schweiz (Switzerland), die USA (plural)."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of German introductions!"
+    exercise_id: "ex-mc-intro-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-intro-001
+    type: multiple_choice
+    question: "How do you ask 'Where are you from?' formally?"
+    options:
+      - Wo wohnen Sie?
+      - Woher kommen Sie?
+      - Wie heißen Sie?
+      - Was machen Sie?
+    correct_index: 1
+    explanation: "Woher kommen Sie? asks about someone's origin. 'Woher' means 'from where'."
+
+  - id: ex-mc-intro-002
+    type: multiple_choice
+    question: "Which preposition do you use with 'wohnen'?"
+    options:
+      - aus
+      - von
+      - in
+      - bei
+    correct_index: 2
+    explanation: "Use 'in' with 'wohnen': Ich wohne in Berlin. Use 'aus' with 'kommen' for origin."
+
+  - id: ex-fb-intro-001
+    type: fill_blank
+    sentence_template: "Ich komme _____ Deutschland."
+    correct_answer: "aus"
+    alternatives:
+      - Aus
+    hint: "Which preposition means 'from' when talking about origin?"
+
+  - id: ex-fb-intro-002
+    type: fill_blank
+    sentence_template: "Wo _____ Sie?"
+    correct_answer: "wohnen"
+    alternatives:
+      - Wohnen
+    hint: "Which verb means 'to live' (reside)?"

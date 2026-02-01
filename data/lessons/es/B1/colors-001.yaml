@@ -1,0 +1,119 @@
+id: colors-001
+title: Colors in Idioms and Expressions
+description: Learn idiomatic expressions using colors in Spanish
+language: es
+level: B1
+estimated_minutes: 8
+category: colors
+tags:
+  - colors
+  - idioms
+  - expressions
+  - figurative
+vocabulary_count: 12
+icon: "🎨"
+
+steps:
+  - type: instruction
+    content: "Colors appear in many Spanish idioms and expressions. Understanding these will help you sound more natural and understand native speakers better."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: "ponerse rojo"
+        translation: "to blush / turn red (embarrassment)"
+      - word: "quedarse en blanco"
+        translation: "to go blank / draw a blank"
+      - word: "verlo todo negro"
+        translation: "to see everything negatively"
+      - word: "estar verde"
+        translation: "to be inexperienced / green"
+      - word: "príncipe azul"
+        translation: "Prince Charming (blue prince)"
+      - word: "poner verde a alguien"
+        translation: "to criticize someone harshly"
+      - word: "pasar la noche en blanco"
+        translation: "to have a sleepless night"
+      - word: "dar en el blanco"
+        translation: "to hit the target / be right"
+      - word: "ponerse morado"
+        translation: "to stuff oneself (with food)"
+      - word: "estar negro"
+        translation: "to be furious / fed up"
+      - word: "media naranja"
+        translation: "better half / soulmate"
+      - word: "prensa amarilla"
+        translation: "tabloid press (yellow press)"
+    order: 2
+
+  - type: example
+    content: "Cuando me preguntó delante de todos, me puse rojo de vergüenza."
+    translation: "When she asked me in front of everyone, I turned red with embarrassment."
+    order: 3
+
+  - type: example
+    content: "Estoy buscando a mi media naranja, pero lo veo todo negro."
+    translation: "I'm looking for my soulmate, but I see everything negatively."
+    order: 4
+
+  - type: tip
+    content: "'Ponerse' + color describes a change of state (getting/becoming), while 'estar' + color describes a current state. 'Se puso rojo' (he turned red) vs 'Está negro' (he's furious)."
+    order: 5
+
+  - type: tip
+    content: "Many color idioms don't translate literally. 'Poner verde' (to put green) means to criticize, not literally turn someone green!"
+    order: 6
+
+  - type: practice
+    content: "Practice color idioms and expressions!"
+    exercise_id: "ex-mc-color-b1-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-color-b1-001
+    type: multiple_choice
+    question: "What does 'Me quedé en blanco' mean?"
+    options:
+      - "I turned pale"
+      - "I drew a blank / couldn't remember"
+      - "I wore white"
+      - "I stayed home"
+    correct_index: 1
+    explanation: "'Quedarse en blanco' means to go blank, often used when you can't remember something during a test or presentation."
+
+  - id: ex-fb-color-b1-001
+    type: fill_blank
+    sentence_template: "Cuando vio a su ex, se puso _____ de vergüenza."
+    correct_answer: "rojo"
+    alternatives:
+      - "Rojo"
+      - "roja"
+    hint: "The color associated with blushing"
+
+  - id: ex-tr-color-b1-001
+    type: translate
+    source_text: "He's always negative. He sees everything black."
+    target_language: "es"
+    correct_translation: "Siempre es negativo. Lo ve todo negro."
+    alternatives:
+      - "Es siempre negativo. Ve todo negro."
+      - "Siempre está negativo. Lo ve todo negro."
+
+  - id: ex-tr-color-b1-002
+    type: translate
+    source_text: "I had a sleepless night worrying about the exam."
+    target_language: "es"
+    correct_translation: "Pasé la noche en blanco preocupándome por el examen."
+    alternatives:
+      - "Pasé la noche en blanco pensando en el examen."
+      - "No dormí en toda la noche preocupado por el examen."
+
+  - id: ex-tr-color-b1-003
+    type: translate
+    source_text: "At the wedding dinner, we stuffed ourselves."
+    target_language: "es"
+    correct_translation: "En la cena de la boda, nos pusimos morados."
+    alternatives:
+      - "En el banquete de la boda, nos pusimos morados."
+      - "En la cena de bodas, comimos muchísimo."

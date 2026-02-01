@@ -1,0 +1,101 @@
+id: family-001
+title: Extended Family
+description: Learn words for extended family members and relationships in French
+language: fr
+level: A1
+estimated_minutes: 4
+category: family
+tags:
+  - family
+  - relationships
+  - extended
+vocabulary_count: 8
+icon: "👨‍👩‍👧‍👦"
+
+steps:
+  - type: instruction
+    content: "Let's learn about the extended family! You'll describe grandparents, aunts, uncles, and more."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: le grand-père
+        translation: grandfather
+      - word: la grand-mère
+        translation: grandmother
+      - word: les grands-parents
+        translation: grandparents
+      - word: l'oncle
+        translation: uncle
+      - word: la tante
+        translation: aunt
+      - word: le cousin / la cousine
+        translation: cousin (masc. / fem.)
+      - word: le neveu
+        translation: nephew
+      - word: la nièce
+        translation: niece
+    order: 2
+
+  - type: example
+    content: "Mes grands-parents habitent à la campagne."
+    translation: "My grandparents live in the countryside."
+    order: 3
+
+  - type: example
+    content: "Mon oncle et ma tante ont trois enfants."
+    translation: "My uncle and aunt have three children."
+    order: 4
+
+  - type: tip
+    content: "Use 'mon' (my) for masculine words and 'ma' (my) for feminine, but 'mon oncle' because 'oncle' starts with a vowel."
+    order: 5
+
+  - type: tip
+    content: "In neveu, the 'eu' makes an 'uh' sound like in 'deux'. Nièce has the 'è' accent for the 'eh' sound."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French family vocabulary!"
+    exercise_id: "ex-mc-fam-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-fam-001
+    type: multiple_choice
+    question: "What does 'la tante' mean?"
+    options:
+      - grandmother
+      - aunt
+      - niece
+      - cousin
+    correct_index: 1
+    explanation: "La tante means 'aunt' in French."
+
+  - id: ex-mc-fam-002
+    type: multiple_choice
+    question: "How do you say 'nephew' in French?"
+    options:
+      - le neveu
+      - la nièce
+      - le cousin
+      - l'oncle
+    correct_index: 0
+    explanation: "Le neveu means 'nephew' in French."
+
+  - id: ex-fb-fam-001
+    type: fill_blank
+    sentence_template: "Ma _____ s'appelle Marie."
+    correct_answer: "grand-mère"
+    alternatives:
+      - tante
+      - cousine
+    hint: "My grandmother's name is Marie"
+
+  - id: ex-fb-fam-002
+    type: fill_blank
+    sentence_template: "J'ai un _____ et une cousine."
+    correct_answer: "cousin"
+    alternatives: []
+    hint: "I have one male cousin and one female cousin"

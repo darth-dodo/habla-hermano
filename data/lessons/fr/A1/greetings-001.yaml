@@ -1,0 +1,101 @@
+id: greetings-001
+title: Greetings and Polite Expressions
+description: Learn formal and informal greetings with polite phrases in French
+language: fr
+level: A1
+estimated_minutes: 4
+category: greetings
+tags:
+  - greeting
+  - polite
+  - formal
+  - informal
+vocabulary_count: 8
+icon: "👋"
+
+steps:
+  - type: instruction
+    content: "Let's expand your greeting skills! You'll learn both formal and informal ways to greet people and be polite."
+    order: 1
+
+  - type: vocabulary
+    content: "Key vocabulary for this lesson:"
+    vocabulary:
+      - word: Comment allez-vous?
+        translation: how are you? (formal)
+      - word: Comment vas-tu?
+        translation: how are you? (informal)
+      - word: Ça va?
+        translation: how's it going?
+      - word: Je vais bien
+        translation: I'm doing well
+      - word: Merci beaucoup
+        translation: thank you very much
+      - word: S'il vous plaît
+        translation: please (formal)
+      - word: S'il te plaît
+        translation: please (informal)
+      - word: De rien
+        translation: you're welcome
+    order: 2
+
+  - type: example
+    content: "Bonjour madame, comment allez-vous?"
+    translation: "Good day, madam, how are you?"
+    order: 3
+
+  - type: example
+    content: "Salut Marie! Ça va? - Oui, je vais bien, merci!"
+    translation: "Hi Marie! How's it going? - Yes, I'm doing well, thanks!"
+    order: 4
+
+  - type: tip
+    content: "Use 'vous' with strangers, elders, or in professional settings. Use 'tu' with friends, family, and children."
+    order: 5
+
+  - type: tip
+    content: "In 's'il vous plaît', there's a liaison: pronounce it 'seel-voo-PLAY'."
+    order: 6
+
+  - type: practice
+    content: "Test your knowledge of French greetings and polite expressions!"
+    exercise_id: "ex-mc-greet-001"
+    order: 7
+
+exercises:
+  - id: ex-mc-greet-001
+    type: multiple_choice
+    question: "How do you formally ask 'How are you?'"
+    options:
+      - Ça va?
+      - Comment vas-tu?
+      - Comment allez-vous?
+      - Je vais bien
+    correct_index: 2
+    explanation: "Comment allez-vous? uses 'vous' and is the formal way to ask how someone is."
+
+  - id: ex-mc-greet-002
+    type: multiple_choice
+    question: "What does 'De rien' mean?"
+    options:
+      - Thank you
+      - Please
+      - You're welcome
+      - Goodbye
+    correct_index: 2
+    explanation: "De rien means 'you're welcome' or literally 'it's nothing'."
+
+  - id: ex-fb-greet-001
+    type: fill_blank
+    sentence_template: "Bonjour, comment _____?"
+    correct_answer: "allez-vous"
+    alternatives:
+      - vas-tu
+    hint: "Formal way to ask 'how are you'"
+
+  - id: ex-fb-greet-002
+    type: fill_blank
+    sentence_template: "Merci! - De _____."
+    correct_answer: "rien"
+    alternatives: []
+    hint: "Response meaning 'you're welcome'"
