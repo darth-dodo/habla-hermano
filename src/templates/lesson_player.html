@@ -4,30 +4,32 @@
 
 {% block content %}
 <div class="h-full flex flex-col">
-    <!-- Lesson Header -->
+    <!-- Lesson Header - Nordic Minimal -->
     <header class="bg-surface-elevated border-b border-border px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="/lessons/" class="text-text-muted hover:text-text transition-colors" aria-label="Back to lessons">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            <a href="/lessons/" class="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-overlay transition-all duration-150" aria-label="Back to lessons">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                 </svg>
             </a>
-            <div>
-                <span class="text-2xl mr-2" aria-hidden="true">{{ lesson.metadata.icon }}</span>
+            <div class="flex items-center gap-2">
+                <span class="text-xl" aria-hidden="true">{{ lesson.metadata.icon }}</span>
                 <span class="font-medium text-text">{{ lesson.metadata.title }}</span>
             </div>
         </div>
         <div class="text-sm text-text-muted">
-            Step <span id="current-step-num">{{ current_step + 1 }}</span> of {{ total_steps }}
+            <span class="text-text font-medium" id="current-step-num">{{ current_step + 1 }}</span>
+            <span class="text-text-subtle">/</span>
+            <span>{{ total_steps }}</span>
         </div>
     </header>
 
     <!-- Progress Bar -->
-    <div class="h-1 bg-surface">
+    <div class="h-1 bg-surface-overlay">
         <div
             id="progress-bar"
-            class="h-full bg-accent transition-all duration-300"
-            style="width: {{ ((current_step + 1) / total_steps * 100) | round }}%"
+            class="h-full bg-accent transition-all duration-300 ease-out"
+            style="width: {{ ((current_step + 1) / total_steps * 100) | round }}%;"
         ></div>
     </div>
 
@@ -49,14 +51,14 @@
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
-                class="px-4 py-2 text-text-muted hover:text-text border border-border rounded-lg hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-4 py-2 text-text-muted hover:text-text border border-border rounded-lg hover:bg-surface-overlay transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                 {% if current_step == 0 %}disabled{% endif %}
             >
-                <span class="flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                <span class="flex items-center gap-2 text-sm font-medium">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
                     </svg>
-                    Previous
+                    Back
                 </span>
             </button>
 
@@ -69,12 +71,12 @@
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
-                class="px-6 py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-colors"
+                class="px-5 py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-all duration-150"
             >
-                <span class="flex items-center gap-2">
-                    Next
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <span class="flex items-center gap-2 text-sm">
+                    Continue
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                     </svg>
                 </span>
             </button>
@@ -84,12 +86,12 @@
                 hx-post="/lessons/{{ lesson.metadata.id }}/complete"
                 hx-target="#step-content"
                 hx-swap="innerHTML"
-                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                class="px-5 py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150"
             >
-                <span class="flex items-center gap-2">
-                    Complete Lesson
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                <span class="flex items-center gap-2 text-sm">
+                    Complete
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                     </svg>
                 </span>
             </button>
