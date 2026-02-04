@@ -1,29 +1,27 @@
 <div
-    class="lesson-step"
+    class="lesson-step animate-fade-in"
     data-step-index="{{ step_index }}"
     data-total-steps="{{ total_steps }}"
 >
     {% if step.type.value == 'instruction' %}
     <!-- Instruction Step -->
-    <div class="bg-surface-elevated rounded-xl p-6 border border-border">
-        <div class="prose prose-invert max-w-none">
-            <p class="text-lg text-text leading-relaxed">{{ step.content }}</p>
-        </div>
+    <div class="bg-surface-elevated rounded-xl p-5 border border-border">
+        <p class="text-text leading-relaxed">{{ step.content }}</p>
     </div>
 
     {% elif step.type.value == 'vocabulary' %}
     <!-- Vocabulary Step -->
     <div class="space-y-4">
-        <h3 class="text-lg font-semibold text-text flex items-center gap-2">
-            <span class="text-xl">📚</span>
-            Vocabulary
-        </h3>
-        <p class="text-text-muted">{{ step.content }}</p>
-        <div class="grid gap-3">
+        <div class="flex items-center gap-2">
+            <span class="text-lg">📝</span>
+            <h3 class="font-semibold text-text">New Words</h3>
+        </div>
+        <p class="text-text-muted text-sm">{{ step.content }}</p>
+        <div class="space-y-2">
             {% for item in step.vocabulary %}
-            <div class="flex items-center justify-between bg-surface-elevated rounded-lg p-4 border border-border hover:border-accent transition-colors">
-                <span class="font-medium text-accent text-lg">{{ item.word }}</span>
-                <span class="text-text-muted">{{ item.translation }}</span>
+            <div class="flex items-center justify-between bg-surface-elevated rounded-lg px-4 py-3 border border-border">
+                <span class="font-medium text-accent">{{ item.word }}</span>
+                <span class="text-text-muted text-sm">{{ item.translation }}</span>
             </div>
             {% endfor %}
         </div>
@@ -31,52 +29,60 @@
 
     {% elif step.type.value == 'example' %}
     <!-- Example Step -->
-    <div class="space-y-4">
-        <div class="bg-surface-elevated rounded-xl p-6 border border-border">
-            {% if step.target_text %}
-            <p class="text-2xl font-medium text-accent mb-2">{{ step.target_text }}</p>
-            {% endif %}
-            {% if step.translation %}
-            <p class="text-text-muted">{{ step.translation }}</p>
-            {% endif %}
-            <p class="mt-4 text-text">{{ step.content }}</p>
-        </div>
+    <div class="bg-surface-elevated rounded-xl p-5 border-l-4 border-accent">
+        {% if step.target_text %}
+        <p class="text-xl font-semibold text-accent mb-2">{{ step.target_text }}</p>
+        {% endif %}
+        {% if step.translation %}
+        <p class="text-text-muted text-sm">{{ step.translation }}</p>
+        {% endif %}
+        {% if step.content %}
+        <p class="mt-4 text-text text-sm">{{ step.content }}</p>
+        {% endif %}
     </div>
 
     {% elif step.type.value == 'tip' %}
     <!-- Tip Step -->
-    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6">
+    <div class="bg-accent-muted rounded-xl p-5 border border-accent/20">
         <div class="flex items-start gap-3">
-            <span class="text-2xl">💡</span>
+            <span class="text-lg">💡</span>
             <div>
-                <h3 class="font-semibold text-yellow-400 mb-2">Pro Tip</h3>
-                <p class="text-text leading-relaxed">{{ step.content }}</p>
+                <h3 class="font-semibold text-accent text-sm mb-1">Tip</h3>
+                <p class="text-text text-sm leading-relaxed">{{ step.content }}</p>
             </div>
         </div>
     </div>
 
     {% elif step.type.value == 'practice' %}
-    <!-- Practice Step (links to exercise) -->
+    <!-- Practice Step -->
     <div class="space-y-4">
-        <p class="text-text-muted">{{ step.content }}</p>
+        <div class="flex items-center gap-2">
+            <span class="text-lg">✍️</span>
+            <h3 class="font-semibold text-text">Practice</h3>
+        </div>
+        <p class="text-text-muted text-sm">{{ step.content }}</p>
         {% if step.exercise_id %}
         <div
             hx-get="/lessons/{{ lesson_id }}/exercise/{{ step.exercise_id }}"
             hx-trigger="load"
             hx-swap="innerHTML"
-            class="exercise-container"
+            class="exercise-container mt-4"
         >
-            <div class="flex items-center justify-center py-8">
-                <div class="animate-pulse text-text-muted">Loading exercise...</div>
+            <div class="flex items-center justify-center py-6 bg-surface-overlay rounded-xl">
+                <div class="loading-dots flex gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                </div>
             </div>
         </div>
         {% endif %}
     </div>
 
     {% else %}
-    <!-- Default/Unknown Step Type -->
-    <div class="bg-surface-elevated rounded-xl p-6 border border-border">
-        <p class="text-text">{{ step.content }}</p>
+    <!-- Default Step Type -->
+    <div class="bg-surface-elevated rounded-xl p-5 border border-border">
+        <p class="text-text leading-relaxed">{{ step.content }}</p>
     </div>
     {% endif %}
 </div>

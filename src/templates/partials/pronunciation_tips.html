@@ -1,0 +1,113 @@
+{#
+Pronunciation Tips Partial - Collapsible section for pronunciation guidance
+Variables expected:
+  - pronunciation_tips: list of tip items, each with:
+    - word: string (the word to pronounce)
+    - phonetic: string (phonetic pronunciation)
+    - tip: string (pronunciation guidance)
+    - audio_hint: string (optional - additional audio guidance)
+  - level: string (CEFR level - 'A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2')
+#}
+
+{% if pronunciation_tips and pronunciation_tips|length > 0 %}
+<div
+    class="mt-3 ml-0 sm:ml-2 max-w-[85%]"
+    x-data="{ expanded: {{ 'true' if level == 'A0' else 'false' }} }"
+>
+    <!-- Toggle Button -->
+    <button
+        @click="expanded = !expanded"
+        class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-accent-muted focus:outline-none focus:ring-2 focus:ring-accent/50"
+        :class="expanded ? 'bg-accent-muted text-accent' : 'bg-surface-overlay text-text-muted hover:text-text'"
+        :aria-expanded="expanded"
+        aria-controls="pronunciation-tips-content"
+        aria-label="Toggle pronunciation tips"
+    >
+        <!-- Speaker/Sound Icon -->
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <span>{{ pronunciation_tips|length }} pronunciation tip{{ 's' if pronunciation_tips|length > 1 else '' }}</span>
+        <!-- Chevron -->
+        <svg
+            class="w-4 h-4 transition-transform duration-200"
+            :class="expanded ? 'rotate-180' : ''"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+        >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <!-- Expandable Content -->
+    <div
+        id="pronunciation-tips-content"
+        x-show="expanded"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 -translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-2"
+        x-cloak
+        class="mt-2 p-4 bg-surface-overlay rounded-2xl border border-border shadow-sm"
+        role="region"
+        aria-label="Pronunciation tips details"
+    >
+        <!-- Header -->
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-border-subtle">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+            <h3 class="text-sm font-semibold text-text">Pronunciation Tips</h3>
+        </div>
+
+        <!-- Tip Items -->
+        <div class="space-y-4">
+            {% for item in pronunciation_tips %}
+            <div class="pronunciation-item">
+                <!-- Word and Phonetic -->
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <!-- Word in accent color -->
+                    <span class="font-semibold text-accent">{{ item.word }}</span>
+
+                    <!-- Phonetic in monospace -->
+                    <span class="font-mono text-xs px-2 py-0.5 bg-surface rounded-lg border border-border-subtle text-text-muted">
+                        /{{ item.phonetic }}/
+                    </span>
+                </div>
+
+                <!-- Tip text -->
+                <p class="mt-1.5 text-sm text-text leading-relaxed">
+                    {{ item.tip }}
+                </p>
+
+                <!-- Optional audio hint -->
+                {% if item.audio_hint %}
+                <p class="mt-1 ml-0 text-xs text-text-subtle italic flex items-center gap-1.5">
+                    <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
+                    {{ item.audio_hint }}
+                </p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Beginner encouragement for A0 level -->
+        {% if level == 'A0' %}
+        <div class="mt-4 pt-3 border-t border-border-subtle">
+            <p class="text-xs text-text-subtle flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Tip: Try saying each word slowly, then gradually speed up as you get comfortable.</span>
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

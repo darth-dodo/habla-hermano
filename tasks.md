@@ -31,8 +31,8 @@
 ## Current State
 
 **Branch**: `main`
-**Phase**: Phase 10 Complete (Lesson Content Expansion)
-**Test Coverage**: 1016+ tests, 86%+ coverage
+**Phase**: Phase 11 Complete (Nordic Design + Collapsible Pronunciation Tips)
+**Test Coverage**: 1017+ tests, 86%+ coverage
 
 ### What's Working
 
@@ -58,6 +58,8 @@
 | Progress Dashboard | ✅ | Stats, vocabulary, charts |
 | Guest Sessions | ✅ | Anonymous progress, merge on signup |
 | AI-Enhanced Lessons | ✅ | LangGraph subgraphs, Hermano personalization |
+| Nordic Minimal Design | ✅ | 3 themes (Light/Dark/Ocean), ice blue accents |
+| Collapsible Pronunciation Tips | ✅ | Level-based auto-expand, A0 shows encouragement |
 
 ### LangGraph Flow
 
@@ -177,21 +179,105 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 | YAML validation | ✅ | All 60 lessons parse correctly |
 | [Design Doc](docs/design/phase10-lesson-content-expansion.md) | ✅ | Multi-agent coordination pattern |
 
+### Phase 11: Nordic Design + Pronunciation Tips ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Nordic Minimal design system | ✅ | CSS variables, Inter font, ice blue accents |
+| 3 themes | ✅ | Light (Nordic Day), Dark (Nordic Night), Ocean |
+| Pronunciation tips in prompts | ✅ | Language-specific guidance in LANGUAGE_ADAPTER |
+| PronunciationTip TypedDict | ✅ | word, phonetic, tip, audio_hint fields |
+| analyze_node extraction | ✅ | Returns 3-tuple: grammar, vocab, pronunciation |
+| Collapsible pronunciation UI | ✅ | Alpine.js expand/collapse, speaker icon |
+| Level-based auto-expand | ✅ | A0 auto-expands with encouragement text |
+| E2E Playwright testing | ✅ | Verified A0 auto-expand, A1 collapsed |
+| [Design Doc](docs/design/phase11-nordic-design-pronunciation.md) | ✅ | Full UI implementation documented |
+
 ---
 
 ## Up Next
 
-### Phase 11: Advanced Features (Priority: 🟢 Low)
+### Phase 12: Advanced Features (Priority: 🟢 Low)
 
 | Task | Status | Notes |
 |------|--------|-------|
 | Spaced repetition | ⏳ | Vocabulary review scheduling |
 | Speech input | ⏳ | Voice-based practice |
 | Mobile app | ⏳ | React Native or PWA |
+| Audio pronunciation | ⏳ | Text-to-speech for pronunciation tips |
 
 ---
 
 ## Session Logs
+
+### Session Log: 2026-02-04 (Phase 11 Completion - Collapsible Pronunciation Tips UI)
+
+**Session Focus**: Implement collapsible pronunciation tips UI and update documentation
+
+**Context**: Phase 11 Nordic Design + Pronunciation was partially complete. The pronunciation tips were being extracted by analyze_node but not displayed in the UI. User requested implementation of collapsible pronunciation tips similar to grammar feedback.
+
+**Key Changes**:
+
+1. **PronunciationTip TypedDict** (`src/agent/state.py`):
+   - Added `PronunciationTip` TypedDict with fields: word, phonetic, tip, audio_hint (optional)
+   - Added `pronunciation_tips` field to `ConversationState`
+
+2. **analyze_node updates** (`src/agent/nodes/analyze.py`):
+   - Updated `_parse_analysis_response()` to return 3-tuple: (grammar, vocab, pronunciation_tips)
+   - Added `_parse_pronunciation_tips()` helper function
+   - analyze_node now extracts pronunciation tips from LLM response
+
+3. **Collapsible UI** (`src/templates/partials/pronunciation_tips.html`):
+   - Alpine.js `x-data` for expand/collapse state
+   - Auto-expand for A0 level: `x-data="{ expanded: {{ 'true' if level == 'A0' else 'false' }} }"`
+   - Speaker icon, count display, smooth transitions
+   - Nordic Minimal styling (bg-surface-overlay, border-border, text-accent)
+   - Beginner encouragement text for A0 level
+
+4. **Template integration** (`src/templates/partials/message_pair.html`):
+   - Added include for `pronunciation_tips.html` partial
+   - Updated header comment with pronunciation_tips and level variables
+
+5. **Test fixes**:
+   - Updated `test_analyze_node.py`: All unpacking changed from 2-tuple to 3-tuple
+   - Updated `test_agent_state.py`: Changed field count test to expect 7 fields
+   - Updated `test_api_routes.py`: Changed "tutor" to "conversation partner" assertion
+
+**E2E Testing** (Playwright MCP):
+- ✅ A1 level: Pronunciation tips collapsed by default, shows "1 pronunciation tip" button
+- ✅ A1 level: Click expands to show tip with phonetic and guidance
+- ✅ A0 level: Pronunciation tips auto-expanded
+- ✅ A0 level: Beginner encouragement text displays
+- Screenshots: `pronunciation-tips-expanded.png`, `pronunciation-tips-a0-auto-expanded.png`
+
+**Documentation Updates**:
+- `README.md`: Added mermaid diagram, updated feature table, test count to 1017
+- `docs/design/phase11-nordic-design-pronunciation.md`: Added Collapsible UI section with mermaid diagrams
+- `docs/architecture.md`: Added PronunciationTip TypedDict, updated analyze_node, test count
+- `docs/product.md`: Rewrote Pronunciation Tips section with collapsible UI explanation
+- `docs/codebase-summary.md`: Updated version to 1.4, test count to 1017, added pronunciation_tips
+- `tasks.md`: Phase 11 marked complete with full task breakdown
+
+**Quality Gates**:
+- ✅ All 1017 tests passing
+- ✅ E2E Playwright tests verified
+- ✅ All documentation updated
+
+**Files Created**:
+- `src/templates/partials/pronunciation_tips.html`
+
+**Files Modified**:
+- `src/agent/state.py` (PronunciationTip TypedDict)
+- `src/agent/nodes/analyze.py` (3-tuple return, pronunciation extraction)
+- `src/templates/partials/message_pair.html` (include pronunciation partial)
+- `src/api/routes/chat.py` (pass pronunciation_tips and level to template)
+- `tests/test_analyze_node.py` (3-tuple unpacking)
+- `tests/test_agent_state.py` (7 fields, new test)
+- `tests/test_api_routes.py` (conversation partner assertion)
+
+**Branch**: `main`
+
+---
 
 ### Session Log: 2026-02-01 (Phase 10 Implementation - Lesson Content Expansion)
 
@@ -631,14 +717,14 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 10 Complete (Lesson Content Expansion)
+- **Current Phase**: Phase 11 Complete (Nordic Design + Collapsible Pronunciation Tips)
 - **Lesson Content**: 60 lessons across 3 languages (es, de, fr) × 4 levels (A0-B1) × 5 categories
 - **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
 - **Graph Structure**: Main: respond → [conditional] → scaffold OR analyze → END; Lesson: load_step → enhance_step → END
 - **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
 - **Auth**: Email/password via Supabase Auth with JWT tokens + guest sessions
-- **UI Features**: 3 themes, 3 languages, optimistic UI, grammar feedback, scaffolding, AI-enhanced lessons, progress dashboard
-- **Test Coverage**: 1016+ tests, 86%+ coverage
+- **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard
+- **Test Coverage**: 1017+ tests, 86%+ coverage
 - **Branch**: `main`
 
 ### Key Implementation Notes

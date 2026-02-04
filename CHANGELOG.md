@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-02-02
+
+### Added
+- Phase 11: Nordic Minimal design system with clean, modern aesthetic
+- Pronunciation tips integrated into all CEFR level prompts (A0-B1)
+- Language-specific pronunciation data: tricky_sounds, stress_rule, sound_tip
+- PRONUNCIATION TIPS sections in prompts for natural pronunciation coaching
+- Design doc: docs/design/phase11-nordic-design-pronunciation.md
+
+### Changed
+- Complete UI redesign with Nordic Minimal theme (cool grays, ice blue accents)
+- Typography updated to Inter font family for cleaner readability
+- Three theme variants: Light (Nordic Day), Dark (Nordic Night), Ocean
+- Simplified chat header with icon-based branding
+- Compact lesson cards with badge-style level indicators
+- Minimal lesson player with thin progress bar
+
 ## [0.7.0] - 2026-02-01
 
 ### Added

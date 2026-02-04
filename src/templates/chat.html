@@ -4,15 +4,15 @@
 
 {% block content %}
 <div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}', menuOpen: false }">
-    <!-- Header -->
-    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
+    <!-- Header - Nordic Minimal -->
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
             <!-- Left: Hamburger Menu -->
             <div class="relative" x-data="{ open: false }">
                 <button
                     @click="open = !open"
                     @click.away="open = false"
-                    class="p-2 rounded-xl bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-text transition-all duration-200"
+                    class="p-2.5 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 btn-press"
                     aria-label="Menu"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -122,10 +122,14 @@
                 </div>
             </div>
 
-            <!-- Center: Logo/Brand -->
-            <a href="/chat" class="flex items-center gap-2">
-                <span class="text-xl">🗣️</span>
-                <h1 class="text-lg font-semibold text-text">Habla Hermano</h1>
+            <!-- Center: Logo/Brand - Clean Nordic typography -->
+            <a href="/chat" class="flex items-center gap-2.5 group">
+                <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+                    <svg class="w-4 h-4 text-accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </div>
+                <h1 class="text-lg font-semibold text-text tracking-tight">Habla</h1>
             </a>
 
             <!-- Right: Language & Level -->
@@ -231,20 +235,24 @@
     <main class="flex-1 overflow-y-auto bg-surface" id="chat-container">
         <div class="max-w-3xl mx-auto px-4 py-8 sm:px-6">
             <div id="chat-messages" class="space-y-6">
-                <!-- Welcome Message -->
+                <!-- Welcome Message - Warm Hermano greeting -->
                 <div class="message-enter flex justify-start mb-6">
-                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
                         <p class="text-ai-text leading-relaxed">
-                            <span x-show="language === 'es'">¡Hola!</span>
-                            <span x-show="language === 'de'">Hallo!</span>
-                            <span x-show="language === 'fr'">Bonjour!</span>
-                            I'm your AI <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span> tutor. I'll adapt to your
-                            <span class="text-accent font-semibold" x-text="level"></span> level.
+                            <span class="font-semibold text-accent">
+                                <span x-show="language === 'es'">¡Hola!</span>
+                                <span x-show="language === 'de'">Hallo!</span>
+                                <span x-show="language === 'fr'">Bonjour!</span>
+                            </span>
+                            I'm your
+                            <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span>
+                            conversation partner. I'll match your
+                            <span class="font-medium text-accent" x-text="level"></span> level.
                         </p>
-                        <p class="text-ai-text/70 mt-2 leading-relaxed">
-                            <span x-show="language === 'es'">Try saying something in Spanish, or ask me to help you practice!</span>
-                            <span x-show="language === 'de'">Try saying something in German, or ask me to help you practice!</span>
-                            <span x-show="language === 'fr'">Try saying something in French, or ask me to help you practice!</span>
+                        <p class="text-text-muted mt-2 text-sm">
+                            <span x-show="language === 'es'">Start typing in Spanish or ask me anything.</span>
+                            <span x-show="language === 'de'">Start typing in German or ask me anything.</span>
+                            <span x-show="language === 'fr'">Start typing in French or ask me anything.</span>
                         </p>
                     </div>
                 </div>
@@ -256,14 +264,17 @@
                 {% endif %}
             </div>
 
-            <!-- Loading Indicator (hidden by default) -->
-            <div id="loading-indicator" class="hidden mt-6">
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="hidden mt-4">
                 <div class="flex justify-start">
-                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-                        <div class="loading-dots flex gap-1.5">
-                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
-                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
-                            <span class="w-2 h-2 bg-text-muted rounded-full"></span>
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 border border-border">
+                        <div class="flex items-center gap-2">
+                            <div class="loading-dots flex gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full"></span>
+                                <span class="w-1.5 h-1.5 rounded-full"></span>
+                                <span class="w-1.5 h-1.5 rounded-full"></span>
+                            </div>
+                            <span class="text-text-muted text-sm">Thinking...</span>
                         </div>
                     </div>
                 </div>
@@ -271,8 +282,8 @@
         </div>
     </main>
 
-    <!-- Input Form -->
-    <footer class="flex-shrink-0 bg-surface-elevated border-t border-border px-4 py-5 sm:px-6">
+    <!-- Input Form - Clean Nordic -->
+    <footer class="flex-shrink-0 bg-surface-elevated border-t border-border px-4 py-4 sm:px-6">
         <div class="max-w-3xl mx-auto">
             <form
                 id="chat-form"
@@ -288,35 +299,34 @@
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
 
-                <!-- Message Input -->
+                <!-- Message Input - Minimal -->
                 <div class="flex-1 relative">
                     <input
                         type="text"
                         name="message"
                         id="message-input"
-                        :placeholder="language === 'es' ? 'Type your message in Spanish or English...' : language === 'de' ? 'Type your message in German or English...' : 'Type your message in French or English...'"
+                        :placeholder="language === 'es' ? 'Type in Spanish...' : language === 'de' ? 'Type in German...' : 'Type in French...'"
                         autocomplete="off"
                         required
-                        class="w-full px-5 py-4 bg-surface-overlay border border-border rounded-2xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                        class="w-full px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder-text-subtle transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent-muted focus:outline-none"
                     >
                 </div>
 
                 <!-- Send Button -->
                 <button
                     type="submit"
-                    class="flex-shrink-0 px-5 py-4 bg-accent hover:bg-accent-hover active:scale-95 text-accent-text font-medium rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                    class="flex-shrink-0 p-3 bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Send message"
                 >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
                 </button>
             </form>
 
             <!-- Helper Text -->
-            <p class="mt-3 text-xs text-text-subtle text-center">
-                Press Enter to send <span class="hidden sm:inline">| Cmd/Ctrl+Shift+N for new chat</span>. I can help with vocabulary, grammar, and conversation practice.
+            <p class="mt-2 text-xs text-text-subtle text-center">
+                Press Enter to send
             </p>
         </div>
     </footer>

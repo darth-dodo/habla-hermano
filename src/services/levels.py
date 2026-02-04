@@ -1,10 +1,10 @@
 """Level detection and adjustment service."""
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class CEFRLevel(str, Enum):
+class CEFRLevel(StrEnum):
     """CEFR language proficiency levels."""
 
     A0 = "A0"

@@ -17,8 +17,10 @@
 | **Phase 7** | Progress Tracking - Dashboard stats, vocabulary tracking, chart data | ✅ Completed |
 | **Phase 8** | Guest Sessions - Anonymous progress, data merge on signup/login | ✅ Completed |
 | **Phase 9** | AI-Enhanced Lessons - LangGraph subgraphs for personalized lesson delivery | ✅ Completed |
+| **Phase 10** | Lesson Content Expansion - 60 lessons across all languages and levels | ✅ Completed |
+| **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
 
-**Test Coverage**: 1016+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1017+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -63,19 +65,28 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "my_name_is": "Me llamo",
         "goodbye": "Adios",
         "thank_you": "Gracias",
-        # ... more phrases
+        # Pronunciation guidance
+        "tricky_sounds": "the rolled 'rr', the 'ñ' (like 'ny' in canyon), and 'j' (like English 'h')",
+        "stress_rule": "the second-to-last syllable unless there's an accent mark",
+        "sound_tip": "'ll' sounds like 'y' in most places, 'z' sounds like 'th' in Spain but 's' in Latin America",
     },
     "de": {
         "language_name": "German",
         "hello": "Hallo",
         "my_name_is": "Ich heisse",
-        # ...
+        # Pronunciation guidance
+        "tricky_sounds": "the 'ch' (like clearing your throat lightly), umlauts (ä, ö, ü), and the 'r' sound",
+        "stress_rule": "usually the first syllable in German words",
+        "sound_tip": "'w' sounds like English 'v', 'v' sounds like English 'f', and 'ie' is 'ee' while 'ei' is 'eye'",
     },
     "fr": {
         "language_name": "French",
         "hello": "Bonjour",
         "my_name_is": "Je m'appelle",
-        # ...
+        # Pronunciation guidance
+        "tricky_sounds": "the French 'r' (back of throat), nasal vowels (on, an, in), and silent final consonants",
+        "stress_rule": "always the last syllable of a word or phrase",
+        "sound_tip": "most final consonants are silent, 'u' is like saying 'ee' with rounded lips",
     },
 }
 ```
@@ -134,7 +145,7 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **LLM** | Claude API | Superior language understanding, structured outputs |
 | **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
-| **Styling** | Tailwind CSS + CSS Variables | Utility-first, 3-theme system (dark/light/ocean) |
+| **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean) |
 
 ---
 
@@ -212,6 +223,7 @@ habla-hermano/
 │   │       ├── lesson_exercise.html # [Implemented] Exercise forms (multiple choice, fill blank, translate)
 │   │       ├── lesson_complete.html # [Implemented] Completion celebration with handoff to chat
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
+│   │       ├── pronunciation_tips.html # [Implemented] Collapsible pronunciation tips UI
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
 │   │       ├── vocab_sidebar.html
 │   │       ├── progress_vocab.html  # [Implemented] Vocabulary list partial
@@ -767,6 +779,13 @@ class VocabWord(TypedDict):
     part_of_speech: str
     context: str  # The sentence it appeared in
 
+class PronunciationTip(TypedDict):
+    """A pronunciation tip for a word in the conversation"""
+    word: str           # Word in target language
+    phonetic: str       # Simple phonetic like "GRAH-see-ahs"
+    tip: str            # Brief pronunciation guidance
+    audio_hint: NotRequired[str]  # Optional English sound comparison
+
 class ConversationState(TypedDict):
     """Main LangGraph state for Habla Hermano"""
 
@@ -783,6 +802,7 @@ class ConversationState(TypedDict):
     # === Analysis Results ===
     grammar_feedback: list[GrammarFeedback]
     new_vocabulary: list[VocabWord]
+    pronunciation_tips: list[PronunciationTip]  # Pronunciation guidance from analyze_node
 
     # === Session Tracking ===
     session_id: str
@@ -1258,7 +1278,7 @@ async def scaffold_node(state: ConversationState) -> dict:
 
 ```python
 async def analyze_node(state: ConversationState) -> dict:
-    """Analyze user's message for grammar errors and new vocabulary"""
+    """Analyze user's message for grammar errors, vocabulary, and pronunciation tips"""
 
     # Get the user's last message (before AI response)
     user_message = state["messages"][-2].content
@@ -1284,11 +1304,20 @@ async def analyze_node(state: ConversationState) -> dict:
                 "translation": "english",
                 "part_of_speech": "noun|verb|adj|etc"
             }}
+        ],
+        "pronunciation_tips": [
+            {{
+                "word": "word in target language",
+                "phonetic": "simple phonetic like GRAH-see-ahs",
+                "tip": "brief tip on how to say it",
+                "audio_hint": "optional comparison to English sounds"
+            }}
         ]
     }}
 
     Only flag errors appropriate for {state["level"]} level.
     Only include vocabulary that's notable for their level.
+    Maximum 2 pronunciation tips for tricky words.
     """
 
     result = await llm.ainvoke(analysis_prompt)
@@ -1296,7 +1325,8 @@ async def analyze_node(state: ConversationState) -> dict:
 
     return {
         "grammar_feedback": analysis.get("grammar_errors", []),
-        "new_vocabulary": analysis.get("new_vocabulary", [])
+        "new_vocabulary": analysis.get("new_vocabulary", []),
+        "pronunciation_tips": analysis.get("pronunciation_tips", [])
     }
 ```
 
@@ -1328,6 +1358,12 @@ TONE: Warm, casual, encouraging. Like texting a friend who speaks {language_name
 
 TOPICS: Greetings, name, how are you, numbers 1-10, colors, yes/no
 
+PRONUNCIATION TIPS: When introducing new words, casually mention how to pronounce them:
+- Tricky sounds in {language_name}: {tricky_sounds}
+- Stress pattern: {stress_rule}
+- Quick tip: {sound_tip}
+- Keep it light and fun - don't overwhelm with phonetics
+
 Example exchange:
 You: "Hey! Let's start with the basics. '{hello}' means 'hello' - pretty easy, right? Give it a shot!"
 User: "{hello_lower}"
@@ -1348,6 +1384,11 @@ BEHAVIOR:
 - Offer translation casually if they seem stuck
 
 TONE: Relaxed, friendly, patient. Never lecture-y.
+
+PRONUNCIATION TIPS: Sprinkle in pronunciation guidance naturally:
+- Point out sounds that don't exist in English
+- Stress patterns: "In {language_name}, stress usually falls on..."
+- Max 1-2 pronunciation notes per conversation turn
 """,
 
     "A2": """
@@ -1363,6 +1404,11 @@ BEHAVIOR:
 - Share expressions: "Here's one locals actually use..."
 
 TONE: Conversational, encouraging growth, casual but substantive.
+
+PRONUNCIATION TIPS: Help them sound more natural:
+- Linking sounds: "Native speakers connect these words..."
+- Rhythm and flow: "{language_name} has a different rhythm than English"
+- Regional variations when relevant
 """,
 
     "B1": """
@@ -1378,6 +1424,11 @@ BEHAVIOR:
 - Corrections are gentle asides: "By the way, you could also say..."
 
 TONE: Natural, peer-to-peer, warm but authentic. Like catching up with a bilingual friend.
+
+PRONUNCIATION TIPS: Polish their accent naturally:
+- Subtle sound distinctions that mark fluency
+- Emotional intonation patterns
+- Compliment good pronunciation when you hear it
 """
 }
 ```

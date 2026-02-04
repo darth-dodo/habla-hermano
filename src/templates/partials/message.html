@@ -1,5 +1,5 @@
 {#
-Message partial template
+Message partial template - Café con Leche Design
 Renders a single message exchange (user message + AI response)
 Variables expected:
   - user_message: string (the user's input)
@@ -8,45 +8,52 @@ Variables expected:
   - vocabulary: optional list of word objects with spanish and english keys
 #}
 
-<!-- User Message -->
+<!-- User Message - Warm honey bubble -->
 <div class="message-enter flex justify-end mb-6">
-    <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm">
+    <div class="bg-user rounded-2xl rounded-br-md px-5 py-3.5 max-w-[80%]" style="box-shadow: 0 2px 6px var(--shadow-color);">
         <p class="text-user-text leading-relaxed">{{ user_message }}</p>
     </div>
 </div>
 
-<!-- AI Response -->
+<!-- AI Response - Hermano's warm reply -->
 <div class="message-enter flex justify-start mb-6">
-    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+    <div class="bg-ai rounded-2xl rounded-bl-md px-5 py-4 max-w-[85%]" style="box-shadow: 0 2px 8px var(--shadow-color);">
         <div class="text-ai-text leading-relaxed">
             {% if ai_response %}
                 {{ ai_response | safe }}
             {% else %}
-                <p class="text-text-muted italic">No response received.</p>
+                <p class="text-text-muted font-display italic">No response received.</p>
             {% endif %}
         </div>
 
-        {# Optional: Correction highlighting #}
+        {# Optional: Correction highlighting - Gentle nudge style #}
         {% if correction %}
-        <div class="mt-3 pt-3 border-t border-border/50">
-            <p class="text-xs font-medium text-accent mb-2">Correction</p>
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="line-through text-text-subtle">{{ correction.original }}</span>
-                <span class="text-text-subtle">→</span>
-                <span class="text-accent font-medium">{{ correction.corrected }}</span>
+        <div class="mt-4 pt-4 border-t border-border/40">
+            <div class="flex items-start gap-2">
+                <span class="text-lg">💡</span>
+                <div>
+                    <p class="text-sm font-display font-medium text-accent mb-2">Quick tip</p>
+                    <div class="flex items-center gap-2 flex-wrap text-sm">
+                        <span class="line-through text-text-subtle opacity-70">{{ correction.original }}</span>
+                        <span class="text-accent">→</span>
+                        <span class="text-accent font-display font-medium">{{ correction.corrected }}</span>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
 
-        {# Optional: Vocabulary highlight #}
+        {# Optional: Vocabulary highlight - Journal entry style #}
         {% if vocabulary %}
-        <div class="mt-3 pt-3 border-t border-border/50">
-            <p class="text-xs font-medium text-accent mb-2">New vocabulary</p>
-            <div class="flex flex-wrap gap-2">
+        <div class="mt-4 pt-4 border-t border-border/40">
+            <p class="text-sm font-display font-medium text-accent mb-3 flex items-center gap-2">
+                <span>📝</span> New words
+            </p>
+            <div class="flex flex-wrap gap-2 stagger-enter">
                 {% for word in vocabulary %}
-                <span class="inline-flex items-center px-2.5 py-1 bg-surface-overlay/50 rounded-lg text-sm">
-                    <span class="text-accent font-medium">{{ word.spanish }}</span>
-                    <span class="mx-1.5 text-text-subtle">-</span>
+                <span class="vocab-reveal inline-flex items-center px-3 py-1.5 bg-accent-muted rounded-xl text-sm cursor-default">
+                    <span class="text-accent font-display font-medium">{{ word.spanish }}</span>
+                    <span class="mx-2 text-text-subtle opacity-50">·</span>
                     <span class="text-text-muted">{{ word.english }}</span>
                 </span>
                 {% endfor %}

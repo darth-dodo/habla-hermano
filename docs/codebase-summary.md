@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.3 | **Tests**: 1016 | **Coverage**: 86%+ | **Date**: January 2026
+**Version**: 1.4 | **Tests**: 1017 | **Coverage**: 86%+ | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -40,9 +40,10 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 1016 tests with 86%+ coverage, strict typing
-- ✅ 3 themes: Dark, Light, Ocean
-- ✅ Micro-lessons system: 5 Spanish A0 lessons with exercises
+- ✅ 1017 tests with 86%+ coverage, strict typing
+- ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
+- ✅ Collapsible pronunciation tips UI with level-based auto-expand
+- ✅ Micro-lessons system: 60 lessons across all languages and levels
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
 - ✅ Guest access for lessons and chat
 - ✅ Progress tracking dashboard with Chart.js visualizations
@@ -217,7 +218,8 @@ habla-hermano/
 │   │   ├── progress.html             # Progress dashboard with charts
 │   │   └── partials/
 │   │       ├── message_pair.html     # User + AI message
-│   │       ├── grammar_feedback.html # Collapsible tips
+│   │       ├── grammar_feedback.html # Collapsible grammar tips
+│   │       ├── pronunciation_tips.html # Collapsible pronunciation tips
 │   │       ├── scaffold.html         # Word bank, hints
 │   │       ├── lesson_step.html      # Step content by type
 │   │       ├── lesson_exercise.html  # Exercise forms
@@ -348,6 +350,7 @@ class ConversationState(TypedDict):
     # Analysis results
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
+    pronunciation_tips: NotRequired[list[PronunciationTip]]  # Pronunciation guidance
 
     # Scaffolding (A0-A1 only)
     scaffolding: NotRequired[dict[str, Any]]
@@ -359,7 +362,7 @@ class ConversationState(TypedDict):
 |------|---------|--------|
 | `respond_node` | Generate AI response using level prompt | AIMessage |
 | `scaffold_node` | Create word bank, hints, sentence starters | ScaffoldingConfig |
-| `analyze_node` | Extract grammar errors and vocabulary | GrammarFeedback[], VocabWord[] |
+| `analyze_node` | Extract grammar errors, vocabulary, and pronunciation tips | GrammarFeedback[], VocabWord[], PronunciationTip[] |
 
 ### Lesson Subgraph Nodes (Phase 9)
 
@@ -809,4 +812,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.3 — Habla Hermano (1016 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking)*
+*Crash Course v1.4 — Habla Hermano (1017 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips)*

@@ -558,7 +558,7 @@ class TestParseAnalysisResponseMarkdownBlocks:
     "new_vocabulary": []
 }
 ```"""
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 1
         assert grammar[0]["original"] == "Yo es"
         assert grammar[0]["correction"] == "Yo soy"
@@ -580,7 +580,7 @@ class TestParseAnalysisResponseMarkdownBlocks:
     ]
 }
 ```"""
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert len(vocab) == 1
         assert vocab[0]["word"] == "libro"
@@ -590,7 +590,7 @@ class TestParseAnalysisResponseMarkdownBlocks:
         from src.agent.nodes.analyze import _parse_analysis_response
 
         content = '{"grammar_errors": [], "new_vocabulary": []}'
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert vocab == []
 
@@ -615,7 +615,7 @@ class TestParseAnalysisResponseGrammarErrors:
                 "new_vocabulary": [],
             }
         )
-        grammar, _vocab = _parse_analysis_response(content)
+        grammar, _vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 1
         assert grammar[0]["original"] == "Yo es estudiante"
         assert grammar[0]["correction"] == "Yo soy estudiante"
@@ -651,7 +651,7 @@ class TestParseAnalysisResponseGrammarErrors:
                 "new_vocabulary": [],
             }
         )
-        grammar, _vocab = _parse_analysis_response(content)
+        grammar, _vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 3
         assert grammar[0]["severity"] == "minor"
         assert grammar[1]["severity"] == "significant"
@@ -674,7 +674,7 @@ class TestParseAnalysisResponseGrammarErrors:
                 "new_vocabulary": [],
             }
         )
-        grammar, _vocab = _parse_analysis_response(content)
+        grammar, _vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 1
         assert grammar[0]["severity"] == "minor"  # Defaults to minor
 
@@ -690,7 +690,7 @@ class TestParseAnalysisResponseGrammarErrors:
                 "new_vocabulary": [],
             }
         )
-        grammar, _vocab = _parse_analysis_response(content)
+        grammar, _vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 1
         assert grammar[0]["severity"] == "minor"  # Defaults to minor
 
@@ -706,7 +706,7 @@ class TestParseAnalysisResponseGrammarErrors:
                 "new_vocabulary": [],
             }
         )
-        grammar, _vocab = _parse_analysis_response(content)
+        grammar, _vocab, _pron = _parse_analysis_response(content)
         assert len(grammar) == 1
         assert grammar[0]["original"] == ""
         assert grammar[0]["correction"] == ""
@@ -729,7 +729,7 @@ class TestParseAnalysisResponseVocabulary:
                 ],
             }
         )
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert len(vocab) == 1
         assert vocab[0]["word"] == "casa"
@@ -750,7 +750,7 @@ class TestParseAnalysisResponseVocabulary:
                 ],
             }
         )
-        _grammar, vocab = _parse_analysis_response(content)
+        _grammar, vocab, _pron = _parse_analysis_response(content)
         assert len(vocab) == 3
         assert vocab[0]["word"] == "hola"
         assert vocab[1]["word"] == "libro"
@@ -768,7 +768,7 @@ class TestParseAnalysisResponseVocabulary:
                 ],
             }
         )
-        _grammar, vocab = _parse_analysis_response(content)
+        _grammar, vocab, _pron = _parse_analysis_response(content)
         assert len(vocab) == 1
         assert vocab[0]["word"] == ""
         assert vocab[0]["translation"] == ""
@@ -783,7 +783,7 @@ class TestParseAnalysisResponseErrors:
         from src.agent.nodes.analyze import _parse_analysis_response
 
         content = "not valid json {"
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert vocab == []
 
@@ -792,7 +792,7 @@ class TestParseAnalysisResponseErrors:
         from src.agent.nodes.analyze import _parse_analysis_response
 
         content = ""
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert vocab == []
 
@@ -801,7 +801,7 @@ class TestParseAnalysisResponseErrors:
         from src.agent.nodes.analyze import _parse_analysis_response
 
         content = '{"other_key": "value"}'
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         assert grammar == []
         assert vocab == []
 
@@ -810,7 +810,7 @@ class TestParseAnalysisResponseErrors:
         from src.agent.nodes.analyze import _parse_analysis_response
 
         content = '{"grammar_errors": "not_an_array", "new_vocabulary": 123}'
-        grammar, vocab = _parse_analysis_response(content)
+        grammar, vocab, _pron = _parse_analysis_response(content)
         # Should not crash, returns empty or handles gracefully
         assert isinstance(grammar, list)
         assert isinstance(vocab, list)

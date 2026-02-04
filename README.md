@@ -36,10 +36,10 @@ Hermano adapts his language mix based on your level:
 
 | Level | What You Experience |
 |-------|---------------------|
-| **A0** Complete Beginner | 80% English with Spanish words introduced one at a time. Hermano celebrates every attempt. |
-| **A1** Beginner | 50/50 mix. Short sentences, translations when needed, natural back-and-forth. |
-| **A2** Elementary | 80% Spanish. Past tense, longer exchanges, Hermano challenges you just enough. |
-| **B1** Intermediate | 95%+ Spanish. Idioms, subjunctive, real discussions like catching up with a bilingual friend. |
+| **A0** Complete Beginner | 80% English with Spanish words introduced one at a time. Hermano celebrates every attempt and shares basic pronunciation tips. |
+| **A1** Beginner | 50/50 mix. Short sentences, translations when needed, natural back-and-forth with pronunciation guidance. |
+| **A2** Elementary | 80% Spanish. Past tense, longer exchanges. Hermano helps you sound more natural with linking sounds and rhythm. |
+| **B1** Intermediate | 95%+ Spanish. Idioms, subjunctive, real discussions. Polish your accent with subtle pronunciation coaching. |
 
 ### Scaffolding That Helps You Respond
 
@@ -69,6 +69,26 @@ Hermano: "¿Estás cansado? Yo también después del trabajo."
 
          💡 Grammar tip: Use "estar" for temporary feelings like tired.
 ```
+
+### Pronunciation Tips Without Interruption
+
+After each exchange, collapsible pronunciation tips appear below Hermano's response. Like grammar feedback, these are non-intrusive and expandable when you're ready to learn:
+
+```mermaid
+flowchart LR
+    subgraph tip["🔊 1 pronunciation tip"]
+        word["**gracias**"]
+        phonetic["/GRAH-see-ahs/"]
+        guidance["Stress the first syllable: GRA-cias"]
+    end
+    word --> phonetic --> guidance
+```
+
+Each level gets appropriate pronunciation coaching:
+- **A0**: Basic sounds, tricky letters (ñ, rr, j) — tips auto-expand with beginner encouragement
+- **A1**: Stress patterns, common mistakes — tips collapsed by default
+- **A2**: Linking sounds, regional variations
+- **B1**: Subtle distinctions that mark fluency
 
 ---
 
@@ -106,8 +126,9 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Progress Dashboard** | Track vocabulary learned, session history, learning streaks, and accuracy trends with Chart.js visualizations |
 | **Guest Access** | Start learning immediately — no sign-up required |
 | **Guest Progress** | Session-based progress tracking for unauthenticated users (vocabulary and lesson completion persisted via cookies) |
+| **Pronunciation Tips** | Collapsible pronunciation guidance with level-based auto-expand (A0 auto-expands) |
 | **3 Languages** | Spanish, German, and French — 60 lessons across all levels A0-B1 |
-| **Beautiful Themes** | Ocean (shown), Dark, and Light modes |
+| **Beautiful Themes** | Nordic Minimal (light/dark/ocean) with clean, modern aesthetic |
 | **Mobile-First** | Works great on phone, tablet, or desktop |
 
 ---
@@ -139,7 +160,7 @@ Each level covers 5 categories: greetings, introductions, numbers, colors, and f
 - [Product Vision](docs/product.md) — Pedagogy and feature philosophy
 - [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
 - [API Reference](docs/api.md) — Endpoints and data structures
-- [Testing](docs/testing.md) — 1016 tests, 86%+ coverage, test strategy
+- [Testing](docs/testing.md) — 1017 tests, 86%+ coverage, test strategy
 - [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
 - [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
 - [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document

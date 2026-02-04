@@ -25,6 +25,10 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "please": "Por favor",
         "yes": "Sí",
         "no": "No",
+        # Pronunciation guidance
+        "tricky_sounds": "the rolled 'rr', the 'ñ' (like 'ny' in canyon), and 'j' (like English 'h')",
+        "stress_rule": "the second-to-last syllable unless there's an accent mark",
+        "sound_tip": "'ll' sounds like 'y' in most places, 'z' sounds like 'th' in Spain but 's' in Latin America",
     },
     "de": {
         "language_name": "German",
@@ -35,6 +39,10 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "please": "Bitte",
         "yes": "Ja",
         "no": "Nein",
+        # Pronunciation guidance
+        "tricky_sounds": "the 'ch' (like clearing your throat lightly), umlauts (ä, ö, ü), and the 'r' sound",
+        "stress_rule": "usually the first syllable in German words",
+        "sound_tip": "'w' sounds like English 'v', 'v' sounds like English 'f', and 'ie' is 'ee' while 'ei' is 'eye'",
     },
     "fr": {
         "language_name": "French",
@@ -45,6 +53,10 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "please": "S'il vous plaît",
         "yes": "Oui",
         "no": "Non",
+        # Pronunciation guidance
+        "tricky_sounds": "the French 'r' (back of throat), nasal vowels (on, an, in), and silent final consonants",
+        "stress_rule": "always the last syllable of a word or phrase",
+        "sound_tip": "most final consonants are silent, 'u' is like saying 'ee' with rounded lips, and liaison links words together",
     },
 }
 
@@ -70,6 +82,13 @@ BEHAVIOR:
 TONE: Warm, casual, encouraging. Like texting a friend who speaks {language_name}.
 
 TOPICS: Greetings, name, how are you, numbers 1-10, colors, yes/no
+
+PRONUNCIATION TIPS: When introducing new words, casually mention how to pronounce them:
+- Tricky sounds in {language_name}: {tricky_sounds}
+- Stress pattern: {stress_rule}
+- Quick tip: {sound_tip}
+- Keep it light and fun - don't overwhelm with phonetics
+- Only mention pronunciation for 1-2 words per exchange, not every word
 
 Example exchange:
 You: "Hey! Let's start with the basics. '{hello}' means 'hello' - pretty easy, right? Give it a shot!"
@@ -98,6 +117,13 @@ TONE: Relaxed, friendly, patient. Never lecture-y.
 TOPICS: Daily routine, family, food, hobbies, weather, describing things
 
 GRAMMAR FOCUS: Basic verb conjugation, present tense, gender agreement (where applicable)
+
+PRONUNCIATION TIPS: Sprinkle in pronunciation guidance naturally:
+- Point out sounds that don't exist in English: "That 'ñ' is like the 'ny' in canyon"
+- Stress patterns: "In {language_name}, stress usually falls on..."
+- Common mistakes: "Lots of people say X, but it's actually more like Y"
+- Use phonetic comparisons to English words they know
+- Max 1-2 pronunciation notes per conversation turn - don't lecture
 """,
     "A2": """
 You are "Hermano" - a supportive language partner for elementary {language_name} learners.
@@ -120,6 +146,13 @@ TONE: Conversational, encouraging growth, casual but substantive.
 TOPICS: Travel, shopping, describing experiences, making plans, telling stories
 
 GRAMMAR FOCUS: Past tense basics, reflexive verbs, pronouns
+
+PRONUNCIATION TIPS: Help them sound more natural:
+- Linking sounds: "Native speakers connect these words..."
+- Rhythm and flow: "{language_name} has a different rhythm than English"
+- Regional variations: "In Spain they say X, but in Latin America it's Y"
+- Intonation patterns for questions vs statements
+- When they mispronounce something, model the correct way casually in your response
 """,
     "B1": """
 You are "Hermano" - a natural conversation partner for intermediate {language_name} learners.
@@ -141,6 +174,13 @@ TONE: Natural, peer-to-peer, warm but authentic. Like catching up with a bilingu
 TOPICS: News, opinions, work, relationships, culture, hypotheticals
 
 GRAMMAR FOCUS: Subjunctive (where applicable), conditionals, advanced past tenses
+
+PRONUNCIATION TIPS: Polish their accent naturally:
+- Subtle sound distinctions that mark fluency
+- Emotional intonation: "When you're surprised, your voice goes up like..."
+- Speed and reduction: "Native speakers often blend these sounds..."
+- Regional accents and when to use them
+- Compliment good pronunciation when you hear it
 """,
 }
 
@@ -172,6 +212,10 @@ def get_prompt_for_level(language: str, level: str) -> str:
         "please": lang_data["please"],
         "yes": lang_data["yes"],
         "no": lang_data["no"],
+        # Pronunciation guidance
+        "tricky_sounds": lang_data.get("tricky_sounds", "various unique sounds"),
+        "stress_rule": lang_data.get("stress_rule", "varies by word"),
+        "sound_tip": lang_data.get("sound_tip", "practice listening to native speakers"),
     }
 
     return prompt.format(**format_dict)

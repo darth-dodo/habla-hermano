@@ -138,6 +138,7 @@ async def send_message(
     # These fields are populated by the analyze node in Phase 2
     grammar_feedback = result.get("grammar_feedback", [])
     new_vocabulary = result.get("new_vocabulary", [])
+    pronunciation_tips = result.get("pronunciation_tips", [])
 
     # Extract scaffolding from scaffold node (Phase 3)
     # Only populated for A0-A1 learners via conditional routing
@@ -175,7 +176,9 @@ async def send_message(
             "ai_response": ai_response,
             "grammar_feedback": grammar_feedback,
             "new_vocabulary": new_vocabulary,
+            "pronunciation_tips": pronunciation_tips,
             "scaffolding": scaffolding,
+            "level": level,
         },
     )
 
