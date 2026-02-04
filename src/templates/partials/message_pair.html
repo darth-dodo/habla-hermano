@@ -1,5 +1,5 @@
 {#
-Message pair partial template - AI response with optional scaffolding and grammar feedback
+Message pair partial template - AI response with optional scaffolding, grammar feedback, and pronunciation tips
 The user message is shown immediately via JavaScript (optimistic UI)
 Variables expected:
   - ai_response: string (the AI's response)
@@ -11,6 +11,12 @@ Variables expected:
     - auto_expand: boolean
   - grammar_feedback: list (optional) - grammar corrections from analyze node
   - new_vocabulary: list (optional) - vocabulary items from analyze node
+  - pronunciation_tips: list (optional) - pronunciation tips from analyze node with:
+    - word: string
+    - phonetic: string
+    - tip: string
+    - audio_hint: string (optional)
+  - level: string - CEFR level (A0, A1, A2, B1) for auto-expand behavior
 #}
 
 <!-- AI Response -->
@@ -30,4 +36,9 @@ Variables expected:
 <!-- Grammar Feedback (collapsible) -->
 {% if grammar_feedback %}
 {% include "partials/grammar_feedback.html" %}
+{% endif %}
+
+<!-- Pronunciation Tips (collapsible) -->
+{% if pronunciation_tips %}
+{% include "partials/pronunciation_tips.html" %}
 {% endif %}

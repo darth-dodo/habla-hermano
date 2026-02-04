@@ -62,9 +62,10 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **4 Proficiency Levels** | ✅ Complete | A0, A1, A2, B1 with distinct Hermano behavior |
 | **3 Languages** | ✅ Complete | Spanish, German, French via LANGUAGE_ADAPTER |
 | **Grammar Feedback** | ✅ Complete | Gentle corrections with expandable tips |
+| **Pronunciation Tips** | ✅ Complete | Level-appropriate pronunciation guidance in conversations |
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
-| **3 Themes** | ✅ Complete | Dark, Light, Ocean |
+| **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
 | **Mobile-First UI** | ✅ Complete | Works on all devices |
 | **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
@@ -111,6 +112,41 @@ Hermano: "Ah, ¿estás cansado? Yo también después del trabajo."
 ```
 
 Hermano responds naturally first, embedding the correction. Expandable feedback provides deeper learning for those who want it.
+
+---
+
+## Pronunciation Tips
+
+Hermano weaves pronunciation guidance naturally into conversations, appropriate to each level:
+
+### Pronunciation by Level
+
+| Level | Pronunciation Focus |
+|-------|---------------------|
+| **A0** | Basic tricky sounds (rolled 'rr', 'ñ', 'j'), simple stress rules, fun comparisons to English |
+| **A1** | Sounds that don't exist in English, stress patterns, common mistakes English speakers make |
+| **A2** | Linking sounds between words, rhythm differences, regional variations (Spain vs Latin America) |
+| **B1** | Subtle distinctions that mark fluency, emotional intonation, speed and reduction patterns |
+
+### Language-Specific Guidance
+
+Each language has its own pronunciation data:
+
+**Spanish**: Rolled 'rr', 'ñ' (like 'ny' in canyon), 'j' (like English 'h'), stress on second-to-last syllable
+
+**German**: 'ch' (clearing throat), umlauts (ä, ö, ü), 'w' sounds like 'v', stress on first syllable
+
+**French**: French 'r' (back of throat), nasal vowels, silent final consonants, stress on last syllable
+
+### Example Interaction
+
+```
+You: "How do I say 'thank you'?"
+Hermano: "'Gracias' - it's pronounced GRAH-see-ahs.
+          That 'c' before 'i' makes an 's' sound,
+          and the stress is on the first syllable: GRA-cias.
+          In Spain, that final 's' might sound more like 'th'!"
+```
 
 ---
 
@@ -225,6 +261,9 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 6** | Micro-Lessons | Structured lessons with exercises, guest access, chat handoff | ✅ Complete |
 | **Phase 7** | Progress Tracking | Words learned, patterns mastered, conversation milestones, dashboard UI | ✅ Complete |
 | **Phase 8** | Guest Session Support | Full guest functionality, session persistence, seamless auth upgrade | ✅ Complete |
+| **Phase 9** | AI-Enhanced Lessons | LangGraph subgraphs for personalized lesson delivery | ✅ Complete |
+| **Phase 10** | Lesson Content Expansion | 60 lessons across all languages and levels | ✅ Complete |
+| **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
 
 ### Future Ideas
 

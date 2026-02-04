@@ -12,7 +12,12 @@ from typing import Any, Literal, cast
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from src.agent.state import ConversationState, GrammarFeedback, VocabWord
+from src.agent.state import (
+    ConversationState,
+    GrammarFeedback,
+    PronunciationTip,
+    VocabWord,
+)
 
 # Type alias for severity values
 SeverityLevel = Literal["minor", "moderate", "significant"]
@@ -27,6 +32,7 @@ The student is learning {language} at CEFR level {level}.
 Analyze their message for:
 1. Grammar errors appropriate to flag at their level
 2. New vocabulary words they used or should learn
+3. Pronunciation tips for tricky words the AI used in its response
 
 LEVEL GUIDELINES:
 - A0: Only flag very basic errors (wrong greetings, completely wrong words). Be very encouraging.
@@ -37,6 +43,11 @@ LEVEL GUIDELINES:
 For vocabulary, identify:
 - Words the student used correctly (to reinforce)
 - Key words from the conversation they should remember
+
+For pronunciation, identify:
+- Words with sounds that don't exist in English
+- Words with tricky stress patterns
+- Common mispronunciations to avoid
 
 Return ONLY valid JSON in this exact format:
 {{
@@ -54,12 +65,21 @@ Return ONLY valid JSON in this exact format:
             "translation": "English translation",
             "part_of_speech": "noun|verb|adjective|adverb|phrase|other"
         }}
+    ],
+    "pronunciation_tips": [
+        {{
+            "word": "word in target language",
+            "phonetic": "simple phonetic like GRAH-see-ahs",
+            "tip": "brief tip on how to say it",
+            "audio_hint": "optional comparison to English sounds"
+        }}
     ]
 }}
 
 If there are no errors, return an empty array for grammar_errors.
 If there's no notable vocabulary, return an empty array for new_vocabulary.
-Keep explanations brief and encouraging. Maximum 3 grammar errors and 5 vocabulary words."""
+If there are no tricky pronunciations, return an empty array for pronunciation_tips.
+Keep explanations brief and encouraging. Maximum 3 grammar errors, 5 vocabulary words, and 2 pronunciation tips."""
 
 
 def _get_llm() -> ChatAnthropic:
@@ -90,7 +110,41 @@ def _get_language_name(code: str) -> str:
     return names.get(code, "Spanish")
 
 
-def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[VocabWord]]:
+def _parse_pronunciation_tips(data: dict[str, Any]) -> list[PronunciationTip]:
+    """
+    Parse pronunciation tips from the LLM response data.
+
+    Args:
+        data: Parsed JSON data from the LLM response.
+
+    Returns:
+        List of PronunciationTip objects.
+    """
+    pronunciation_tips: list[PronunciationTip] = []
+    for tip in data.get("pronunciation_tips", []):
+        # Skip non-dict entries (malformed data)
+        if not isinstance(tip, dict):
+            continue
+
+        pronunciation_tip: PronunciationTip = {
+            "word": str(tip.get("word", "")),
+            "phonetic": str(tip.get("phonetic", "")),
+            "tip": str(tip.get("tip", "")),
+        }
+
+        # Only include audio_hint if present and non-empty
+        audio_hint = tip.get("audio_hint")
+        if audio_hint and isinstance(audio_hint, str):
+            pronunciation_tip["audio_hint"] = audio_hint
+
+        pronunciation_tips.append(pronunciation_tip)
+
+    return pronunciation_tips
+
+
+def _parse_analysis_response(
+    content: str,
+) -> tuple[list[GrammarFeedback], list[VocabWord], list[PronunciationTip]]:
     """
     Parse the LLM's JSON response into typed structures.
 
@@ -98,7 +152,7 @@ def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[
         content: Raw response content from the LLM.
 
     Returns:
-        Tuple of (grammar_feedback list, vocabulary list).
+        Tuple of (grammar_feedback list, vocabulary list, pronunciation_tips list).
         Returns empty lists on parse failure.
     """
     try:
@@ -143,16 +197,18 @@ def _parse_analysis_response(content: str) -> tuple[list[GrammarFeedback], list[
                 )
             )
 
-        return grammar_feedback, new_vocabulary
+        pronunciation_tips = _parse_pronunciation_tips(data)
+
+        return grammar_feedback, new_vocabulary, pronunciation_tips
 
     except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
         logger.warning(f"Failed to parse analysis response: {e}")
-        return [], []
+        return [], [], []
 
 
 async def analyze_node(state: ConversationState) -> dict[str, Any]:
     """
-    Analyze the user's last message for grammar and vocabulary.
+    Analyze the user's last message for grammar, vocabulary, and pronunciation.
 
     This node runs after the respond node to provide educational feedback
     without disrupting the conversation flow.
@@ -167,7 +223,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         state: Current conversation state containing messages, level, and language.
 
     Returns:
-        Dictionary with grammar_feedback and new_vocabulary lists.
+        Dictionary with grammar_feedback, new_vocabulary, and pronunciation_tips lists.
     """
     messages = state["messages"]
 
@@ -178,6 +234,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         return {
             "grammar_feedback": [],
             "new_vocabulary": [],
+            "pronunciation_tips": [],
         }
 
     # Get the user's last message (before AI response)
@@ -189,6 +246,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         return {
             "grammar_feedback": [],
             "new_vocabulary": [],
+            "pronunciation_tips": [],
         }
 
     user_text = user_message.content
@@ -196,6 +254,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         return {
             "grammar_feedback": [],
             "new_vocabulary": [],
+            "pronunciation_tips": [],
         }
 
     # Build the analysis prompt
@@ -218,15 +277,16 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         # Parse the response
         content = response.content
         if isinstance(content, str):
-            grammar_feedback, new_vocabulary = _parse_analysis_response(content)
+            grammar_feedback, new_vocabulary, pronunciation_tips = _parse_analysis_response(content)
         else:
-            grammar_feedback, new_vocabulary = [], []
+            grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
     except Exception as e:
         logger.error(f"Analysis LLM call failed: {e}")
-        grammar_feedback, new_vocabulary = [], []
+        grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
     return {
         "grammar_feedback": grammar_feedback,
         "new_vocabulary": new_vocabulary,
+        "pronunciation_tips": pronunciation_tips,
     }

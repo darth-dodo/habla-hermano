@@ -71,6 +71,23 @@ class VocabWord(TypedDict):
     part_of_speech: str
 
 
+class PronunciationTip(TypedDict):
+    """
+    Represents a pronunciation tip for words used in conversation.
+
+    Attributes:
+        word: The word or phrase to pronounce.
+        phonetic: Simple phonetic representation (e.g., "GRAH-see-ahs").
+        tip: Brief explanation of how to pronounce it.
+        audio_hint: Optional comparison to English sounds.
+    """
+
+    word: str
+    phonetic: str
+    tip: str
+    audio_hint: NotRequired[str]
+
+
 class ConversationState(TypedDict):
     """
     Main LangGraph state for Habla Hermano conversations.
@@ -87,6 +104,9 @@ class ConversationState(TypedDict):
     Scaffolding fields (Phase 3):
     - scaffolding: Dict from ScaffoldingConfig.model_dump() for A0-A1 learners
 
+    Pronunciation fields (Phase 11):
+    - pronunciation_tips: List of pronunciation tips for words in the response
+
     The add_messages reducer handles message accumulation automatically,
     appending new messages to the existing list.
     """
@@ -97,3 +117,4 @@ class ConversationState(TypedDict):
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
     scaffolding: NotRequired[dict[str, Any]]  # ScaffoldingConfig.model_dump() for A0-A1
+    pronunciation_tips: NotRequired[list[PronunciationTip]]

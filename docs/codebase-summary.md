@@ -41,8 +41,9 @@ block-beta
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
 - ✅ 1016 tests with 86%+ coverage, strict typing
-- ✅ 3 themes: Dark, Light, Ocean
-- ✅ Micro-lessons system: 5 Spanish A0 lessons with exercises
+- ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
+- ✅ Pronunciation tips integrated into chat conversations
+- ✅ Micro-lessons system: 60 lessons across all languages and levels
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
 - ✅ Guest access for lessons and chat
 - ✅ Progress tracking dashboard with Chart.js visualizations
