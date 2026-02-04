@@ -117,16 +117,42 @@ Hermano responds naturally first, embedding the correction. Expandable feedback 
 
 ## Pronunciation Tips
 
-Hermano weaves pronunciation guidance naturally into conversations, appropriate to each level:
+Hermano provides pronunciation guidance through two channels:
+1. **Natural conversation**: Hermano weaves tips into responses
+2. **Collapsible UI**: Structured tips appear below each response, expandable when ready
+
+### Collapsible Pronunciation UI
+
+After each exchange, pronunciation tips appear in a collapsible panel below Hermano's response:
+
+```mermaid
+flowchart TB
+    subgraph panel["🔊 Pronunciation Tips Panel"]
+        direction TB
+        header["🔊 1 pronunciation tip [▼]"]
+        subgraph content["Expanded Content"]
+            word["**hola**"]
+            phonetic["/OH-lah/"]
+            tip["Soft 'h' sound, stress first syllable"]
+        end
+        encourage["💡 Don't worry about perfect pronunciation yet..."]
+    end
+    header --> content
+    content --> encourage
+```
+
+**Level-based behavior**:
+- **A0**: Auto-expands with beginner encouragement text
+- **A1+**: Collapsed by default, click to expand
 
 ### Pronunciation by Level
 
-| Level | Pronunciation Focus |
-|-------|---------------------|
-| **A0** | Basic tricky sounds (rolled 'rr', 'ñ', 'j'), simple stress rules, fun comparisons to English |
-| **A1** | Sounds that don't exist in English, stress patterns, common mistakes English speakers make |
-| **A2** | Linking sounds between words, rhythm differences, regional variations (Spain vs Latin America) |
-| **B1** | Subtle distinctions that mark fluency, emotional intonation, speed and reduction patterns |
+| Level | Pronunciation Focus | UI Behavior |
+|-------|---------------------|-------------|
+| **A0** | Basic tricky sounds (rolled 'rr', 'ñ', 'j'), simple stress rules | Auto-expanded with encouragement |
+| **A1** | Sounds that don't exist in English, stress patterns, common mistakes | Collapsed by default |
+| **A2** | Linking sounds between words, rhythm differences, regional variations | Collapsed by default |
+| **B1** | Subtle distinctions that mark fluency, emotional intonation | Collapsed by default |
 
 ### Language-Specific Guidance
 
@@ -146,6 +172,8 @@ Hermano: "'Gracias' - it's pronounced GRAH-see-ahs.
           That 'c' before 'i' makes an 's' sound,
           and the stress is on the first syllable: GRA-cias.
           In Spain, that final 's' might sound more like 'th'!"
+
+[🔊 1 pronunciation tip]  ← Collapsible panel with structured tip
 ```
 
 ---

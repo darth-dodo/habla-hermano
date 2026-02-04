@@ -20,7 +20,7 @@
 | **Phase 10** | Lesson Content Expansion - 60 lessons across all languages and levels | ✅ Completed |
 | **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
 
-**Test Coverage**: 1016+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1017+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -223,6 +223,7 @@ habla-hermano/
 │   │       ├── lesson_exercise.html # [Implemented] Exercise forms (multiple choice, fill blank, translate)
 │   │       ├── lesson_complete.html # [Implemented] Completion celebration with handoff to chat
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
+│   │       ├── pronunciation_tips.html # [Implemented] Collapsible pronunciation tips UI
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
 │   │       ├── vocab_sidebar.html
 │   │       ├── progress_vocab.html  # [Implemented] Vocabulary list partial
@@ -778,6 +779,13 @@ class VocabWord(TypedDict):
     part_of_speech: str
     context: str  # The sentence it appeared in
 
+class PronunciationTip(TypedDict):
+    """A pronunciation tip for a word in the conversation"""
+    word: str           # Word in target language
+    phonetic: str       # Simple phonetic like "GRAH-see-ahs"
+    tip: str            # Brief pronunciation guidance
+    audio_hint: NotRequired[str]  # Optional English sound comparison
+
 class ConversationState(TypedDict):
     """Main LangGraph state for Habla Hermano"""
 
@@ -794,6 +802,7 @@ class ConversationState(TypedDict):
     # === Analysis Results ===
     grammar_feedback: list[GrammarFeedback]
     new_vocabulary: list[VocabWord]
+    pronunciation_tips: list[PronunciationTip]  # Pronunciation guidance from analyze_node
 
     # === Session Tracking ===
     session_id: str
@@ -1269,7 +1278,7 @@ async def scaffold_node(state: ConversationState) -> dict:
 
 ```python
 async def analyze_node(state: ConversationState) -> dict:
-    """Analyze user's message for grammar errors and new vocabulary"""
+    """Analyze user's message for grammar errors, vocabulary, and pronunciation tips"""
 
     # Get the user's last message (before AI response)
     user_message = state["messages"][-2].content
@@ -1295,11 +1304,20 @@ async def analyze_node(state: ConversationState) -> dict:
                 "translation": "english",
                 "part_of_speech": "noun|verb|adj|etc"
             }}
+        ],
+        "pronunciation_tips": [
+            {{
+                "word": "word in target language",
+                "phonetic": "simple phonetic like GRAH-see-ahs",
+                "tip": "brief tip on how to say it",
+                "audio_hint": "optional comparison to English sounds"
+            }}
         ]
     }}
 
     Only flag errors appropriate for {state["level"]} level.
     Only include vocabulary that's notable for their level.
+    Maximum 2 pronunciation tips for tricky words.
     """
 
     result = await llm.ainvoke(analysis_prompt)
@@ -1307,7 +1325,8 @@ async def analyze_node(state: ConversationState) -> dict:
 
     return {
         "grammar_feedback": analysis.get("grammar_errors", []),
-        "new_vocabulary": analysis.get("new_vocabulary", [])
+        "new_vocabulary": analysis.get("new_vocabulary", []),
+        "pronunciation_tips": analysis.get("pronunciation_tips", [])
     }
 ```
 

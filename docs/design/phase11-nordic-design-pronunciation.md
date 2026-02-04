@@ -181,6 +181,81 @@ Hermano: "Tu pronunciación de 'desarrollo' fue perfecta -
 
 ---
 
+## Collapsible Pronunciation Tips UI
+
+The pronunciation tips feature includes a collapsible UI component that displays pronunciation guidance extracted by the `analyze_node`. This provides non-intrusive learning support that students can engage with when ready.
+
+### UI Implementation
+
+**Template**: `src/templates/partials/pronunciation_tips.html`
+
+**Features**:
+- **Collapsible panel**: Click to expand/collapse pronunciation tips
+- **Auto-expand for A0**: Absolute beginners see tips expanded by default
+- **Nordic Minimal styling**: Uses ice blue accents, surface overlays, and smooth transitions
+- **Speaker icon**: Visual indicator for pronunciation content
+- **Beginner encouragement**: A0 learners see encouraging text about pronunciation practice
+
+### State Flow
+
+```
+analyze_node
+    │
+    ├── Extracts pronunciation_tips from LLM response
+    │   └── Returns list[PronunciationTip]
+    │
+    ▼
+chat.py route
+    │
+    ├── Passes pronunciation_tips to template
+    ├── Passes level for auto-expand behavior
+    │
+    ▼
+message_pair.html
+    │
+    └── Includes pronunciation_tips.html partial
+        └── Alpine.js handles expand/collapse state
+```
+
+### PronunciationTip Structure
+
+```python
+class PronunciationTip(TypedDict):
+    word: str           # Word in target language
+    phonetic: str       # Simple phonetic like "GRAH-see-ahs"
+    tip: str            # Brief pronunciation guidance
+    audio_hint: NotRequired[str]  # Optional English sound comparison
+```
+
+### UI Behavior by Level
+
+| Level | Default State | Encouragement Text |
+|-------|---------------|-------------------|
+| **A0** | Expanded | "Don't worry about perfect pronunciation yet..." |
+| **A1** | Collapsed | None |
+| **A2** | Collapsed | None |
+| **B1** | Collapsed | None |
+
+### Example Rendered Output
+
+```mermaid
+flowchart TB
+    subgraph panel["🔊 Pronunciation Tips Panel"]
+        direction TB
+        header["🔊 1 pronunciation tip ▼"]
+        subgraph content["Expanded Content"]
+            word["**hola**"]
+            phonetic["/OH-lah/"]
+            tip["Stress the first syllable, soft 'h' sound"]
+        end
+        encourage["💡 Don't worry about perfect pronunciation..."]
+    end
+    header --> content
+    content --> encourage
+```
+
+---
+
 ## Files Changed
 
 ### Templates
@@ -192,9 +267,13 @@ Hermano: "Tu pronunciación de 'desarrollo' fue perfecta -
 - `src/templates/partials/lesson_exercise.html` - Clean form styling
 - `src/templates/partials/lesson_step.html` - Minimal step components
 - `src/templates/partials/message.html` - Clean message bubbles
+- `src/templates/partials/message_pair.html` - Includes pronunciation_tips partial
+- `src/templates/partials/pronunciation_tips.html` - Collapsible pronunciation tips UI
 
 ### Agent
 - `src/agent/prompts.py` - PRONUNCIATION TIPS sections, language-specific data
+- `src/agent/state.py` - PronunciationTip TypedDict, pronunciation_tips in ConversationState
+- `src/agent/nodes/analyze.py` - Extracts pronunciation_tips from LLM response
 
 ---
 
@@ -206,11 +285,17 @@ Screenshots captured via Playwright MCP:
 - Lessons list page
 - Lesson player with vocabulary
 - Pronunciation tip in conversation
+- Collapsible pronunciation tips expanded (A1 level)
+- Auto-expanded pronunciation tips (A0 level)
 
 ### Functional Testing
 - Prompts load correctly with pronunciation data
 - All three languages have pronunciation guidance
 - Format strings resolve without errors
+- Pronunciation tips extracted by analyze_node
+- Collapsible UI renders correctly in chat
+- Auto-expand works for A0 level
+- Beginner encouragement text displays for A0
 
 ---
 
