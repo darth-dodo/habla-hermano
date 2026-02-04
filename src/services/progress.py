@@ -1,5 +1,7 @@
 """Progress tracking service for dashboard aggregation.
 
+Phase 12: Added review word initialization in record_chat_activity.
+
 Aggregates data from vocabulary, session, and lesson repositories
 into dashboard-ready statistics and chart data structures.
 """
@@ -16,6 +18,7 @@ from src.db.repository import (
     LessonProgressRepository,
     VocabularyRepository,
 )
+from src.services.review import ReviewService
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
@@ -89,6 +92,7 @@ class ProgressService:
                     Pass the admin client for guest (session-based) access.
         """
         self._user_id = user_id
+        self._client = client
         self._vocab_repo = VocabularyRepository(user_id, client=client)
         self._session_repo = LearningSessionRepository(user_id, client=client)
         self._lesson_repo = LessonProgressRepository(user_id, client=client)
@@ -173,6 +177,9 @@ class ProgressService:
         Fire-and-forget: logs errors but does not raise, so callers
         are never blocked by persistence failures.
 
+        Also initializes newly learned words for spaced repetition review
+        if they don't already have a review scheduled.
+
         Args:
             language: Target language code (es, de).
             level: CEFR level (A0, A1, A2, B1).
@@ -180,13 +187,25 @@ class ProgressService:
                        and optionally part_of_speech.
         """
         try:
+            review_service = ReviewService(self._user_id, client=self._client)
+
             for word_entry in new_vocab:
-                self._vocab_repo.upsert(
+                vocab = self._vocab_repo.upsert(
                     word=word_entry["word"],
                     translation=word_entry["translation"],
                     language=language,
                     part_of_speech=word_entry.get("part_of_speech"),
                 )
+
+                # Initialize for review if not already scheduled (Phase 12)
+                if vocab.id and vocab.next_review_at is None:
+                    try:
+                        review_service.initialize_word_for_review(vocab.id)
+                    except Exception:
+                        logger.exception(
+                            "Failed to initialize word '%s' for review",
+                            word_entry.get("word", "unknown"),
+                        )
 
             session = self._session_repo.get_active()
             if session is None:

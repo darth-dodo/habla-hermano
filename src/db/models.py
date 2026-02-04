@@ -33,6 +33,13 @@ class Vocabulary(BaseModel):
     times_seen: int = 1
     times_correct: int = 0
 
+    # SM-2 spaced repetition fields
+    easiness_factor: float = 2.5  # How easy this word is (1.3 - 2.5+)
+    interval_days: int = 0  # Current review interval
+    repetition_count: int = 0  # Successful reviews in a row
+    next_review_at: datetime | None = None  # When due (None = not yet in rotation)
+    last_reviewed_at: datetime | None = None
+
     class Config:
         """Pydantic configuration."""
 

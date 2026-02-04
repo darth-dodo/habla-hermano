@@ -240,6 +240,233 @@ class VocabularyRepository:
                 "id", word_id
             ).execute()
 
+    # ==================== Spaced Repetition Methods ====================
+
+    def get_due_for_review(self, language: str, limit: int | None = None) -> list[Vocabulary]:
+        """Get vocabulary due for review, ordered by most overdue first.
+
+        Queries words where next_review_at is not None AND next_review_at <= NOW().
+
+        Args:
+            language: Language code (es, de).
+            limit: Optional maximum number of entries to return.
+
+        Returns:
+            List of Vocabulary entries due for review, ordered by next_review_at ASC.
+        """
+        query = (
+            self._client.table("vocabulary")
+            .select("*")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .lte("next_review_at", datetime.now(UTC).isoformat())
+            .order("next_review_at", desc=False)
+        )
+
+        if limit is not None:
+            query = query.limit(limit)
+
+        response = query.execute()
+        return [Vocabulary(**item) for item in response.data]
+
+    def get_due_by_keywords(
+        self, language: str, keywords: list[str], limit: int = 5
+    ) -> list[Vocabulary]:
+        """Get due words where the word or translation contains any of the keywords.
+
+        Used for intelligent chat weaving - finding review words that match
+        the current conversation topic.
+
+        Args:
+            language: Language code (es, de).
+            keywords: List of keywords to match against word or translation.
+            limit: Maximum number of entries to return.
+
+        Returns:
+            List of matching Vocabulary entries due for review.
+        """
+        if not keywords:
+            return []
+
+        # Get all due words first (filtering by keywords requires client-side processing
+        # since Supabase doesn't support OR across multiple ilike conditions easily)
+        all_due = self.get_due_for_review(language)
+
+        # Filter by keywords (case-insensitive match)
+        keywords_lower = [kw.lower() for kw in keywords]
+        matching = []
+
+        for vocab in all_due:
+            word_lower = vocab.word.lower()
+            translation_lower = vocab.translation.lower()
+
+            for keyword in keywords_lower:
+                if keyword in word_lower or keyword in translation_lower:
+                    matching.append(vocab)
+                    break  # Avoid duplicates if multiple keywords match
+
+            if len(matching) >= limit:
+                break
+
+        return matching
+
+    def update_review_schedule(self, vocab_id: int, updates: dict[str, Any]) -> Vocabulary | None:
+        """Update SM-2 spaced repetition fields for a vocabulary entry.
+
+        Updates scheduling fields and optionally increments times_seen/times_correct.
+
+        Args:
+            vocab_id: The vocabulary entry ID.
+            updates: Dictionary with any of:
+                - easiness_factor (float): New easiness factor
+                - interval_days (int): New interval
+                - repetition_count (int): New repetition count
+                - next_review_at (datetime|str|None): Next review datetime
+                - last_reviewed_at (datetime|str|None): Last reviewed datetime
+                - increment_seen (bool): If True, increment times_seen by 1
+                - increment_correct (bool): If True, increment times_correct by 1
+
+        Returns:
+            Updated Vocabulary if successful, None otherwise.
+        """
+        update_data = self._build_review_update_data(updates)
+
+        # Handle increment flags - need to fetch current values first
+        if updates.get("increment_seen") or updates.get("increment_correct"):
+            self._apply_increment_flags(vocab_id, updates, update_data)
+
+        if not update_data:
+            return None
+
+        response = (
+            self._client.table("vocabulary")
+            .update(update_data)
+            .eq("id", vocab_id)
+            .eq("user_id", self._user_id)
+            .execute()
+        )
+
+        if response.data:
+            return Vocabulary(**response.data[0])
+        return None
+
+    def _build_review_update_data(self, updates: dict[str, Any]) -> dict[str, Any]:
+        """Build update data dict from SM-2 scheduling fields.
+
+        Args:
+            updates: Raw updates dictionary.
+
+        Returns:
+            Processed update data for Supabase.
+        """
+        update_data: dict[str, Any] = {}
+
+        # Direct copy fields
+        direct_fields = ["easiness_factor", "interval_days", "repetition_count"]
+        for field in direct_fields:
+            if field in updates:
+                update_data[field] = updates[field]
+
+        # Datetime fields (convert to ISO string if datetime object)
+        datetime_fields = ["next_review_at", "last_reviewed_at"]
+        for field in datetime_fields:
+            if field in updates:
+                value = updates[field]
+                update_data[field] = value.isoformat() if isinstance(value, datetime) else value
+
+        return update_data
+
+    def _apply_increment_flags(
+        self, vocab_id: int, updates: dict[str, Any], update_data: dict[str, Any]
+    ) -> None:
+        """Apply increment_seen and increment_correct flags to update_data.
+
+        Args:
+            vocab_id: The vocabulary entry ID.
+            updates: Raw updates dictionary with increment flags.
+            update_data: Update data dict to modify in place.
+        """
+        current_response = (
+            self._client.table("vocabulary")
+            .select("times_seen, times_correct")
+            .eq("id", vocab_id)
+            .eq("user_id", self._user_id)
+            .execute()
+        )
+        if not current_response.data:
+            return
+
+        current = current_response.data[0]
+        if updates.get("increment_seen"):
+            update_data["times_seen"] = current.get("times_seen", 0) + 1
+        if updates.get("increment_correct"):
+            update_data["times_correct"] = current.get("times_correct", 0) + 1
+
+    def get_review_stats(self, language: str) -> dict[str, Any]:
+        """Get review statistics for the user's vocabulary.
+
+        Returns stats for display in the progress page and review UI.
+
+        Args:
+            language: Language code (es, de).
+
+        Returns:
+            Dictionary with:
+                - due_count: Number of words currently due for review
+                - total_in_rotation: Total words with scheduled reviews
+                - next_review_at: Datetime of next upcoming review (if any)
+        """
+        now = datetime.now(UTC).isoformat()
+
+        # Count words due for review (next_review_at <= NOW)
+        due_response = (
+            self._client.table("vocabulary")
+            .select("id", count="exact")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .lte("next_review_at", now)
+            .execute()
+        )
+        due_count = due_response.count if due_response.count is not None else 0
+
+        # Count total words in rotation (next_review_at IS NOT NULL)
+        in_rotation_response = (
+            self._client.table("vocabulary")
+            .select("id", count="exact")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .execute()
+        )
+        total_in_rotation = (
+            in_rotation_response.count if in_rotation_response.count is not None else 0
+        )
+
+        # Get the next upcoming review (next_review_at > NOW, ordered ASC)
+        next_review_response = (
+            self._client.table("vocabulary")
+            .select("next_review_at")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .gt("next_review_at", now)
+            .order("next_review_at", desc=False)
+            .limit(1)
+            .execute()
+        )
+
+        next_review_at = None
+        if next_review_response.data:
+            next_review_at = next_review_response.data[0].get("next_review_at")
+
+        return {
+            "due_count": due_count,
+            "total_in_rotation": total_in_rotation,
+            "next_review_at": next_review_at,
+        }
+
 
 class LearningSessionRepository:
     """Data access for learning_sessions table."""

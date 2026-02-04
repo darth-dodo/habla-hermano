@@ -88,6 +88,36 @@ class PronunciationTip(TypedDict):
     audio_hint: NotRequired[str]
 
 
+class ReviewWordOffered(TypedDict):
+    """
+    Represents a review word offered for chat weaving.
+
+    Attributes:
+        vocab_id: The vocabulary entry ID for SM-2 updates.
+        word: The word in the target language.
+        translation: The English translation.
+    """
+
+    vocab_id: int
+    word: str
+    translation: str
+
+
+class ReviewWordUsed(TypedDict):
+    """
+    Represents a review word successfully used by the learner.
+
+    Attributes:
+        vocab_id: The vocabulary entry ID for SM-2 updates.
+        word: The word that was used correctly.
+        quality: SM-2 quality score (4-5 for correct usage in context).
+    """
+
+    vocab_id: int
+    word: str
+    quality: int
+
+
 class ConversationState(TypedDict):
     """
     Main LangGraph state for Habla Hermano conversations.
@@ -96,6 +126,9 @@ class ConversationState(TypedDict):
     - messages: Conversation history with add_messages reducer
     - level: CEFR level (A0, A1, A2, B1)
     - language: Target language code (es, de, fr)
+
+    Identity fields (Phase 12):
+    - user_id: User UUID for database access (authenticated or guest session ID)
 
     Analysis fields (Phase 2):
     - grammar_feedback: List of grammar corrections from user's last message
@@ -107,6 +140,10 @@ class ConversationState(TypedDict):
     Pronunciation fields (Phase 11):
     - pronunciation_tips: List of pronunciation tips for words in the response
 
+    Spaced Repetition fields (Phase 12):
+    - review_words_offered: Words offered for chat weaving by respond_node
+    - review_words_used: Words successfully used by learner, tracked by analyze_node
+
     The add_messages reducer handles message accumulation automatically,
     appending new messages to the existing list.
     """
@@ -114,7 +151,10 @@ class ConversationState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     level: str  # A0, A1, A2, B1
     language: str  # es, de, fr
+    user_id: NotRequired[str]  # UUID for database access
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
     scaffolding: NotRequired[dict[str, Any]]  # ScaffoldingConfig.model_dump() for A0-A1
     pronunciation_tips: NotRequired[list[PronunciationTip]]
+    review_words_offered: NotRequired[list[ReviewWordOffered]]
+    review_words_used: NotRequired[list[ReviewWordUsed]]

@@ -1,5 +1,6 @@
 """Micro-lesson endpoints for structured learning content.
 
+Phase 12: Added review word initialization on lesson completion.
 Phase 9: Added AI-enhanced endpoints using LangGraph subgraphs.
 Phase 7: Added lesson completion persistence for authenticated users.
 Phase 6: Full implementation of lesson API routes.
@@ -15,7 +16,7 @@ AI-Enhanced endpoints (Phase 9):
 import contextlib
 import logging
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
@@ -23,17 +24,70 @@ from fastapi.responses import HTMLResponse
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import LessonServiceDep, TemplatesDep
 from src.api.supabase_client import get_supabase_admin
-from src.db.repository import LessonProgressRepository
+from src.db.repository import LessonProgressRepository, VocabularyRepository
 from src.lessons.models import (
     FillBlankExercise,
     LessonLevel,
     MultipleChoiceExercise,
     TranslateExercise,
 )
+from src.services.review import ReviewService
+
+if TYPE_CHECKING:
+    from supabase import Client as SupabaseClient
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def _initialize_lesson_vocabulary_for_review(
+    effective_id: str,
+    vocabulary: list[dict[str, str]],
+    language: str,
+    client: "SupabaseClient | None" = None,
+) -> None:
+    """Initialize vocabulary from a lesson for spaced repetition review.
+
+    Upserts each vocabulary word and schedules it for review if not already scheduled.
+    This is called after lesson completion to ensure learned words enter the review rotation.
+
+    Args:
+        effective_id: User ID or guest session ID.
+        vocabulary: List of vocabulary dicts with 'word' and 'translation' keys.
+        language: Target language code (es, de, fr).
+        client: Optional Supabase client for guest access.
+    """
+    if not vocabulary:
+        return
+
+    vocab_repo = VocabularyRepository(effective_id, client=client)
+    review_service = ReviewService(effective_id, client=client)
+
+    for word_entry in vocabulary:
+        try:
+            # Upsert the vocabulary word
+            vocab = vocab_repo.upsert(
+                word=word_entry.get("word", ""),
+                translation=word_entry.get("translation", ""),
+                language=language,
+                part_of_speech=word_entry.get("part_of_speech"),
+            )
+
+            # Schedule for review if not already scheduled
+            if vocab.id and vocab.next_review_at is None:
+                review_service.initialize_word_for_review(vocab.id)
+        except Exception:
+            # Log but continue with other words
+            logger.exception(
+                "Failed to initialize word '%s' for review",
+                word_entry.get("word", "unknown"),
+            )
 
 
 # =============================================================================
@@ -609,7 +663,8 @@ async def complete_lesson(
     """Mark a lesson as completed and show completion view.
 
     Records the lesson completion for the current user and displays
-    a celebration view with score and next steps.
+    a celebration view with score and next steps. Also initializes
+    vocabulary from the lesson for spaced repetition review.
 
     Args:
         request: FastAPI request for template context.
@@ -629,7 +684,7 @@ async def complete_lesson(
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
-    # Get vocabulary count from lesson
+    # Get vocabulary from lesson
     vocabulary = lesson_service.get_lesson_vocabulary(lesson_id)
     vocab_count = len(vocabulary)
 
@@ -653,6 +708,14 @@ async def complete_lesson(
                 client = get_supabase_admin()
             repo = LessonProgressRepository(effective_id, client=client)
             repo.complete_lesson(lesson_id, score=score)
+
+            # Initialize vocabulary for review (Phase 12)
+            _initialize_lesson_vocabulary_for_review(
+                effective_id=effective_id,
+                vocabulary=vocabulary,
+                language=lesson.metadata.language,
+                client=client,
+            )
         except Exception:
             logger.exception("Failed to persist lesson completion for user %s", effective_id)
 

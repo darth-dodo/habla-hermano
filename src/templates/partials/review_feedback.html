@@ -1,0 +1,132 @@
+{#
+Review Feedback - Answer feedback display
+Shows Hermano's response and auto-loads next question
+Variables expected:
+  - is_correct: bool (whether the answer was correct)
+  - user_answer: str (what the user typed)
+  - correct_answer: str (the correct answer)
+  - feedback_text: str (Hermano's feedback message)
+  - word: str (the word being reviewed)
+  - translation: str (the translation)
+  - current_index: int (1-based current question number)
+  - session_size: int (total questions in session)
+  - has_more: bool (whether there are more questions)
+  - quality_score: int (optional, 0-5 SM-2 quality score for debugging)
+#}
+
+<!-- Review Mode Banner (persistent) -->
+<div id="review-banner" class="mb-4 px-4 py-2.5 bg-accent-muted rounded-xl border border-accent/20 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span class="text-sm font-medium text-accent">Review: {{ current_index }} of {{ session_size }}</span>
+    </div>
+    <button
+        hx-post="/review/end"
+        hx-target="#chat-messages"
+        hx-swap="innerHTML"
+        hx-confirm="End review session early?"
+        class="text-xs text-text-muted hover:text-error transition-colors"
+    >
+        End Early
+    </button>
+</div>
+
+<!-- Progress Bar -->
+<div class="mb-6 h-1 bg-surface-overlay rounded-full overflow-hidden">
+    <div
+        class="h-full bg-accent rounded-full transition-all duration-300"
+        style="width: {{ (current_index / session_size) * 100 }}%"
+    ></div>
+</div>
+
+<!-- User's Answer (shown as user bubble) -->
+{% if user_answer %}
+<div class="message-enter flex justify-end mb-4">
+    <div class="bg-user rounded-2xl rounded-br-md px-5 py-3.5 max-w-[80%]" style="box-shadow: 0 2px 6px var(--shadow-color);">
+        <p class="text-user-text leading-relaxed">{{ user_answer }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Hermano's Feedback -->
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
+        <!-- Feedback Header -->
+        <div class="flex items-start gap-3 mb-3">
+            {% if is_correct %}
+            <div class="flex-shrink-0 w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-success check-draw" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            {% else %}
+            <div class="flex-shrink-0 w-8 h-8 bg-error/20 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            {% endif %}
+            <div class="flex-1">
+                <p class="text-ai-text leading-relaxed">{{ feedback_text }}</p>
+            </div>
+        </div>
+
+        <!-- Word Details (shown on incorrect answers) -->
+        {% if not is_correct %}
+        <div class="mt-3 p-3 bg-surface-elevated rounded-lg border border-border">
+            <div class="flex items-center gap-2 flex-wrap text-sm">
+                {% if user_answer %}
+                <span class="line-through text-error/70">{{ user_answer }}</span>
+                <span class="text-text-muted">→</span>
+                {% endif %}
+                <span class="text-accent font-medium">{{ correct_answer }}</span>
+            </div>
+            <p class="text-xs text-text-muted mt-1.5">
+                <span class="font-medium">{{ word }}</span>
+                <span class="mx-1">·</span>
+                <span>{{ translation }}</span>
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Auto-load Next Question or Complete -->
+{% if has_more %}
+<div
+    hx-get="/review/next"
+    hx-trigger="load delay:1.5s"
+    hx-target="#chat-messages"
+    hx-swap="innerHTML"
+    class="text-center py-4"
+>
+    <div class="flex items-center justify-center gap-2 text-text-subtle text-sm">
+        <div class="loading-dots flex gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        </div>
+        <span>Next word...</span>
+    </div>
+</div>
+{% else %}
+<!-- Session complete - load summary -->
+<div
+    hx-get="/review/complete"
+    hx-trigger="load delay:1s"
+    hx-target="#chat-messages"
+    hx-swap="innerHTML"
+    class="text-center py-4"
+>
+    <div class="flex items-center justify-center gap-2 text-text-subtle text-sm">
+        <div class="loading-dots flex gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        </div>
+        <span>Wrapping up...</span>
+    </div>
+</div>
+{% endif %}

@@ -1,5 +1,6 @@
 """Chat router for handling conversation interactions.
 
+Phase 12: Added review mode support for spaced repetition.
 Phase 7: Added vocabulary and session data capture for authenticated users.
 Phase 5: Added user authentication with Supabase.
 Phase 4: Added conversation persistence with LangGraph checkpointing.
@@ -26,14 +27,35 @@ from langchain_core.messages import HumanMessage
 
 from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
-from src.api.auth import OptionalUserDep
+from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
 from src.api.supabase_client import get_supabase_admin
 from src.services.progress import ProgressService
+from src.services.review import ReviewService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
+
+
+def _resolve_identity_for_chat(
+    user: OptionalUserDep,
+    session_id: str | None,
+) -> tuple[str | None, object | None]:
+    """Resolve effective user ID and Supabase client for auth or guest users.
+
+    Returns (effective_id, client) where client is the admin client for guests
+    or None for authenticated users.
+    """
+    if user:
+        return user.id, None
+    if session_id:
+        try:
+            return session_id, get_supabase_admin()
+        except Exception:
+            logger.warning("Admin client unavailable; guest features disabled")
+            return None, None
+    return None, None
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
@@ -42,6 +64,10 @@ async def chat_page(
     templates: TemplatesDep,
     settings: SettingsDep,
     user: OptionalUserDep,
+    mode: str | None = None,
+    session_id: Annotated[str | None, Cookie()] = None,
+    warmup_dismissed: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
 ) -> HTMLResponse:
     """Render the main chat interface.
 
@@ -49,24 +75,76 @@ async def chat_page(
     get persistent conversation history; guests get session-based
     conversations via cookies.
 
+    Phase 12: Added review mode support. When mode=review, shows the
+    review session start UI instead of normal chat.
+
     Args:
         request: FastAPI request object.
         templates: Jinja2 templates instance.
         settings: Application settings.
         user: Optional authenticated user (None if guest).
+        mode: Optional mode parameter ("review" for review mode).
+        session_id: Session cookie for guest users.
+        warmup_dismissed: Cookie tracking if warmup was dismissed.
+        language: Target language for review stats.
 
     Returns:
         HTMLResponse: Rendered chat page for both authenticated and guest users.
     """
+    # Default context
+    context = {
+        "app_name": settings.APP_NAME,
+        "debug": settings.DEBUG,
+        "user": user,
+        "review_mode": False,
+        "show_warmup": False,
+        "review_stats": None,
+        "current_language": language,
+    }
+
+    # Resolve identity for review features
+    effective_id, client = _resolve_identity_for_chat(user, session_id)
+
+    if effective_id:
+        # Get review stats
+        try:
+            review_service = ReviewService(effective_id, client=client)
+            review_stats = review_service.get_stats(language=language)
+            context["review_stats"] = review_stats
+
+            if mode == "review":
+                # Review mode - show review start UI
+                context["review_mode"] = True
+            elif review_stats.due_count > 0 and not warmup_dismissed:
+                # Show warmup prompt if words are due and not dismissed
+                context["show_warmup"] = True
+        except Exception:
+            logger.exception("Failed to get review stats for user %s", effective_id)
+
     return templates.TemplateResponse(
         request=request,
         name="chat.html",
-        context={
-            "app_name": settings.APP_NAME,
-            "debug": settings.DEBUG,
-            "user": user,
-        },
+        context=context,
     )
+
+
+def _resolve_chat_identity(
+    user: AuthenticatedUser | None,
+    session_id: str | None,
+) -> tuple[str, str | None, str | None]:
+    """Resolve thread_id and effective user_id for chat.
+
+    Returns:
+        Tuple of (thread_id, effective_user_id, new_session_id).
+        new_session_id is set only for first-time anonymous users.
+    """
+    if user:
+        return get_user_thread_id(user.id), user.id, None
+    if session_id:
+        return session_id, session_id, None
+    # First-time anonymous user
+    new_id = str(uuid.uuid4())
+    return new_id, new_id, new_id
 
 
 @router.post("/chat", response_class=HTMLResponse)
@@ -104,20 +182,8 @@ async def send_message(
     Returns:
         HTMLResponse: Partial HTML with user message and AI response.
     """
-    # Determine thread_id based on authentication status
-    # Track if we need to set a new session cookie for anonymous users
-    new_session_id: str | None = None
-
-    if user:
-        # Authenticated: use user-scoped thread_id for persistence
-        thread_id = get_user_thread_id(user.id)
-    elif session_id:
-        # Anonymous: use session-based thread_id from cookie
-        thread_id = session_id
-    else:
-        # Generate new session_id for first-time anonymous users
-        thread_id = str(uuid.uuid4())
-        new_session_id = thread_id  # Will be set on template_response
+    # Resolve identity for thread_id and effective user_id
+    thread_id, effective_user_id, new_session_id = _resolve_chat_identity(user, session_id)
 
     # Invoke LangGraph agent with checkpointing
     async with get_checkpointer() as checkpointer:
@@ -127,6 +193,7 @@ async def send_message(
                 "messages": [HumanMessage(content=message)],
                 "level": level,
                 "language": language,
+                "user_id": effective_user_id,  # Phase 12: For review word weaving
             },
             config={"configurable": {"thread_id": thread_id}},
         )
@@ -145,27 +212,17 @@ async def send_message(
     scaffolding = result.get("scaffolding", {})
 
     # Capture vocabulary and session data for any user with identity (fire-and-forget)
-    if new_vocabulary:
-        effective_id: str | None = None
-
-        if user:
-            effective_id = user.id
-        elif session_id:
-            effective_id = session_id
-        elif new_session_id:
-            effective_id = new_session_id
-
-        if effective_id:
-            try:
-                client = get_supabase_admin() if not user else None
-                progress_service = ProgressService(effective_id, client=client)
-                progress_service.record_chat_activity(
-                    language=language,
-                    level=level,
-                    new_vocab=new_vocabulary,
-                )
-            except Exception:
-                logger.exception("Failed to capture chat activity for user %s", effective_id)
+    if new_vocabulary and effective_user_id:
+        try:
+            client = get_supabase_admin() if not user else None
+            progress_service = ProgressService(effective_user_id, client=client)
+            progress_service.record_chat_activity(
+                language=language,
+                level=level,
+                new_vocab=new_vocabulary,
+            )
+        except Exception:
+            logger.exception("Failed to capture chat activity for user %s", effective_user_id)
 
     # Create template response
     template_response = templates.TemplateResponse(

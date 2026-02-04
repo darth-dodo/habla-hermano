@@ -3,6 +3,8 @@ Analyze node for the Habla Hermano conversation graph.
 
 This node analyzes the user's message for grammar errors and vocabulary,
 providing level-appropriate feedback without interrupting the conversation flow.
+
+Phase 12: Adds tracking for review word usage in chat weaving.
 """
 
 import json
@@ -16,6 +18,8 @@ from src.agent.state import (
     ConversationState,
     GrammarFeedback,
     PronunciationTip,
+    ReviewWordOffered,
+    ReviewWordUsed,
     VocabWord,
 )
 
@@ -206,6 +210,88 @@ def _parse_analysis_response(
         return [], [], []
 
 
+def _check_review_word_usage(
+    user_text: str,
+    offered_words: list[ReviewWordOffered],
+) -> list[ReviewWordUsed]:
+    """
+    Check if the user correctly used any offered review words.
+
+    Performs case-insensitive matching of the user's text against
+    the offered review words. If a word is found, it's considered
+    "correctly used" and assigned a quality score of 4 (correct usage).
+
+    Args:
+        user_text: The user's message text.
+        offered_words: List of review words that were offered for weaving.
+
+    Returns:
+        List of ReviewWordUsed dicts for words found in the user's message.
+    """
+    if not user_text or not offered_words:
+        return []
+
+    user_text_lower = user_text.lower()
+    used_words: list[ReviewWordUsed] = []
+
+    for word in offered_words:
+        word_lower = word["word"].lower()
+
+        # Check if the word appears in the user's message
+        # Simple substring check - could be enhanced with word boundary detection
+        if word_lower in user_text_lower:
+            used_words.append(
+                ReviewWordUsed(
+                    vocab_id=word["vocab_id"],
+                    word=word["word"],
+                    quality=4,  # Correct usage in context
+                )
+            )
+
+    return used_words
+
+
+async def _update_sm2_for_used_words(
+    user_id: str | None,
+    used_words: list[ReviewWordUsed],
+) -> None:
+    """
+    Update SM-2 scheduling for review words that were used correctly.
+
+    This enables "silent" review tracking during natural conversation -
+    users get spaced repetition benefits without explicit review sessions.
+
+    Args:
+        user_id: User UUID for database access.
+        used_words: List of words the user correctly used.
+    """
+    if not user_id or not used_words:
+        return
+
+    try:
+        # Import here to avoid circular imports
+        from src.api.supabase_client import get_supabase_admin
+        from src.services.review import ReviewService
+
+        client = get_supabase_admin()
+        review_service = ReviewService(user_id, client=client)
+
+        for word in used_words:
+            try:
+                review_service.update_sm2(
+                    vocab_id=word["vocab_id"],
+                    quality=word["quality"],
+                )
+                logger.debug(
+                    f"Updated SM-2 for word '{word['word']}' with quality {word['quality']}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to update SM-2 for word '{word['word']}': {e}")
+
+    except Exception as e:
+        logger.warning(f"Failed to update SM-2 for used words: {e}")
+
+
 async def analyze_node(state: ConversationState) -> dict[str, Any]:
     """
     Analyze the user's last message for grammar, vocabulary, and pronunciation.
@@ -219,23 +305,29 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
     - A2: Add past tense errors, reflexive verb issues
     - B1: Add subjunctive, conditional, advanced constructions
 
+    Phase 12: Also tracks usage of offered review words for spaced repetition.
+
     Args:
         state: Current conversation state containing messages, level, and language.
 
     Returns:
-        Dictionary with grammar_feedback, new_vocabulary, and pronunciation_tips lists.
+        Dictionary with grammar_feedback, new_vocabulary, pronunciation_tips,
+        and review_words_used lists.
     """
     messages = state["messages"]
+
+    # Initialize result with empty lists
+    result: dict[str, Any] = {
+        "grammar_feedback": [],
+        "new_vocabulary": [],
+        "pronunciation_tips": [],
+    }
 
     # Need at least 2 messages (user message + AI response)
     # The user's message is at index -2 (before the AI response at -1)
     if len(messages) < 2:
         logger.debug("Not enough messages for analysis")
-        return {
-            "grammar_feedback": [],
-            "new_vocabulary": [],
-            "pronunciation_tips": [],
-        }
+        return result
 
     # Get the user's last message (before AI response)
     user_message = messages[-2]
@@ -243,19 +335,25 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
     # Verify it's actually a human message
     if not isinstance(user_message, HumanMessage):
         logger.debug("Second-to-last message is not a HumanMessage")
-        return {
-            "grammar_feedback": [],
-            "new_vocabulary": [],
-            "pronunciation_tips": [],
-        }
+        return result
 
     user_text = user_message.content
     if not user_text or not isinstance(user_text, str):
-        return {
-            "grammar_feedback": [],
-            "new_vocabulary": [],
-            "pronunciation_tips": [],
-        }
+        return result
+
+    # Phase 12: Check for review word usage BEFORE grammar analysis
+    # This enables "silent" spaced repetition during natural conversation
+    offered_words = state.get("review_words_offered", [])
+    used_words: list[ReviewWordUsed] = []
+
+    if offered_words:
+        used_words = _check_review_word_usage(user_text, offered_words)
+
+        if used_words:
+            # Update SM-2 scheduling for correctly used words
+            user_id = state.get("user_id")
+            await _update_sm2_for_used_words(user_id, used_words)
+            result["review_words_used"] = used_words
 
     # Build the analysis prompt
     language_name = _get_language_name(state["language"])
@@ -285,8 +383,8 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         logger.error(f"Analysis LLM call failed: {e}")
         grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
-    return {
-        "grammar_feedback": grammar_feedback,
-        "new_vocabulary": new_vocabulary,
-        "pronunciation_tips": pronunciation_tips,
-    }
+    result["grammar_feedback"] = grammar_feedback
+    result["new_vocabulary"] = new_vocabulary
+    result["pronunciation_tips"] = pronunciation_tips
+
+    return result
