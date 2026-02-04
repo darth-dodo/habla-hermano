@@ -88,8 +88,8 @@ class TestCEFRLevel:
     def test_level_is_string_enum(self) -> None:
         """Test CEFRLevel is a string enum."""
         assert isinstance(CEFRLevel.A1.value, str)
-        # String enum allows using value directly
-        assert str(CEFRLevel.A1) == "CEFRLevel.A1"
+        # StrEnum allows using value directly as string
+        assert str(CEFRLevel.A1) == "A1"
 
     def test_level_comparison(self) -> None:
         """Test level enum members can be compared."""

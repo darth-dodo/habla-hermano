@@ -10,7 +10,7 @@ Models follow the pattern from product.md:
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # =============================================================================
 
 
-class LessonLevel(str, Enum):
+class LessonLevel(StrEnum):
     """CEFR proficiency levels for lessons."""
 
     A0 = "A0"  # Absolute beginner
@@ -28,7 +28,7 @@ class LessonLevel(str, Enum):
     B1 = "B1"  # Intermediate
 
 
-class LessonStepType(str, Enum):
+class LessonStepType(StrEnum):
     """Types of lesson steps."""
 
     INSTRUCTION = "instruction"  # Text explanation
@@ -38,7 +38,7 @@ class LessonStepType(str, Enum):
     PRACTICE = "practice"  # Exercise reference
 
 
-class ExerciseType(str, Enum):
+class ExerciseType(StrEnum):
     """Types of exercises."""
 
     MULTIPLE_CHOICE = "multiple_choice"
