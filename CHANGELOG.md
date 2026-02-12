@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-02-04
+
+### Added
+- Phase 12: Spaced repetition system with SM-2 algorithm
+- ReviewService with SM-2 scheduling (easiness factor, intervals, repetition count)
+- Intelligent chat weaving: due review words naturally woven into Hermano's conversations
+- Dedicated review mode with conversational micro-quizzes (not flashcards)
+- Review session API: /review/start, /review/next, /review/submit, /review/stats
+- Review state tracking in LangGraph with review_words_offered and review_words_used
+- Topical word matching: reviews words that fit current conversation context
+- Quality score inference from answer correctness (no manual rating buttons)
+- Silent review tracking: SM-2 updates when users naturally use review words in chat
+- Review stats on progress page with due count and next review time
+- Chat warmup prompt when words are due for review
+- Session size options: Quick (5), Regular (10), All due words
+- Design doc: docs/design/phase12-spaced-repetition.md
+
+### Changed
+- Vocabulary model extended with SM-2 fields: easiness_factor, interval_days, repetition_count, next_review_at, last_reviewed_at
+- VocabularyRepository extended with get_due_for_review, get_due_by_keywords, update_review_schedule, get_review_stats
+- Chat route now passes user_id to graph for review word weaving
+- Respond node fetches topical review words and adds them to system prompt
+- Analyze node tracks review word usage and updates SM-2 silently
+
 ## [0.8.0] - 2026-02-02
 
 ### Added

@@ -63,6 +63,7 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **3 Languages** | ✅ Complete | Spanish, German, French via LANGUAGE_ADAPTER |
 | **Grammar Feedback** | ✅ Complete | Gentle corrections with expandable tips |
 | **Pronunciation Tips** | ✅ Complete | Level-appropriate pronunciation guidance in conversations |
+| **Spaced Repetition** | ✅ Complete | SM-2 algorithm with intelligent chat weaving and dedicated review mode |
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
 | **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
@@ -175,6 +176,90 @@ Hermano: "'Gracias' - it's pronounced GRAH-see-ahs.
 
 [🔊 1 pronunciation tip]  ← Collapsible panel with structured tip
 ```
+
+---
+
+## Spaced Repetition
+
+Habla Hermano uses **conversation-first spaced repetition**. There are no flashcard decks and no decontextualized drills. Instead, words you have encountered in chat and lessons come back to you naturally — through Hermano himself.
+
+### Philosophy
+
+Traditional spaced repetition isolates words on cards. Habla Hermano keeps them in conversation where they belong. Every review is a chance to *use* the word, not just recognize it. The SM-2 algorithm decides **when** a word needs reinforcement; Hermano decides **how** to bring it back.
+
+### Two Channels for Review
+
+| Channel | What Happens | Learner Experience |
+|---------|--------------|--------------------|
+| **Chat weaving** | During normal conversation, Hermano naturally works due-for-review words into his responses and prompts. When you use the word correctly, SM-2 updates silently in the background. | Feels like a regular chat — you don't even notice you're reviewing. |
+| **Dedicated review mode** | Conversational micro-quizzes where Hermano asks questions in his personality. Three question types keep things varied. | Feels like a quick game with Hermano, not a test. |
+
+#### Chat Weaving Example
+
+```
+Hermano: "¿Recuerdas la palabra 'mercado'? I was just thinking about
+          street markets. ¿Qué compras en el mercado?"
+You:     "Yo compro frutas en el mercado."
+Hermano: "Nice! 'Frutas en el mercado' — sounds like you'd fit right
+          in at a Mexican tianguis."
+          (SM-2 silently updates: mercado → next review in 6 days)
+```
+
+#### Dedicated Review Question Types
+
+| Type | What Hermano Asks | Example |
+|------|-------------------|---------|
+| **Translate** | "How do you say ___ in Spanish?" | "How do you say 'market' in Spanish?" |
+| **Fill in the blank** | A sentence with a missing word | "Yo compro frutas en el ___." |
+| **Recognize** | "What does ___ mean?" | "What does 'mercado' mean?" |
+
+Hermano gives feedback on every answer in his own voice — encouraging on correct answers, supportive and helpful on mistakes.
+
+### How It Works (Learner Perspective)
+
+```mermaid
+flowchart LR
+    A["Chat or lesson"] -->|words collected| B["Automatic scheduling"]
+    B -->|SM-2 timing| C{"Review due?"}
+    C -->|yes| D["Warmup prompt in chat"]
+    C -->|yes| E["Review card on Progress page"]
+    D --> F["Review session with Hermano"]
+    E --> F
+    F -->|answers| G["SM-2 updates intervals"]
+    G --> C
+```
+
+1. **Words are collected automatically.** Every word you encounter in chat or lessons enters your personal review schedule.
+2. **SM-2 determines timing.** The algorithm calculates when each word should come back based on how well you know it.
+3. **Hermano prompts you when words are due.** A warmup message appears at the top of chat, or a review card shows on your Progress page.
+4. **You pick your session size.** Quick (5 words), Regular (10 words), or all due words.
+5. **Hermano gives feedback on every answer.** Correct? He celebrates. Wrong? He gives you the answer warmly and moves on.
+
+### Session Sizes
+
+| Size | Words | Best For |
+|------|-------|----------|
+| **Quick** | 5 | Between classes, on the bus, warming up |
+| **Regular** | 10 | Daily practice, building a habit |
+| **All due** | Everything scheduled | Weekend catch-up, dedicated study time |
+
+### Entry Points
+
+Learners can start a review session from three places:
+
+- **Progress page** — A review card shows the number of words due and lets you pick a session size.
+- **Chat warmup prompt** — When words are due, a prompt appears at the top of the chat: "You have 8 words to review. Want to warm up?"
+- **Direct URL** — Navigate to the chat page with `?mode=review` to jump straight into a review session.
+
+### What Makes This Different
+
+| Traditional SRS | Habla Hermano SRS |
+|-----------------|-------------------|
+| Flashcard decks | Conversational review with Hermano |
+| Isolated word recall | Words used in sentences and context |
+| Binary right/wrong | Hermano-style encouragement and hints |
+| Separate app or mode | Woven into the same chat you already use |
+| Manual card creation | Automatic scheduling from chat and lessons |
 
 ---
 
@@ -292,11 +377,11 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 9** | AI-Enhanced Lessons | LangGraph subgraphs for personalized lesson delivery | ✅ Complete |
 | **Phase 10** | Lesson Content Expansion | 60 lessons across all languages and levels | ✅ Complete |
 | **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
+| **Phase 12** | Spaced Repetition | SM-2 algorithm, intelligent chat weaving, dedicated review mode | ✅ Complete |
 
 ### Future Ideas
 
 - Voice input/output
-- Spaced repetition for vocabulary
 - Scenario roleplay (ordering food, booking hotel)
 - Multiple AI personas
 - Offline mode
@@ -332,6 +417,13 @@ See [Architecture Documentation](architecture.md) for details.
 - Session data preservation rate during auth upgrade (target: 100%)
 - Guest feature usage parity with authenticated users
 
+### Phase 12: Spaced Repetition Metrics
+- Review session completion rate (target: >70%)
+- Words retained after 30 days (target: >80%)
+- Chat weaving engagement (target: >50% of offered words used correctly)
+- Time to first review prompt (automatic after first chat session)
+- Review-to-chat conversion (users who start a regular chat after completing a review)
+
 ---
 
 ## What We're NOT Building
@@ -352,3 +444,4 @@ See [Architecture Documentation](architecture.md) for details.
 - [E2E Tests](playwright-e2e.md) — Playwright test documentation
 - [Design Documents](design/) — Phase-by-phase implementation details
 - [Phase 6 Design](design/phase6-micro-lessons.md) — Micro-lessons design document
+- [Phase 12 Design](design/phase12-spaced-repetition.md) — Spaced repetition design document
