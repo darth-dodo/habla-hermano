@@ -206,10 +206,13 @@ class TestChatDataCaptureAuthenticated:
             async def __aexit__(self, *args):
                 pass
 
+        mock_user_client = MagicMock()
+
         with (
             patch("src.api.routes.chat.build_graph", return_value=mock_graph),
             patch("src.api.routes.chat.get_checkpointer", return_value=MockCheckpointerCtx()),
             patch("src.api.routes.chat.ProgressService") as MockProgressService,
+            patch("src.api.routes.chat.get_supabase_for_user", return_value=mock_user_client),
         ):
             mock_service_instance = MagicMock()
             MockProgressService.return_value = mock_service_instance
@@ -217,14 +220,16 @@ class TestChatDataCaptureAuthenticated:
             app.include_router(chat.router)
             client = TestClient(app)
 
+            # Must provide sb-access-token cookie for authenticated vocab capture
+            client.cookies.set("sb-access-token", "test-jwt-token")
             response = client.post(
                 "/chat",
                 data={"message": "Hola", "level": "A1", "language": "es"},
             )
 
             assert response.status_code == 200
-            # Authenticated users get progress tracking (no client param needed - uses RLS)
-            MockProgressService.assert_called_once_with(mock_user.id)
+            # Authenticated users get progress tracking with user-authenticated client
+            MockProgressService.assert_called_once_with(mock_user.id, client=mock_user_client)
             mock_service_instance.record_chat_activity.assert_called_once_with(
                 language="es",
                 level="A1",
@@ -380,10 +385,13 @@ class TestChatDataCaptureErrorResilience:
             async def __aexit__(self, *args):
                 pass
 
+        mock_user_client = MagicMock()
+
         with (
             patch("src.api.routes.chat.build_graph", return_value=mock_graph),
             patch("src.api.routes.chat.get_checkpointer", return_value=MockCheckpointerCtx()),
             patch("src.api.routes.chat.ProgressService") as MockProgressService,
+            patch("src.api.routes.chat.get_supabase_for_user", return_value=mock_user_client),
         ):
             mock_service_instance = MagicMock()
             mock_service_instance.record_chat_activity.side_effect = RuntimeError(
@@ -394,6 +402,8 @@ class TestChatDataCaptureErrorResilience:
             app.include_router(chat.router)
             client = TestClient(app)
 
+            # Must provide sb-access-token cookie for authenticated vocab capture
+            client.cookies.set("sb-access-token", "test-jwt-token")
             response = client.post(
                 "/chat",
                 data={"message": "Hola", "level": "A1", "language": "es"},

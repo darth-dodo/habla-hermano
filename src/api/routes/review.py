@@ -21,6 +21,7 @@ from fastapi.responses import HTMLResponse
 
 from src.api.auth import CurrentUserDep
 from src.api.dependencies import TemplatesDep
+from src.api.supabase_client import get_supabase_for_user
 from src.db.models import Vocabulary
 from src.db.repository import VocabularyRepository
 from src.services.review import ReviewService
@@ -181,6 +182,7 @@ def _get_hermano_feedback(quality: int, vocab: Vocabulary) -> str:
 async def get_review_stats(
     user: CurrentUserDep,
     language: str = "es",
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict[str, int | str | None]:
     """Get review statistics for progress page and review prompts.
 
@@ -190,6 +192,7 @@ async def get_review_stats(
     Args:
         user: Authenticated user (required).
         language: Target language to filter by. Defaults to "es".
+        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         Dictionary with:
@@ -197,7 +200,9 @@ async def get_review_stats(
         - next_review_in: Human-readable time until next review
         - total_in_rotation: Total words scheduled for review
     """
-    service = ReviewService(user.id)
+    # Use user-authenticated client for RLS to work with auth.uid()
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
     stats = service.get_stats(language=language)
 
     return {
@@ -214,6 +219,7 @@ async def start_review_session(
     user: CurrentUserDep,
     count: int | Literal["all"] = 10,
     language: str = "es",
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Initialize a review session and return the first question.
 
@@ -227,11 +233,14 @@ async def start_review_session(
         user: Authenticated user (required).
         count: Number of words to review (5, 10, or "all").
         language: Target language. Defaults to "es".
+        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: First review question as partial HTML.
     """
-    service = ReviewService(user.id)
+    # Use user-authenticated client for RLS to work with auth.uid()
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
 
     # Get due words
     limit = None if count == "all" else int(count)
@@ -289,6 +298,7 @@ async def submit_review_answer(
     word_id: int = Form(...),
     user_answer: str = Form(...),
     review_session: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Submit an answer for the current review question.
 
@@ -303,6 +313,7 @@ async def submit_review_answer(
         word_id: The vocabulary ID being answered.
         user_answer: User's submitted answer.
         review_session: Review session state cookie.
+        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: Feedback partial with next question or session summary.
@@ -318,7 +329,9 @@ async def submit_review_answer(
     except json.JSONDecodeError as err:
         raise HTTPException(status_code=400, detail="Invalid review session.") from err
 
-    service = ReviewService(user.id)
+    # Use user-authenticated client for RLS to work with auth.uid()
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
 
     # Get the vocabulary item
     due_words = service.get_due_words(language=session_state.get("language", "es"))
@@ -326,7 +339,7 @@ async def submit_review_answer(
 
     # If word not in due list, try to get from all vocab
     if vocab is None:
-        vocab_repo = VocabularyRepository(user.id)
+        vocab_repo = VocabularyRepository(user.id, client=user_client)
         all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
         vocab = next((w for w in all_vocab if w.id == word_id), None)
 
@@ -389,7 +402,7 @@ async def submit_review_answer(
 
     # Get next word
     next_word_id = word_ids[current_index]
-    vocab_repo = VocabularyRepository(user.id)
+    vocab_repo = VocabularyRepository(user.id, client=user_client)
     all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
     next_vocab = next((w for w in all_vocab if w.id == next_word_id), None)
 
@@ -398,7 +411,7 @@ async def submit_review_answer(
         session_state["current_index"] += 1
         # Recursive call or show summary
         return await _handle_missing_word(
-            request, templates, session_state, user.id, feedback, is_correct
+            request, templates, session_state, user.id, user_client, feedback, is_correct
         )
 
     next_question = _generate_question(next_vocab)
@@ -434,6 +447,7 @@ async def _handle_missing_word(
     templates: TemplatesDep,
     session_state: dict[str, Any],
     user_id: str,
+    user_client: Any,
     feedback: str,
     is_correct: bool,
 ) -> HTMLResponse:
@@ -444,6 +458,7 @@ async def _handle_missing_word(
         templates: Jinja2 template engine.
         session_state: Current review session state.
         user_id: Authenticated user's ID.
+        user_client: User-authenticated Supabase client.
         feedback: Feedback message from previous answer.
         is_correct: Whether the previous answer was correct.
 
@@ -455,7 +470,7 @@ async def _handle_missing_word(
     total = len(word_ids)
 
     # Find next valid word
-    vocab_repo = VocabularyRepository(user_id)
+    vocab_repo = VocabularyRepository(user_id, client=user_client)
     all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
     vocab_map = {v.id: v for v in all_vocab}
 

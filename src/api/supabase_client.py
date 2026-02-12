@@ -26,7 +26,7 @@ def get_supabase() -> SupabaseClient:
     Raises:
         ValueError: If Supabase is not configured.
     """
-    from supabase import create_client  # noqa: PLC0415
+    from supabase import create_client
 
     settings = get_settings()
 
@@ -57,7 +57,7 @@ def get_supabase_admin() -> SupabaseClient:
     Raises:
         ValueError: If Supabase is not configured or service key is missing.
     """
-    from supabase import create_client  # noqa: PLC0415
+    from supabase import create_client
 
     settings = get_settings()
 
@@ -73,6 +73,41 @@ def get_supabase_admin() -> SupabaseClient:
         settings.SUPABASE_URL,
         settings.SUPABASE_SERVICE_KEY,
     )
+
+
+def get_supabase_for_user(access_token: str) -> SupabaseClient:
+    """Get Supabase client authenticated with user's JWT.
+
+    Creates a client that includes the user's access token in requests,
+    allowing RLS policies to use auth.uid() for row-level access control.
+
+    Args:
+        access_token: User's JWT access token from authentication.
+
+    Returns:
+        Client: Supabase client authenticated as the user.
+
+    Raises:
+        ValueError: If Supabase is not configured.
+    """
+    from supabase import create_client
+
+    settings = get_settings()
+
+    if not settings.supabase_configured:
+        raise ValueError(
+            "Supabase is not configured. "
+            "Please set SUPABASE_URL, SUPABASE_ANON_KEY, "
+            "and SUPABASE_DB_URL in your environment."
+        )
+
+    client = create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_ANON_KEY,
+    )
+    # Set the user's JWT for authenticated requests
+    client.postgrest.auth(access_token)
+    return client
 
 
 def clear_supabase_cache() -> None:

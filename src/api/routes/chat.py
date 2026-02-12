@@ -37,6 +37,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
+from src.api.supabase_client import get_supabase_for_user
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
 
@@ -145,6 +146,7 @@ async def send_message(
     level: Annotated[str, Form()] = "A1",
     language: Annotated[str, Form()] = "es",
     session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Process a chat message and return the response as partial HTML.
 
@@ -202,9 +204,11 @@ async def send_message(
 
     # Capture vocabulary and session data for authenticated users only
     # Guests get chat but no progress tracking (simplifies architecture, no service key needed)
-    if new_vocabulary and effective_user_id and user:
+    if new_vocabulary and effective_user_id and user and sb_access_token:
         try:
-            progress_service = ProgressService(effective_user_id)
+            # Use user-authenticated client for RLS to work with auth.uid()
+            user_client = get_supabase_for_user(sb_access_token)
+            progress_service = ProgressService(effective_user_id, client=user_client)
             progress_service.record_chat_activity(
                 language=language,
                 level=level,
