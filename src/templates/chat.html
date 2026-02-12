@@ -3,7 +3,7 @@
 {% block title %}Chat - Habla Hermano{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}', menuOpen: false }">
+<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}', menuOpen: false, reviewMode: {{ 'true' if review_mode else 'false' }} }">
     <!-- Header - Nordic Minimal -->
     <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
@@ -235,6 +235,19 @@
     <main class="flex-1 overflow-y-auto bg-surface" id="chat-container">
         <div class="max-w-3xl mx-auto px-4 py-8 sm:px-6">
             <div id="chat-messages" class="space-y-6">
+                {% if review_mode and review_stats %}
+                <!-- Review Mode - Show session start selector -->
+                {% set due_count = review_stats.due_count %}
+                {% include "partials/review_start.html" %}
+                {% else %}
+                <!-- Normal Chat Mode -->
+
+                {% if show_warmup and review_stats %}
+                <!-- Warmup Prompt - Show when words are due -->
+                {% set due_count = review_stats.due_count %}
+                {% include "partials/warmup_prompt.html" %}
+                {% endif %}
+
                 <!-- Welcome Message - Warm Hermano greeting -->
                 <div class="message-enter flex justify-start mb-6">
                     <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
@@ -261,6 +274,7 @@
                     {% for msg in messages %}
                         {% include "partials/message.html" %}
                     {% endfor %}
+                {% endif %}
                 {% endif %}
             </div>
 

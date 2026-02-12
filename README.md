@@ -127,6 +127,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Guest Access** | Start learning immediately — no sign-up required |
 | **Guest Progress** | Session-based progress tracking for unauthenticated users (vocabulary and lesson completion persisted via cookies) |
 | **Pronunciation Tips** | Collapsible pronunciation guidance with level-based auto-expand (A0 auto-expands) |
+| **Spaced Repetition** | SM-2 algorithm with intelligent chat weaving and dedicated review mode |
 | **3 Languages** | Spanish, German, and French — 60 lessons across all levels A0-B1 |
 | **Beautiful Themes** | Nordic Minimal (light/dark/ocean) with clean, modern aesthetic |
 | **Mobile-First** | Works great on phone, tablet, or desktop |
@@ -164,6 +165,7 @@ Each level covers 5 categories: greetings, introductions, numbers, colors, and f
 - [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
 - [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
 - [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document
+- [Phase 12 Design](docs/design/phase12-spaced-repetition.md) — Spaced repetition design document
 - [Changelog](CHANGELOG.md) — Release history
 
 ---

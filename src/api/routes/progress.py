@@ -1,5 +1,6 @@
 """Progress and statistics endpoints.
 
+Phase 12: Added review stats for spaced repetition.
 Phase 7: Added real progress tracking with ProgressService.
 Phase 8: Supports both authenticated and guest users via session_id cookie.
 
@@ -19,6 +20,7 @@ from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import SupabaseClient, get_supabase_admin
 from src.db.repository import VocabularyRepository
 from src.services.progress import ProgressService
+from src.services.review import ReviewService
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +55,11 @@ async def get_progress_page(
     templates: TemplatesDep,
     user: OptionalUserDep,
     session_id: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
 ) -> HTMLResponse:
     """Render the progress overview page with learning statistics.
 
+    Phase 12: Added review stats for spaced repetition display.
     Phase 7: Uses ProgressService for real dashboard stats.
     Phase 8: Supports guest users via session_id cookie.
 
@@ -64,6 +68,7 @@ async def get_progress_page(
         templates: Jinja2 template engine.
         user: Authenticated user or None.
         session_id: Guest session cookie for unauthenticated users.
+        language: Target language for review stats. Defaults to "es".
 
     Returns:
         HTMLResponse: Rendered progress page with stats and vocabulary.
@@ -83,11 +88,20 @@ async def get_progress_page(
                 "vocabulary": [],
                 "user": None,
                 "is_guest": True,
+                "review_stats": None,
             },
         )
 
     service = ProgressService(effective_id, client=client)
     stats = service.get_dashboard_stats()
+
+    # Get review stats for spaced repetition
+    review_stats = None
+    try:
+        review_service = ReviewService(effective_id, client=client)
+        review_stats = review_service.get_stats(language=language)
+    except Exception:
+        logger.exception("Failed to get review stats for user %s", effective_id)
 
     return templates.TemplateResponse(
         request=request,
@@ -100,6 +114,7 @@ async def get_progress_page(
             "vocabulary": [],  # Loaded via HTMX partial
             "user": user,
             "is_guest": is_guest,
+            "review_stats": review_stats,
         },
     )
 

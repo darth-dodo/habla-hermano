@@ -1,0 +1,68 @@
+{#
+Warmup Prompt - Chat entry prompt
+Shown when user opens chat and has words due for review
+Variables expected:
+  - due_count: int (number of words due)
+  - language: str (language code, e.g. 'es')
+#}
+
+<div
+    id="warmup-prompt"
+    class="message-enter flex justify-start mb-6"
+    x-data="{ dismissed: false }"
+    x-show="!dismissed"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 transform translate-y-0"
+    x-transition:leave-end="opacity-0 transform -translate-y-2"
+>
+    <div class="bg-accent-muted rounded-2xl rounded-bl-sm px-5 py-4 max-w-[90%] border border-accent/20">
+        <!-- Message -->
+        <p class="text-text leading-relaxed mb-4">
+            <span class="font-semibold text-accent">
+                {% if language == 'es' %}
+                    ¡Oye!
+                {% elif language == 'de' %}
+                    Hey!
+                {% elif language == 'fr' %}
+                    Salut!
+                {% else %}
+                    Hey!
+                {% endif %}
+            </span>
+            You've got {{ due_count }} {{ 'word' if due_count == 1 else 'words' }} getting rusty - want a quick warmup?
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-2">
+            <a
+                href="/chat?mode=review"
+                class="px-4 py-2.5 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl text-sm transition-all duration-150 flex items-center gap-2 btn-press"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Sure!
+            </a>
+
+            <button
+                @click="dismissed = true"
+                hx-delete="/review/warmup-prompt"
+                hx-swap="none"
+                class="px-4 py-2.5 bg-surface-overlay hover:bg-border/50 text-text-muted font-medium rounded-xl text-sm transition-all duration-150 btn-press"
+            >
+                Skip for now
+            </button>
+        </div>
+
+        <!-- Time Estimate -->
+        <p class="text-xs text-text-subtle mt-3">
+            {% if due_count <= 5 %}
+                ~2 min review
+            {% elif due_count <= 10 %}
+                ~5 min review
+            {% else %}
+                ~{{ (due_count / 2) | int }} min for all
+            {% endif %}
+        </p>
+    </div>
+</div>

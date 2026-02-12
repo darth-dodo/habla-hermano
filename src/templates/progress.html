@@ -45,6 +45,15 @@
                 </div>
             </div>
 
+            <!-- Review Card - Spaced Repetition -->
+            {% if review_stats %}
+            <div id="review-card-container" role="region" aria-label="Vocabulary review">
+                {% set due_count = review_stats.due_count %}
+                {% set estimate_minutes = (due_count / 2) | int if due_count > 10 else (5 if due_count > 5 else 2) %}
+                {% include "partials/review_card.html" %}
+            </div>
+            {% endif %}
+
             <!-- Charts Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Vocabulary Growth Chart -->

@@ -1,0 +1,93 @@
+{#
+Review Start - Session start selector
+Hermano greeting with session size options
+Variables expected:
+  - due_count: int (total words due for review)
+  - language: str (language code, e.g. 'es')
+#}
+
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[90%] border border-border">
+        <!-- Hermano Greeting -->
+        <p class="text-ai-text leading-relaxed mb-4">
+            <span class="font-semibold text-accent">
+                {% if language == 'es' %}
+                    ¡Oye!
+                {% elif language == 'de' %}
+                    Hey!
+                {% elif language == 'fr' %}
+                    Salut!
+                {% else %}
+                    Hey!
+                {% endif %}
+            </span>
+            You've got <strong class="text-accent">{{ due_count }} {{ 'word' if due_count == 1 else 'words' }}</strong> ready for review. How much time do you have?
+        </p>
+
+        <!-- Session Size Options -->
+        <div
+            class="flex flex-wrap gap-2 mb-4"
+            x-data="{ selected: 10 }"
+        >
+            <!-- Quick (5) -->
+            <button
+                type="button"
+                @click="selected = 5"
+                :class="selected === 5 ? 'bg-accent text-accent-text border-accent' : 'bg-surface-overlay text-text border-border hover:border-accent/50'"
+                class="px-4 py-2.5 rounded-xl border font-medium text-sm transition-all duration-150 btn-press"
+            >
+                Quick (5)
+            </button>
+
+            <!-- Regular (10) - Default selected -->
+            <button
+                type="button"
+                @click="selected = 10"
+                :class="selected === 10 ? 'bg-accent text-accent-text border-accent' : 'bg-surface-overlay text-text border-border hover:border-accent/50'"
+                class="px-4 py-2.5 rounded-xl border font-medium text-sm transition-all duration-150 btn-press"
+            >
+                Regular (10)
+            </button>
+
+            <!-- All -->
+            {% if due_count > 10 %}
+            <button
+                type="button"
+                @click="selected = {{ due_count }}"
+                :class="selected === {{ due_count }} ? 'bg-accent text-accent-text border-accent' : 'bg-surface-overlay text-text border-border hover:border-accent/50'"
+                class="px-4 py-2.5 rounded-xl border font-medium text-sm transition-all duration-150 btn-press"
+            >
+                All ({{ due_count }})
+            </button>
+            {% endif %}
+
+            <!-- Hidden input for selected count -->
+            <input type="hidden" name="review_count" x-model="selected" />
+
+            <!-- Start Button -->
+            <button
+                hx-post="/review/start"
+                hx-vals="js:{count: selected}"
+                hx-target="#chat-messages"
+                hx-swap="innerHTML"
+                class="ml-auto px-5 py-2.5 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-150 flex items-center gap-2 btn-press"
+            >
+                <span>Let's go!</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Hint -->
+        <p class="text-xs text-text-subtle">
+            {% if due_count <= 5 %}
+                About 2 minutes
+            {% elif due_count <= 10 %}
+                About 5 minutes
+            {% else %}
+                About {{ (due_count / 2) | int }} minutes for all
+            {% endif %}
+        </p>
+    </div>
+</div>

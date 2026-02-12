@@ -19,8 +19,9 @@
 | **Phase 9** | AI-Enhanced Lessons - LangGraph subgraphs for personalized lesson delivery | ✅ Completed |
 | **Phase 10** | Lesson Content Expansion - 60 lessons across all languages and levels | ✅ Completed |
 | **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
+| **Phase 12** | Spaced Repetition - SM-2 algorithm, intelligent chat weaving, review mode | ✅ Completed |
 
-**Test Coverage**: 1017+ tests (86%+ coverage) covering agent, API, database, auth, lessons, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1017+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -169,12 +170,15 @@ habla-hermano/
 │   │       ├── chat.py          # [Implemented] POST /chat (protected)
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
-│   │       └── progress.py      # [Implemented] Vocabulary, stats endpoints
+│   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
+│   │       └── review.py        # [Implemented] Spaced repetition review endpoints
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
 │   │   ├── graph.py             # [Implemented] LangGraph: respond → scaffold (conditional) → analyze → END
-│   │   ├── state.py             # [Implemented] TypedDict state with GrammarFeedback, VocabWord
+│   │   ├── state.py             # [Implemented] TypedDict state with GrammarFeedback, VocabWord, ReviewWord types
+│   │   ├── review_state.py      # [Implemented] ReviewState TypedDict for review subgraph
+│   │   ├── review_graph.py      # [Implemented] Review session subgraph with question/feedback flow
 │   │   ├── prompts.py           # [Implemented] System prompts by level
 │   │   ├── checkpointer.py      # [Implemented] PostgresSaver + MemorySaver fallback
 │   │   └── nodes/
@@ -183,6 +187,7 @@ habla-hermano/
 │   │       ├── analyze.py       # [Implemented] Grammar/vocab analysis
 │   │       ├── scaffold.py      # [Implemented] Generate scaffolding (word banks, hints, sentence starters)
 │   │       ├── lesson.py        # [Implemented] AI-enhanced lesson nodes (load_step, enhance_step, validate_exercise)
+│   │       ├── review.py        # [Implemented] Review nodes (generate_question, evaluate_answer, update_sm2)
 │   │       └── feedback.py      # [Planned] Format corrections
 │   │
 │   ├── agent/
@@ -205,7 +210,8 @@ habla-hermano/
 │   │   ├── vocabulary.py        # [Implemented] Vocab extraction logic
 │   │   ├── levels.py            # [Implemented] Level detection/adjustment
 │   │   ├── progress.py          # [Implemented] ProgressService for dashboard aggregation
-│   │   └── merge.py             # [Implemented] GuestDataMergeService for auth data transfer
+│   │   ├── merge.py             # [Implemented] GuestDataMergeService for auth data transfer
+│   │   └── review.py            # [Implemented] ReviewService with SM-2 algorithm
 │   │
 │   ├── templates/               # [Implemented] All template files
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
@@ -227,7 +233,13 @@ habla-hermano/
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
 │   │       ├── vocab_sidebar.html
 │   │       ├── progress_vocab.html  # [Implemented] Vocabulary list partial
-│   │       └── stats_summary.html   # [Implemented] Stats summary partial
+│   │       ├── stats_summary.html   # [Implemented] Stats summary partial
+│   │       ├── review_question.html # [Implemented] Review question partial
+│   │       ├── review_feedback.html # [Implemented] Review answer feedback partial
+│   │       ├── review_complete.html # [Implemented] Review session complete partial
+│   │       ├── review_empty.html    # [Implemented] No words to review partial
+│   │       ├── review_start.html    # [Implemented] Review session start UI
+│   │       └── chat_warmup.html     # [Implemented] Review warmup prompt in chat
 │   │
 │   └── static/
 │       ├── css/
@@ -725,6 +737,108 @@ async def validate_exercise_node(state: LessonState) -> dict[str, Any]:
 
 ---
 
+### Phase 12: Spaced Repetition with SM-2 Algorithm
+
+Phase 12 adds conversation-first spaced repetition — no flashcards, no decontextualized drills. Words come back through Hermano naturally, using the SM-2 algorithm for scheduling.
+
+**ReviewState** — Dedicated TypedDict for the review subgraph:
+
+```python
+class ReviewState(TypedDict):
+    # Session context
+    user_id: str
+    language: str
+    level: str
+
+    # Session tracking
+    words_to_review: list[dict[str, object]]
+    current_word_index: int
+    session_size: int  # 5, 10, or total count
+
+    # Current question (populated by generate_question node)
+    current_word: NotRequired[dict[str, object]]
+    question_type: NotRequired[str]  # translate, fill_blank, recognize
+    question_text: NotRequired[str]
+
+    # Answer evaluation (populated by evaluate_answer node)
+    user_answer: NotRequired[str]
+    quality_score: NotRequired[int]  # 0-5 SM-2 score
+    feedback_text: NotRequired[str]
+
+    # Session results
+    results: list[dict[str, object]]  # [{word_id, quality, correct}]
+```
+
+**Two compiled subgraphs**:
+
+1. **Review Subgraph** — Generates questions for review sessions:
+
+```
+┌─────────────────────┐
+│  generate_question   │ ← Picks question type, generates with Hermano's voice
+└────────┬────────────┘
+         │
+┌────────▼────────┐
+│      END        │ ← Returns question, waits for user input externally
+└─────────────────┘
+```
+
+2. **Answer Evaluation Subgraph** — Evaluates answers and updates scheduling:
+
+```
+┌─────────────────────┐
+│  evaluate_answer     │ ← AI evaluates correctness, infers quality score (0-5)
+└────────┬────────────┘
+         │
+┌────────▼────────┐
+│   update_sm2     │ ← Applies SM-2 algorithm: easiness_factor, interval, next_review_at
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│      END        │
+└─────────────────┘
+```
+
+**Chat weaving** — The respond node also participates in review:
+
+- `_get_topical_review_words()` fetches due-for-review words related to the current topic
+- Hermano naturally weaves these words into responses and prompts
+- The analyze node detects correct usage via `_check_review_word_usage()`
+- SM-2 is updated silently via `_update_sm2_for_used_words()` — the user never notices
+
+**Review nodes** (`src/agent/nodes/review.py`):
+
+| Node | Purpose |
+|------|---------|
+| `generate_question_node` | Picks question type (translate/fill_blank/recognize), generates question with Hermano's personality |
+| `evaluate_answer_node` | Uses AI to evaluate correctness, infer quality score (0-5), generate personalized feedback |
+| `update_sm2_node` | Applies SM-2 formula: updates easiness_factor, interval, repetitions, next_review_at |
+
+**SM-2 Algorithm** (`src/services/review.py`):
+
+```
+quality >= 3 (correct):
+  repetitions += 1
+  if repetitions == 1: interval = 1 day
+  elif repetitions == 2: interval = 6 days
+  else: interval = previous_interval × easiness_factor
+
+quality < 3 (incorrect):
+  repetitions = 0
+  interval = 1 day
+
+easiness_factor = max(1.3, EF + 0.1 - (5 - quality) × (0.08 + (5 - quality) × 0.02))
+```
+
+**What you learned**:
+- Designing a two-channel review system (passive chat weaving + active review mode)
+- Building multiple subgraphs that share a common state type
+- Silent background updates triggered by conversation analysis
+- SM-2 scheduling algorithm implementation with database persistence
+- Composing LLM evaluation with algorithmic updates in a single subgraph
+
+---
+
 ## State Definition (Full)
 
 ```python
@@ -786,6 +900,18 @@ class PronunciationTip(TypedDict):
     tip: str            # Brief pronunciation guidance
     audio_hint: NotRequired[str]  # Optional English sound comparison
 
+class ReviewWordOffered(TypedDict):
+    """A review word offered for chat weaving (Phase 12)"""
+    vocab_id: int       # Database ID for SM-2 update
+    word: str           # Word in target language
+    translation: str    # English translation
+
+class ReviewWordUsed(TypedDict):
+    """A review word the user correctly used in chat (Phase 12)"""
+    vocab_id: int       # Database ID for SM-2 update
+    word: str           # Word that was used
+    quality: int        # SM-2 quality score (0-5)
+
 class ConversationState(TypedDict):
     """Main LangGraph state for Habla Hermano"""
 
@@ -803,6 +929,11 @@ class ConversationState(TypedDict):
     grammar_feedback: list[GrammarFeedback]
     new_vocabulary: list[VocabWord]
     pronunciation_tips: list[PronunciationTip]  # Pronunciation guidance from analyze_node
+
+    # === Spaced Repetition (Phase 12) ===
+    user_id: NotRequired[str]  # For review word lookup
+    review_words_offered: NotRequired[list[ReviewWordOffered]]  # Words woven into chat
+    review_words_used: NotRequired[list[ReviewWordUsed]]  # Words user correctly used
 
     # === Session Tracking ===
     session_id: str
@@ -1165,6 +1296,88 @@ When users chat with Hermano, new vocabulary extracted by the analyze node is pe
 │     - Increments times_seen if exists, creates if not                   │
 │  2. Ensure active session exists:                                       │
 │     - LearningSessionRepository.get_active() or .create()               │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Spaced Repetition Data Flow
+
+#### Dedicated Review Session
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     REVIEW SESSION FLOW                                  │
+│                                                                         │
+│  User starts review (Progress page / chat warmup / ?mode=review)       │
+│                                                                         │
+│  1. ReviewService.get_words_for_review(user_id, language)              │
+│     - Queries vocabulary WHERE next_review_at <= now                    │
+│     - Returns list of due words sorted by priority                     │
+│                                                                         │
+│  2. User picks session size: Quick (5) / Regular (10) / All            │
+│                                                                         │
+│  3. For each word in session:                                          │
+│     ┌──────────────────────────────────────────────────┐               │
+│     │  review_subgraph.ainvoke(ReviewState)             │               │
+│     │  → generate_question_node                         │               │
+│     │    - Picks question_type (translate/fill_blank/   │               │
+│     │      recognize) based on word and level            │               │
+│     │    - Generates question_text with Hermano voice   │               │
+│     │  → Returns: question_type, question_text          │               │
+│     └──────────────────────┬───────────────────────────┘               │
+│                            │ user answers                               │
+│     ┌──────────────────────▼───────────────────────────┐               │
+│     │  answer_evaluation_graph.ainvoke(ReviewState)     │               │
+│     │  → evaluate_answer_node                           │               │
+│     │    - AI evaluates correctness                     │               │
+│     │    - Infers quality_score (0-5)                   │               │
+│     │    - Generates feedback_text                      │               │
+│     │  → update_sm2_node                                │               │
+│     │    - Applies SM-2 formula to vocabulary record    │               │
+│     │    - Updates: easiness_factor, interval,          │               │
+│     │      repetitions, next_review_at                  │               │
+│     │  → Returns: quality_score, feedback_text          │               │
+│     └──────────────────────────────────────────────────┘               │
+│                                                                         │
+│  4. Session complete → summary of results                              │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Chat Weaving Flow (Passive Review)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     CHAT WEAVING FLOW                                    │
+│                                                                         │
+│  During normal conversation:                                            │
+│                                                                         │
+│  RESPOND NODE (before generating response):                            │
+│  ┌──────────────────────────────────────────┐                          │
+│  │  _get_topical_review_words(user_id,      │                          │
+│  │    language, topic_context)               │                          │
+│  │  → ReviewService.get_words_for_review()   │                          │
+│  │  → Filter for topic relevance             │                          │
+│  │  → Add to system prompt: "naturally       │                          │
+│  │    weave these words into your response"  │                          │
+│  └──────────────────────┬───────────────────┘                          │
+│                         ▼                                               │
+│  Hermano's response includes review words naturally                    │
+│  State tracks: review_words_offered = [{word, translation}]            │
+│                         │                                               │
+│                         ▼ (user responds)                               │
+│                                                                         │
+│  ANALYZE NODE (after user response):                                   │
+│  ┌──────────────────────────────────────────┐                          │
+│  │  _check_review_word_usage(user_message,  │                          │
+│  │    offered_words)                         │                          │
+│  │  → Check if user used offered words       │                          │
+│  │  → For each correctly used word:          │                          │
+│  │    _update_sm2_for_used_words()           │                          │
+│  │    - quality = 4 (good recall)            │                          │
+│  │    - ReviewService.update_review()        │                          │
+│  │  State: review_words_used = [{word}]      │                          │
+│  └──────────────────────────────────────────┘                          │
+│                                                                         │
+│  User never sees any review UI — it all happens in the background.     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1591,6 +1804,55 @@ async def get_chart_data(
     """Return vocab_growth and accuracy_trend as JSON for charts."""
 ```
 
+### Review (Phase 12)
+
+The review module provides spaced repetition with the SM-2 algorithm. It supports both dedicated review sessions and intelligent chat weaving.
+
+**Review Stats**:
+```python
+@router.get("/stats")
+async def get_review_stats(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
+) -> JSONResponse:
+    """Return due_count, next_review_in, and total_in_rotation."""
+```
+
+**Review Session**:
+```python
+@router.post("/start")
+async def start_review_session(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+    language: str = "es",
+    size: int = 10,
+) -> HTMLResponse:
+    """Start a review session with specified number of due words."""
+
+@router.post("/next")
+async def get_next_question(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Get the next review question (conversational micro-quiz format)."""
+
+@router.post("/submit")
+async def submit_answer(
+    user: OptionalUserDep,
+    answer: str = Form(...),
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Submit answer, get Hermano-style feedback, update SM-2 scheduling."""
+
+@router.post("/complete")
+async def complete_review_session(
+    user: OptionalUserDep,
+    session_id: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Complete review session and show summary."""
+```
+
 ---
 
 ## Database Schema (Supabase PostgreSQL)
@@ -1608,7 +1870,7 @@ CREATE TABLE user_profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Vocabulary learned across all sessions
+-- Vocabulary learned across all sessions (with SM-2 spaced repetition fields)
 CREATE TABLE vocabulary (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,  -- auth.users UUID or guest session UUID
@@ -1619,6 +1881,12 @@ CREATE TABLE vocabulary (
     first_seen_at TIMESTAMPTZ DEFAULT NOW(),
     times_seen INTEGER DEFAULT 1,
     times_correct INTEGER DEFAULT 0,  -- For accuracy tracking
+    -- SM-2 spaced repetition fields (Phase 12)
+    easiness_factor FLOAT DEFAULT 2.5,  -- How easy this word is (1.3 - 2.5+)
+    interval_days INTEGER DEFAULT 0,     -- Current review interval
+    repetition_count INTEGER DEFAULT 0,  -- Successful reviews in a row
+    next_review_at TIMESTAMPTZ,          -- When due (NULL = not yet in rotation)
+    last_reviewed_at TIMESTAMPTZ,
     UNIQUE(user_id, word, language)
 );
 
@@ -1794,8 +2062,24 @@ asyncio_mode = "auto"
 5. API endpoints for AI-enhanced step content and exercise validation
 6. 1016+ tests with comprehensive coverage
 
-### Week 8+: Iterate
-1. Test with real beginners
-2. Tune scaffolding and AI enhancement based on feedback
-3. Add more lessons (A1, A2, B1)
-4. German/French support (if time)
+### Week 8: Lesson Content Expansion (Phase 10) - COMPLETED
+1. Content generation pipeline for bulk lesson creation
+2. 60 lessons across 3 languages (Spanish, German, French) × 4 levels (A0–B1)
+3. 5 lessons per language-level combination with progressive difficulty
+4. YAML-based lesson format with vocabulary, exercises, and cultural notes
+
+### Week 9: Nordic Design + Pronunciation (Phase 11) - COMPLETED
+1. Nordic Minimal design system (Light, Dark, Ocean themes)
+2. Pronunciation tips engine with per-language phonetic data
+3. Collapsible pronunciation UI (auto-expanded for A0, collapsed for A1+)
+4. Language-specific guidance: Spanish, German, French phonetics
+5. Consistent design tokens and component library
+
+### Week 10: Spaced Repetition (Phase 12) - COMPLETED
+1. SM-2 algorithm implementation in ReviewService
+2. ReviewState TypedDict and review subgraphs (question generation, answer evaluation)
+3. Dedicated review mode with 3 question types (translate, fill_blank, recognize)
+4. Chat weaving: respond node offers due-for-review words naturally
+5. Silent tracking: analyze node detects correct usage and updates SM-2
+6. Review API endpoints for session management and progress tracking
+7. Database migration with SM-2 fields (easiness_factor, interval, repetitions, next_review_at)
