@@ -19,7 +19,7 @@ and session-based for anonymous users (cookie-based).
 
 import logging
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
@@ -33,6 +33,9 @@ from src.api.supabase_client import get_supabase_admin
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
 
+if TYPE_CHECKING:
+    from supabase import Client as SupabaseClient
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
@@ -41,7 +44,7 @@ router = APIRouter(tags=["chat"])
 def _resolve_identity_for_chat(
     user: OptionalUserDep,
     session_id: str | None,
-) -> tuple[str | None, object | None]:
+) -> "tuple[str | None, SupabaseClient | None]":
     """Resolve effective user ID and Supabase client for auth or guest users.
 
     Returns (effective_id, client) where client is the admin client for guests
