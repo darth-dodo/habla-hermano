@@ -606,11 +606,12 @@ class TestStreak:
 # =============================================================================
 
 
+@patch("src.services.progress.ReviewService")
 class TestRecordChatActivity:
     """Tests for ProgressService.record_chat_activity."""
 
     def test_upserts_each_vocab_word(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test each word in new_vocab triggers a repo upsert call."""
         mock_session_repo.get_active.return_value = _make_session()
@@ -631,7 +632,7 @@ class TestRecordChatActivity:
         )
 
     def test_creates_session_when_none_active(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test a new session is created when no active session exists."""
         mock_session_repo.get_active.return_value = None
@@ -641,7 +642,7 @@ class TestRecordChatActivity:
         mock_session_repo.create.assert_called_once_with(language="es", level="A1")
 
     def test_does_not_create_session_when_active(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test no new session is created when one is already active."""
         mock_session_repo.get_active.return_value = _make_session()
@@ -651,7 +652,7 @@ class TestRecordChatActivity:
         mock_session_repo.create.assert_not_called()
 
     def test_empty_vocab_list(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test calling with an empty vocab list does not call upsert."""
         mock_session_repo.get_active.return_value = _make_session()
@@ -661,7 +662,7 @@ class TestRecordChatActivity:
         mock_vocab_repo.upsert.assert_not_called()
 
     def test_error_is_logged_not_raised(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test exceptions are caught, logged, and not re-raised."""
         mock_vocab_repo.upsert.side_effect = RuntimeError("Supabase down")
@@ -674,7 +675,7 @@ class TestRecordChatActivity:
         )
 
     def test_error_logged_with_user_id(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test logged error includes the user_id for traceability."""
         mock_vocab_repo.upsert.side_effect = RuntimeError("Connection lost")
@@ -691,7 +692,7 @@ class TestRecordChatActivity:
             assert "test-user-123" in str(call_args)
 
     def test_session_check_after_vocab_upsert(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test session lookup happens even with vocab to upsert."""
         mock_session_repo.get_active.return_value = _make_session()
@@ -705,7 +706,7 @@ class TestRecordChatActivity:
         mock_session_repo.get_active.assert_called_once()
 
     def test_part_of_speech_optional(
-        self, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
+        self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test part_of_speech defaults to None when not provided."""
         mock_session_repo.get_active.return_value = _make_session()
