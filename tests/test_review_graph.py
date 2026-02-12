@@ -215,9 +215,9 @@ class TestReviewStateFieldTypes:
     def test_scalar_field_types(self, field: str, expected_type: type) -> None:
         """Scalar fields should have the expected primitive type."""
         hints = get_type_hints(ReviewState, include_extras=False)
-        assert (
-            hints[field] is expected_type
-        ), f"Field {field} expected {expected_type}, got {hints[field]}"
+        assert hints[field] is expected_type, (
+            f"Field {field} expected {expected_type}, got {hints[field]}"
+        )
 
 
 # ---------------------------------------------------------------------------
