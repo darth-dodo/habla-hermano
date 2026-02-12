@@ -1,5 +1,6 @@
 """Chat router for handling conversation interactions.
 
+Phase 13: Simplified guest model - guests get chat only, no persistence.
 Phase 12: Added review mode support for spaced repetition.
 Phase 7: Added vocabulary and session data capture for authenticated users.
 Phase 5: Added user authentication with Supabase.
@@ -15,11 +16,18 @@ Authentication:
 
 Thread IDs are user-scoped for authenticated users (persistent across sessions),
 and session-based for anonymous users (cookie-based).
+
+Guest users get:
+- Full chat functionality (conversation persists via LangGraph checkpointing)
+- Grammar feedback and pronunciation tips (returned in response)
+- NO vocabulary tracking (requires account)
+- NO progress page data (requires account)
+- NO spaced repetition (requires account)
 """
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
@@ -29,36 +37,12 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
-from src.api.supabase_client import get_supabase_admin
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
-
-if TYPE_CHECKING:
-    from supabase import Client as SupabaseClient
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
-
-
-def _resolve_identity_for_chat(
-    user: OptionalUserDep,
-    session_id: str | None,
-) -> "tuple[str | None, SupabaseClient | None]":
-    """Resolve effective user ID and Supabase client for auth or guest users.
-
-    Returns (effective_id, client) where client is the admin client for guests
-    or None for authenticated users.
-    """
-    if user:
-        return user.id, None
-    if session_id:
-        try:
-            return session_id, get_supabase_admin()
-        except Exception:
-            logger.warning("Admin client unavailable; guest features disabled")
-            return None, None
-    return None, None
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
@@ -68,15 +52,14 @@ async def chat_page(
     settings: SettingsDep,
     user: OptionalUserDep,
     mode: str | None = None,
-    session_id: Annotated[str | None, Cookie()] = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
     language: str = "es",
 ) -> HTMLResponse:
     """Render the main chat interface.
 
     Supports both authenticated and guest users. Authenticated users
-    get persistent conversation history; guests get session-based
-    conversations via cookies.
+    get persistent conversation history and progress tracking; guests get
+    session-based conversations via cookies but no progress tracking.
 
     Phase 12: Added review mode support. When mode=review, shows the
     review session start UI instead of normal chat.
@@ -87,7 +70,6 @@ async def chat_page(
         settings: Application settings.
         user: Optional authenticated user (None if guest).
         mode: Optional mode parameter ("review" for review mode).
-        session_id: Session cookie for guest users.
         warmup_dismissed: Cookie tracking if warmup was dismissed.
         language: Target language for review stats.
 
@@ -105,13 +87,10 @@ async def chat_page(
         "current_language": language,
     }
 
-    # Resolve identity for review features
-    effective_id, client = _resolve_identity_for_chat(user, session_id)
-
-    if effective_id:
-        # Get review stats
+    # Review features only for authenticated users
+    if user:
         try:
-            review_service = ReviewService(effective_id, client=client)
+            review_service = ReviewService(user.id)
             review_stats = review_service.get_stats(language=language)
             context["review_stats"] = review_stats
 
@@ -122,7 +101,7 @@ async def chat_page(
                 # Show warmup prompt if words are due and not dismissed
                 context["show_warmup"] = True
         except Exception:
-            logger.exception("Failed to get review stats for user %s", effective_id)
+            logger.exception("Failed to get review stats for user %s", user.id)
 
     return templates.TemplateResponse(
         request=request,
@@ -135,19 +114,26 @@ def _resolve_chat_identity(
     user: AuthenticatedUser | None,
     session_id: str | None,
 ) -> tuple[str, str | None, str | None]:
-    """Resolve thread_id and effective user_id for chat.
+    """Resolve thread_id and user_id for chat.
+
+    For authenticated users, returns their user ID for both thread and user tracking.
+    For guests, returns session_id for thread (checkpointing) but None for user_id
+    (no progress tracking).
 
     Returns:
-        Tuple of (thread_id, effective_user_id, new_session_id).
-        new_session_id is set only for first-time anonymous users.
+        Tuple of (thread_id, user_id_for_progress, new_session_id).
+        - thread_id: Used for LangGraph checkpointing (works for both auth and guest)
+        - user_id_for_progress: Only set for authenticated users (None for guests)
+        - new_session_id: Set only for first-time anonymous users (for cookie)
     """
     if user:
         return get_user_thread_id(user.id), user.id, None
     if session_id:
-        return session_id, session_id, None
-    # First-time anonymous user
+        # Guest with existing session - thread_id for chat, but NO user_id for progress
+        return session_id, None, None
+    # First-time anonymous user - generate session for checkpointing only
     new_id = str(uuid.uuid4())
-    return new_id, new_id, new_id
+    return new_id, None, new_id
 
 
 @router.post("/chat", response_class=HTMLResponse)
@@ -214,11 +200,11 @@ async def send_message(
     # Only populated for A0-A1 learners via conditional routing
     scaffolding = result.get("scaffolding", {})
 
-    # Capture vocabulary and session data for any user with identity (fire-and-forget)
-    if new_vocabulary and effective_user_id:
+    # Capture vocabulary and session data for authenticated users only
+    # Guests get chat but no progress tracking (simplifies architecture, no service key needed)
+    if new_vocabulary and effective_user_id and user:
         try:
-            client = get_supabase_admin() if not user else None
-            progress_service = ProgressService(effective_user_id, client=client)
+            progress_service = ProgressService(effective_user_id)
             progress_service.record_chat_activity(
                 language=language,
                 level=level,

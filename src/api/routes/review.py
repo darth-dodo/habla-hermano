@@ -1,7 +1,7 @@
 """Review endpoints for spaced repetition.
 
 Phase 12: Implements spaced repetition review sessions using the SM-2 algorithm.
-Supports both authenticated users and guests via session_id cookie.
+Requires authentication - spaced repetition is an authenticated-only feature.
 
 Endpoints:
 - GET /review/stats - Get review statistics (due count, next review time)
@@ -19,9 +19,8 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
-from src.api.auth import AuthenticatedUser, OptionalUserDep
+from src.api.auth import CurrentUserDep
 from src.api.dependencies import TemplatesDep
-from src.api.supabase_client import SupabaseClient, get_supabase_admin
 from src.db.models import Vocabulary
 from src.db.repository import VocabularyRepository
 from src.services.review import ReviewService
@@ -34,28 +33,6 @@ router = APIRouter(prefix="/review", tags=["review"])
 # =============================================================================
 # Helpers
 # =============================================================================
-
-
-def _resolve_identity(
-    user: AuthenticatedUser | None,
-    session_id: str | None,
-) -> tuple[str | None, SupabaseClient | None]:
-    """Resolve effective user ID and Supabase client for auth or guest users.
-
-    Returns (effective_id, client) where client is the admin client for guests
-    or None for authenticated users. If the admin client cannot be created
-    (e.g. missing env var), returns (None, None) so callers fall through
-    to the empty-state path.
-    """
-    if user:
-        return user.id, None
-    if session_id:
-        try:
-            return session_id, get_supabase_admin()
-        except Exception:
-            logger.warning("Admin client unavailable; guest review disabled")
-            return None, None
-    return None, None
 
 
 def _get_review_session_cookie_name() -> str:
@@ -202,18 +179,16 @@ def _get_hermano_feedback(quality: int, vocab: Vocabulary) -> str:
 
 @router.get("/stats")
 async def get_review_stats(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
     language: str = "es",
 ) -> dict[str, int | str | None]:
     """Get review statistics for progress page and review prompts.
 
     Returns the number of words due for review, time until next review,
-    and total words in the review rotation.
+    and total words in the review rotation. Requires authentication.
 
     Args:
-        user: Authenticated user or None.
-        session_id: Guest session cookie for unauthenticated users.
+        user: Authenticated user (required).
         language: Target language to filter by. Defaults to "es".
 
     Returns:
@@ -222,16 +197,7 @@ async def get_review_stats(
         - next_review_in: Human-readable time until next review
         - total_in_rotation: Total words scheduled for review
     """
-    effective_id, client = _resolve_identity(user, session_id)
-
-    if not effective_id:
-        return {
-            "due_count": 0,
-            "next_review_in": None,
-            "total_in_rotation": 0,
-        }
-
-    service = ReviewService(effective_id, client=client)
+    service = ReviewService(user.id)
     stats = service.get_stats(language=language)
 
     return {
@@ -245,8 +211,7 @@ async def get_review_stats(
 async def start_review_session(
     request: Request,
     templates: TemplatesDep,
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
     count: int | Literal["all"] = 10,
     language: str = "es",
 ) -> HTMLResponse:
@@ -254,30 +219,19 @@ async def start_review_session(
 
     Creates a review session with the specified number of words and stores
     session state in a cookie. Returns the first question as an HTML partial.
+    Requires authentication.
 
     Args:
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
-        user: Authenticated user or None.
-        session_id: Guest session cookie for unauthenticated users.
+        user: Authenticated user (required).
         count: Number of words to review (5, 10, or "all").
         language: Target language. Defaults to "es".
 
     Returns:
         HTMLResponse: First review question as partial HTML.
-
-    Raises:
-        HTTPException: 400 if no words are due for review.
     """
-    effective_id, client = _resolve_identity(user, session_id)
-
-    if not effective_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Please sign in or start a session to use reviews.",
-        )
-
-    service = ReviewService(effective_id, client=client)
+    service = ReviewService(user.id)
 
     # Get due words
     limit = None if count == "all" else int(count)
@@ -331,24 +285,23 @@ async def start_review_session(
 async def submit_review_answer(
     request: Request,
     templates: TemplatesDep,
-    user: OptionalUserDep,
+    user: CurrentUserDep,
     word_id: int = Form(...),
     user_answer: str = Form(...),
-    session_id: Annotated[str | None, Cookie()] = None,
     review_session: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Submit an answer for the current review question.
 
     Validates the answer against the correct answer, updates SM-2 scheduling,
     and returns feedback along with the next question (or summary if complete).
+    Requires authentication.
 
     Args:
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
-        user: Authenticated user or None.
+        user: Authenticated user (required).
         word_id: The vocabulary ID being answered.
         user_answer: User's submitted answer.
-        session_id: Guest session cookie for unauthenticated users.
         review_session: Review session state cookie.
 
     Returns:
@@ -357,11 +310,6 @@ async def submit_review_answer(
     Raises:
         HTTPException: 400 if no active review session.
     """
-    effective_id, client = _resolve_identity(user, session_id)
-
-    if not effective_id:
-        raise HTTPException(status_code=400, detail="No active session.")
-
     if not review_session:
         raise HTTPException(status_code=400, detail="No active review session.")
 
@@ -370,7 +318,7 @@ async def submit_review_answer(
     except json.JSONDecodeError as err:
         raise HTTPException(status_code=400, detail="Invalid review session.") from err
 
-    service = ReviewService(effective_id, client=client)
+    service = ReviewService(user.id)
 
     # Get the vocabulary item
     due_words = service.get_due_words(language=session_state.get("language", "es"))
@@ -378,7 +326,7 @@ async def submit_review_answer(
 
     # If word not in due list, try to get from all vocab
     if vocab is None:
-        vocab_repo = VocabularyRepository(effective_id, client=client)
+        vocab_repo = VocabularyRepository(user.id)
         all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
         vocab = next((w for w in all_vocab if w.id == word_id), None)
 
@@ -441,7 +389,7 @@ async def submit_review_answer(
 
     # Get next word
     next_word_id = word_ids[current_index]
-    vocab_repo = VocabularyRepository(effective_id, client=client)
+    vocab_repo = VocabularyRepository(user.id)
     all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
     next_vocab = next((w for w in all_vocab if w.id == next_word_id), None)
 
@@ -450,7 +398,7 @@ async def submit_review_answer(
         session_state["current_index"] += 1
         # Recursive call or show summary
         return await _handle_missing_word(
-            request, templates, session_state, effective_id, client, feedback, is_correct
+            request, templates, session_state, user.id, feedback, is_correct
         )
 
     next_question = _generate_question(next_vocab)
@@ -485,18 +433,29 @@ async def _handle_missing_word(
     request: Request,
     templates: TemplatesDep,
     session_state: dict[str, Any],
-    effective_id: str,
-    client: SupabaseClient | None,
+    user_id: str,
     feedback: str,
     is_correct: bool,
 ) -> HTMLResponse:
-    """Handle case where a word in the session is missing."""
+    """Handle case where a word in the session is missing.
+
+    Args:
+        request: FastAPI request for template context.
+        templates: Jinja2 template engine.
+        session_state: Current review session state.
+        user_id: Authenticated user's ID.
+        feedback: Feedback message from previous answer.
+        is_correct: Whether the previous answer was correct.
+
+    Returns:
+        HTMLResponse: Next question or session summary.
+    """
     word_ids = session_state["word_ids"]
     current_index = session_state["current_index"]
     total = len(word_ids)
 
     # Find next valid word
-    vocab_repo = VocabularyRepository(effective_id, client=client)
+    vocab_repo = VocabularyRepository(user_id)
     all_vocab = vocab_repo.get_all(language=session_state.get("language", "es"))
     vocab_map = {v.id: v for v in all_vocab}
 
@@ -563,6 +522,8 @@ async def end_review_session(
     """End the current review session early.
 
     Returns a summary of progress so far and clears the session cookie.
+    This endpoint does not require authentication as it only reads
+    the session cookie state.
 
     Args:
         request: FastAPI request for template context.
@@ -618,7 +579,8 @@ async def dismiss_warmup() -> HTMLResponse:
     """Dismiss the warmup prompt for this browser session.
 
     Sets a cookie to prevent the warmup prompt from appearing again
-    during the current browsing session.
+    during the current browsing session. This endpoint does not require
+    authentication as it only manages a UI preference cookie.
 
     Returns:
         HTMLResponse: Empty response with cookie set.

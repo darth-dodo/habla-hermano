@@ -2,6 +2,9 @@
 
 Provides endpoints for Supabase authentication with HTMX support.
 Uses httponly cookies for secure JWT storage.
+
+Note: Guest users have chat access only with no data persistence.
+Progress tracking requires signing up for an account.
 """
 
 import logging
@@ -13,7 +16,6 @@ from supabase import Client, create_client
 
 from src.api.config import get_settings
 from src.api.dependencies import SettingsDep, TemplatesDep
-from src.services.merge import GuestDataMergeService
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +135,9 @@ async def signup(
     Creates a new user account via Supabase Auth. On success, sets
     an httponly cookie with the JWT and redirects to the chat page.
 
+    Note: Guest data is not merged on signup. Guests have chat-only access
+    without data persistence. Users must sign up to start tracking progress.
+
     Args:
         request: FastAPI request object.
         templates: Jinja2 templates instance.
@@ -204,19 +209,8 @@ async def signup(
         response = Response(status_code=status.HTTP_200_OK)
         set_auth_cookie(response, auth_response.session.access_token)
 
-        # Merge guest data if session_id cookie exists (fire-and-forget)
-        guest_session_id = request.cookies.get("session_id")
-        if guest_session_id and auth_response.user:
-            try:
-                merge_service = GuestDataMergeService(
-                    guest_session_id=guest_session_id,
-                    authenticated_user_id=auth_response.user.id,
-                )
-                result = merge_service.merge_all()
-                logger.info("Merged guest data on signup: %s", result)
-                response.delete_cookie(key="session_id")
-            except Exception:
-                logger.exception("Failed to merge guest data on signup")
+        # Clear any existing guest session cookie
+        response.delete_cookie(key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response
@@ -254,6 +248,9 @@ async def login(
     Authenticates user via Supabase Auth. On success, sets an httponly
     cookie with the JWT and redirects to the chat page.
 
+    Note: Guest data is not merged on login. Guests have chat-only access
+    without data persistence. Users must sign up to start tracking progress.
+
     Args:
         request: FastAPI request object.
         templates: Jinja2 templates instance.
@@ -287,19 +284,8 @@ async def login(
         response = Response(status_code=status.HTTP_200_OK)
         set_auth_cookie(response, auth_response.session.access_token)
 
-        # Merge guest data if session_id cookie exists (fire-and-forget)
-        guest_session_id = request.cookies.get("session_id")
-        if guest_session_id and auth_response.user:
-            try:
-                merge_service = GuestDataMergeService(
-                    guest_session_id=guest_session_id,
-                    authenticated_user_id=auth_response.user.id,
-                )
-                result = merge_service.merge_all()
-                logger.info("Merged guest data on login: %s", result)
-                response.delete_cookie(key="session_id")
-            except Exception:
-                logger.exception("Failed to merge guest data on login")
+        # Clear any existing guest session cookie
+        response.delete_cookie(key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response
