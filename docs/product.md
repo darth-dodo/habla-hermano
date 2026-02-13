@@ -441,6 +441,13 @@ See [Architecture Documentation](architecture.md) for details.
 - Time to first review prompt (automatic after first chat session)
 - Review-to-chat conversion (users who start a regular chat after completing a review)
 
+### Phase 12: Spaced Repetition Metrics
+- Review session completion rate (target: >70%)
+- Words retained after 30 days (target: >80%)
+- Chat weaving engagement (target: >50% of offered words used correctly)
+- Time to first review prompt (automatic after first chat session)
+- Review-to-chat conversion (users who start a regular chat after completing a review)
+
 ---
 
 ## What We're NOT Building

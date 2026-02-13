@@ -27,7 +27,7 @@ Guest users get:
 
 import logging
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
@@ -46,6 +46,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["chat"])
 
 
+def _resolve_identity_for_chat(
+    user: OptionalUserDep,
+    session_id: str | None,
+) -> "tuple[str | None, SupabaseClient | None]":
+    """Resolve effective user ID and Supabase client for auth or guest users.
+
+    Returns (effective_id, client) where client is the admin client for guests
+    or None for authenticated users.
+    """
+    if user:
+        return user.id, None
+    if session_id:
+        try:
+            return session_id, get_supabase_admin()
+        except Exception:
+            logger.warning("Admin client unavailable; guest features disabled")
+            return None, None
+    return None, None
+
+
 @router.get("/", response_class=HTMLResponse, response_model=None)
 async def chat_page(
     request: Request,
@@ -61,6 +81,9 @@ async def chat_page(
     Supports both authenticated and guest users. Authenticated users
     get persistent conversation history and progress tracking; guests get
     session-based conversations via cookies but no progress tracking.
+
+    Phase 12: Added review mode support. When mode=review, shows the
+    review session start UI instead of normal chat.
 
     Phase 12: Added review mode support. When mode=review, shows the
     review session start UI instead of normal chat.
