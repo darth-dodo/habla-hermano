@@ -21,7 +21,7 @@ Add spaced repetition to Habla Hermano through two complementary features:
 - Maintain the Hermano personality throughout review interactions
 - No gamification guilt - reviews are optional and pressure-free
 - Leverage existing chat UI and infrastructure
-- Support both authenticated and guest users
+- Require authentication for review features (guests can chat but do not accumulate vocabulary for review)
 
 ---
 
@@ -427,64 +427,90 @@ Do NOT force them awkwardly - conversation flow comes first.
 
 ### New Routes: `src/api/routes/review.py`
 
+All review endpoints require authentication via `CurrentUserDep`. Guest users
+cannot access review features. Database operations use a user-authenticated
+Supabase client (`get_supabase_for_user`) so that Row Level Security policies
+work correctly with `auth.uid()`.
+
 ```python
-from fastapi import APIRouter, Depends, Cookie
+from fastapi import APIRouter, Cookie, Form, HTTPException
 from typing import Annotated, Literal
+
+from src.api.auth import CurrentUserDep
+from src.api.supabase_client import get_supabase_for_user
 
 router = APIRouter(prefix="/review", tags=["review"])
 
 
 @router.get("/stats")
 async def get_review_stats(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
     language: str = "es",
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict:
     """Get review statistics for progress page.
+
+    Requires authentication. Uses the user's access token to create
+    a Supabase client that respects RLS policies.
 
     Returns:
         {due_count: 12, next_review_in: "2 hours", total_in_rotation: 45}
     """
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
+    ...
 
 
 @router.post("/start")
 async def start_review_session(
-    count: int | Literal["all"],
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
+    count: int | Literal["all"] = 10,
     language: str = "es",
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Initialize review session and return first question.
+
+    Requires authentication.
 
     Args:
         count: Number of words (5, 10, or "all")
     """
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
+    ...
 
 
 @router.post("/answer")
 async def submit_review_answer(
-    word_id: int,
-    user_answer: str,
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
+    word_id: int = Form(...),
+    user_answer: str = Form(...),
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
-    """Validate answer, update SM-2, return feedback + next question."""
+    """Validate answer, update SM-2, return feedback + next question.
+
+    Requires authentication.
+    """
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
+    ...
 
 
 @router.post("/end")
-async def end_review_session(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
-) -> HTMLResponse:
-    """End session early, return summary partial."""
+async def end_review_session() -> HTMLResponse:
+    """End session early, return summary partial.
+
+    Reads session state from the review_session cookie.
+    Does not require authentication (cookie-only operation).
+    """
 
 
 @router.delete("/warmup-prompt")
-async def dismiss_warmup(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
-) -> HTMLResponse:
-    """Dismiss warmup prompt for this session."""
+async def dismiss_warmup() -> HTMLResponse:
+    """Dismiss warmup prompt for this browser session.
+
+    Sets a UI preference cookie. Does not require authentication.
+    """
 ```
 
 ### Modified Existing Routes
@@ -559,7 +585,12 @@ class ReviewSession:
 
 
 class ReviewService:
-    """Service for spaced repetition review operations."""
+    """Service for spaced repetition review operations.
+
+    Requires an authenticated user_id. The optional client parameter
+    accepts a user-authenticated Supabase client (from get_supabase_for_user)
+    so that database operations respect RLS policies via auth.uid().
+    """
 
     def __init__(self, user_id: str, client=None):
         self._user_id = user_id
@@ -671,7 +702,7 @@ async def record_chat_activity(new_vocab: list[VocabWord], ...):
 
 ### Phase 5: Polish & Edge Cases
 - Handle zero due words gracefully
-- Guest user support (using existing identity resolution)
+- Ensure unauthenticated users see a clear sign-up prompt when accessing review features
 - Words that fail multiple times get extra repetition in session
 - Configurable new word graduation delay
 - Review statistics in progress charts
@@ -692,7 +723,7 @@ async def record_chat_activity(new_vocab: list[VocabWord], ...):
 
 - Review session lifecycle (start → answer → complete)
 - Session persistence across requests
-- Guest user review support
+- Unauthenticated access returns 401 for review endpoints
 - Word entry into rotation from lessons
 - Word entry into rotation from chat
 
@@ -741,4 +772,4 @@ async def record_chat_activity(new_vocab: list[VocabWord], ...):
 - Existing Progress page infrastructure
 - Existing Chat page and HTMX patterns
 - Existing LangGraph subgraph patterns (lessons)
-- Existing guest user support (identity resolution)
+- Existing Supabase authentication and RLS policies

@@ -45,9 +45,9 @@ block-beta
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
 - ✅ Micro-lessons system: 60 lessons across all languages and levels
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
-- ✅ Guest access for lessons and chat
+- ✅ Guest access for chat (no persistence beyond LangGraph checkpointing)
 - ✅ Progress tracking dashboard with Chart.js visualizations
-- ✅ Guest session persistence for unauthenticated users
+- ✅ User-authenticated Supabase client for RLS compliance
 - ✅ AI-enhanced lessons via LangGraph subgraphs (Phase 9)
 
 ---
@@ -176,7 +176,8 @@ habla-hermano/
 │   │       ├── chat.py               # POST /chat, GET /
 │   │       ├── auth.py               # Signup, login, logout
 │   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
-│   │       └── progress.py           # Dashboard, vocabulary, chart-data endpoints
+│   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
+│   │       └── review.py             # Spaced repetition review sessions (auth-only)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -208,7 +209,7 @@ habla-hermano/
 │   │   ├── vocabulary.py             # Vocab tracking
 │   │   ├── levels.py                 # Level detection
 │   │   ├── progress.py               # ProgressService: dashboard aggregation
-│   │   └── merge.py                  # GuestDataMergeService: auth merge
+│   │   └── review.py                 # ReviewService: spaced repetition (SM-2)
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes
@@ -307,11 +308,13 @@ sequenceDiagram
     API-->>U: HTML partial (message_pair.html)
 ```
 
-### Progress Capture
+### Progress Capture (Authenticated Users Only)
 
-After each chat interaction, `ProgressService.record_chat_activity()` persists:
+For authenticated users, `ProgressService.record_chat_activity()` persists data after each chat interaction using a user-authenticated Supabase client (RLS-compliant):
 - **Vocabulary**: New words extracted by analyze_node (upsert with times_seen counter)
 - **Sessions**: Active learning session tracking (language, level, message count)
+
+Guest users receive grammar feedback and pronunciation tips in the response but no data is persisted to the database.
 
 ---
 
@@ -439,7 +442,7 @@ The `ProgressService` aggregates data from vocabulary, session, and lesson repos
 
 ```python
 class ProgressService:
-    """Read-heavy service for dashboard rendering."""
+    """Read-heavy service for dashboard rendering. Authenticated users only."""
 
     def __init__(self, user_id: str, client: SupabaseClient | None = None):
         self._vocab_repo = VocabularyRepository(user_id, client=client)
@@ -451,6 +454,8 @@ class ProgressService:
     def record_chat_activity(self, language: str, level: str, new_vocab: list) -> None
 ```
 
+Routes pass a user-authenticated Supabase client (`get_supabase_for_user(sb_access_token)`) so that all database queries respect RLS.
+
 ### Dashboard Data Structures
 
 | Structure | Fields | Purpose |
@@ -460,25 +465,33 @@ class ProgressService:
 | `VocabGrowthPoint` | date, cumulative_words | Vocabulary growth line chart |
 | `AccuracyPoint` | date, accuracy | Accuracy trend line chart |
 
-### Guest Session Persistence
+### Guest Model (Simplified)
 
-The `GuestDataMergeService` handles data transfer when guests authenticate:
+Guests get **chat only** with no persistent data tracking:
+
+- **Chat**: Full conversational functionality via LangGraph checkpointing (session cookie)
+- **Grammar feedback**: Returned inline in chat responses
+- **Pronunciation tips**: Returned inline in chat responses
+- **Scaffolding**: Word banks and hints for A0-A1 levels
+
+Guests do **not** get: vocabulary tracking, progress dashboard, lesson progress, or spaced repetition review. These features require authentication.
+
+### Auth Pattern for Data Operations
+
+All data operations (progress, vocabulary, review) use a **user-authenticated Supabase client** so that PostgreSQL Row-Level Security (RLS) policies work via `auth.uid()`:
 
 ```python
-class GuestDataMergeService:
-    """Merges guest session data into authenticated account on login/signup."""
+from src.api.supabase_client import get_supabase_for_user
 
-    def __init__(self, guest_session_id: str, authenticated_user_id: str):
-        self._client = get_supabase_admin()  # Bypasses RLS
+# In route handlers, read the token from the cookie:
+sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None
 
-    def merge_all(self) -> dict[str, int]:
-        # Returns: {"vocabulary": N, "sessions": N, "lessons": N}
+# Then create a user-scoped client:
+user_client = get_supabase_for_user(sb_access_token)
+service = ProgressService(user.id, client=user_client)
 ```
 
-**Merge Strategy**:
-- **Vocabulary**: Duplicate words merge counters (times_seen, times_correct); keeps earliest first_seen_at
-- **Sessions**: Transferred directly (no deduplication needed)
-- **Lessons**: Duplicate lessons keep higher score
+This replaced the earlier pattern of using `get_supabase_admin()` (service-role client that bypassed RLS) for guest operations. The admin client is no longer used in progress or review routes.
 
 ---
 
@@ -787,7 +800,7 @@ src/agent/graph.py           # LangGraph pipeline
 src/agent/nodes/*.py         # Pipeline nodes
 src/agent/prompts.py         # Level-specific prompts
 src/services/progress.py     # ProgressService: dashboard aggregation
-src/services/merge.py        # GuestDataMergeService: auth merge
+src/services/review.py       # ReviewService: spaced repetition (SM-2)
 ```
 
 ### Commands
