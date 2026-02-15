@@ -25,7 +25,7 @@
 
     <!-- Scrollable Content -->
     <main class="flex-1 overflow-y-auto bg-surface">
-        <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <div class="max-w-4xl mx-auto px-4 py-6 space-y-4 sm:space-y-6">
 
             <!-- Stats Cards Row (loaded via HTMX) -->
             <div id="stats-container"
@@ -57,16 +57,16 @@
             <!-- Charts Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Vocabulary Growth Chart -->
-                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                <div class="bg-surface-elevated rounded-2xl p-4 sm:p-5 border border-border">
                     <h3 class="text-sm font-medium text-text-muted mb-4">Vocabulary Growth</h3>
-                    <div class="h-48">
+                    <div class="h-40 sm:h-48">
                         <canvas id="vocab-growth-chart" aria-label="Line chart showing vocabulary growth over time" role="img"></canvas>
                     </div>
                 </div>
                 <!-- Accuracy Trend Chart -->
-                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                <div class="bg-surface-elevated rounded-2xl p-4 sm:p-5 border border-border">
                     <h3 class="text-sm font-medium text-text-muted mb-4">Accuracy Trend</h3>
-                    <div class="h-48">
+                    <div class="h-40 sm:h-48">
                         <canvas id="accuracy-trend-chart" aria-label="Bar chart showing accuracy trend over time" role="img"></canvas>
                     </div>
                 </div>
@@ -110,7 +110,7 @@ async function initCharts() {
         // Common chart options
         const commonScaleOptions = {
             x: {
-                ticks: { color: textMuted, maxTicksLimit: 7 },
+                ticks: { color: textMuted, maxTicksLimit: 5 },
                 grid: { color: borderColor + '30' }
             },
             y: {

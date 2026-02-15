@@ -5,7 +5,7 @@
 {% block content %}
 <div class="h-full flex flex-col">
     <!-- Lesson Header - Nordic Minimal -->
-    <header class="bg-surface-elevated border-b border-border px-4 py-3 flex items-center justify-between">
+    <header class="bg-surface-elevated border-b border-border px-4 py-3 flex items-center justify-between safe-top safe-x">
         <div class="flex items-center gap-3">
             <a href="/lessons/" class="p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-overlay transition-all duration-150" aria-label="Back to lessons">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -14,7 +14,7 @@
             </a>
             <div class="flex items-center gap-2">
                 <span class="text-xl" aria-hidden="true">{{ lesson.metadata.icon }}</span>
-                <span class="font-medium text-text">{{ lesson.metadata.title }}</span>
+                <span class="font-medium text-text truncate">{{ lesson.metadata.title }}</span>
             </div>
         </div>
         <div class="text-sm text-text-muted">
@@ -34,8 +34,8 @@
     </div>
 
     <!-- Lesson Content Area -->
-    <div class="flex-1 overflow-y-auto">
-        <div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden">
+        <div class="max-w-2xl mx-auto px-3 py-4 sm:px-4 sm:py-8">
             <div id="step-content" class="animate-fade-in">
                 {% include "partials/lesson_step.html" %}
             </div>
@@ -43,7 +43,7 @@
     </div>
 
     <!-- Navigation Footer -->
-    <footer class="bg-surface-elevated border-t border-border px-4 py-4">
+    <footer class="bg-surface-elevated border-t border-border px-4 py-4 safe-bottom safe-x">
         <div class="max-w-2xl mx-auto flex items-center justify-between">
             <button
                 id="prev-btn"
@@ -51,7 +51,7 @@
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
-                class="px-4 py-2 text-text-muted hover:text-text border border-border rounded-lg hover:bg-surface-overlay transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                class="px-4 py-3 sm:py-2 text-text-muted hover:text-text border border-border rounded-lg hover:bg-surface-overlay transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                 {% if current_step == 0 %}disabled{% endif %}
             >
                 <span class="flex items-center gap-2 text-sm font-medium">
@@ -71,7 +71,7 @@
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
-                class="px-5 py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-all duration-150"
+                class="px-5 py-3 sm:py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-all duration-150"
             >
                 <span class="flex items-center gap-2 text-sm">
                     Continue
@@ -86,7 +86,7 @@
                 hx-post="/lessons/{{ lesson.metadata.id }}/complete"
                 hx-target="#step-content"
                 hx-swap="innerHTML"
-                class="px-5 py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150"
+                class="px-5 py-3 sm:py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150"
             >
                 <span class="flex items-center gap-2 text-sm">
                     Complete

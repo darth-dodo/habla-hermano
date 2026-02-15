@@ -1,5 +1,5 @@
 <div
-    class="lesson-step enhanced"
+    class="lesson-step enhanced overflow-hidden"
     data-step-index="{{ step_index }}"
     data-total-steps="{{ total_steps }}"
 >
@@ -16,7 +16,7 @@
     <!-- Original Step Content -->
     {% if step_type == 'instruction' %}
     <!-- Instruction Step -->
-    <div class="bg-surface-elevated rounded-xl p-6 border border-border mb-4">
+    <div class="bg-surface-elevated rounded-xl p-4 sm:p-6 border border-border mb-4">
         <div class="prose prose-invert max-w-none">
             <p class="text-lg text-text leading-relaxed">{{ step_content }}</p>
         </div>
@@ -43,7 +43,7 @@
     {% elif step_type == 'example' %}
     <!-- Example Step -->
     <div class="space-y-4 mb-4">
-        <div class="bg-surface-elevated rounded-xl p-6 border border-border">
+        <div class="bg-surface-elevated rounded-xl p-4 sm:p-6 border border-border">
             {% if step_target_text %}
             <p class="text-2xl font-medium text-accent mb-2">{{ step_target_text }}</p>
             {% endif %}
@@ -56,7 +56,7 @@
 
     {% elif step_type == 'tip' %}
     <!-- Tip Step -->
-    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-6 mb-4">
+    <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 sm:p-6 mb-4">
         <div class="flex items-start gap-3">
             <span class="text-2xl" aria-hidden="true">&#128161;</span>
             <div>
@@ -86,7 +86,7 @@
 
     {% else %}
     <!-- Default/Unknown Step Type -->
-    <div class="bg-surface-elevated rounded-xl p-6 border border-border mb-4">
+    <div class="bg-surface-elevated rounded-xl p-4 sm:p-6 border border-border mb-4">
         <p class="text-text">{{ step_content }}</p>
     </div>
     {% endif %}
