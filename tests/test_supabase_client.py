@@ -43,7 +43,7 @@ class TestGetSupabase:
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("supabase.create_client") as mock_create:
+            with patch("src.api.supabase_client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -59,7 +59,7 @@ class TestGetSupabase:
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("supabase.create_client") as mock_create:
+            with patch("src.api.supabase_client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -107,7 +107,7 @@ class TestGetSupabaseAdmin:
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_SERVICE_KEY = "service-key"
 
-            with patch("supabase.create_client") as mock_create:
+            with patch("src.api.supabase_client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -135,7 +135,7 @@ class TestClearSupabaseCache:
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("supabase.create_client") as mock_create:
+            with patch("src.api.supabase_client.create_client") as mock_create:
                 mock_client1 = MagicMock()
                 mock_client2 = MagicMock()
                 mock_create.side_effect = [mock_client1, mock_client2]

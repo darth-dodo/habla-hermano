@@ -7,9 +7,11 @@ Uses the anon key for regular operations and service key for admin tasks.
 from functools import lru_cache
 from typing import Any
 
+from supabase import create_client
+
 from src.api.config import get_settings
 
-# Type alias - actual Client import deferred to avoid import errors when unconfigured
+# Type alias for Supabase client
 SupabaseClient = Any
 
 
@@ -26,8 +28,6 @@ def get_supabase() -> SupabaseClient:
     Raises:
         ValueError: If Supabase is not configured.
     """
-    from supabase import create_client
-
     settings = get_settings()
 
     if not settings.supabase_configured:
@@ -57,8 +57,6 @@ def get_supabase_admin() -> SupabaseClient:
     Raises:
         ValueError: If Supabase is not configured or service key is missing.
     """
-    from supabase import create_client
-
     settings = get_settings()
 
     if not settings.supabase_configured:
@@ -90,8 +88,6 @@ def get_supabase_for_user(access_token: str) -> SupabaseClient:
     Raises:
         ValueError: If Supabase is not configured.
     """
-    from supabase import create_client
-
     settings = get_settings()
 
     if not settings.supabase_configured:
