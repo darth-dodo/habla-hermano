@@ -124,8 +124,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Grammar Feedback** | Gentle corrections with expandable explanations |
 | **Micro-Lessons** | Structured lessons with vocabulary, exercises, and completion tracking |
 | **Progress Dashboard** | Track vocabulary learned, session history, learning streaks, and accuracy trends with Chart.js visualizations |
-| **Guest Access** | Start learning immediately — no sign-up required |
-| **Guest Progress** | Session-based progress tracking for unauthenticated users (vocabulary and lesson completion persisted via cookies) |
+| **Guest Access** | Try chatting with Hermano immediately — no sign-up required |
 | **Pronunciation Tips** | Collapsible pronunciation guidance with level-based auto-expand (A0 auto-expands) |
 | **Spaced Repetition** | SM-2 algorithm with intelligent chat weaving and dedicated review mode |
 | **3 Languages** | Spanish, German, and French — 60 lessons across all levels A0-B1 |
@@ -152,7 +151,7 @@ Each lesson includes:
 | 🇩🇪 German | 5 | 5 | 5 | 5 | 20 |
 | 🇫🇷 French | 5 | 5 | 5 | 5 | 20 |
 
-Each level covers 5 categories: greetings, introductions, numbers, colors, and family. No account required — guests can start learning immediately.
+Each level covers 5 categories: greetings, introductions, numbers, colors, and family. Lessons require a free account to track progress and completion.
 
 ---
 
@@ -161,7 +160,7 @@ Each level covers 5 categories: greetings, introductions, numbers, colors, and f
 - [Product Vision](docs/product.md) — Pedagogy and feature philosophy
 - [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
 - [API Reference](docs/api.md) — Endpoints and data structures
-- [Testing](docs/testing.md) — 1017 tests, 86%+ coverage, test strategy
+- [Testing](docs/testing.md) — 1445 tests, 76%+ coverage, test strategy
 - [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
 - [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
 - [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document

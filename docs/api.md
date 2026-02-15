@@ -18,7 +18,20 @@ Habla Hermano provides an HTMX-driven API that returns HTML partials for seamles
 
 ## Authentication
 
-All chat routes require authentication via JWT token stored in an httponly cookie (`sb-access-token`).
+The API uses two cookie-based identity mechanisms:
+
+- **`sb-access-token`**: User's Supabase JWT. Required for all data-persisting operations (progress, vocabulary, review). Used via `get_supabase_for_user()` to create a user-authenticated Supabase client that respects Row Level Security (RLS).
+- **`session_id`**: Anonymous session cookie. Used only for LangGraph chat thread persistence (`thread_id`). Not used for any data operations.
+
+**Endpoint authentication levels**:
+
+| Category | Authentication | Guest behavior |
+|----------|---------------|----------------|
+| Chat (`/`, `/chat`, `/new`) | Optional (`OptionalUserDep`) | Full chat, grammar feedback, pronunciation tips. No vocabulary tracking or progress. |
+| Progress (`/progress/*`) | Required for data (`OptionalUserDep`) | Returns empty/zero stats with `is_guest: True` |
+| Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
+| Lessons (`/lessons/*`) | Optional | Full access to browse and play lessons |
+| Auth (`/auth/*`) | None | Public endpoints |
 
 ### GET /auth/login
 
@@ -90,17 +103,15 @@ Clear session and logout user.
 
 ---
 
-## Protected Endpoints
+## Chat Endpoints
 
 ### GET /
 
-Render the main chat interface. **Requires authentication.**
+Render the main chat interface. Supports both authenticated and guest users.
 
 **Response**: Full HTML page with chat UI, level/language selectors, and theme toggle.
 
-**Authentication**: Requires valid `sb-access-token` JWT cookie.
-
-**Unauthorized**: Returns 401 with `HX-Redirect: /auth/login` header.
+**Authentication**: Optional (`OptionalUserDep`). Authenticated users see review stats and warmup prompts; guests see the chat interface without review features.
 
 **Example**:
 ```bash
@@ -111,9 +122,9 @@ curl http://localhost:8000/
 
 ### POST /chat
 
-Send a message and receive an AI response with optional scaffolding and grammar feedback. **Requires authentication.**
+Send a message and receive an AI response with optional scaffolding and grammar feedback. Supports both authenticated and guest users.
 
-**Authentication**: Requires valid `sb-access-token` JWT cookie. Thread ID is derived from user ID (`user:{user_id}`).
+**Authentication**: Optional (`OptionalUserDep`). Thread ID is derived from user ID for authenticated users (`user:{user_id}`) or from `session_id` cookie for guests. Vocabulary tracking only occurs for authenticated users with a valid `sb-access-token`.
 
 #### Request
 
@@ -1139,9 +1150,9 @@ Lessons support multiple exercise types, each with specific data structures.
 
 ## Progress Tracking
 
-The progress tracking system provides a dashboard for viewing learning statistics, vocabulary growth, and session history. All endpoints support both authenticated users and guest sessions.
+The progress tracking system provides a dashboard for viewing learning statistics, vocabulary growth, and session history. All endpoints use `OptionalUserDep` but require authentication to return meaningful data.
 
-**Guest Session Support**: Guest users are identified by a `session_id` cookie. No authentication is required to view your own progress. Authenticated users have their progress linked to their user account.
+**Authentication**: Requires `sb-access-token` cookie for data access. Unauthenticated users see the progress page with empty/zero stats and a sign-up prompt (`is_guest: True`). All database operations use `get_supabase_for_user(sb_access_token)` to create a user-authenticated client that respects RLS policies.
 
 ---
 
@@ -1149,13 +1160,13 @@ The progress tracking system provides a dashboard for viewing learning statistic
 
 Render the progress dashboard page.
 
-**Authentication**: Optional. Supports both authenticated users and guests.
+**Authentication**: Required for data (`OptionalUserDep`). Unauthenticated users see empty stats with `is_guest: True` and a sign-up prompt.
 
 **Response**: Full HTML page with progress dashboard including:
 - Statistics summary cards
 - Vocabulary list with filtering
 - Progress charts
-- Session history
+- Review stats (spaced repetition)
 
 **Example**:
 ```bash
@@ -1168,7 +1179,7 @@ curl http://localhost:8000/progress/
 
 Get the statistics summary as an HTML partial.
 
-**Authentication**: Optional. Returns stats for the current user (authenticated) or guest session.
+**Authentication**: Required for data (`OptionalUserDep`). Returns zeroed stats for unauthenticated users.
 
 **Response**: HTML partial (`partials/progress_stats.html`) containing statistics cards.
 
@@ -1191,7 +1202,7 @@ curl http://localhost:8000/progress/stats
 
 Get the vocabulary list as an HTML partial.
 
-**Authentication**: Optional.
+**Authentication**: Required for data (`OptionalUserDep`). Returns empty list for unauthenticated users.
 
 **Query Parameters**:
 
@@ -1224,7 +1235,7 @@ curl "http://localhost:8000/progress/vocabulary?language=es"
 
 Get chart data for progress visualization.
 
-**Authentication**: Optional.
+**Authentication**: Required for data (`OptionalUserDep`). Returns empty arrays for unauthenticated users.
 
 **Query Parameters**:
 
@@ -1262,7 +1273,7 @@ curl "http://localhost:8000/progress/chart-data?language=es&days=30"
 
 Remove a vocabulary word from the user's learned words.
 
-**Authentication**: Optional. Removes from current user or guest session.
+**Authentication**: Required for data (`OptionalUserDep`). No-ops silently for unauthenticated users. Ownership enforced at database level via RLS.
 
 **Path Parameters**:
 
@@ -1424,6 +1435,114 @@ Time-series data for progress visualization charts.
   </td>
 </tr>
 ```
+
+---
+
+## Review Endpoints (Spaced Repetition)
+
+The review system implements SM-2 spaced repetition for vocabulary reinforcement. All review endpoints require authentication (`CurrentUserDep`) and return 401 for unauthenticated users. Review session state is stored in a `review_session` cookie.
+
+**Authentication**: Required (`CurrentUserDep`). All endpoints use `get_supabase_for_user(sb_access_token)` for database operations.
+
+---
+
+### GET /review/stats
+
+Get review statistics for progress page and review prompts.
+
+**Authentication**: Required.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Target language code: `es`, `de`, `fr` |
+
+**Response**: JSON object with review statistics.
+
+**Example**:
+```bash
+curl http://localhost:8000/review/stats?language=es \
+  --cookie "sb-access-token=<jwt_token>"
+```
+
+**Response Example**:
+```json
+{
+  "due_count": 5,
+  "next_review_in": "2 hours",
+  "total_in_rotation": 42
+}
+```
+
+---
+
+### POST /review/start
+
+Initialize a review session and return the first question.
+
+**Authentication**: Required.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `count` | integer or `"all"` | No | `10` | Number of words to review |
+| `language` | string | No | `es` | Target language code |
+
+**Response**: HTML partial (`partials/review_question.html`) with the first review question. Sets a `review_session` cookie with session state.
+
+**Example**:
+```bash
+curl -X POST "http://localhost:8000/review/start?count=10&language=es" \
+  --cookie "sb-access-token=<jwt_token>"
+```
+
+---
+
+### POST /review/answer
+
+Submit an answer for the current review question.
+
+**Authentication**: Required.
+
+**Request Body** (form data):
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `word_id` | integer | Yes | Vocabulary ID being answered |
+| `user_answer` | string | Yes | User's submitted answer |
+
+**Response**: HTML partial with feedback and the next question (`partials/review_feedback_question.html`), or session summary (`partials/review_summary.html`) if the session is complete. Updates SM-2 scheduling for the answered word.
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/review/answer \
+  -d "word_id=42" \
+  -d "user_answer=cansado" \
+  --cookie "sb-access-token=<jwt_token>" \
+  --cookie "review_session=<session_state>"
+```
+
+---
+
+### POST /review/end
+
+End the current review session early and show a summary.
+
+**Authentication**: Not required (reads session cookie only).
+
+**Response**: HTML partial (`partials/review_summary.html`) with progress so far. Clears the `review_session` cookie.
+
+---
+
+### DELETE /review/warmup-prompt
+
+Dismiss the review warmup prompt for the current browser session.
+
+**Authentication**: Not required (manages UI preference cookie only).
+
+**Response**: Empty response. Sets a `warmup_dismissed` session cookie to suppress the prompt.
 
 ---
 

@@ -63,16 +63,32 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **3 Languages** | ✅ Complete | Spanish, German, French via LANGUAGE_ADAPTER |
 | **Grammar Feedback** | ✅ Complete | Gentle corrections with expandable tips |
 | **Pronunciation Tips** | ✅ Complete | Level-appropriate pronunciation guidance in conversations |
-| **Spaced Repetition** | ✅ Complete | SM-2 algorithm with intelligent chat weaving and dedicated review mode |
+| **Spaced Repetition** | ✅ Complete | SM-2 algorithm with intelligent chat weaving and dedicated review mode (authenticated users only) |
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
 | **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
 | **Mobile-First UI** | ✅ Complete | Works on all devices |
 | **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
-| **Guest Access** | ✅ Complete | Lessons and chat work without authentication |
-| **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats |
-| **Guest Sessions** | ✅ Complete | Full functionality for unauthenticated users with session persistence |
+| **Guest Access** | ✅ Complete | Chat works without authentication; grammar feedback, pronunciation tips, and scaffolding included |
+| **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats (authenticated users only) |
+
+### Guest vs. Authenticated Experience
+
+Guests can try Habla Hermano without creating an account. The chat experience works fully -- conversation persists via LangGraph checkpointing, and Hermano still provides grammar feedback, pronunciation tips, and scaffolding (word banks, sentence starters) in every response.
+
+To unlock the full learning loop, guests need to sign up:
+
+| Capability | Guest | Authenticated |
+|------------|:-----:|:-------------:|
+| Chat with Hermano | Yes | Yes |
+| Grammar feedback | Yes | Yes |
+| Pronunciation tips | Yes | Yes |
+| Scaffolding (word banks, hints) | Yes | Yes |
+| Vocabulary tracking | -- | Yes |
+| Progress page and stats | -- | Yes |
+| Spaced repetition and review | -- | Yes |
+| Lesson completion tracking | -- | Yes |
 
 ---
 
@@ -180,6 +196,8 @@ Hermano: "'Gracias' - it's pronounced GRAH-see-ahs.
 ---
 
 ## Spaced Repetition
+
+> **Note**: Spaced repetition requires an authenticated account. Guest users can chat freely but do not accumulate vocabulary or review schedules.
 
 Habla Hermano uses **conversation-first spaced repetition**. There are no flashcard decks and no decontextualized drills. Instead, words you have encountered in chat and lessons come back to you naturally — through Hermano himself.
 
@@ -373,7 +391,7 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 5** | Authentication | Supabase Auth, multi-user support, JWT tokens | ✅ Complete |
 | **Phase 6** | Micro-Lessons | Structured lessons with exercises, guest access, chat handoff | ✅ Complete |
 | **Phase 7** | Progress Tracking | Words learned, patterns mastered, conversation milestones, dashboard UI | ✅ Complete |
-| **Phase 8** | Guest Session Support | Full guest functionality, session persistence, seamless auth upgrade | ✅ Complete |
+| **Phase 8** | Guest Access | Chat-only guest mode with grammar feedback and scaffolding; no data persistence | ✅ Complete |
 | **Phase 9** | AI-Enhanced Lessons | LangGraph subgraphs for personalized lesson delivery | ✅ Complete |
 | **Phase 10** | Lesson Content Expansion | 60 lessons across all languages and levels | ✅ Complete |
 | **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
@@ -411,11 +429,17 @@ See [Architecture Documentation](architecture.md) for details.
 - Dashboard engagement (views per user per week)
 - Progress data accuracy and consistency
 
-### Phase 8: Guest Session Metrics
+### Phase 8: Guest Access Metrics
 - Guest-to-authenticated conversion rate (target: >20%)
 - Guest session retention (return within 7 days)
-- Session data preservation rate during auth upgrade (target: 100%)
-- Guest feature usage parity with authenticated users
+- Signup funnel: guests who attempt vocabulary/progress features and convert
+
+### Phase 12: Spaced Repetition Metrics
+- Review session completion rate (target: >70%)
+- Words retained after 30 days (target: >80%)
+- Chat weaving engagement (target: >50% of offered words used correctly)
+- Time to first review prompt (automatic after first chat session)
+- Review-to-chat conversion (users who start a regular chat after completing a review)
 
 ### Phase 12: Spaced Repetition Metrics
 - Review session completion rate (target: >70%)

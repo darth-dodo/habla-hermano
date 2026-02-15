@@ -15,7 +15,7 @@
 | **Phase 5** | Authentication - Supabase Auth, multi-user support | ✅ Completed |
 | **Phase 6** | Micro-Lessons - Structured lesson content, exercises, progress | ✅ Completed |
 | **Phase 7** | Progress Tracking - Dashboard stats, vocabulary tracking, chart data | ✅ Completed |
-| **Phase 8** | Guest Sessions - Anonymous progress, data merge on signup/login | ✅ Completed |
+| **Phase 8** | Guest Sessions - Chat-only guest access via session cookies | ✅ Completed |
 | **Phase 9** | AI-Enhanced Lessons - LangGraph subgraphs for personalized lesson delivery | ✅ Completed |
 | **Phase 10** | Lesson Content Expansion - 60 lessons across all languages and levels | ✅ Completed |
 | **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
@@ -162,9 +162,9 @@ habla-hermano/
 │   │   ├── main.py              # [Implemented] FastAPI app entry
 │   │   ├── config.py            # [Implemented] Settings (Pydantic)
 │   │   ├── dependencies.py      # [Implemented] DI for graph, db session
-│   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep, OptionalUserDep
+│   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep, OptionalUserDep, EffectiveUser (legacy)
 │   │   ├── session.py           # [Implemented] Thread ID management
-│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + admin)
+│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + user-authenticated)
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] POST /chat (protected)
@@ -210,7 +210,7 @@ habla-hermano/
 │   │   ├── vocabulary.py        # [Implemented] Vocab extraction logic
 │   │   ├── levels.py            # [Implemented] Level detection/adjustment
 │   │   ├── progress.py          # [Implemented] ProgressService for dashboard aggregation
-│   │   ├── merge.py             # [Implemented] GuestDataMergeService for auth data transfer
+│   │   ├── merge.py             # [Removed] Previously GuestDataMergeService - no longer needed
 │   │   └── review.py            # [Implemented] ReviewService with SM-2 algorithm
 │   │
 │   ├── templates/               # [Implemented] All template files
@@ -570,75 +570,55 @@ class ChartData:
 - Fire-and-forget logging pattern for non-critical persistence
 
 ### Phase 8: Guest Sessions (Week 5-6) - IMPLEMENTED
-**Learn**: Anonymous user support, data migration, RLS bypass patterns
+**Learn**: Simplified guest model, auth-gated persistence, user-scoped Supabase clients
 
-**Status**: This phase is complete. The application now supports anonymous guest usage with progress tracking, and seamlessly merges guest data when users sign up or log in.
+**Status**: This phase is complete. The application provides a simplified guest experience: guests can chat with Hermano (via LangGraph checkpointing with a session cookie), but vocabulary, progress, lessons, and review are authenticated-only features. There is no guest data persistence and no data merge on signup.
 
-**Key Components**:
+**Key Design Decisions**:
 
-1. **Session ID Cookie Mechanism**:
+1. **Chat-Only for Guests**: Guests get the full chat experience (LangGraph conversation with checkpointing via session cookie as `thread_id`), but all data-persistence features (vocabulary tracking, progress dashboard, lesson completion, spaced repetition) require authentication.
+
+2. **No Admin Client for Guest Operations**: The previous design used a service role client (`get_supabase_admin()`) to bypass RLS for guest data. The simplified model eliminates this pattern entirely. All data operations use a user-authenticated Supabase client.
+
+3. **User-Authenticated Supabase Client** (`src/api/supabase_client.py`):
 ```python
-# Guest identification via session_id cookie (UUID)
-# Set on first visit, used as user_id for database operations
-session_id: Annotated[str | None, Cookie()] = None
-```
+def get_supabase_for_user(access_token: str) -> SupabaseClient:
+    """Get Supabase client authenticated with user's JWT.
 
-2. **Admin Client for RLS Bypass** (`src/api/supabase_client.py`):
-```python
-def get_supabase_admin() -> SupabaseClient:
-    """Service role client that bypasses Row Level Security.
-
-    Required for guest data access since session_id != auth.uid().
+    Creates a client that includes the user's access token in requests,
+    allowing RLS policies to use auth.uid() for row-level access control.
     """
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+    client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+    client.postgrest.auth(access_token)
+    return client
 ```
 
-3. **Identity Resolution Pattern** (`src/api/routes/progress.py`):
+4. **Auth Pattern in Data Routes** (`src/api/routes/progress.py`):
 ```python
-def _resolve_identity(user, session_id) -> tuple[str | None, SupabaseClient | None]:
-    """Resolve effective user ID and client for auth or guest users.
+# All data endpoints check for authentication first
+if not user or not sb_access_token:
+    # Return empty stats with sign-up prompt for guests
+    return templates.TemplateResponse(...)
 
-    Returns:
-        (user_id, None) for authenticated users (uses anon client with RLS)
-        (session_id, admin_client) for guests (bypasses RLS)
-        (None, None) when neither available
-    """
-    if user:
-        return user.id, None
-    if session_id:
-        return session_id, get_supabase_admin()
-    return None, None
+# Authenticated users get a user-scoped client
+user_client = get_supabase_for_user(sb_access_token)
+service = ProgressService(user.id, client=user_client)
 ```
 
-4. **GuestDataMergeService** (`src/services/merge.py`):
+5. **Review Endpoints Require Auth** (`src/api/routes/review.py`):
 ```python
-class GuestDataMergeService:
-    """Merges guest session data into authenticated account on signup/login."""
-
-    def merge_all(self) -> dict[str, int]:
-        """Transfer vocabulary, sessions, and lessons from guest to auth user."""
-        return {
-            "vocabulary": self._merge_vocabulary(),   # Sum counters, keep earliest
-            "sessions": self._merge_sessions(),       # Transfer all
-            "lessons": self._merge_lessons(),         # Keep higher score
-        }
-```
-
-5. **Merge Integration in Auth Routes** (`src/api/routes/auth.py`):
-```python
-# On signup/login success:
-guest_session_id = request.cookies.get("session_id")
-if guest_session_id and auth_response.user:
-    merge_service = GuestDataMergeService(guest_session_id, auth_response.user.id)
-    merge_service.merge_all()
-    response.delete_cookie(key="session_id")  # Clear guest cookie
+# Review endpoints use CurrentUserDep (auth required, not optional)
+@router.get("/stats")
+async def get_review_stats(user: CurrentUserDep, ...):
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    service = ReviewService(user.id, client=user_client)
 ```
 
 **What you learned**:
-- Anonymous user support with cookie-based session identification
-- Row Level Security bypass patterns using service role client
-- Data migration strategies (merge vs transfer) for different entity types
-- Fire-and-forget merge operations that don't block authentication flow
+- Simplified guest model reduces complexity (no admin client, no merge service, no RLS bypass)
+- LangGraph checkpointing provides conversation persistence for guests without database writes
+- User-authenticated Supabase clients let RLS work naturally with `auth.uid()`
+- Auth-gating data features is simpler than supporting guest data with merge-on-signup
 
 ### Phase 9: AI-Enhanced Lessons (Week 7) - IMPLEMENTED
 **Learn**: Graph composition, subgraphs, AI personalization
@@ -1140,7 +1120,7 @@ API Routes (src/api/routes/lessons.py)
 
 ## Progress Data Flow (Phase 7-8)
 
-The progress system aggregates data from three repositories through the ProgressService, supporting both authenticated and guest users.
+The progress system aggregates data from three repositories through the ProgressService. All data operations require authentication. Guests see empty stats with a sign-up prompt.
 
 ### Progress Architecture
 
@@ -1148,35 +1128,30 @@ The progress system aggregates data from three repositories through the Progress
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        PROGRESS PAGE REQUEST                             │
 │  GET /progress/                                                          │
-│  Cookies: sb-access-token (auth) OR session_id (guest)                  │
+│  Cookies: sb-access-token (JWT from Supabase Auth)                      │
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       IDENTITY RESOLUTION                                │
-│  _resolve_identity(user, session_id)                                    │
-│  ┌─────────────────┐         ┌─────────────────┐                        │
-│  │ Authenticated?  │───Yes──►│ user_id = JWT   │                        │
-│  │                 │         │ client = None   │                        │
-│  └────────┬────────┘         │ (uses anon+RLS) │                        │
-│           │ No               └─────────────────┘                        │
-│           ▼                                                             │
-│  ┌─────────────────┐         ┌─────────────────┐                        │
-│  │ Has session_id? │───Yes──►│ user_id = UUID  │                        │
-│  │                 │         │ client = admin  │                        │
-│  └────────┬────────┘         │ (bypasses RLS)  │                        │
-│           │ No               └─────────────────┘                        │
+│                       AUTH CHECK                                         │
+│  user: OptionalUserDep + sb_access_token cookie                         │
+│  ┌─────────────────┐         ┌─────────────────────────────────┐       │
+│  │ Authenticated?  │───Yes──►│ user_client =                   │       │
+│  │                 │         │   get_supabase_for_user(token)  │       │
+│  └────────┬────────┘         │ RLS works via auth.uid()        │       │
+│           │ No               └─────────────────────────────────┘       │
 │           ▼                                                             │
 │  ┌─────────────────┐                                                    │
 │  │ Return empty    │                                                    │
-│  │ stats (new user)│                                                    │
+│  │ stats + signup  │                                                    │
+│  │ prompt (guest)  │                                                    │
 │  └─────────────────┘                                                    │
 └─────────────────────────────────────────────────────────────────────────┘
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        PROGRESS SERVICE                                  │
-│  ProgressService(user_id, client)                                       │
+│  ProgressService(user.id, client=user_client)                           │
 │                                                                         │
 │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐            │
 │  │ VocabularyRepo │  │ SessionRepo    │  │ LessonRepo     │            │
@@ -1212,57 +1187,6 @@ The progress system aggregates data from three repositories through the Progress
 │  │ Charts: vocab_growth (line) | accuracy_trend (line)              │   │
 │  │ Data loaded via /progress/chart-data as JSON                     │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### Guest Data Merge Flow
-
-When a guest user signs up or logs in, their progress data is transferred to their authenticated account.
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        LOGIN/SIGNUP SUCCESS                              │
-│  auth_response.session != None                                          │
-│  Cookies: session_id (guest UUID) exists                                │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    GUEST DATA MERGE SERVICE                              │
-│  GuestDataMergeService(guest_session_id, authenticated_user_id)         │
-│  Uses admin client (service role) to bypass RLS                         │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ _merge_vocabulary()                                              │   │
-│  │ - Query guest vocabulary entries                                 │   │
-│  │ - For each entry:                                                │   │
-│  │   - If auth user has same word+language:                         │   │
-│  │     - Sum times_seen and times_correct                           │   │
-│  │     - Keep earliest first_seen_at                                │   │
-│  │     - Delete guest entry                                         │   │
-│  │   - Else: Update user_id to auth user                            │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ _merge_sessions()                                                │   │
-│  │ - Transfer all guest sessions (no dedup needed)                  │   │
-│  │ - Bulk update: SET user_id = auth_id WHERE user_id = guest_id    │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ _merge_lessons()                                                 │   │
-│  │ - For duplicate lessons: keep higher score                       │   │
-│  │ - Otherwise: transfer ownership                                  │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-│  Returns: {"vocabulary": N, "sessions": N, "lessons": N}                │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CLEANUP                                           │
-│  response.delete_cookie(key="session_id")                               │
-│  Guest continues as authenticated user with all their progress          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1754,16 +1678,22 @@ async def handoff_to_chat(lesson_id: str) -> Response:
 
 ### Progress (Phase 7-8)
 
-The progress module provides endpoints for dashboard statistics, vocabulary management, and chart data. All endpoints support both authenticated and guest users.
+The progress module provides endpoints for dashboard statistics, vocabulary management, and chart data. All endpoints require authentication; unauthenticated users receive empty stats with a sign-up prompt. Data operations use a user-authenticated Supabase client (`get_supabase_for_user(sb_access_token)`) so that RLS policies work naturally with `auth.uid()`.
 
 **Dashboard Page**:
 ```python
 @router.get("/")
 async def get_progress_page(
     user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
-    """Render progress overview with stats from ProgressService."""
+    """Render progress overview with stats from ProgressService.
+    Unauthenticated users see empty stats with a sign-up prompt."""
+    if not user or not sb_access_token:
+        return templates.TemplateResponse(...)  # empty stats, is_guest=True
+
+    user_client = get_supabase_for_user(sb_access_token)
+    service = ProgressService(user.id, client=user_client)
 ```
 
 **Vocabulary Management**:
@@ -1771,7 +1701,7 @@ async def get_progress_page(
 @router.get("/vocabulary")
 async def get_vocabulary(
     user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     language: str = "es",
 ) -> HTMLResponse:
     """Render vocabulary list partial for HTMX loading."""
@@ -1780,7 +1710,7 @@ async def get_vocabulary(
 async def remove_vocabulary_word(
     user: OptionalUserDep,
     word_id: int,
-    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Remove word from vocabulary (returns empty for HTMX swap)."""
 ```
@@ -1790,14 +1720,14 @@ async def remove_vocabulary_word(
 @router.get("/stats")
 async def get_stats(
     user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Render stats summary partial with DashboardStats."""
 
 @router.get("/chart-data")
 async def get_chart_data(
     user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     language: str = "es",
     days: int = 30,
 ) -> JSONResponse:
@@ -1806,16 +1736,16 @@ async def get_chart_data(
 
 ### Review (Phase 12)
 
-The review module provides spaced repetition with the SM-2 algorithm. It supports both dedicated review sessions and intelligent chat weaving.
+The review module provides spaced repetition with the SM-2 algorithm. All review endpoints require authentication (`CurrentUserDep`) since spaced repetition data is persisted per-user. Data operations use `get_supabase_for_user(sb_access_token)` for RLS compliance.
 
 **Review Stats**:
 ```python
 @router.get("/stats")
 async def get_review_stats(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
     language: str = "es",
-) -> JSONResponse:
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+) -> dict:
     """Return due_count, next_review_in, and total_in_rotation."""
 ```
 
@@ -1823,41 +1753,32 @@ async def get_review_stats(
 ```python
 @router.post("/start")
 async def start_review_session(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
+    user: CurrentUserDep,
+    count: int | Literal["all"] = 10,
     language: str = "es",
-    size: int = 10,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Start a review session with specified number of due words."""
 
-@router.post("/next")
-async def get_next_question(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
-) -> HTMLResponse:
-    """Get the next review question (conversational micro-quiz format)."""
-
-@router.post("/submit")
-async def submit_answer(
-    user: OptionalUserDep,
-    answer: str = Form(...),
-    session_id: Annotated[str | None, Cookie()] = None,
+@router.post("/answer")
+async def submit_review_answer(
+    user: CurrentUserDep,
+    word_id: int = Form(...),
+    user_answer: str = Form(...),
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Submit answer, get Hermano-style feedback, update SM-2 scheduling."""
 
-@router.post("/complete")
-async def complete_review_session(
-    user: OptionalUserDep,
-    session_id: Annotated[str | None, Cookie()] = None,
-) -> HTMLResponse:
-    """Complete review session and show summary."""
+@router.post("/end")
+async def end_review_session() -> HTMLResponse:
+    """End session early and show summary. Reads session state from cookie."""
 ```
 
 ---
 
 ## Database Schema (Supabase PostgreSQL)
 
-The application uses Supabase PostgreSQL with Row Level Security (RLS) policies. All tables include a `user_id` column that references either an authenticated user's UUID or a guest session UUID.
+The application uses Supabase PostgreSQL with Row Level Security (RLS) policies. All tables include a `user_id` column that references an authenticated user's UUID from Supabase Auth. Data persistence is authenticated-only; guests do not write to these tables.
 
 ```sql
 -- User profiles (auto-created via database trigger on auth.users insert)
@@ -1873,7 +1794,7 @@ CREATE TABLE user_profiles (
 -- Vocabulary learned across all sessions (with SM-2 spaced repetition fields)
 CREATE TABLE vocabulary (
     id SERIAL PRIMARY KEY,
-    user_id UUID NOT NULL,  -- auth.users UUID or guest session UUID
+    user_id UUID NOT NULL,  -- auth.users UUID (authenticated users only)
     word TEXT NOT NULL,
     translation TEXT NOT NULL,
     language TEXT NOT NULL,  -- 'es', 'de', 'fr'
@@ -1931,7 +1852,7 @@ CREATE POLICY "Users can delete own vocabulary"
     USING (auth.uid() = user_id);
 ```
 
-**RLS Bypass for Guest Users**: Guest users store data using their session UUID as `user_id`. Since this doesn't match `auth.uid()`, the service role client (admin) is used to bypass RLS for guest data access. On signup/login, the `GuestDataMergeService` transfers guest data to the authenticated user's account.
+**RLS with User-Authenticated Clients**: All data operations use `get_supabase_for_user(sb_access_token)`, which creates a Supabase client authenticated with the user's JWT. This allows RLS policies to use `auth.uid()` naturally without any bypass. Guest users do not persist data to these tables -- they only have access to chat (via LangGraph checkpointing with a session cookie).
 
 ---
 
@@ -2047,12 +1968,12 @@ asyncio_mode = "auto"
 7. Progress page template with HTMX partial loading
 
 ### Week 5-6: Guest Sessions (Phase 8) - COMPLETED
-1. Session ID cookie mechanism for anonymous users
-2. Admin Supabase client for RLS bypass
-3. Identity resolution pattern in progress routes
-4. GuestDataMergeService for data transfer on auth
-5. Merge integration in signup/login routes
-6. Merge strategies: sum counters, transfer sessions, keep higher score
+1. Simplified guest model: chat-only access via session cookie (used as LangGraph thread_id)
+2. Auth-gated data features: progress, vocabulary, lessons, and review require authentication
+3. User-authenticated Supabase client (`get_supabase_for_user()`) for RLS compliance
+4. Unauthenticated users see empty stats with sign-up prompt
+5. Review endpoints use `CurrentUserDep` (auth required)
+6. Removed: `GuestDataMergeService`, `_resolve_identity()`, admin client for guest ops
 
 ### Week 7: AI-Enhanced Lessons (Phase 9) - COMPLETED
 1. LessonState TypedDict for subgraph state management

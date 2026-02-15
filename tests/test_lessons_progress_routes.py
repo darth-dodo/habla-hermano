@@ -378,9 +378,15 @@ def test_app(
         "src.api.routes.lessons.LessonProgressRepository",
         return_value=MagicMock(),
     )
+    # Patch get_supabase_for_user to return a mock client
+    app._supabase_for_user_patcher = patch(
+        "src.api.routes.progress.get_supabase_for_user",
+        return_value=MagicMock(),
+    )
     app._progress_service_patcher.start()
     app._vocab_repo_patcher.start()
     app._lesson_progress_repo_patcher.start()
+    app._supabase_for_user_patcher.start()
 
     return app
 
@@ -396,12 +402,15 @@ def client(test_app: FastAPI) -> Generator[TestClient, None, None]:
         TestClient: Synchronous HTTP client for testing.
     """
     with TestClient(test_app) as c:
+        # Set the sb-access-token cookie for authenticated requests
+        c.cookies.set("sb-access-token", "test-jwt-token")
         yield c
 
     # Stop patchers after client is done
     test_app._progress_service_patcher.stop()
     test_app._vocab_repo_patcher.stop()
     test_app._lesson_progress_repo_patcher.stop()
+    test_app._supabase_for_user_patcher.stop()
 
 
 @pytest.fixture
@@ -415,13 +424,18 @@ async def async_client(test_app: FastAPI) -> AsyncClient:
         AsyncClient: Async HTTP client for testing.
     """
     transport = ASGITransport(app=test_app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        cookies={"sb-access-token": "test-jwt-token"},
+    ) as c:
         yield c
 
     # Stop patchers after client is done
     test_app._progress_service_patcher.stop()
     test_app._vocab_repo_patcher.stop()
     test_app._lesson_progress_repo_patcher.stop()
+    test_app._supabase_for_user_patcher.stop()
 
 
 # =============================================================================

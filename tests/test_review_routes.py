@@ -1,9 +1,10 @@
 """Tests for review API routes (spaced repetition).
 
-Phase 12: Comprehensive tests for /review endpoints including stats,
+Phase 12/13: Comprehensive tests for /review endpoints including stats,
 session management, answer evaluation, and helper functions.
 
-Tests cover authenticated users, guest sessions (session_id cookie),
+Review is an authenticated-only feature (Phase 13 simplified guest model).
+Tests cover authenticated users, unauthenticated rejection (401),
 edge cases, and error paths.
 """
 
@@ -19,13 +20,12 @@ from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from httpx import ASGITransport, AsyncClient
 
-from src.api.auth import AuthenticatedUser, get_current_user_optional
+from src.api.auth import AuthenticatedUser, get_current_user
 from src.api.routes.review import (
     _evaluate_answer,
     _generate_question,
     _get_hermano_feedback,
     _levenshtein_distance,
-    _resolve_identity,
 )
 from src.db.models import Vocabulary
 from src.services.review import ReviewStats
@@ -217,7 +217,7 @@ def app(
 ) -> Generator[FastAPI, None, None]:
     """Create test FastAPI app with mocked dependencies for review routes.
 
-    Patches ReviewService, VocabularyRepository, and get_supabase_admin to
+    Patches ReviewService, VocabularyRepository, and get_supabase_for_user to
     prevent real database calls during tests.
     """
     from fastapi import FastAPI
@@ -230,14 +230,14 @@ def app(
     app = FastAPI()
 
     # Mock auth: return authenticated user
-    async def get_mock_user_optional() -> AuthenticatedUser:
+    async def get_mock_user() -> AuthenticatedUser:
         return mock_user
 
     # Mock templates
     def get_mock_templates() -> Jinja2Templates:
         return templates
 
-    app.dependency_overrides[get_current_user_optional] = get_mock_user_optional
+    app.dependency_overrides[get_current_user] = get_mock_user
     app.dependency_overrides[get_cached_templates] = get_mock_templates
 
     app.include_router(review_router)
@@ -249,23 +249,19 @@ def app(
         patch(
             "src.api.routes.review.VocabularyRepository", return_value=mock_vocab_repo
         ) as _mock_repo_cls,
-        patch("src.api.routes.review.get_supabase_admin", return_value=MagicMock()) as _mock_admin,
+        patch(
+            "src.api.routes.review.get_supabase_for_user", return_value=MagicMock()
+        ) as _mock_user_client,
     ):
         yield app
 
 
 @pytest.fixture
-def guest_app(
-    mock_review_service: MagicMock,
-    mock_vocab_repo: MagicMock,
+def unauth_app(
     tmp_path: Path,
 ) -> Generator[FastAPI, None, None]:
-    """Create test FastAPI app for guest user flow (no auth, session_id cookie).
-
-    The optional user dependency returns None, forcing the guest code path
-    that relies on the session_id cookie.
-    """
-    from fastapi import FastAPI
+    """Create test app where no user is authenticated (simulates 401)."""
+    from fastapi import FastAPI, HTTPException
 
     from src.api.dependencies import get_cached_templates
     from src.api.routes.review import router as review_router
@@ -274,55 +270,18 @@ def guest_app(
 
     app = FastAPI()
 
-    # Mock auth: no authenticated user (guest)
-    async def get_no_user() -> None:
-        return None
+    async def get_no_user() -> AuthenticatedUser:
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
     def get_mock_templates() -> Jinja2Templates:
         return templates
 
-    app.dependency_overrides[get_current_user_optional] = get_no_user
+    app.dependency_overrides[get_current_user] = get_no_user
     app.dependency_overrides[get_cached_templates] = get_mock_templates
 
     app.include_router(review_router)
 
-    with (
-        patch("src.api.routes.review.ReviewService", return_value=mock_review_service),
-        patch("src.api.routes.review.VocabularyRepository", return_value=mock_vocab_repo),
-        patch("src.api.routes.review.get_supabase_admin", return_value=MagicMock()),
-    ):
-        yield app
-
-
-@pytest.fixture
-def no_identity_app(
-    tmp_path: Path,
-) -> Generator[FastAPI, None, None]:
-    """Create test app where no user identity can be resolved (no auth, no cookie)."""
-    from fastapi import FastAPI
-
-    from src.api.dependencies import get_cached_templates
-    from src.api.routes.review import router as review_router
-
-    templates = _create_review_templates(tmp_path)
-
-    app = FastAPI()
-
-    async def get_no_user() -> None:
-        return None
-
-    def get_mock_templates() -> Jinja2Templates:
-        return templates
-
-    app.dependency_overrides[get_current_user_optional] = get_no_user
-    app.dependency_overrides[get_cached_templates] = get_mock_templates
-
-    app.include_router(review_router)
-
-    with (
-        patch("src.api.routes.review.get_supabase_admin", return_value=MagicMock()),
-    ):
-        yield app
+    yield app
 
 
 @pytest.fixture
@@ -334,17 +293,9 @@ async def client(app: FastAPI) -> AsyncClient:
 
 
 @pytest.fixture
-async def guest_client(guest_app: FastAPI) -> AsyncClient:
-    """Create async test client for guest user tests."""
-    transport = ASGITransport(app=guest_app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
-        yield c
-
-
-@pytest.fixture
-async def no_identity_client(no_identity_app: FastAPI) -> AsyncClient:
-    """Create async test client for no-identity tests."""
-    transport = ASGITransport(app=no_identity_app)
+async def unauth_client(unauth_app: FastAPI) -> AsyncClient:
+    """Create async test client for unauthenticated request tests."""
+    transport = ASGITransport(app=unauth_app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
@@ -379,48 +330,6 @@ def _build_session_cookie(
 # =============================================================================
 # Helper Function Tests
 # =============================================================================
-
-
-class TestResolveIdentity:
-    """Tests for _resolve_identity helper function."""
-
-    def test_returns_user_id_when_authenticated(self, mock_user: AuthenticatedUser) -> None:
-        """Authenticated user returns (user.id, None)."""
-        effective_id, client = _resolve_identity(mock_user, None)
-        assert effective_id == mock_user.id
-        assert client is None
-
-    def test_returns_user_id_even_with_session_cookie(self, mock_user: AuthenticatedUser) -> None:
-        """Authenticated user takes priority over session_id cookie."""
-        effective_id, client = _resolve_identity(mock_user, "guest-session-456")
-        assert effective_id == mock_user.id
-        assert client is None
-
-    def test_returns_session_id_for_guest(self) -> None:
-        """Guest with session_id returns (session_id, admin_client)."""
-        with patch("src.api.routes.review.get_supabase_admin") as mock_admin:
-            mock_admin.return_value = MagicMock()
-            effective_id, client = _resolve_identity(None, "guest-session-789")
-
-        assert effective_id == "guest-session-789"
-        assert client is not None
-
-    def test_returns_none_when_no_identity(self) -> None:
-        """No user and no session_id returns (None, None)."""
-        effective_id, client = _resolve_identity(None, None)
-        assert effective_id is None
-        assert client is None
-
-    def test_returns_none_when_admin_client_fails(self) -> None:
-        """Guest with failing admin client returns (None, None) gracefully."""
-        with patch(
-            "src.api.routes.review.get_supabase_admin",
-            side_effect=ValueError("Supabase not configured"),
-        ):
-            effective_id, client = _resolve_identity(None, "guest-session-fail")
-
-        assert effective_id is None
-        assert client is None
 
 
 class TestLevenshteinDistance:
@@ -646,27 +555,10 @@ class TestGetReviewStats:
         assert data["next_review_in"] == "2 hours"
         assert data["total_in_rotation"] == 10
 
-    async def test_returns_stats_for_guest_user(self, guest_client: AsyncClient) -> None:
-        """Guest user with session_id cookie gets review statistics."""
-        response = await guest_client.get(
-            "/review/stats",
-            cookies={"session_id": "guest-session-abc"},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["due_count"] == 3
-        assert data["total_in_rotation"] == 10
-
-    async def test_returns_empty_stats_when_no_identity(
-        self, no_identity_client: AsyncClient
-    ) -> None:
-        """No user and no session_id returns zeroed stats."""
-        response = await no_identity_client.get("/review/stats")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["due_count"] == 0
-        assert data["next_review_in"] is None
-        assert data["total_in_rotation"] == 0
+    async def test_returns_401_when_unauthenticated(self, unauth_client: AsyncClient) -> None:
+        """Unauthenticated request to stats returns 401."""
+        response = await unauth_client.get("/review/stats")
+        assert response.status_code == 401
 
     async def test_stats_with_language_param(self, client: AsyncClient) -> None:
         """Language parameter is passed through to ReviewService."""
@@ -745,19 +637,10 @@ class TestStartReviewSession:
         assert "review-empty" in response.text
         assert "No words due" in response.text
 
-    async def test_start_raises_400_without_identity(self, no_identity_client: AsyncClient) -> None:
-        """Returns 400 when no user identity can be resolved."""
-        response = await no_identity_client.post("/review/start")
-        assert response.status_code == 400
-
-    async def test_start_for_guest_with_session_id(self, guest_client: AsyncClient) -> None:
-        """Guest user with session_id can start a review session."""
-        response = await guest_client.post(
-            "/review/start",
-            cookies={"session_id": "guest-session-start"},
-        )
-        assert response.status_code == 200
-        assert "review-question" in response.text
+    async def test_start_returns_401_when_unauthenticated(self, unauth_client: AsyncClient) -> None:
+        """Returns 401 when user is not authenticated."""
+        response = await unauth_client.post("/review/start")
+        assert response.status_code == 401
 
     async def test_start_with_language_query_param(
         self, client: AsyncClient, mock_review_service: MagicMock
@@ -915,17 +798,17 @@ class TestSubmitReviewAnswer:
         assert response.status_code == 200
         assert "feedback" in response.text
 
-    async def test_answer_without_identity_returns_400(
-        self, no_identity_client: AsyncClient
+    async def test_answer_returns_401_when_unauthenticated(
+        self, unauth_client: AsyncClient
     ) -> None:
-        """Answering without any user identity returns 400."""
+        """Answering without authentication returns 401."""
         session_cookie = _build_session_cookie(word_ids=[1], current_index=0)
-        response = await no_identity_client.post(
+        response = await unauth_client.post(
             "/review/answer",
             data={"word_id": "1", "user_answer": "test"},
             cookies={"review_session": session_cookie},
         )
-        assert response.status_code == 400
+        assert response.status_code == 401
 
     async def test_answer_updates_session_cookie_with_results(self, client: AsyncClient) -> None:
         """Updated session cookie includes the answer result."""
@@ -950,19 +833,6 @@ class TestSubmitReviewAnswer:
         )
         # After answering question 1 of 3, progress should be 33%
         assert "progress-bar" in response.text
-
-    async def test_answer_for_guest_user(self, guest_client: AsyncClient) -> None:
-        """Guest user with session_id can answer questions."""
-        session_cookie = _build_session_cookie(word_ids=[1, 2], current_index=0)
-        response = await guest_client.post(
-            "/review/answer",
-            data={"word_id": "1", "user_answer": "hola"},
-            cookies={
-                "session_id": "guest-session-answer",
-                "review_session": session_cookie,
-            },
-        )
-        assert response.status_code == 200
 
 
 # =============================================================================
