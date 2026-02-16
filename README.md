@@ -5,7 +5,7 @@
 Meet Hermano — your friendly, laid-back language buddy who takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-ocean-home.png" alt="Habla Hermano Desktop" width="700"/>
+  <img src="docs/screenshots/mobile-ocean-home.png" alt="Habla Hermano" width="300"/>
 </p>
 
 ---
@@ -27,7 +27,7 @@ Most language apps drill vocabulary in isolation. You memorize words, ace flashc
 ## Conversations That Adapt to You
 
 <p align="center">
-  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Beach conversation on mobile" width="300"/>
+  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Beach conversation with Hermano" width="300"/>
 </p>
 
 Hermano adapts his language mix based on your level:
@@ -44,7 +44,7 @@ Hermano adapts his language mix based on your level:
 ## Scaffolding That Helps You Respond
 
 <p align="center">
-  <img src="docs/screenshots/desktop-ocean-scaffold-a0.png" alt="Word Bank and Hints" width="700"/>
+  <img src="docs/screenshots/mobile-beach-scaffold.png" alt="Word bank, hints, and pronunciation tips" width="300"/>
 </p>
 
 Stuck on what to say? Beginners get contextual help:
@@ -60,7 +60,7 @@ For A0 learners, scaffolding appears automatically. A1 learners can expand it wh
 ## Grammar and Pronunciation Feedback
 
 <p align="center">
-  <img src="docs/screenshots/desktop-ocean-grammar.png" alt="Grammar Feedback" width="700"/>
+  <img src="docs/screenshots/mobile-beach-response.png" alt="Conversation with grammar correction" width="300"/>
 </p>
 
 Made a mistake? Hermano models the correct form naturally in his response, then offers expandable tips for deeper learning:
@@ -101,21 +101,15 @@ Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced 
 
 ---
 
-## Works on Any Device
-
-Fully responsive on phone, tablet, and desktop — with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
+## Three Beautiful Themes
 
 <p align="center">
-  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Mobile Dark Theme" width="250"/>
+  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Ocean theme" width="200"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-beach-light.png" alt="Mobile Light Theme" width="250"/>
+  <img src="docs/screenshots/mobile-beach-light.png" alt="Light theme" width="200"/>
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/mobile-beach-scaffold.png" alt="Mobile Scaffolding and Pronunciation Tips" width="300"/>
-</p>
-
-Three themes: **Dark**, **Light**, and **Ocean** — all with a clean Nordic Minimal aesthetic.
+**Dark**, **Light**, and **Ocean** — all with a clean Nordic Minimal aesthetic. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
 
 ---
 
