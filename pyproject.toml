@@ -29,6 +29,9 @@ dependencies = [
     # Configuration
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
+
+    # Rate limiting
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]
@@ -127,6 +130,7 @@ module = [
     "psycopg_pool.*",
     "yaml.*",
     "jwt.*",
+    "slowapi.*",
 ]
 ignore_missing_imports = true
 
