@@ -1,10 +1,15 @@
 """Authentication utilities for Supabase JWT validation.
 
-Provides JWT token validation using Supabase's JWKS endpoint and
-a FastAPI dependency for extracting the current authenticated user.
+Provides JWT token validation using Supabase's auth.get_user() for server-side
+verification and a FastAPI dependency for extracting the current authenticated user.
 Also provides EffectiveUser for unified authenticated/guest identity.
+
+Security:
+- Production: Tokens are verified server-side via Supabase auth.get_user()
+- Local dev: Falls back to unverified JWT decode with a WARNING log
 """
 
+import logging
 import time
 from dataclasses import dataclass
 from typing import Annotated
@@ -12,7 +17,10 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
+from src.api.config import get_settings
 from src.api.supabase_client import SupabaseClient, get_supabase, get_supabase_admin
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -53,36 +61,69 @@ def _get_token_from_request(request: Request) -> str | None:
     return None
 
 
-async def get_current_user(request: Request) -> AuthenticatedUser:
-    """FastAPI dependency to get the current authenticated user.
+def _verify_token_via_supabase(token: str) -> AuthenticatedUser:
+    """Verify a JWT token server-side via Supabase auth.get_user().
 
-    Extracts and validates the JWT token from the request, returning
-    the authenticated user's information.
+    This is the secure verification path used in production. The token
+    signature is validated by Supabase's auth service, and user data
+    is returned from Supabase (the source of truth).
 
     Args:
-        request: FastAPI request object.
+        token: Raw JWT access token string.
 
     Returns:
-        AuthenticatedUser with id and email.
+        AuthenticatedUser with verified id and email from Supabase.
 
     Raises:
-        HTTPException: 401 if token is missing, invalid, or expired.
+        HTTPException: 401 if token is invalid, expired, or Supabase
+            returns a null user.
+        ValueError: If Supabase is not configured (propagated from get_supabase).
     """
-    token = _get_token_from_request(request)
-
-    if not token:
+    try:
+        client = get_supabase()
+        response = client.auth.get_user(token)
+    except ValueError:
+        raise
+    except Exception as e:
+        logger.warning("Supabase token verification failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
+            detail="Token verification failed",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
+    if response.user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    return AuthenticatedUser(
+        id=response.user.id,
+        email=response.user.email or "",
+    )
+
+
+def _decode_token_unverified(token: str) -> AuthenticatedUser:
+    """Decode a JWT token WITHOUT signature verification.
+
+    WARNING: This path is for local development only. It does NOT verify
+    the token signature, meaning forged tokens will be accepted.
+
+    Args:
+        token: Raw JWT access token string.
+
+    Returns:
+        AuthenticatedUser with claims extracted from unverified JWT.
+
+    Raises:
+        HTTPException: 401 if token is malformed, expired, or missing 'sub'.
+    """
     try:
-        # Decode and validate JWT
-        # Supabase uses HS256 with the JWT secret for token signing
         payload = jwt.decode(
             token,
-            options={"verify_signature": False},  # We'll verify via Supabase API
+            options={"verify_signature": False},
             algorithms=["HS256"],
         )
 
@@ -113,6 +154,46 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
             detail=f"Invalid token: {e}",
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
+
+
+async def get_current_user(request: Request) -> AuthenticatedUser:
+    """FastAPI dependency to get the current authenticated user.
+
+    Extracts the JWT token from the request and verifies it:
+    - If Supabase is configured: verifies server-side via auth.get_user()
+    - If Supabase is NOT configured (local dev): falls back to unverified
+      decode with a WARNING log.
+
+    Args:
+        request: FastAPI request object.
+
+    Returns:
+        AuthenticatedUser with id and email.
+
+    Raises:
+        HTTPException: 401 if token is missing, invalid, or expired.
+    """
+    token = _get_token_from_request(request)
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    settings = get_settings()
+
+    if settings.supabase_configured:
+        # Production path: verify token server-side via Supabase
+        return _verify_token_via_supabase(token)
+
+    # Local dev fallback: unverified JWT decode
+    logger.warning(
+        "JWT signature verification is DISABLED (Supabase not configured). "
+        "Do NOT use this in production."
+    )
+    return _decode_token_unverified(token)
 
 
 async def get_current_user_optional(request: Request) -> AuthenticatedUser | None:
