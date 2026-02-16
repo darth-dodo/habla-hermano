@@ -129,7 +129,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Spaced Repetition** | SM-2 algorithm with intelligent chat weaving and dedicated review mode |
 | **3 Languages** | Spanish, German, and French — 60 lessons across all levels A0-B1 |
 | **Beautiful Themes** | Nordic Minimal (light/dark/ocean) with clean, modern aesthetic |
-| **Mobile-First** | Works great on phone, tablet, or desktop |
+| **Mobile-First** | Safe areas, dynamic viewport, touch-optimized for phone, tablet, and desktop |
 
 ---
 
@@ -160,11 +160,12 @@ Each level covers 5 categories: greetings, introductions, numbers, colors, and f
 - [Product Vision](docs/product.md) — Pedagogy and feature philosophy
 - [Architecture](docs/architecture.md) — Technical design and LangGraph implementation
 - [API Reference](docs/api.md) — Endpoints and data structures
-- [Testing](docs/testing.md) — 1445 tests, 76%+ coverage, test strategy
+- [Testing](docs/testing.md) — 1440+ tests, 86%+ coverage, test strategy
 - [E2E Tests](docs/playwright-e2e.md) — Playwright browser test documentation
 - [Codebase Summary](docs/codebase-summary.md) — Full crash course for onboarding
 - [Phase 6 Design](docs/design/phase6-micro-lessons.md) — Micro-lessons design document
 - [Phase 12 Design](docs/design/phase12-spaced-repetition.md) — Spaced repetition design document
+- [Phase 13 Design](docs/design/phase13-mobile-responsive.md) — Mobile responsive design document
 - [Changelog](CHANGELOG.md) — Release history
 
 ---
