@@ -67,7 +67,7 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
 | **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
-| **Mobile-First UI** | ✅ Complete | Works on all devices |
+| **Mobile-First UI** | ✅ Complete | Safe areas, dynamic viewport, touch-optimized, works on all devices |
 | **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
 | **Guest Access** | ✅ Complete | Chat works without authentication; grammar feedback, pronunciation tips, and scaffolding included |
@@ -396,6 +396,7 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 10** | Lesson Content Expansion | 60 lessons across all languages and levels | ✅ Complete |
 | **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
 | **Phase 12** | Spaced Repetition | SM-2 algorithm, intelligent chat weaving, dedicated review mode | ✅ Complete |
+| **Phase 13** | Mobile Responsive | Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Complete |
 
 ### Future Ideas
 
@@ -469,3 +470,4 @@ See [Architecture Documentation](architecture.md) for details.
 - [Design Documents](design/) — Phase-by-phase implementation details
 - [Phase 6 Design](design/phase6-micro-lessons.md) — Micro-lessons design document
 - [Phase 12 Design](design/phase12-spaced-repetition.md) — Spaced repetition design document
+- [Phase 13 Design](design/phase13-mobile-responsive.md) — Mobile responsive design document

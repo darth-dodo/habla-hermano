@@ -20,8 +20,9 @@
 | **Phase 10** | Lesson Content Expansion - 60 lessons across all languages and levels | ✅ Completed |
 | **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
 | **Phase 12** | Spaced Repetition - SM-2 algorithm, intelligent chat weaving, review mode | ✅ Completed |
+| **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 
-**Test Coverage**: 1017+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1440+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -146,7 +147,7 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **LLM** | Claude API | Superior language understanding, structured outputs |
 | **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
-| **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean) |
+| **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean), mobile-responsive |
 
 ---
 
@@ -213,9 +214,9 @@ habla-hermano/
 │   │   ├── merge.py             # [Removed] Previously GuestDataMergeService - no longer needed
 │   │   └── review.py            # [Implemented] ReviewService with SM-2 algorithm
 │   │
-│   ├── templates/               # [Implemented] All template files
-│   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables
-│   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu (Lessons, New Chat, Theme, Auth), language/level selectors
+│   ├── templates/               # [Implemented] All template files (mobile-responsive)
+│   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables, safe areas, dynamic viewport
+│   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu, safe areas, virtual keyboard support
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
 │   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
 │   │   ├── progress.html        # [Implemented] Progress dashboard with stats, vocabulary, charts
@@ -2004,3 +2005,12 @@ asyncio_mode = "auto"
 5. Silent tracking: analyze node detects correct usage and updates SM-2
 6. Review API endpoints for session management and progress tracking
 7. Database migration with SM-2 fields (easiness_factor, interval, repetitions, next_review_at)
+
+### Week 11: Mobile Responsive (Phase 13) - COMPLETED
+1. Global foundation: `viewport-fit=cover`, `100dvh`, safe area CSS utilities, touch optimizations
+2. Chat page: safe area insets on header/footer, responsive padding, virtual keyboard handling
+3. Lesson player: responsive footer touch targets, overflow handling, title truncation
+4. Progress dashboard: responsive chart height, mobile spacing, reduced chart tick count
+5. Partial components: full-width scaffolding/pronunciation/grammar on mobile, responsive review buttons
+6. Lessons page: multi-line card descriptions on mobile
+7. Auth pages: safe area padding for notched devices

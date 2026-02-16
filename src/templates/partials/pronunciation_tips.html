@@ -11,7 +11,7 @@ Variables expected:
 
 {% if pronunciation_tips and pronunciation_tips|length > 0 %}
 <div
-    class="mt-3 ml-0 sm:ml-2 max-w-[85%]"
+    class="mt-3 ml-0 sm:ml-2 max-w-full sm:max-w-[85%]"
     x-data="{ expanded: {{ 'true' if level == 'A0' else 'false' }} }"
 >
     <!-- Toggle Button -->

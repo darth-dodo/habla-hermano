@@ -30,9 +30,9 @@
 
 ## Current State
 
-**Branch**: `main`
-**Phase**: Phase 11 Complete (Nordic Design + Collapsible Pronunciation Tips)
-**Test Coverage**: 1017+ tests, 86%+ coverage
+**Branch**: `feature/phase13-mobile-responsive`
+**Phase**: Phase 13 Complete (Mobile Responsive Design)
+**Test Coverage**: 1440+ tests, 86%+ coverage
 
 ### What's Working
 
@@ -52,7 +52,7 @@
 | Multi-User Support | ✅ | User ID → Thread ID isolation |
 | New Conversation | ✅ | Clear session and start fresh |
 | 3 Themes | ✅ | Dark, Light, Ocean |
-| Mobile-First UI | ✅ | Works on all devices |
+| Mobile-First UI | ✅ | Safe areas, dynamic viewport, touch-optimized, all devices |
 | Micro-Lessons | ✅ | 60 lessons across 3 languages (es, de, fr) and 4 levels (A0-B1) |
 | Lesson Player | ✅ | Step-through with HTMX navigation |
 | Progress Dashboard | ✅ | Stats, vocabulary, charts |
@@ -195,16 +195,40 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 
 ---
 
-## Up Next
-
-### Phase 12: Advanced Features (Priority: 🟢 Low)
+### Phase 12: Spaced Repetition ✅
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Spaced repetition | ⏳ | Vocabulary review scheduling |
-| Speech input | ⏳ | Voice-based practice |
-| Mobile app | ⏳ | React Native or PWA |
-| Audio pronunciation | ⏳ | Text-to-speech for pronunciation tips |
+| SM-2 algorithm | ✅ | ReviewService with scheduling |
+| Review subgraphs | ✅ | Question generation + answer evaluation |
+| Chat weaving | ✅ | Silent review word integration |
+| Dedicated review mode | ✅ | 3 question types (translate, fill_blank, recognize) |
+| [Design Doc](docs/design/phase12-spaced-repetition.md) | ✅ | Full architecture documented |
+
+### Phase 13: Mobile Responsive ✅
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Global foundation | ✅ | viewport-fit=cover, 100dvh, safe areas, touch optimizations |
+| Chat page responsive | ✅ | Safe areas, keyboard-aware footer, responsive controls |
+| Lesson player responsive | ✅ | Touch targets, overflow handling, title truncation |
+| Progress dashboard responsive | ✅ | Chart sizing, mobile spacing, tick count |
+| Partial components | ✅ | Full-width on mobile, responsive buttons |
+| Lessons + auth pages | ✅ | Multi-line descriptions, safe area padding |
+| [Design Doc](docs/design/phase13-mobile-responsive.md) | ✅ | Full architecture documented |
+
+---
+
+## Up Next
+
+### Future Ideas (Priority: 🟢 Low)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Voice input/output | ⏳ | Speech-based practice |
+| Scenario roleplay | ⏳ | Ordering food, booking hotel |
+| Multiple AI personas | ⏳ | Beyond Hermano |
+| Offline mode | ⏳ | PWA with service worker |
 
 ---
 

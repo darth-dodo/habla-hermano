@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-02-15
+
+### Changed
+- Phase 13: Comprehensive mobile-responsive design across all pages
+- Added `viewport-fit=cover` for edge-to-edge rendering on notched devices
+- Added dynamic viewport height (`100dvh`) to account for mobile browser chrome
+- Added safe area inset utilities (`safe-top`, `safe-bottom`, `safe-x`) for notched phones
+- Added virtual keyboard scroll handling via `visualViewport` API
+- Added touch-optimized interactions: `touch-action: manipulation`, 16px input font-size
+- Chat page: responsive header controls, keyboard-aware footer with safe areas
+- Lesson player: responsive footer with larger touch targets, overflow handling, title truncation
+- Progress dashboard: responsive chart sizing, tighter mobile spacing, reduced tick count
+- Scaffold/pronunciation/grammar partials: full-width on mobile (`max-w-full sm:max-w-[85%]`)
+- Review partials: full-width buttons on mobile, responsive padding
+- Lessons page: multi-line card descriptions on mobile (`line-clamp-2`)
+- Auth pages: safe area padding for notched devices
+- Mobile scrollbar hiding for native overlay scrollbar experience
+- Design doc: docs/design/phase13-mobile-responsive.md
+
 ## [0.9.0] - 2026-02-04
 
 ### Added

@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.4 | **Tests**: 1017 | **Coverage**: 86%+ | **Date**: February 2026
+**Version**: 1.5 | **Tests**: 1440+ | **Coverage**: 86%+ | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -40,8 +40,9 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 1017 tests with 86%+ coverage, strict typing
+- ✅ 1440+ tests with 86%+ coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
+- ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
 - ✅ Micro-lessons system: 60 lessons across all languages and levels
 - ✅ Hamburger menu with Lessons, New Chat, Theme, Auth
@@ -212,8 +213,8 @@ habla-hermano/
 │   │   └── review.py                 # ReviewService: spaced repetition (SM-2)
 │   │
 │   ├── templates/                    # Jinja2 HTML
-│   │   ├── base.html                 # Layout with themes
-│   │   ├── chat.html                 # Chat interface with hamburger menu
+│   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
+│   │   ├── chat.html                 # Chat interface with hamburger menu, mobile-responsive
 │   │   ├── lessons.html              # Lesson catalog page
 │   │   ├── lesson_player.html        # Interactive lesson player
 │   │   ├── progress.html             # Progress dashboard with charts
@@ -230,9 +231,9 @@ habla-hermano/
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
-│       └── js/app.js                 # HTMX handlers
+│       └── js/app.js                 # HTMX handlers, virtual keyboard handling
 │
-├── tests/                            # 1016 tests, 86%+ coverage
+├── tests/                            # 1440+ tests, 86%+ coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── test_agent_*.py               # LangGraph tests
 │   ├── test_api_*.py                 # API route tests
@@ -825,4 +826,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.4 — Habla Hermano (1017 tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips)*
+*Crash Course v1.5 — Habla Hermano (1440+ tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive)*

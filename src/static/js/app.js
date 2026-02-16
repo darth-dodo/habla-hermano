@@ -376,4 +376,16 @@
         init();
     }
 
+    // ============================================
+    // Virtual Keyboard Handling
+    // ============================================
+    if ('visualViewport' in window) {
+        window.visualViewport.addEventListener('resize', function() {
+            var chatContainer = document.getElementById('chat-container');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+    }
+
 })();
