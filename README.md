@@ -29,7 +29,7 @@ Habla Hermano is different:
 ### Real Conversations at Every Level
 
 <p align="center">
-  <img src="docs/screenshots/mobile-ocean-conversation.png" alt="Habla Hermano Mobile Conversation" width="300"/>
+  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Habla Hermano Mobile Conversation" width="300"/>
 </p>
 
 Hermano adapts his language mix based on your level:
@@ -89,6 +89,20 @@ Each level gets appropriate pronunciation coaching:
 - **A1**: Stress patterns, common mistakes — tips collapsed by default
 - **A2**: Linking sounds, regional variations
 - **B1**: Subtle distinctions that mark fluency
+
+### Mobile Experience
+
+Fully responsive on any device — safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
+
+<p align="center">
+  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Mobile Dark Theme - Beach Conversation" width="250"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-beach-light.png" alt="Mobile Light Theme - Beach Conversation" width="250"/>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/mobile-beach-scaffold.png" alt="Mobile Scaffolding - Word Bank and Pronunciation Tips" width="300"/>
+</p>
 
 ---
 
