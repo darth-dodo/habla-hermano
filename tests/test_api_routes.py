@@ -265,18 +265,15 @@ class TestSendMessageEdgeCases:
         test_client: TestClient,
         mock_compiled_graph: MagicMock,
     ) -> None:
-        """POST /chat should handle long messages."""
-        long_message = "Hola " * 1000  # Very long message
+        """POST /chat should reject messages exceeding MAX_MESSAGE_LENGTH."""
+        long_message = "Hola " * 1000  # 5000 chars, exceeds 2000 limit
 
         response = test_client.post(
             "/chat",
             data={"message": long_message, "level": "A1"},
         )
-        assert response.status_code == 200
-
-        # Verify the full message was passed to the agent
-        call_args = mock_compiled_graph.ainvoke.call_args[0][0]
-        assert call_args["messages"][0].content == long_message
+        assert response.status_code == 422
+        assert "too long" in response.text
 
     def test_send_message_special_characters(
         self,
@@ -316,16 +313,13 @@ class TestSendMessageEdgeCases:
         mock_compiled_graph: MagicMock,
         sample_message: str,
     ) -> None:
-        """POST /chat should accept unknown levels (validation at agent level)."""
+        """POST /chat should reject unsupported CEFR levels."""
         response = test_client.post(
             "/chat",
             data={"message": sample_message, "level": "C2"},  # Not a supported level
         )
-        # Should still return 200 - level validation is at agent level
-        assert response.status_code == 200
-
-        call_args = mock_compiled_graph.ainvoke.call_args[0][0]
-        assert call_args["level"] == "C2"
+        assert response.status_code == 422
+        assert "Invalid level" in response.text
 
 
 class TestHealthEndpoint:

@@ -45,6 +45,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
 
+# --- Input validation constants ---
+MAX_MESSAGE_LENGTH = 2000
+VALID_LEVELS = {"A0", "A1", "A2", "B1"}
+VALID_LANGUAGES = {"es", "de", "fr"}
+
+
+def _make_error_html(error_message: str) -> HTMLResponse:
+    """Return an HTMX-compatible HTML error fragment."""
+    html = f'<div class="text-red-500 text-sm p-2">{error_message}</div>'
+    return HTMLResponse(content=html, status_code=422)
+
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
 async def chat_page(
@@ -176,6 +187,28 @@ async def send_message(
     Returns:
         HTMLResponse: Partial HTML with user message and AI response.
     """
+    # --- Input validation ---
+    message = message.strip()
+
+    if not message:
+        return _make_error_html("Message cannot be empty.")
+
+    if len(message) > MAX_MESSAGE_LENGTH:
+        return _make_error_html(
+            f"Message is too long (max {MAX_MESSAGE_LENGTH} characters). "
+            "Please shorten your message."
+        )
+
+    if level not in VALID_LEVELS:
+        return _make_error_html(
+            f"Invalid level '{level}'. Must be one of: {', '.join(sorted(VALID_LEVELS))}."
+        )
+
+    if language not in VALID_LANGUAGES:
+        return _make_error_html(
+            f"Invalid language '{language}'. Must be one of: {', '.join(sorted(VALID_LANGUAGES))}."
+        )
+
     # Resolve identity for thread_id and effective user_id
     thread_id, effective_user_id, new_session_id = _resolve_chat_identity(user, session_id)
 
