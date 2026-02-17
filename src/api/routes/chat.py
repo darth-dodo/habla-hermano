@@ -37,6 +37,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
+from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.supabase_client import get_supabase_for_user
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
@@ -152,6 +153,7 @@ def _resolve_chat_identity(
 
 
 @router.post("/chat", response_class=HTMLResponse)
+@rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
 async def send_message(
     request: Request,
     templates: TemplatesDep,

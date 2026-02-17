@@ -16,6 +16,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
 from src.api.dependencies import get_cached_templates
+from src.api.rate_limit import reset_rate_limits
 
 # =============================================================================
 # User and Authentication Fixtures
@@ -222,15 +223,17 @@ def clean_env() -> Generator[None, None, None]:
 
 @pytest.fixture(autouse=True)
 def reset_settings_cache() -> Generator[None, None, None]:
-    """Reset settings cache before and after each test.
+    """Reset settings cache and rate limits before and after each test.
 
-    This ensures each test starts with fresh settings.
+    This ensures each test starts with fresh settings and clean rate limit state.
     """
     get_settings.cache_clear()
     get_cached_templates.cache_clear()
+    reset_rate_limits()
     yield
     get_settings.cache_clear()
     get_cached_templates.cache_clear()
+    reset_rate_limits()
 
 
 # =============================================================================
