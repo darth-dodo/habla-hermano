@@ -31,7 +31,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
 
     # Rate limiting
-    "slowapi>=0.1.9",
+    "ratelimit>=2.2.1",
 ]
 
 [project.optional-dependencies]
@@ -130,7 +130,7 @@ module = [
     "psycopg_pool.*",
     "yaml.*",
     "jwt.*",
-    "slowapi.*",
+    "ratelimit.*",
 ]
 ignore_missing_imports = true
 

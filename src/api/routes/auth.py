@@ -16,7 +16,7 @@ from supabase import Client, create_client
 
 from src.api.config import get_settings
 from src.api.dependencies import SettingsDep, TemplatesDep
-from src.api.rate_limit import AUTH_RATE_LIMIT, limiter
+from src.api.rate_limit import AUTH_RATE_LIMIT_CALLS, AUTH_RATE_LIMIT_PERIOD, rate_limited
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ async def signup_page(
 
 
 @router.post("/signup", response_class=HTMLResponse)
-@limiter.limit(AUTH_RATE_LIMIT)  # type: ignore[misc]
+@rate_limited(calls=AUTH_RATE_LIMIT_CALLS, period=AUTH_RATE_LIMIT_PERIOD)
 async def signup(
     request: Request,
     templates: TemplatesDep,
@@ -239,7 +239,7 @@ async def signup(
 
 
 @router.post("/login", response_class=HTMLResponse)
-@limiter.limit(AUTH_RATE_LIMIT)  # type: ignore[misc]
+@rate_limited(calls=AUTH_RATE_LIMIT_CALLS, period=AUTH_RATE_LIMIT_PERIOD)
 async def login(
     request: Request,
     templates: TemplatesDep,
