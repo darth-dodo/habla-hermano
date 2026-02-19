@@ -30,9 +30,44 @@
 
 ## Current State
 
-**Branch**: `feature/phase13-mobile-responsive`
-**Phase**: Phase 13 Complete (Mobile Responsive Design)
-**Test Coverage**: 1440+ tests, 86%+ coverage
+**Branch**: `feature/phase14-learning-paths`
+**Phase**: Phase 14 Complete (Structured Learning Paths + Adaptive Recommendations)
+**Test Coverage**: 1569+ tests passing (99 new Phase 14 tests)
+
+### Phase 14 Implementation Tasks
+
+#### 🔴 Critical (Core Services - Parallel)
+
+| # | Task | Status | Files | Notes |
+|---|------|--------|-------|-------|
+| 1 | Implement PathService | ✅ | `src/services/paths.py` | Static path config + progress computation |
+| 2 | Implement AdaptiveService | ✅ | `src/services/adaptive.py` | Daily recommendations from progress + vocab |
+
+#### 🟠 High Priority (Routes + Templates - Sequential, depends on #1 & #2)
+
+| # | Task | Status | Files | Notes |
+|---|------|--------|-------|-------|
+| 3 | Implement learn routes | ✅ | `src/api/routes/learn.py` | GET /learn/, GET /learn/recommendation |
+| 4 | Create templates | ✅ | `src/templates/learn.html`, `partials/learn_unit.html`, `partials/learn_recommendation.html` | Path timeline + recommendation card |
+
+#### 🟡 Medium Priority (Integration - depends on #3 & #4)
+
+| # | Task | Status | Files | Notes |
+|---|------|--------|-------|-------|
+| 5 | Mount learn router in main.py | ✅ | `src/api/main.py` | +2 lines: import + include_router |
+| 6 | Add next_path_lesson to lesson completion | ✅ | `src/api/routes/lessons.py` | +15 lines in complete_lesson |
+| 7 | Add "Continue Path" button | ✅ | `src/templates/partials/lesson_complete.html` | +12 lines |
+
+#### 🟢 Low Priority (Tests + Validation - depends on all above)
+
+| # | Task | Status | Files | Notes |
+|---|------|--------|-------|-------|
+| 8 | Write PathService tests | ✅ | `tests/test_paths_service.py` | 27 tests: path building, progress, next lesson |
+| 9 | Write AdaptiveService tests | ✅ | `tests/test_adaptive_service.py` | 49 tests: strengths, readiness, recommendations |
+| 10 | Write learn routes tests | ✅ | `tests/test_learn_routes.py` | 23 tests: pages, partials, error handling |
+| 11 | Run full test suite | ✅ | - | 1569 passed, 1 pre-existing failure (unrelated) |
+
+---
 
 ### What's Working
 
@@ -221,6 +256,40 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 
 ## Up Next
 
+### Codebase Improvements (From Analysis)
+
+Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
+
+#### Priority: 🔴 High
+
+| # | Task | Severity | Effort | Files | Notes |
+|---|------|----------|--------|-------|-------|
+| 1 | Fix `VocabularyRepository.upsert()` race condition | High | Low | `src/db/repository.py` | Read-then-write pattern; concurrent requests can duplicate rows. Use Supabase `upsert()` with `on_conflict` instead. Same issue in `increment_correct()`. |
+| 2 | Remove `get_supabase_admin()` from agent nodes | High | Medium | `respond.py`, `analyze.py`, `review.py`, `learn.py` | Agent nodes bypass RLS via admin client. Contradicts Phase 8 simplified guest model. Pass user-scoped client through `ConversationState` instead. |
+
+#### Priority: 🟡 Medium
+
+| # | Task | Severity | Effort | Files | Notes |
+|---|------|----------|--------|-------|-------|
+| 3 | Extract shared `_get_llm()` factory | Medium | Low | 5 node files under `src/agent/nodes/` | Duplicated in respond, analyze, scaffold, lesson, review — each with different temperature/max_tokens. Create `src/agent/llm.py` with `get_llm(profile: str)`. |
+| 4 | Fix `SupabaseClient = Any` type alias | Medium | Medium | `src/api/supabase_client.py`, `pyproject.toml` | Kills type safety for entire data layer. Use `supabase.Client` or a Protocol. Remove stale mypy `ignore_errors = true` for `src.db.*` and `src.services.*`. |
+| 5 | Add chat message length validation | Medium | Trivial | `src/api/routes/chat.py` | No limit on user message length — potential API cost abuse. Add `max_length` to Pydantic `ChatRequest` model. |
+| 6 | Fix `new_conversation` checkpoint clearing | Medium | Medium | `src/api/routes/chat.py` | Has TODO about Phase 8 checkpoint deletion; authenticated users get a new thread_id but old checkpoints are never cleaned up. Implement proper checkpoint deletion. |
+| 7 | Narrow broad `except Exception` blocks | Medium | Medium | 21 instances across codebase | Overly broad exception handling hides bugs. Catch specific exceptions (`SupabaseError`, `ValueError`, `JSONDecodeError`, etc.). |
+| 8 | Move keyword filtering server-side in `get_due_by_keywords()` | Medium | Low | `src/db/repository.py` | Fetches ALL due words then filters in Python. Use Supabase `.or()` filter to push keyword matching to the database. |
+
+#### Priority: 🟢 Low
+
+| # | Task | Severity | Effort | Files | Notes |
+|---|------|----------|--------|-------|-------|
+| 9 | Remove dead `EffectiveUser` code in auth.py | Low | Low | `src/api/auth.py` (lines ~222-285) | ~65 lines of dead code: `EffectiveUser`, `get_effective_user()`, `get_client_for_user()`, `EffectiveUserDep`. Superseded by Phase 8 simplified auth. |
+| 10 | Delete dead `feedback.py` stub node | Low | Trivial | `src/agent/nodes/feedback.py` | 51-line stub returning `{"formatted_feedback": []}`. Never imported or used in graph. Remove file and `[Planned]` reference in architecture.md. |
+| 11 | Remove stub methods in `VocabularyService` | Low | Low | `src/services/vocabulary.py` | `extract_vocabulary()` and `get_word_bank()` always return `[]` with `# noqa: ARG002`. Actual extraction done by `analyze_node`. Remove stubs or implement properly. |
+| 12 | Clean up f-string logging & debug noise | Low | Low | `src/agent/nodes/scaffold.py`, others | Scaffold node has verbose `logger.info(f"scaffold_node called with level=...")`. Use lazy `%s` formatting per Python logging best practice. |
+| 13 | Document `learn.py` route in architecture.md | Low | Low | `src/api/routes/learn.py`, `docs/architecture.md` | Route exists on disk but is undocumented. Part of Phase 14 WIP — add to architecture doc when stabilized. |
+| 14 | Update stale deployment configs | Low | Low | `render.yaml`, `Dockerfile` | Both reference SQLite (`DATABASE_URL: "sqlite:///..."`) but app uses Supabase PostgreSQL. `.env.example` has `ENABLE_SPACED_REPETITION=false` (feature shipped in Phase 12). |
+| 15 | Consider LLM instance caching | Low | Low | `src/agent/nodes/*` | `_get_llm()` creates a new `ChatAnthropic` instance per invocation. If stateless, cache per temperature/max_tokens combo. Low priority — LangChain may handle this internally. |
+
 ### Future Ideas (Priority: 🟢 Low)
 
 | Task | Status | Notes |
@@ -233,6 +302,43 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 ---
 
 ## Session Logs
+
+### Session Log: 2026-02-19 (Phase 14 Implementation - Learning Paths + Adaptive Recommendations)
+
+**Session Focus**: Add structured learning paths and adaptive daily recommendations
+
+**Agent**: Developer (following `.agentic-framework/workflows/feature-development.md`)
+**Branch**: `feature/phase14-learning-paths`
+
+**Design Reference**: `.claude/plans/serene-frolicking-stearns.md`
+
+**Key Decisions**:
+1. No new DB tables — paths are static config, progress derived from existing `lesson_progress`
+2. PathService uses `@lru_cache` singleton (matches existing LessonService pattern)
+3. Tasks 1 & 2 (PathService + AdaptiveService) executed in parallel via subagents
+4. Lesson ordering: CATEGORY_ORDER within each LEVEL_ORDER unit (20 lessons per language)
+
+**Artifacts Created**:
+- `src/services/paths.py` — PathService with path definitions + progress computation (~337 lines)
+- `src/services/adaptive.py` — AdaptiveService with daily recommendations (~180 lines)
+
+**Completed (Session 2)**:
+- Task 3: `src/api/routes/learn.py` — GET /learn/ + GET /learn/recommendation (~219 lines)
+- Task 4: `src/templates/learn.html` (~98 lines), `partials/learn_unit.html` (~188 lines), `partials/learn_recommendation.html` (~68 lines)
+- Task 5: `src/api/main.py` — mounted learn router at /learn prefix
+- Task 6: `src/api/routes/lessons.py` — added next_path_lesson computation to complete_lesson
+- Task 7: `src/templates/partials/lesson_complete.html` — added "Continue Path" button
+- Task 8: `tests/test_paths_service.py` — 27 tests (path building, progress, next lesson)
+- Task 9: `tests/test_adaptive_service.py` — 49 tests (strengths, readiness, recommendations, suggestion text)
+- Task 10: `tests/test_learn_routes.py` — 23 tests (pages, partials, error handling, guest access)
+- Task 11: Full suite — 1569 passed, 1 pre-existing failure (unrelated)
+
+**Template Fixes**:
+- Fixed `learn_unit.html`: `li.best_score` → `li.score` (matching LessonInUnit dataclass)
+- Fixed `learn_recommendation.html`: `{{ category }}` → `{{ cat_strength.category | capitalize }}` (CategoryStrength objects, not strings)
+- Fixed Jinja2 scoping: `loop` variable not available in `{% include %}` — pass `unit_index` and `is_last` explicitly from parent
+
+---
 
 ### Session Log: 2026-02-04 (Phase 11 Completion - Collapsible Pronunciation Tips UI)
 
@@ -741,15 +847,22 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 11 Complete (Nordic Design + Collapsible Pronunciation Tips)
+- **Current Phase**: Phase 14 In Progress (Structured Learning Paths + Adaptive Recommendations)
 - **Lesson Content**: 60 lessons across 3 languages (es, de, fr) × 4 levels (A0-B1) × 5 categories
 - **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
 - **Graph Structure**: Main: respond → [conditional] → scaffold OR analyze → END; Lesson: load_step → enhance_step → END
 - **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
 - **Auth**: Email/password via Supabase Auth with JWT tokens + guest sessions
-- **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard
-- **Test Coverage**: 1017+ tests, 86%+ coverage
-- **Branch**: `main`
+- **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard, spaced repetition, mobile responsive
+- **Test Coverage**: 1440+ tests, 86%+ coverage
+- **Branch**: `feature/phase14-learning-paths`
+
+### Phase 14: Learning Paths (In Progress)
+- **PathService**: `src/services/paths.py` — Static path config + progress computation (DONE)
+- **AdaptiveService**: `src/services/adaptive.py` — Daily recommendations (DONE)
+- **Learn Routes**: `src/api/routes/learn.py` — GET /learn/ (IN PROGRESS)
+- **Templates**: `src/templates/learn.html` + partials (PENDING)
+- **Known Constraint**: `lesson_progress` stores base IDs without language/level scoping; PathService always scopes `get_lesson()` calls with language+level
 
 ### Key Implementation Notes
 - **ADR**: `docs/adr/ADR-001-supabase-integration.md` - Decision rationale
