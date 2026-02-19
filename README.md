@@ -81,6 +81,12 @@ Each level gets appropriate coaching — from basic sounds and tricky letters at
 
 Beyond freeform conversation, Hermano offers bite-sized lessons that teach vocabulary and grammar through interactive exercises.
 
+<p align="center">
+  <img src="docs/screenshots/mobile-lessons-list.png" alt="Lesson listing" width="250"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-lesson-player.png" alt="Lesson vocabulary step" width="250"/>
+</p>
+
 Each lesson includes:
 - **Vocabulary steps** with translations and example sentences
 - **Exercises** — multiple choice, fill-in-the-blank, and translation
@@ -95,6 +101,23 @@ Each lesson includes:
 
 ---
 
+## Learning Paths
+
+<p align="center">
+  <img src="docs/screenshots/mobile-learning-path.png" alt="Spanish learning path" width="250"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete screen" width="250"/>
+</p>
+
+Don't know where to start? Each language has a structured path that guides you from absolute beginner to intermediate — 4 levels, 5 lessons each, 20 lessons total.
+
+- **Visual timeline** — See your entire path with progress at a glance
+- **Smart recommendations** — Daily suggestions based on where you left off
+- **Continue flow** — Complete a lesson and jump straight to the next one
+- **No rigid lock-in** — Follow the path or browse freely, your choice
+
+---
+
 ## Spaced Repetition
 
 Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced repetition algorithm to weave words back into your conversations at optimal intervals — plus a dedicated review mode when you want focused practice.
@@ -104,9 +127,9 @@ Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced 
 ## Three Beautiful Themes
 
 <p align="center">
-  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Ocean theme" width="200"/>
+  <img src="docs/screenshots/mobile-ocean-home.png" alt="Ocean theme" width="200"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-beach-light.png" alt="Light theme" width="200"/>
+  <img src="docs/screenshots/mobile-light-home.png" alt="Light theme" width="200"/>
 </p>
 
 **Dark**, **Light**, and **Ocean** — all with a clean Nordic Minimal aesthetic. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
@@ -146,7 +169,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Frontend** | HTMX, Alpine.js, Tailwind CSS |
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
-| **Testing** | pytest (1440+ tests, 86%+ coverage), Playwright E2E |
+| **Testing** | pytest (1540+ tests, 86%+ coverage), Playwright E2E |
 
 ### Architecture Highlights
 
@@ -173,6 +196,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - [Phase 6: Micro-Lessons](docs/design/phase6-micro-lessons.md)
 - [Phase 12: Spaced Repetition](docs/design/phase12-spaced-repetition.md)
 - [Phase 13: Mobile Responsive](docs/design/phase13-mobile-responsive.md)
+- [Phase 14: Learning Paths](docs/design/phase14-learning-paths.md)
 
 ---
 

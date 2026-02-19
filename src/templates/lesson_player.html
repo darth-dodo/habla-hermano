@@ -125,6 +125,34 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
             if (prevBtn) {
                 prevBtn.disabled = stepIndex === 0;
             }
+
+            // Swap Continue → Complete on last step, and back
+            const isLastStep = stepIndex >= totalSteps - 1;
+            const nextBtn = document.getElementById('next-btn');
+            const completeBtn = document.getElementById('complete-btn');
+
+            if (isLastStep && nextBtn && !completeBtn) {
+                const btn = document.createElement('button');
+                btn.id = 'complete-btn';
+                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.id }}/complete');
+                btn.setAttribute('hx-target', '#step-content');
+                btn.setAttribute('hx-swap', 'innerHTML');
+                btn.className = 'px-5 py-3 sm:py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150';
+                btn.innerHTML = '<span class="flex items-center gap-2 text-sm">Complete <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></span>';
+                nextBtn.replaceWith(btn);
+                htmx.process(btn);
+            } else if (!isLastStep && completeBtn && !nextBtn) {
+                const btn = document.createElement('button');
+                btn.id = 'next-btn';
+                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.id }}/step/next');
+                btn.setAttribute('hx-target', '#step-content');
+                btn.setAttribute('hx-swap', 'innerHTML');
+                btn.setAttribute('hx-include', '#current-step-input');
+                btn.className = 'px-5 py-3 sm:py-2 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-lg transition-all duration-150';
+                btn.innerHTML = '<span class="flex items-center gap-2 text-sm">Continue <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></span>';
+                completeBtn.replaceWith(btn);
+                htmx.process(btn);
+            }
         }
     }
 });

@@ -1,0 +1,188 @@
+{#
+Learning Path Unit - Timeline card for a single unit within the path.
+Included inside a loop from learn.html.
+
+Variables expected:
+  - up: UnitProgress object (or None if no progress data)
+    - up.unit.level, up.unit.title, up.unit.description, up.unit.icon
+    - up.completed_count, up.total_count, up.is_complete
+    - up.lessons: list of LessonInUnit (each has .lesson.metadata.id, .lesson.metadata.title, .lesson.metadata.icon, .is_completed, .best_score)
+  - unit: PathUnit (available when up is None)
+    - unit.level, unit.title, unit.description, unit.icon, unit.lesson_ids
+  - unit_index: 0-based unit index (set by parent before include)
+  - is_last: whether this is the last unit in the loop (set by parent before include)
+  - language: language code string
+  - path_progress: PathProgress object (available from parent scope, can be None)
+#}
+
+{% set u = up.unit if up else unit %}
+{% set is_complete = up.is_complete if up else false %}
+{% set completed = up.completed_count if up else 0 %}
+{% set total = up.total_count if up else (u.lesson_ids | length) %}
+{% set is_current = (path_progress and path_progress.current_unit_index == unit_index) if path_progress else (unit_index == 0) %}
+{% set is_future = (not is_complete and not is_current) %}
+
+<div class="relative flex gap-4 pb-8 last:pb-0">
+
+    <!-- Timeline connector line -->
+    {% if not is_last %}
+    <div
+        class="absolute left-[15px] top-10 bottom-0 w-0.5 {{ 'bg-success' if is_complete else 'bg-border' }}"
+        aria-hidden="true"
+    ></div>
+    {% endif %}
+
+    <!-- Timeline dot -->
+    <div class="flex-shrink-0 relative z-10 mt-1" aria-hidden="true">
+        {% if is_complete %}
+        <!-- Completed: green circle with checkmark -->
+        <div class="w-8 h-8 rounded-full bg-success flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        {% elif is_current %}
+        <!-- Current: accent circle with pulse -->
+        <div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center animate-pulse-subtle">
+            <div class="w-3 h-3 rounded-full bg-accent-text"></div>
+        </div>
+        {% else %}
+        <!-- Future: gray circle -->
+        <div class="w-8 h-8 rounded-full bg-surface-overlay border-2 border-border flex items-center justify-center">
+            <div class="w-2.5 h-2.5 rounded-full bg-border"></div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Unit card -->
+    <div class="flex-1 min-w-0">
+        <div class="bg-surface-elevated rounded-xl border border-border {{ 'border-accent/30' if is_current else '' }} overflow-hidden">
+
+            <!-- Clickable header -->
+            <button
+                type="button"
+                class="w-full text-left p-4 flex items-start gap-3 hover:bg-surface-overlay/50 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                @click="expandedUnit = expandedUnit === {{ unit_index }} ? -1 : {{ unit_index }}"
+                :aria-expanded="expandedUnit === {{ unit_index }}"
+                aria-controls="unit-lessons-{{ unit_index }}"
+            >
+                <!-- Unit icon -->
+                <span class="text-2xl flex-shrink-0 mt-0.5" aria-hidden="true">{{ u.icon }}</span>
+
+                <!-- Unit info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full
+                            {{ 'bg-success-muted text-success' if is_complete else ('bg-accent-muted text-accent' if is_current else 'bg-surface-overlay text-text-subtle') }}">
+                            {{ u.level }}
+                        </span>
+                        <h3 class="font-medium text-text truncate">{{ u.title }}</h3>
+                    </div>
+                    <p class="text-sm text-text-muted mt-1 line-clamp-2">{{ u.description }}</p>
+
+                    <!-- Progress indicator -->
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="flex-1 h-1.5 bg-surface-overlay rounded-full overflow-hidden" role="progressbar" aria-valuenow="{{ completed }}" aria-valuemin="0" aria-valuemax="{{ total }}" aria-label="{{ u.title }} progress">
+                            {% set pct = ((completed / total) * 100) | round if total > 0 else 0 %}
+                            <div class="h-full rounded-full transition-all duration-300 {{ 'bg-success' if is_complete else 'bg-accent' }}" style="width: {{ pct }}%;"></div>
+                        </div>
+                        <span class="text-xs text-text-muted whitespace-nowrap">{{ completed }}/{{ total }}</span>
+                    </div>
+                </div>
+
+                <!-- Expand/collapse chevron -->
+                <svg
+                    class="w-5 h-5 text-text-subtle flex-shrink-0 mt-1 transition-transform duration-200"
+                    :class="expandedUnit === {{ unit_index }} ? 'rotate-180' : ''"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+                    aria-hidden="true"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <!-- Expanded lesson list -->
+            <div
+                id="unit-lessons-{{ unit_index }}"
+                x-show="expandedUnit === {{ unit_index }}"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-2"
+                x-cloak
+                role="list"
+                aria-label="Lessons in {{ u.title }}"
+            >
+                <div class="border-t border-border px-4 py-2">
+                    {% if up and up.lessons %}
+                        {% set found_next = namespace(value=false) %}
+                        {% for li in up.lessons %}
+                        {% set is_lesson_completed = li.is_completed %}
+                        {% set is_next_lesson = (not is_lesson_completed and not found_next.value) %}
+                        {% if is_next_lesson %}
+                            {% set found_next.value = true %}
+                        {% endif %}
+
+                        <a
+                            href="/lessons/{{ li.lesson.metadata.id }}/play"
+                            class="group flex items-center gap-3 py-3 {{ 'border-t border-border/50' if not loop.first else '' }} transition-colors duration-150 rounded-lg -mx-1 px-1
+                                {{ 'hover:bg-accent-muted/50' if is_next_lesson else 'hover:bg-surface-overlay/50' }}"
+                            role="listitem"
+                        >
+                            <!-- Status indicator -->
+                            {% if is_lesson_completed %}
+                            <div class="flex-shrink-0 w-7 h-7 rounded-full bg-success/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            {% elif is_next_lesson %}
+                            <div class="flex-shrink-0 w-7 h-7 rounded-full bg-accent flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5 text-accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                </svg>
+                            </div>
+                            {% else %}
+                            <div class="flex-shrink-0 w-7 h-7 rounded-full border-2 border-border flex items-center justify-center">
+                                <div class="w-2 h-2 rounded-full bg-border"></div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Lesson icon + title -->
+                            <span class="text-lg flex-shrink-0" aria-hidden="true">{{ li.lesson.metadata.icon }}</span>
+                            <span class="flex-1 min-w-0 text-sm truncate
+                                {{ 'text-text font-medium' if is_next_lesson else ('text-text-muted' if not is_lesson_completed else 'text-text') }}
+                                group-hover:text-accent transition-colors">
+                                {{ li.lesson.metadata.title }}
+                            </span>
+
+                            <!-- Score badge for completed -->
+                            {% if is_lesson_completed and li.score is not none %}
+                            <span class="flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-success-muted text-success">
+                                {{ li.score }}%
+                            </span>
+                            {% endif %}
+
+                            <!-- Arrow for next lesson -->
+                            {% if is_next_lesson %}
+                            <svg class="w-4 h-4 text-accent flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+
+                    {% elif u.lesson_ids is defined %}
+                        {# No progress data, just show lesson count #}
+                        <div class="py-4 text-center">
+                            <p class="text-sm text-text-muted">{{ u.lesson_ids | length }} lessons</p>
+                            <p class="text-xs text-text-subtle mt-1">Complete earlier units to unlock</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
