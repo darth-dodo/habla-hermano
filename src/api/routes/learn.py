@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_admin, get_supabase_for_user
+from src.db.models import LessonProgress, Vocabulary
 from src.db.repository import LessonProgressRepository, VocabularyRepository
 from src.services.adaptive import get_adaptive_service
 from src.services.paths import get_path_service
@@ -29,7 +30,7 @@ def _get_user_learning_data(
     is_guest: bool,
     language: str,
     sb_access_token: str | None,
-) -> tuple[list, list, int]:
+) -> tuple[list[LessonProgress], list[Vocabulary], int]:
     """Fetch completed lessons, vocabulary, and review due count for a user.
 
     Args:

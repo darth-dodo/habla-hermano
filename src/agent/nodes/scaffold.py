@@ -82,9 +82,9 @@ def _parse_scaffold_response(content: str, level: str) -> ScaffoldingConfig:
     try:
         # Handle potential markdown code blocks
         if "```json" in content:
-            content = content.split("```json")[1].split("```")[0]
+            content = content.split("```json", maxsplit=1)[1].split("```", maxsplit=1)[0]
         elif "```" in content:
-            content = content.split("```")[1].split("```")[0]
+            content = content.split("```", maxsplit=1)[1].split("```", maxsplit=1)[0]
 
         data = json.loads(content.strip())
 
