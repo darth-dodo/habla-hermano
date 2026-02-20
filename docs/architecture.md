@@ -21,8 +21,9 @@
 | **Phase 11** | Nordic Design + Pronunciation - Clean UI design, pronunciation tips in chat | ✅ Completed |
 | **Phase 12** | Spaced Repetition - SM-2 algorithm, intelligent chat weaving, review mode | ✅ Completed |
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
+| **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
 
-**Test Coverage**: 1440+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1569+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -172,7 +173,8 @@ habla-hermano/
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
-│   │       └── review.py        # [Implemented] Spaced repetition review endpoints
+│   │       ├── review.py        # [Implemented] Spaced repetition review endpoints
+│   │       └── learn.py         # [Implemented] Learning path and recommendation endpoints
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
@@ -212,7 +214,9 @@ habla-hermano/
 │   │   ├── levels.py            # [Implemented] Level detection/adjustment
 │   │   ├── progress.py          # [Implemented] ProgressService for dashboard aggregation
 │   │   ├── merge.py             # [Removed] Previously GuestDataMergeService - no longer needed
-│   │   └── review.py            # [Implemented] ReviewService with SM-2 algorithm
+│   │   ├── review.py            # [Implemented] ReviewService with SM-2 algorithm
+│   │   ├── paths.py             # [Implemented] PathService for structured learning paths
+│   │   └── adaptive.py          # [Implemented] AdaptiveService for daily recommendations
 │   │
 │   ├── templates/               # [Implemented] All template files (mobile-responsive)
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables, safe areas, dynamic viewport
@@ -220,6 +224,7 @@ habla-hermano/
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
 │   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
 │   │   ├── progress.html        # [Implemented] Progress dashboard with stats, vocabulary, charts
+│   │   ├── learn.html             # [Implemented] Learning path overview page
 │   │   ├── auth/
 │   │   │   ├── login.html       # [Implemented] Login page
 │   │   │   └── signup.html      # [Implemented] Signup page
@@ -240,7 +245,9 @@ habla-hermano/
 │   │       ├── review_complete.html # [Implemented] Review session complete partial
 │   │       ├── review_empty.html    # [Implemented] No words to review partial
 │   │       ├── review_start.html    # [Implemented] Review session start UI
-│   │       └── chat_warmup.html     # [Implemented] Review warmup prompt in chat
+│   │       ├── chat_warmup.html     # [Implemented] Review warmup prompt in chat
+│   │       ├── learn_unit.html        # [Implemented] Learning path unit card
+│   │       └── learn_recommendation.html # [Implemented] Adaptive recommendation card
 │   │
 │   └── static/
 │       ├── css/
@@ -251,13 +258,9 @@ habla-hermano/
 ├── data/
 │   ├── hermano.db
 │   └── lessons/                 # [Implemented] Lesson content (YAML)
-│       └── es/                  # Spanish lessons
-│           └── A0/              # Absolute beginner lessons
-│               ├── greetings-001.yaml
-│               ├── introductions-001.yaml
-│               ├── numbers-001.yaml
-│               ├── colors-001.yaml
-│               └── family-001.yaml
+│       ├── es/                  # Spanish lessons (A0-B1)
+│       ├── de/                  # German lessons (A0-B1)
+│       └── fr/                  # French lessons (A0-B1)
 │
 ├── docs/
 ├── pyproject.toml

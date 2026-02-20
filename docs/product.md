@@ -68,10 +68,11 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
 | **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
 | **Mobile-First UI** | ✅ Complete | Safe areas, dynamic viewport, touch-optimized, works on all devices |
-| **Micro-Lessons** | ✅ Complete | 5 Spanish A0 lessons with vocabulary, exercises, completion tracking |
+| **Micro-Lessons** | ✅ Complete | 60 lessons across 3 languages (es, de, fr) × 4 levels (A0-B1) with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
 | **Guest Access** | ✅ Complete | Chat works without authentication; grammar feedback, pronunciation tips, and scaffolding included |
 | **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats (authenticated users only) |
+| **Learning Paths** | ✅ Complete | Structured progression from A0 to B1 with adaptive daily recommendations |
 
 ### Guest vs. Authenticated Experience
 
@@ -278,6 +279,38 @@ Learners can start a review session from three places:
 | Binary right/wrong | Hermano-style encouragement and hints |
 | Separate app or mode | Woven into the same chat you already use |
 | Manual card creation | Automatic scheduling from chat and lessons |
+
+---
+
+## Learning Paths
+
+> **Note**: Learning paths are visible to all users, but progress tracking and adaptive recommendations require an authenticated account.
+
+Habla Hermano provides a structured progression through 20 lessons per language, organized into 4 CEFR level units (A0 → A1 → A2 → B1), each containing 5 category-ordered lessons (greetings → introductions → numbers → colors → family).
+
+### Path Structure
+
+| Level | Title | Lessons | Description |
+|-------|-------|---------|-------------|
+| **A0** | Absolute Beginner | 5 | Your first words and phrases |
+| **A1** | Beginner | 5 | Basic conversations and introductions |
+| **A2** | Elementary | 5 | Everyday situations and simple interactions |
+| **B1** | Intermediate | 5 | Express opinions and handle most situations |
+
+### Adaptive Recommendations
+
+Each time you visit the learning page, Hermano analyzes three signals to recommend what to do next:
+
+| Signal | What It Checks | Example |
+|--------|---------------|---------|
+| **Path progress** | Next uncompleted lesson in your path | "Continue with 'Basic Numbers' to keep your streak going." |
+| **Vocabulary accuracy** | Categories where your accuracy is below 70% | "Your Greetings could use some practice." |
+| **Review schedule** | Words due for spaced repetition | "You have 5 words ready for review." |
+| **Level readiness** | Whether all lessons at your current level are complete | "You've completed A0 -- ready for A1!" |
+
+### Lesson Completion Flow
+
+After completing a lesson, the completion screen shows your score and a "Continue Path" button linking to the next lesson in the path. This creates a natural flow through the curriculum without rigid lock-in — you can always browse lessons freely.
 
 ---
 

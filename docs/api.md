@@ -1546,6 +1546,112 @@ Dismiss the review warmup prompt for the current browser session.
 
 ---
 
+## Learning Path Endpoints (Phase 14)
+
+Phase 14 introduces structured learning paths with adaptive daily recommendations. These endpoints provide an overview of the learning path and personalized suggestions for what to learn next.
+
+### GET /learn/
+
+Render the learning path overview page showing structured progression from A0 to B1.
+
+**Authentication**: Optional (`OptionalUserDep`). Authenticated users see their completion progress and adaptive recommendations. Guests see the path structure without progress data.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Target language code: `es`, `de`, `fr` |
+
+**Response**: Full HTML page (`learn.html`) containing:
+- Path timeline with units and lessons
+- Completion percentage and progress bar
+- Current unit highlight
+- Lazy-loaded recommendation card (via HTMX)
+- Links to lesson player for each lesson
+
+**Example**:
+```bash
+# View Spanish learning path
+curl http://localhost:8000/learn/
+
+# View German learning path
+curl "http://localhost:8000/learn/?language=de"
+```
+
+---
+
+### GET /learn/recommendation
+
+Get the adaptive daily recommendation as an HTMX partial. Designed for lazy loading — the learn page renders first, then this card fills in asynchronously.
+
+**Authentication**: Optional. Returns empty recommendation for guests.
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Target language code: `es`, `de`, `fr` |
+
+**Response**: HTML partial (`partials/learn_recommendation.html`) containing:
+- Next lesson suggestion with link
+- Review due count (links to review mode)
+- Weak category warnings (accuracy < 70%)
+- Level readiness indicator
+- Human-readable suggestion text
+
+**HTMX Integration**:
+```html
+<div hx-get="/learn/recommendation?language=es"
+     hx-trigger="load"
+     hx-target="#recommendation-card">
+</div>
+```
+
+**Example**:
+```bash
+curl "http://localhost:8000/learn/recommendation?language=es" \
+  --cookie "sb-access-token=<jwt_token>"
+```
+
+---
+
+### Learning Path Data Structures
+
+#### DailyRecommendation
+
+Personalized daily learning recommendation combining multiple signals.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `next_lesson` | Lesson or null | The next uncompleted lesson in the path |
+| `review_due_count` | integer | Words due for spaced repetition review |
+| `weak_categories` | array[CategoryStrength] | Categories with accuracy below 70% |
+| `level_readiness` | LevelReadiness or null | Current level completion summary |
+| `suggestion_text` | string | Human-readable recommendation sentence |
+
+#### CategoryStrength
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `category` | string | Category name (e.g., "greetings") |
+| `total_words` | integer | Total vocabulary words in this category |
+| `words_seen` | integer | Words the user has encountered |
+| `accuracy` | float | Ratio of correct answers to total attempts (0.0-1.0) |
+| `is_weak` | boolean | True when accuracy < 0.7 and user has seen words |
+
+#### LevelReadiness
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `current_level` | string | CEFR level (e.g., "A1") |
+| `completed_in_level` | integer | Lessons completed at this level |
+| `total_in_level` | integer | Total lessons at this level |
+| `readiness_pct` | float | Completion percentage (0-100) |
+| `is_ready` | boolean | True when all lessons at the level are complete |
+| `next_level` | string or null | Next CEFR level, or null at highest |
+
+---
+
 ## Related Documentation
 
 - [Product Specification](./product.md) - Vision, pedagogy, and feature details

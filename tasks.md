@@ -847,21 +847,22 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 ## Notes for Future Agents
 
 ### Project State
-- **Current Phase**: Phase 14 In Progress (Structured Learning Paths + Adaptive Recommendations)
+- **Current Phase**: Phase 14 Complete (Structured Learning Paths + Adaptive Recommendations)
 - **Lesson Content**: 60 lessons across 3 languages (es, de, fr) × 4 levels (A0-B1) × 5 categories
 - **Personality**: "Hermano" - friendly big brother tutor, encouraging and casual
 - **Graph Structure**: Main: respond → [conditional] → scaffold OR analyze → END; Lesson: load_step → enhance_step → END
 - **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
 - **Auth**: Email/password via Supabase Auth with JWT tokens + guest sessions
-- **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard, spaced repetition, mobile responsive
-- **Test Coverage**: 1440+ tests, 86%+ coverage
+- **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard, spaced repetition, mobile responsive, structured learning paths, adaptive recommendations
+- **Test Coverage**: 1569+ tests, 86%+ coverage
 - **Branch**: `feature/phase14-learning-paths`
 
-### Phase 14: Learning Paths (In Progress)
-- **PathService**: `src/services/paths.py` — Static path config + progress computation (DONE)
-- **AdaptiveService**: `src/services/adaptive.py` — Daily recommendations (DONE)
-- **Learn Routes**: `src/api/routes/learn.py` — GET /learn/ (IN PROGRESS)
-- **Templates**: `src/templates/learn.html` + partials (PENDING)
+### Phase 14: Learning Paths (Complete)
+- **PathService**: `src/services/paths.py` — Static path config + progress computation
+- **AdaptiveService**: `src/services/adaptive.py` — Daily recommendations from progress + vocab
+- **Learn Routes**: `src/api/routes/learn.py` — GET /learn/, GET /learn/recommendation
+- **Templates**: `src/templates/learn.html`, `partials/learn_unit.html`, `partials/learn_recommendation.html`
+- **Tests**: 99 new tests (27 PathService + 49 AdaptiveService + 23 learn routes)
 - **Known Constraint**: `lesson_progress` stores base IDs without language/level scoping; PathService always scopes `get_lesson()` calls with language+level
 
 ### Key Implementation Notes

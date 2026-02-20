@@ -34,8 +34,13 @@
 | Data Capture | `test_data_capture.py` | 20+ | Phase 7 vocabulary/session capture integration |
 | Merge Service | `test_merge_service.py` | 30+ | Phase 8 guest data merge operations |
 | Guest Progress | `test_guest_progress.py` | 23+ | Phase 8 E2E guest flow tests |
+| Review Service | `test_review_service.py` | 30+ | Phase 12 spaced repetition review scheduling |
+| SM2 Algorithm | `test_sm2.py` | 25+ | Phase 12 SM-2 algorithm calculations |
+| Path Service | `test_paths_service.py` | 27 | Phase 14 path building, progress tracking, next lesson detection |
+| Adaptive Service | `test_adaptive_service.py` | 49 | Phase 14 daily recommendations, category strengths, level readiness |
+| Learn Routes | `test_learn_routes.py` | 23 | Phase 14 learn page rendering, HTMX partials, guest vs auth users |
 
-**Total**: 1016+ tests with 86%+ code coverage
+**Total**: 1569+ tests with 86%+ code coverage
 
 ---
 
@@ -1085,6 +1090,88 @@ async def test_no_cookie_progress_dashboard_empty(self, async_client) -> None:
 
 ---
 
+## Phase 12 Test Coverage
+
+Phase 12 introduced spaced repetition for vocabulary review using the SM-2 algorithm. Tests validate the review scheduling service and the core SM-2 interval/easiness calculations.
+
+### Review Service Tests (`tests/test_review_service.py`)
+
+**30+ test cases** covering the ReviewService for spaced repetition scheduling.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestReviewScheduling` | 10+ | Review interval scheduling and due date calculation |
+| `TestReviewQualityProcessing` | 10+ | Quality response processing and repetition updates |
+| `TestReviewServiceEdgeCases` | 10+ | Edge cases, empty queues, new vs existing items |
+
+### SM-2 Algorithm Tests (`tests/test_sm2.py`)
+
+**25+ test cases** covering the SM-2 spaced repetition algorithm implementation.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestSM2IntervalCalculation` | 10+ | Interval growth based on repetition count |
+| `TestSM2EasinessFactor` | 8+ | Easiness factor adjustments from quality ratings |
+| `TestSM2EdgeCases` | 7+ | Boundary values, minimum intervals, factor floors |
+
+---
+
+## Phase 13 Test Coverage
+
+Phase 13 focused on mobile responsive design improvements (CSS/template changes). No dedicated test files were added as changes were primarily visual/layout adjustments validated through manual and E2E browser testing.
+
+---
+
+## Phase 14 Test Coverage
+
+Phase 14 introduced learning paths and adaptive recommendations. 99 new tests were added covering the PathService, AdaptiveService, and learn routes.
+
+### Path Service Tests (`tests/test_paths_service.py`)
+
+**27 test cases** covering the PathService for structured learning path management.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestPathBuilding` | 8+ | Learning path construction from lesson catalog |
+| `TestPathProgress` | 8+ | Progress tracking across path milestones |
+| `TestNextLessonDetection` | 6+ | Next recommended lesson identification |
+| `TestPathEdgeCases` | 5+ | Empty paths, missing lessons, boundary conditions |
+
+### Adaptive Service Tests (`tests/test_adaptive_service.py`)
+
+**49 test cases** covering the AdaptiveService for personalized learning recommendations.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestDailyRecommendations` | 12+ | Daily recommendation generation and prioritization |
+| `TestCategoryStrengths` | 10+ | Category strength scoring and analysis |
+| `TestLevelReadiness` | 8+ | CEFR level readiness assessment |
+| `TestSuggestionTextBuilding` | 10+ | Human-readable suggestion text generation |
+| `TestWeakCategoryDetection` | 9+ | Weak category identification and targeting |
+
+### Learn Route Tests (`tests/test_learn_routes.py`)
+
+**23 test cases** covering the learn page endpoints and HTMX partial rendering.
+
+#### Test Classes
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestLearnPageRendering` | 8+ | GET /learn/ full page rendering |
+| `TestRecommendationPartial` | 6+ | GET /learn/recommendation HTMX partial |
+| `TestGuestVsAuthUsers` | 5+ | Guest and authenticated user behavior differences |
+| `TestLearnRouteErrors` | 4+ | Error handling and language parameter validation |
+
+---
+
 ## E2E Tests (Playwright)
 
 End-to-end tests are documented in [docs/playwright-e2e.md](./playwright-e2e.md).
@@ -1311,6 +1398,8 @@ def base_state(self) -> ConversationState:
 | `src/lessons/` | 88%+ | 85%+ |
 | `src/progress/` | 88%+ | 85%+ |
 | `src/merge/` | 90%+ | 85%+ |
+| `src/review/` | 88%+ | 85%+ |
+| `src/learn/` | 88%+ | 85%+ |
 | **Overall** | **86%+** | **70%+** |
 
 ### Coverage Commands
@@ -1354,6 +1443,11 @@ tests/
 ├── test_data_capture.py     # Phase 7 vocabulary/session capture
 ├── test_merge_service.py    # Phase 8 guest data merge
 ├── test_guest_progress.py   # Phase 8 E2E guest flows
+├── test_review_service.py   # Phase 12 spaced repetition review service
+├── test_sm2.py              # Phase 12 SM-2 algorithm
+├── test_paths_service.py    # Phase 14 learning path service
+├── test_adaptive_service.py # Phase 14 adaptive recommendations
+├── test_learn_routes.py     # Phase 14 learn page routes
 └── test_services.py         # Service layer tests
 ```
 

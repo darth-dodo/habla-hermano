@@ -169,7 +169,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Frontend** | HTMX, Alpine.js, Tailwind CSS |
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
-| **Testing** | pytest (1540+ tests, 86%+ coverage), Playwright E2E |
+| **Testing** | pytest (1569+ tests, 86%+ coverage), Playwright E2E |
 
 ### Architecture Highlights
 

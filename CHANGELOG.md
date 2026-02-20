@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-02-20
+
+### Added - Phase 14: Learning Paths & Adaptive Recommendations
+- **PathService** (`src/services/paths.py`): Structured learning paths organizing 60 lessons into language → CEFR level units → category-ordered progressions
+- **AdaptiveService** (`src/services/adaptive.py`): Personalized daily recommendations combining path progress, vocabulary accuracy (category strengths), level readiness, and review schedules
+- **Learning path page** (`GET /learn/`): Full-page path overview with visual timeline, unit progress, and adaptive recommendation card
+- **Recommendation endpoint** (`GET /learn/recommendation`): HTMX lazy-loaded partial for the daily recommendation card
+- **Data models**: PathUnit, LearningPath, LessonInUnit, UnitProgress, PathProgress, CategoryStrength, LevelReadiness, DailyRecommendation
+- **Continue Path button**: Post-lesson-completion flow linking to learning path
+- **Templates**: `learn.html` (full path page), `partials/learn_recommendation.html` (recommendation card)
+- **99 new tests**: PathService (27), AdaptiveService (49), learn routes (23) — total suite now 1569+ tests at 86%+ coverage
+
 ## [0.10.0] - 2026-02-15
 
 ### Changed
