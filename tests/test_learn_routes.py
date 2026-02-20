@@ -11,9 +11,7 @@ data/lessons/ so path construction and progress overlays are realistic.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
-
 
 # Module path for patching helpers inside the learn route module.
 _LEARN_MODULE = "src.api.routes.learn"

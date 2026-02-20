@@ -95,6 +95,8 @@ known-first-party = ["src"]
 "tests/**/*.py" = ["ARG", "PLR2004", "PLC0415", "SIM117"]  # Allow late imports and nested with for mocking
 "src/agent/nodes/*.py" = ["PLC0415"]  # Lazy imports to avoid circular dependency with src.api.config
 "src/api/routes/lessons.py" = ["PLC0415"]  # Lazy imports for lesson subgraphs to avoid circular dependency
+"src/services/paths.py" = ["PLC0415"]  # Lazy import in factory to avoid circular dependency
+"src/services/adaptive.py" = ["PLC0415"]  # Lazy imports in factory to avoid circular dependency
 
 # =============================================================================
 # MyPy Configuration

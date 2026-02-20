@@ -174,7 +174,6 @@ async def get_recommendation(
         HTMLResponse: Rendered recommendation partial.
     """
     adaptive_service = get_adaptive_service()
-    path_service = get_path_service()
 
     # Resolve effective identity
     effective_id: str | None = None

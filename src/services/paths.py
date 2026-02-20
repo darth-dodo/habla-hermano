@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from src.db.models import LessonProgress
-from src.lessons.models import Lesson
-from src.lessons.service import LessonService
+if TYPE_CHECKING:
+    from src.db.models import LessonProgress
+    from src.lessons.models import Lesson
+    from src.lessons.service import LessonService
 
 # =============================================================================
 # Constants
