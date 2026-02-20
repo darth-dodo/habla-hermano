@@ -32,9 +32,7 @@ class TestLearnPageRoute:
         assert response.status_code == 200
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
-    def test_returns_html_content_type(
-        self, mock_data: MagicMock, test_client: TestClient
-    ) -> None:
+    def test_returns_html_content_type(self, mock_data: MagicMock, test_client: TestClient) -> None:
         """GET /learn/ should return text/html content type."""
         response = test_client.get("/learn/")
         assert "text/html" in response.headers["content-type"]
@@ -65,17 +63,13 @@ class TestLearnPageRoute:
         assert "German" in response.text
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
-    def test_french_language_parameter(
-        self, mock_data: MagicMock, test_client: TestClient
-    ) -> None:
+    def test_french_language_parameter(self, mock_data: MagicMock, test_client: TestClient) -> None:
         """Passing language=fr should render the French learning path."""
         response = test_client.get("/learn/?language=fr")
         assert response.status_code == 200
         assert "French" in response.text
 
-    def test_unsupported_language_redirects_to_lessons(
-        self, test_client: TestClient
-    ) -> None:
+    def test_unsupported_language_redirects_to_lessons(self, test_client: TestClient) -> None:
         """Unsupported language code should redirect to /lessons (302)."""
         response = test_client.get("/learn/?language=xx", follow_redirects=False)
         assert response.status_code == 302
@@ -139,9 +133,7 @@ class TestLearnRecommendationRoute:
         assert response.status_code == 200
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
-    def test_returns_html_content(
-        self, mock_data: MagicMock, test_client: TestClient
-    ) -> None:
+    def test_returns_html_content(self, mock_data: MagicMock, test_client: TestClient) -> None:
         """Recommendation endpoint should return HTML content."""
         response = test_client.get("/learn/recommendation")
         assert "text/html" in response.headers["content-type"]
@@ -156,9 +148,7 @@ class TestLearnRecommendationRoute:
         assert "<!DOCTYPE html>" not in response.text
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
-    def test_contains_suggestion_text(
-        self, mock_data: MagicMock, test_client: TestClient
-    ) -> None:
+    def test_contains_suggestion_text(self, mock_data: MagicMock, test_client: TestClient) -> None:
         """Recommendation partial should contain the suggestion text.
 
         With empty progress data the adaptive service produces a fallback
@@ -168,11 +158,7 @@ class TestLearnRecommendationRoute:
         text = response.text
         # With empty completed_lessons the next lesson exists, so
         # suggestion_text contains "Continue with" or the fallback message
-        has_suggestion = (
-            "Continue with" in text
-            or "keep exploring" in text
-            or "Today" in text
-        )
+        has_suggestion = "Continue with" in text or "keep exploring" in text or "Today" in text
         assert has_suggestion
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
@@ -198,9 +184,7 @@ class TestLearnPageWithoutAuth:
     """
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
-    def test_guest_sees_path_structure(
-        self, mock_data: MagicMock, test_client: TestClient
-    ) -> None:
+    def test_guest_sees_path_structure(self, mock_data: MagicMock, test_client: TestClient) -> None:
         """Guest user should still see the path structure with a 200 response."""
         response = test_client.get("/learn/")
         assert response.status_code == 200

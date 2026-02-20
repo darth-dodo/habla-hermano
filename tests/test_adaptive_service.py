@@ -208,7 +208,11 @@ class TestCategoryStrengthDataclass:
     def test_category_strength_is_frozen(self) -> None:
         """CategoryStrength should be immutable."""
         cs = CategoryStrength(
-            category="greetings", total_words=0, words_seen=0, accuracy=0.0, is_weak=False,
+            category="greetings",
+            total_words=0,
+            words_seen=0,
+            accuracy=0.0,
+            is_weak=False,
         )
         with pytest.raises(AttributeError):
             cs.accuracy = 1.0  # type: ignore[misc]
@@ -298,7 +302,8 @@ class TestCategoryStrengths:
     """Tests for AdaptiveService.get_category_strengths."""
 
     def test_empty_vocab_returns_categories_with_zero_words(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """When no vocab data exists, each category should show 0 totals."""
         strengths = service.get_category_strengths("es", [])
@@ -311,7 +316,8 @@ class TestCategoryStrengths:
             assert cs.is_weak is False
 
     def test_maps_words_to_correct_categories(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Words should be grouped into the category defined by their lesson."""
         vocab = [
@@ -327,7 +333,8 @@ class TestCategoryStrengths:
         assert strength_map["colors"].total_words == 1
 
     def test_calculates_accuracy_correctly(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Accuracy should be sum(times_correct) / sum(times_seen)."""
         vocab = [
@@ -344,7 +351,8 @@ class TestCategoryStrengths:
         assert greetings.words_seen == 2
 
     def test_is_weak_true_when_accuracy_below_threshold(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """is_weak should be True when accuracy < 0.7 and seen > 0."""
         vocab = [
@@ -359,7 +367,8 @@ class TestCategoryStrengths:
         assert greetings.is_weak is True
 
     def test_is_weak_false_when_accuracy_at_threshold(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """is_weak should be False when accuracy >= 0.7."""
         vocab = [
@@ -374,7 +383,8 @@ class TestCategoryStrengths:
         assert greetings.is_weak is False
 
     def test_is_weak_false_when_no_words_seen(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """is_weak should be False when no words have been seen even with 0 accuracy."""
         # Provide vocab for a different language so category has 0 seen words
@@ -387,7 +397,8 @@ class TestCategoryStrengths:
             assert cs.is_weak is False
 
     def test_filters_vocab_by_language(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Only vocab matching the requested language should be included."""
         vocab = [
@@ -404,7 +415,8 @@ class TestCategoryStrengths:
         assert greetings.accuracy == 0.6
 
     def test_case_insensitive_word_matching(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Word matching should be case-insensitive."""
         vocab = [
@@ -416,7 +428,8 @@ class TestCategoryStrengths:
         assert strength_map["greetings"].total_words == 1
 
     def test_accuracy_rounded_to_two_decimals(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Accuracy should be rounded to 2 decimal places."""
         vocab = [
@@ -431,7 +444,8 @@ class TestCategoryStrengths:
         assert greetings.accuracy == 0.33
 
     def test_returns_all_language_categories(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Should return a CategoryStrength for every category in the language."""
         strengths = service.get_category_strengths("es", [])
@@ -450,14 +464,16 @@ class TestLevelReadiness:
     """Tests for AdaptiveService._compute_level_readiness."""
 
     def test_returns_none_for_unsupported_language(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Should return None when language has no path (e.g. 'jp')."""
         result = service._compute_level_readiness("jp", [])
         assert result is None
 
     def test_no_completions_first_level(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """With no completions, should report first level at 0% readiness."""
         result = service._compute_level_readiness("es", [])
@@ -471,7 +487,8 @@ class TestLevelReadiness:
         assert result.next_level == "A1"
 
     def test_partial_completion(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Partial completion should show correct counts and percentage."""
         completed = [
@@ -488,7 +505,8 @@ class TestLevelReadiness:
         assert result.is_ready is False
 
     def test_full_level_complete_all_shared_ids(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """When all category IDs are completed (shared across levels), all units complete.
 
@@ -508,7 +526,8 @@ class TestLevelReadiness:
         assert result.next_level is None  # B1 is the last level
 
     def test_all_levels_complete_is_ready(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """When all levels are complete, is_ready should be True."""
         completed = [_make_lesson_progress(f"{cat}-001") for cat in CATEGORIES]
@@ -519,7 +538,8 @@ class TestLevelReadiness:
         assert result.is_ready is True
 
     def test_last_level_has_no_next(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """When on the last level (B1), next_level should be None."""
         completed = [_make_lesson_progress(f"{cat}-001") for cat in CATEGORIES]
@@ -539,7 +559,8 @@ class TestDailyRecommendation:
     """Tests for AdaptiveService.get_daily_recommendation."""
 
     def test_recommendation_with_empty_data(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Should return a valid recommendation even with no user data."""
         rec = service.get_daily_recommendation("es", [], [], 0)
@@ -552,7 +573,8 @@ class TestDailyRecommendation:
         assert len(rec.suggestion_text) > 0
 
     def test_includes_review_count(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Recommendation should carry through the review_due_count."""
         rec = service.get_daily_recommendation("es", [], [], 5)
@@ -560,7 +582,8 @@ class TestDailyRecommendation:
         assert rec.review_due_count == 5
 
     def test_includes_weak_categories(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Recommendation should include categories with is_weak=True."""
         vocab = [
@@ -573,7 +596,8 @@ class TestDailyRecommendation:
         assert "greetings" in weak_cats
 
     def test_excludes_strong_categories(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Recommendation should not include categories with is_weak=False."""
         vocab = [
@@ -585,7 +609,8 @@ class TestDailyRecommendation:
         assert "greetings" not in weak_cats
 
     def test_includes_next_lesson(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Recommendation should include the next lesson from the path."""
         rec = service.get_daily_recommendation("es", [], [], 0)
@@ -594,7 +619,8 @@ class TestDailyRecommendation:
         assert rec.next_lesson.metadata.language == "es"
 
     def test_next_lesson_none_when_all_complete(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """When all lessons are complete, next_lesson should be None."""
         completed = [_make_lesson_progress(f"{cat}-001") for cat in CATEGORIES]
@@ -603,7 +629,8 @@ class TestDailyRecommendation:
         assert rec.next_lesson is None
 
     def test_includes_level_readiness(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Recommendation should include level readiness information."""
         rec = service.get_daily_recommendation("es", [], [], 0)
@@ -612,7 +639,8 @@ class TestDailyRecommendation:
         assert isinstance(rec.level_readiness, LevelReadiness)
 
     def test_suggestion_text_mentions_review(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should mention review when review_due_count > 0."""
         rec = service.get_daily_recommendation("es", [], [], 3)
@@ -620,7 +648,8 @@ class TestDailyRecommendation:
         assert "3 words ready for review" in rec.suggestion_text
 
     def test_suggestion_text_singular_word_review(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should use 'word' (singular) when review_due_count == 1."""
         rec = service.get_daily_recommendation("es", [], [], 1)
@@ -628,7 +657,8 @@ class TestDailyRecommendation:
         assert "1 word ready for review" in rec.suggestion_text
 
     def test_suggestion_text_mentions_weak_categories(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should mention weak categories by display name."""
         vocab = [
@@ -640,7 +670,8 @@ class TestDailyRecommendation:
         assert "could use some practice" in rec.suggestion_text
 
     def test_suggestion_text_ready_for_next_level(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should mention level readiness when level complete.
 
@@ -655,7 +686,8 @@ class TestDailyRecommendation:
         assert len(rec.suggestion_text) > 0
 
     def test_suggestion_text_continue_with_lesson(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should mention the next lesson title."""
         rec = service.get_daily_recommendation("es", [], [], 0)
@@ -664,7 +696,8 @@ class TestDailyRecommendation:
         assert "to keep your streak going" in rec.suggestion_text
 
     def test_suggestion_text_default_when_nothing_applies(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """suggestion_text should show default when no signals are available."""
         # Complete everything, no reviews, no weak categories
@@ -676,7 +709,8 @@ class TestDailyRecommendation:
         assert "Great job" in rec.suggestion_text
 
     def test_unsupported_language_returns_recommendation(
-        self, service: AdaptiveService,
+        self,
+        service: AdaptiveService,
     ) -> None:
         """Should handle unsupported language gracefully."""
         rec = service.get_daily_recommendation("jp", [], [], 0)
@@ -729,7 +763,11 @@ class TestBuildSuggestion:
         """Should mention weak category names for practice."""
         weak = [
             CategoryStrength(
-                category="greetings", total_words=5, words_seen=3, accuracy=0.4, is_weak=True,
+                category="greetings",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.4,
+                is_weak=True,
             ),
         ]
         result = AdaptiveService._build_suggestion(
@@ -745,10 +783,18 @@ class TestBuildSuggestion:
         """Should join two weak category display names with 'and'."""
         weak = [
             CategoryStrength(
-                category="greetings", total_words=5, words_seen=3, accuracy=0.4, is_weak=True,
+                category="greetings",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.4,
+                is_weak=True,
             ),
             CategoryStrength(
-                category="numbers", total_words=5, words_seen=3, accuracy=0.3, is_weak=True,
+                category="numbers",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.3,
+                is_weak=True,
             ),
         ]
         result = AdaptiveService._build_suggestion(
@@ -763,13 +809,25 @@ class TestBuildSuggestion:
         """Should show at most 2 weak categories even if more exist."""
         weak = [
             CategoryStrength(
-                category="greetings", total_words=5, words_seen=3, accuracy=0.4, is_weak=True,
+                category="greetings",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.4,
+                is_weak=True,
             ),
             CategoryStrength(
-                category="numbers", total_words=5, words_seen=3, accuracy=0.3, is_weak=True,
+                category="numbers",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.3,
+                is_weak=True,
             ),
             CategoryStrength(
-                category="colors", total_words=5, words_seen=3, accuracy=0.2, is_weak=True,
+                category="colors",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.2,
+                is_weak=True,
             ),
         ]
         result = AdaptiveService._build_suggestion(
@@ -836,7 +894,8 @@ class TestBuildSuggestion:
         assert "to keep your streak going" in result
 
     def test_level_ready_takes_priority_over_next_lesson(
-        self, lesson_service: LessonService,
+        self,
+        lesson_service: LessonService,
     ) -> None:
         """Level readiness message should appear instead of next lesson."""
         readiness = LevelReadiness(
@@ -858,12 +917,17 @@ class TestBuildSuggestion:
         assert "Continue with" not in result
 
     def test_combined_review_and_weak_and_lesson(
-        self, lesson_service: LessonService,
+        self,
+        lesson_service: LessonService,
     ) -> None:
         """All parts should appear together when multiple signals present."""
         weak = [
             CategoryStrength(
-                category="greetings", total_words=5, words_seen=3, accuracy=0.4, is_weak=True,
+                category="greetings",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.4,
+                is_weak=True,
             ),
         ]
         lesson = lesson_service.get_lesson("greetings-001")
@@ -882,7 +946,11 @@ class TestBuildSuggestion:
         """Categories not in CATEGORY_DISPLAY should fall back to slug."""
         weak = [
             CategoryStrength(
-                category="unknown_cat", total_words=5, words_seen=3, accuracy=0.4, is_weak=True,
+                category="unknown_cat",
+                total_words=5,
+                words_seen=3,
+                accuracy=0.4,
+                is_weak=True,
             ),
         ]
         result = AdaptiveService._build_suggestion(

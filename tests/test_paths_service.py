@@ -37,7 +37,7 @@ from src.services.paths import (
 _TEST_LANGUAGE = "es"
 _TEST_LANGUAGE_NAME = "Spanish"
 _TEST_USER_ID = "test-user-path-001"
-_NUM_LEVELS = len(LEVEL_ORDER)         # 4
+_NUM_LEVELS = len(LEVEL_ORDER)  # 4
 _NUM_CATEGORIES = len(CATEGORY_ORDER)  # 5
 _TOTAL_LESSONS = _NUM_LEVELS * _NUM_CATEGORIES  # 20
 
@@ -172,8 +172,7 @@ def all_lesson_ids() -> list[str]:
 def all_completed(all_lesson_ids: list[str]) -> list[LessonProgress]:
     """Create LessonProgress entries marking every base lesson ID as completed."""
     return [
-        _make_lesson_progress(lesson_id=lid, completed=True, score=85)
-        for lid in all_lesson_ids
+        _make_lesson_progress(lesson_id=lid, completed=True, score=85) for lid in all_lesson_ids
     ]
 
 
@@ -185,35 +184,28 @@ def all_completed(all_lesson_ids: list[str]) -> list[LessonProgress]:
 class TestPathBuilding:
     """Tests for static path construction from lesson data."""
 
-    def test_path_builds_for_supported_language(
-        self, path_service: PathService
-    ) -> None:
+    def test_path_builds_for_supported_language(self, path_service: PathService) -> None:
         """get_path should return a LearningPath for a supported language."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
         assert path is not None
         assert isinstance(path, LearningPath)
 
-    def test_path_has_correct_number_of_units(
-        self, path_service: PathService
-    ) -> None:
+    def test_path_has_correct_number_of_units(self, path_service: PathService) -> None:
         """Path should contain one unit per CEFR level (4 units for full data)."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
         assert path is not None
         assert len(path.units) == _NUM_LEVELS
 
-    def test_each_unit_has_correct_number_of_lessons(
-        self, path_service: PathService
-    ) -> None:
+    def test_each_unit_has_correct_number_of_lessons(self, path_service: PathService) -> None:
         """Each unit should contain one lesson per category (5 lessons)."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
         assert path is not None
         for unit in path.units:
             assert len(unit.lesson_ids) == _NUM_CATEGORIES, (
-                f"Unit {unit.level} has {len(unit.lesson_ids)} lessons, "
-                f"expected {_NUM_CATEGORIES}"
+                f"Unit {unit.level} has {len(unit.lesson_ids)} lessons, expected {_NUM_CATEGORIES}"
             )
 
     def test_get_path_returns_none_for_unsupported_language(
@@ -224,9 +216,7 @@ class TestPathBuilding:
 
         assert result is None
 
-    def test_lesson_ids_match_category_order(
-        self, path_service: PathService
-    ) -> None:
+    def test_lesson_ids_match_category_order(self, path_service: PathService) -> None:
         """Lesson IDs within each unit should follow CATEGORY_ORDER."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
@@ -235,9 +225,7 @@ class TestPathBuilding:
         for unit in path.units:
             assert unit.lesson_ids == expected_ids
 
-    def test_unit_levels_match_level_order(
-        self, path_service: PathService
-    ) -> None:
+    def test_unit_levels_match_level_order(self, path_service: PathService) -> None:
         """Unit levels should appear in the same order as LEVEL_ORDER."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
@@ -245,9 +233,7 @@ class TestPathBuilding:
         unit_levels = tuple(unit.level for unit in path.units)
         assert unit_levels == LEVEL_ORDER
 
-    def test_language_name_is_correct(
-        self, path_service: PathService
-    ) -> None:
+    def test_language_name_is_correct(self, path_service: PathService) -> None:
         """LearningPath.language_name should match LANGUAGE_META."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
@@ -255,9 +241,7 @@ class TestPathBuilding:
         assert path.language == _TEST_LANGUAGE
         assert path.language_name == _TEST_LANGUAGE_NAME
 
-    def test_units_are_frozen_dataclass(
-        self, path_service: PathService
-    ) -> None:
+    def test_units_are_frozen_dataclass(self, path_service: PathService) -> None:
         """PathUnit instances should be frozen (immutable)."""
         path = path_service.get_path(_TEST_LANGUAGE)
 
@@ -292,9 +276,7 @@ class TestPathProgress:
     completing N base IDs counts as N * NUM_LEVELS total completions.
     """
 
-    def test_no_completions_all_zeros(
-        self, path_service: PathService
-    ) -> None:
+    def test_no_completions_all_zeros(self, path_service: PathService) -> None:
         """With no completions, counters should be zero and next_lesson is the first lesson."""
         progress = path_service.get_path_progress(_TEST_LANGUAGE, [])
 
@@ -305,9 +287,7 @@ class TestPathProgress:
         assert progress.next_lesson is not None
         assert progress.next_lesson.metadata.id == f"{CATEGORY_ORDER[0]}-001"
 
-    def test_partial_completion_counts_across_all_units(
-        self, path_service: PathService
-    ) -> None:
+    def test_partial_completion_counts_across_all_units(self, path_service: PathService) -> None:
         """Completing a base ID counts once per unit that contains it.
 
         Completing 2 base IDs with 4 levels means 2 * 4 = 8 overall completions.
@@ -334,8 +314,7 @@ class TestPathProgress:
     ) -> None:
         """Completing all 5 base IDs marks all 4 units as complete simultaneously."""
         completed = [
-            _make_lesson_progress(f"{cat}-001", completed=True, score=85)
-            for cat in CATEGORY_ORDER
+            _make_lesson_progress(f"{cat}-001", completed=True, score=85) for cat in CATEGORY_ORDER
         ]
 
         progress = path_service.get_path_progress(_TEST_LANGUAGE, completed)
@@ -359,9 +338,7 @@ class TestPathProgress:
         assert progress.completion_percentage == 100.0
         assert progress.next_lesson is None
 
-    def test_completion_percentage_calculation(
-        self, path_service: PathService
-    ) -> None:
+    def test_completion_percentage_calculation(self, path_service: PathService) -> None:
         """completion_percentage should be (completed / total) * 100, rounded to 1 decimal."""
         # Complete 2 of 5 base IDs: 2 * 4 = 8 out of 20
         completed = [
@@ -375,9 +352,7 @@ class TestPathProgress:
         expected_pct = round(8 / _TOTAL_LESSONS * 100, 1)  # 40.0
         assert progress.completion_percentage == expected_pct
 
-    def test_score_mapped_from_lesson_progress(
-        self, path_service: PathService
-    ) -> None:
+    def test_score_mapped_from_lesson_progress(self, path_service: PathService) -> None:
         """Score from LessonProgress should appear on the corresponding LessonInUnit."""
         completed = [
             _make_lesson_progress(f"{CATEGORY_ORDER[0]}-001", completed=True, score=92),
@@ -391,9 +366,7 @@ class TestPathProgress:
         assert first_lesson_in_unit.is_completed is True
         assert first_lesson_in_unit.score == 92
 
-    def test_score_appears_in_every_unit_for_same_base_id(
-        self, path_service: PathService
-    ) -> None:
+    def test_score_appears_in_every_unit_for_same_base_id(self, path_service: PathService) -> None:
         """The same score should appear in every unit for a completed base ID."""
         completed = [
             _make_lesson_progress(f"{CATEGORY_ORDER[0]}-001", completed=True, score=77),
@@ -407,9 +380,7 @@ class TestPathProgress:
             assert first_lesson.is_completed is True
             assert first_lesson.score == 77
 
-    def test_incomplete_lesson_has_no_score(
-        self, path_service: PathService
-    ) -> None:
+    def test_incomplete_lesson_has_no_score(self, path_service: PathService) -> None:
         """A lesson not in completed_lessons should have is_completed=False and score=None."""
         progress = path_service.get_path_progress(_TEST_LANGUAGE, [])
 
@@ -427,9 +398,7 @@ class TestPathProgress:
 
         assert result is None
 
-    def test_unit_progress_counts(
-        self, path_service: PathService
-    ) -> None:
+    def test_unit_progress_counts(self, path_service: PathService) -> None:
         """UnitProgress should correctly count completed and total lessons per unit.
 
         Completing 3 base IDs means 3 of 5 are done in every unit.
@@ -483,9 +452,7 @@ class TestPathProgress:
 class TestGetNextPathLesson:
     """Tests for the get_next_path_lesson convenience method."""
 
-    def test_returns_first_lesson_when_nothing_completed(
-        self, path_service: PathService
-    ) -> None:
+    def test_returns_first_lesson_when_nothing_completed(self, path_service: PathService) -> None:
         """With no completions, should return the very first lesson in the path."""
         next_lesson = path_service.get_next_path_lesson(_TEST_LANGUAGE, [])
 
@@ -493,9 +460,7 @@ class TestGetNextPathLesson:
         assert next_lesson.metadata.id == f"{CATEGORY_ORDER[0]}-001"
         assert next_lesson.metadata.level.value == LEVEL_ORDER[0]
 
-    def test_returns_correct_next_after_partial_completion(
-        self, path_service: PathService
-    ) -> None:
+    def test_returns_correct_next_after_partial_completion(self, path_service: PathService) -> None:
         """After completing the first base ID, the next uncompleted is the second category."""
         completed = [
             _make_lesson_progress(f"{CATEGORY_ORDER[0]}-001", completed=True, score=80),
@@ -516,17 +481,13 @@ class TestGetNextPathLesson:
 
         assert next_lesson is None
 
-    def test_returns_none_for_unsupported_language(
-        self, path_service: PathService
-    ) -> None:
+    def test_returns_none_for_unsupported_language(self, path_service: PathService) -> None:
         """For an unsupported language, should return None."""
         next_lesson = path_service.get_next_path_lesson("jp", [])
 
         assert next_lesson is None
 
-    def test_skips_completed_finds_first_gap(
-        self, path_service: PathService
-    ) -> None:
+    def test_skips_completed_finds_first_gap(self, path_service: PathService) -> None:
         """When first and third base IDs are completed, should return the second."""
         completed = [
             _make_lesson_progress(f"{CATEGORY_ORDER[0]}-001", completed=True, score=80),
@@ -538,9 +499,7 @@ class TestGetNextPathLesson:
         assert next_lesson is not None
         assert next_lesson.metadata.id == f"{CATEGORY_ORDER[1]}-001"
 
-    def test_next_lesson_is_in_first_unit_level(
-        self, path_service: PathService
-    ) -> None:
+    def test_next_lesson_is_in_first_unit_level(self, path_service: PathService) -> None:
         """The next uncompleted lesson should be returned from the first unit (A0)."""
         completed = [
             _make_lesson_progress(f"{CATEGORY_ORDER[0]}-001", completed=True, score=80),

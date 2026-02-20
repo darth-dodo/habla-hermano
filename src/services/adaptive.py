@@ -132,7 +132,10 @@ class AdaptiveService:
         ]
         level_readiness = self._compute_level_readiness(language, completed_lessons)
         suggestion_text = self._build_suggestion(
-            next_lesson, review_due_count, weak_categories, level_readiness,
+            next_lesson,
+            review_due_count,
+            weak_categories,
+            level_readiness,
         )
 
         return DailyRecommendation(
@@ -144,7 +147,9 @@ class AdaptiveService:
         )
 
     def get_category_strengths(
-        self, language: str, vocab_data: list[Vocabulary],
+        self,
+        language: str,
+        vocab_data: list[Vocabulary],
     ) -> list[CategoryStrength]:
         """Compute strength per category based on vocabulary accuracy.
 
@@ -189,20 +194,24 @@ class AdaptiveService:
             total_correct_count = sum(w.times_correct for w in words)
             accuracy = (total_correct_count / total_seen_count) if total_seen_count > 0 else 0.0
 
-            strengths.append(CategoryStrength(
-                category=cat,
-                total_words=total,
-                words_seen=seen,
-                accuracy=round(accuracy, 2),
-                is_weak=accuracy < 0.7 and seen > 0,
-            ))
+            strengths.append(
+                CategoryStrength(
+                    category=cat,
+                    total_words=total,
+                    words_seen=seen,
+                    accuracy=round(accuracy, 2),
+                    is_weak=accuracy < 0.7 and seen > 0,
+                )
+            )
 
         return strengths
 
     # -- private helpers ----------------------------------------------------
 
     def _compute_level_readiness(
-        self, language: str, completed_lessons: list[LessonProgress],
+        self,
+        language: str,
+        completed_lessons: list[LessonProgress],
     ) -> LevelReadiness | None:
         """Determine current level readiness from path progress.
 
@@ -267,9 +276,7 @@ class AdaptiveService:
             parts.append(f"You have {review_due_count} {noun} ready for review.")
 
         if weak_categories:
-            weak_names = [
-                CATEGORY_DISPLAY.get(c.category, c.category) for c in weak_categories[:2]
-            ]
+            weak_names = [CATEGORY_DISPLAY.get(c.category, c.category) for c in weak_categories[:2]]
             parts.append(f"Your {' and '.join(weak_names)} could use some practice.")
 
         if level_readiness and level_readiness.is_ready and level_readiness.next_level:
@@ -278,9 +285,7 @@ class AdaptiveService:
                 f" -- ready for {level_readiness.next_level}!"
             )
         elif next_lesson:
-            parts.append(
-                f'Continue with "{next_lesson.metadata.title}" to keep your streak going.'
-            )
+            parts.append(f'Continue with "{next_lesson.metadata.title}" to keep your streak going.')
 
         if not parts:
             parts.append("Great job! Keep exploring to discover new vocabulary.")

@@ -127,9 +127,7 @@ async def get_learn_page(
                 review_due_count=review_due_count,
             )
         except Exception:
-            logger.exception(
-                "Failed to load learning data for user %s", effective_id
-            )
+            logger.exception("Failed to load learning data for user %s", effective_id)
 
     # Fall back to empty progress when no user or on error
     if path_progress is None:
@@ -203,9 +201,7 @@ async def get_recommendation(
                 review_due_count=review_due_count,
             )
         except Exception:
-            logger.exception(
-                "Failed to load recommendation for user %s", effective_id
-            )
+            logger.exception("Failed to load recommendation for user %s", effective_id)
 
     return templates.TemplateResponse(
         request=request,
