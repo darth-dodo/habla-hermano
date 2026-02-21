@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.6 | **Tests**: 1569+ | **Coverage**: 86%+ | **Date**: February 2026
+**Version**: 1.6 | **Tests**: 1810 | **Coverage**: 97% | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -40,7 +40,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 1569+ tests with 86%+ coverage, strict typing
+- ✅ 1810 tests with 97% coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -241,20 +241,51 @@ habla-hermano/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/app.js                 # HTMX handlers, virtual keyboard handling
 │
-├── tests/                            # 1569+ tests, 86%+ coverage
+├── tests/                            # 1810 tests, 97% coverage
 │   ├── conftest.py                   # Fixtures
-│   ├── test_agent_*.py               # LangGraph tests
-│   ├── test_api_*.py                 # API route tests
-│   ├── test_auth*.py                 # Auth tests
-│   ├── test_db_*.py                  # Database tests
-│   ├── test_services_*.py            # Service tests
-│   ├── test_lesson_models.py         # Lesson data model tests
-│   ├── test_lesson_service.py        # Lesson service tests
-│   ├── test_lesson_routes.py         # Lesson API endpoint tests
-│   ├── test_lessons_progress_routes.py # Lesson progress tests
-│   ├── test_paths_service.py         # PathService tests (27 tests)
-│   ├── test_adaptive_service.py      # AdaptiveService tests (49 tests)
-│   └── test_learn_routes.py          # Learn route tests (23 tests)
+│   ├── agent/
+│   │   ├── test_graph.py             # LangGraph pipeline tests
+│   │   ├── test_state.py             # ConversationState tests
+│   │   ├── test_prompts.py           # System prompt tests
+│   │   ├── test_routing.py           # Conditional routing tests
+│   │   ├── test_checkpointer.py      # Checkpointer tests
+│   │   ├── test_review_graph.py      # Review subgraph tests
+│   │   ├── test_coverage.py          # Agent coverage tests
+│   │   └── nodes/
+│   │       ├── test_nodes.py         # Node integration tests
+│   │       ├── test_analyze.py       # analyze_node tests
+│   │       ├── test_scaffold.py      # scaffold_node tests
+│   │       └── test_review.py        # Review node tests
+│   ├── api/
+│   │   ├── test_auth.py              # JWT validation tests
+│   │   ├── test_config.py            # Settings tests
+│   │   ├── test_session.py           # Session management tests
+│   │   ├── test_supabase_client.py   # Supabase client tests
+│   │   ├── test_data_capture.py      # Data capture tests
+│   │   ├── test_persistence.py       # Persistence tests
+│   │   └── routes/
+│   │       ├── test_chat.py          # POST /chat endpoint tests
+│   │       ├── test_auth.py          # Auth route tests
+│   │       ├── test_learn.py         # Learn route tests
+│   │       ├── test_lessons.py       # Lesson route tests
+│   │       ├── test_progress.py      # Progress route tests
+│   │       ├── test_review.py        # Review route tests
+│   │       ├── test_validation.py    # Validation tests
+│   │       └── test_e2e.py           # End-to-end route tests
+│   ├── db/
+│   │   ├── test_models.py            # Database model tests
+│   │   └── test_repository.py        # Repository tests
+│   ├── lessons/
+│   │   ├── test_models.py            # Lesson data model tests
+│   │   └── test_service.py           # Lesson service tests
+│   └── services/
+│       ├── test_adaptive.py          # AdaptiveService tests
+│       ├── test_coverage.py          # Service coverage tests
+│       ├── test_progress.py          # ProgressService tests
+│       ├── test_review.py            # ReviewService tests
+│       ├── test_paths.py             # PathService tests
+│       ├── test_levels.py            # Level detection tests
+│       └── test_vocabulary.py        # Vocabulary tracking tests
 │
 ├── docs/
 │   ├── architecture.md
@@ -701,20 +732,19 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 86%+ (1569+ tests)
+### Coverage: 97% (1810 tests)
 
 ### Test Categories
 
-| Category | Files | Focus |
-|----------|-------|-------|
-| Agent | 8 | LangGraph nodes, state, routing |
-| API | 5 | FastAPI endpoints |
-| Auth | 3 | JWT validation, auth flows |
-| Database | 3 | Models, repository |
-| Services | 2 | Vocabulary, levels |
-| Integration | 3 | End-to-end flows |
-| Lessons | 4 | Models, service, routes, progress |
-| Learning Paths | 3 | PathService, AdaptiveService, learn routes |
+| Category | Directory | Focus |
+|----------|-----------|-------|
+| Agent | `tests/agent/` | LangGraph nodes, state, routing, checkpointer |
+| Agent Nodes | `tests/agent/nodes/` | Individual node tests (analyze, scaffold, review) |
+| API | `tests/api/` | Auth, config, session, supabase client |
+| API Routes | `tests/api/routes/` | Chat, auth, learn, lessons, progress, review, e2e |
+| Database | `tests/db/` | Models, repository |
+| Lessons | `tests/lessons/` | Lesson models, lesson service |
+| Services | `tests/services/` | Adaptive, coverage, progress, review, paths, levels, vocabulary |
 
 ### Key Fixtures
 
@@ -852,4 +882,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.6 — Habla Hermano (1569+ tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations)*
+*Crash Course v1.6 — Habla Hermano (1810 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations)*

@@ -23,7 +23,7 @@
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 | **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
 
-**Test Coverage**: 1569+ tests (86%+ coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1810 tests (97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 

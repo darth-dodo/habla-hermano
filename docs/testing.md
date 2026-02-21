@@ -8,39 +8,44 @@
 
 | Category | Test File | Test Cases | Coverage Focus |
 |----------|-----------|------------|----------------|
-| Agent Graph | `test_agent_graph.py` | 35 | Graph structure, node routing, Phase 3 conditional edges |
-| Agent State | `test_agent_state.py` | 40+ | TypedDict state, Pydantic models, reducers |
-| Agent Nodes | `test_agent_nodes.py` | 50+ | respond_node, analyze_node integration |
-| Agent Prompts | `test_agent_prompts.py` | 25+ | Level-specific prompts, language support |
-| Scaffold Node | `test_scaffold_node.py` | 60+ | Phase 3 scaffolding, word banks, auto_expand |
-| Routing | `test_routing.py` | 35+ | Phase 3 conditional routing, needs_scaffolding |
-| Analyze Node | `test_analyze_node.py` | 70+ | Phase 2 grammar feedback, vocabulary extraction |
-| API Config | `test_api_config.py` | 30+ | Settings, environment, Pydantic config |
-| API Routes | `test_api_routes.py` | 45+ | Endpoints, HTMX responses, form handling |
-| Auth | `test_auth.py` | 50+ | JWT validation, signup/login flows, token expiration |
-| Checkpointer | `test_checkpointer.py` | 30+ | PostgresSaver/MemorySaver fallback, thread IDs |
-| Session | `test_session.py` | 20+ | Thread ID management, cookie lifecycle |
-| Persistence | `test_persistence_integration.py` | 25+ | End-to-end auth + persistence workflows |
-| DB Models | `test_db_models.py` | 25+ | Pydantic models for Supabase |
-| DB Repository | `test_db_repository.py` | 30+ | Data access layer with mocked client |
-| Supabase Client | `test_supabase_client.py` | 15+ | Client singleton, cache management |
-| Services Levels | `test_services_levels.py` | 20+ | CEFR level detection |
-| Services Vocab | `test_services_vocabulary.py` | 20+ | Vocabulary tracking |
-| Lessons/Progress | `test_lessons_progress_routes.py` | 50+ | Lesson endpoints, progress tracking |
-| Lesson Models | `test_lesson_models.py` | 36 | Phase 6 lesson data model validation |
-| Lesson Service | `test_lesson_service.py` | 20 | Phase 6 lesson service functionality |
-| Lesson Routes | `test_lesson_routes.py` | 39 | Phase 6 lesson API endpoints |
-| Progress Service | `test_progress_service.py` | 25+ | Phase 7 dashboard stats, chart data |
-| Data Capture | `test_data_capture.py` | 20+ | Phase 7 vocabulary/session capture integration |
-| Merge Service | `test_merge_service.py` | 30+ | Phase 8 guest data merge operations |
-| Guest Progress | `test_guest_progress.py` | 23+ | Phase 8 E2E guest flow tests |
-| Review Service | `test_review_service.py` | 30+ | Phase 12 spaced repetition review scheduling |
-| SM2 Algorithm | `test_sm2.py` | 25+ | Phase 12 SM-2 algorithm calculations |
-| Path Service | `test_paths_service.py` | 27 | Phase 14 path building, progress tracking, next lesson detection |
-| Adaptive Service | `test_adaptive_service.py` | 49 | Phase 14 daily recommendations, category strengths, level readiness |
-| Learn Routes | `test_learn_routes.py` | 23 | Phase 14 learn page rendering, HTMX partials, guest vs auth users |
+| Agent Graph | `agent/test_graph.py` | 35 | Graph structure, node routing, Phase 3 conditional edges |
+| Agent State | `agent/test_state.py` | 40+ | TypedDict state, Pydantic models, reducers |
+| Agent Nodes | `agent/nodes/test_nodes.py` | 50+ | respond_node, analyze_node integration |
+| Agent Prompts | `agent/test_prompts.py` | 25+ | Level-specific prompts, language support |
+| Scaffold Node | `agent/nodes/test_scaffold.py` | 60+ | Phase 3 scaffolding, word banks, auto_expand |
+| Routing | `agent/test_routing.py` | 35+ | Phase 3 conditional routing, needs_scaffolding |
+| Analyze Node | `agent/nodes/test_analyze.py` | 70+ | Phase 2 grammar feedback, vocabulary extraction |
+| Review Graph | `agent/test_review_graph.py` | 30+ | Review graph structure and execution |
+| Agent Coverage | `agent/test_coverage.py` | 20+ | Agent module test coverage validation |
+| Review Nodes | `agent/nodes/test_review.py` | 25+ | Review node implementations |
+| API Config | `api/test_config.py` | 30+ | Settings, environment, Pydantic config |
+| Chat Routes | `api/routes/test_chat.py` | 45+ | Endpoints, HTMX responses, form handling |
+| Auth | `api/test_auth.py` | 50+ | JWT validation, signup/login flows, token expiration |
+| Auth Routes | `api/routes/test_auth.py` | 30+ | Auth API endpoint tests |
+| Checkpointer | `agent/test_checkpointer.py` | 30+ | PostgresSaver/MemorySaver fallback, thread IDs |
+| Session | `api/test_session.py` | 20+ | Thread ID management, cookie lifecycle |
+| Persistence | `api/test_persistence.py` | 25+ | End-to-end auth + persistence workflows |
+| DB Models | `db/test_models.py` | 25+ | Pydantic models for Supabase |
+| DB Repository | `db/test_repository.py` | 30+ | Data access layer with mocked client |
+| Supabase Client | `api/test_supabase_client.py` | 15+ | Client singleton, cache management |
+| Services Levels | `services/test_levels.py` | 20+ | CEFR level detection |
+| Services Vocab | `services/test_vocabulary.py` | 20+ | Vocabulary tracking |
+| Lessons/Progress | `api/routes/test_progress.py` | 50+ | Lesson endpoints, progress tracking |
+| Lesson Models | `lessons/test_models.py` | 36 | Phase 6 lesson data model validation |
+| Lesson Service | `lessons/test_service.py` | 20 | Phase 6 lesson service functionality |
+| Lesson Routes | `api/routes/test_lessons.py` | 39 | Phase 6 lesson API endpoints |
+| Progress Service | `services/test_progress.py` | 25+ | Phase 7 dashboard stats, chart data |
+| Data Capture | `api/test_data_capture.py` | 20+ | Phase 7 vocabulary/session capture integration |
+| Review Service | `services/test_review.py` | 30+ | Phase 12 spaced repetition review scheduling |
+| Input Validation | `api/routes/test_validation.py` | 25+ | Input validation and sanitization |
+| Review Routes | `api/routes/test_review.py` | 20+ | Review API endpoints |
+| Learn Routes | `api/routes/test_learn.py` | 23 | Phase 14 learn page rendering, HTMX partials, guest vs auth users |
+| E2E Routes | `api/routes/test_e2e.py` | 30+ | End-to-end route integration tests |
+| Path Service | `services/test_paths.py` | 27 | Phase 14 path building, progress tracking, next lesson detection |
+| Adaptive Service | `services/test_adaptive.py` | 49 | Phase 14 daily recommendations, category strengths, level readiness |
+| Coverage Services | `services/test_coverage.py` | 20+ | Service module coverage validation |
 
-**Total**: 1569+ tests with 86%+ code coverage
+**Total**: 1810 tests with 97% code coverage
 
 ---
 
@@ -48,7 +53,7 @@
 
 Phase 3 introduced conditional routing and scaffolding for A0-A1 learners. The following sections document the new test coverage.
 
-### Scaffold Node Tests (`tests/test_scaffold_node.py`)
+### Scaffold Node Tests (`tests/agent/nodes/test_scaffold.py`)
 
 **60+ test cases** covering the scaffold node implementation.
 
@@ -128,7 +133,7 @@ async def test_handles_missing_level_gracefully(self) -> None:
 
 ---
 
-### Routing Tests (`tests/test_routing.py`)
+### Routing Tests (`tests/agent/test_routing.py`)
 
 **35+ test cases** covering the `needs_scaffolding()` routing function.
 
@@ -205,7 +210,7 @@ def test_a0_scaffolds_for_all_languages(self, language: str) -> None:
 
 ---
 
-### Agent Graph Tests (`tests/test_agent_graph.py`)
+### Agent Graph Tests (`tests/agent/test_graph.py`)
 
 Updated for Phase 3 with **conditional routing structure tests**.
 
@@ -269,7 +274,7 @@ def test_analyze_is_terminal_node(self) -> None:
 
 Phase 6 introduced the structured lesson system with YAML-based content, lesson player, and progress tracking. All tests were developed using a strict TDD (Test-Driven Development) approach: RED (write failing tests first) then GREEN (implement to pass).
 
-### Lesson Model Tests (`tests/test_lesson_models.py`)
+### Lesson Model Tests (`tests/lessons/test_models.py`)
 
 **36 test cases** covering the Pydantic data models for lessons.
 
@@ -340,7 +345,7 @@ def test_progress_marks_complete_at_100_percent(self) -> None:
 
 ---
 
-### Lesson Service Tests (`tests/test_lesson_service.py`)
+### Lesson Service Tests (`tests/lessons/test_service.py`)
 
 **20 test cases** covering the lesson service functionality.
 
@@ -432,7 +437,7 @@ def test_progress_updates_existing(self) -> None:
 
 ---
 
-### Lesson Route Tests (`tests/test_lesson_routes.py`)
+### Lesson Route Tests (`tests/api/routes/test_lessons.py`)
 
 **39 test cases** covering all lesson API endpoints.
 
@@ -565,7 +570,7 @@ End-to-end browser testing for the lesson player interface.
 
 Phase 7 introduced the progress dashboard with learning statistics, vocabulary tracking visualization, and session history. Tests validate the ProgressService and data capture integration.
 
-### Progress Service Tests (`tests/test_progress_service.py`)
+### Progress Service Tests (`tests/services/test_progress.py`)
 
 **25+ test cases** covering the ProgressService for dashboard data aggregation.
 
@@ -659,7 +664,7 @@ async def test_record_chat_activity_increments_vocabulary(self) -> None:
 
 ---
 
-### Data Capture Integration Tests (`tests/test_data_capture.py`)
+### Data Capture Integration Tests (`tests/api/test_data_capture.py`)
 
 **20+ test cases** covering vocabulary and session capture in chat and lesson routes.
 
@@ -725,376 +730,11 @@ async def test_lesson_completion_records_vocabulary(self, async_client) -> None:
 
 ---
 
-## Phase 8 Test Coverage
-
-Phase 8 introduced guest-to-user data migration with the GuestDataMergeService. Tests validate vocabulary merge, session transfer, and lesson progress migration during signup and login flows.
-
-### Merge Service Tests (`tests/test_merge_service.py`)
-
-**30+ test cases** covering the GuestDataMergeService operations.
-
-#### Test Classes
-
-| Class | Tests | Purpose |
-|-------|-------|---------|
-| `TestVocabularyMerge` | 8 | Vocabulary deduplication and merge |
-| `TestSessionTransfer` | 7 | Session record ownership transfer |
-| `TestLessonProgressMerge` | 6 | Lesson progress conflict resolution |
-| `TestSignupMergeTrigger` | 5 | Merge on new user registration |
-| `TestLoginMergeTrigger` | 4 | Merge on existing user login |
-
-#### Key Test Scenarios
-
-**Vocabulary Merge Operations**:
-```python
-async def test_merge_vocabulary_deduplicates(self) -> None:
-    """Merging vocabulary should deduplicate words already learned."""
-    service = GuestDataMergeService()
-
-    # Guest learned: hola, adios, gracias
-    # User already knows: hola, por favor
-    await service.merge_vocabulary(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    user_vocab = await service.get_user_vocabulary(user_id="user-456")
-    vocab_words = [v["word"] for v in user_vocab]
-
-    # Should have all unique words: hola, adios, gracias, por favor
-    assert len(vocab_words) == 4
-    assert "hola" in vocab_words
-    assert "adios" in vocab_words
-
-async def test_merge_vocabulary_preserves_learning_dates(self) -> None:
-    """Merged vocabulary should preserve earliest learning date."""
-    service = GuestDataMergeService()
-
-    await service.merge_vocabulary(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    user_vocab = await service.get_user_vocabulary(user_id="user-456")
-    hola_entry = next(v for v in user_vocab if v["word"] == "hola")
-
-    # Should use the earlier of guest or user learning date
-    assert hola_entry["learned_at"] is not None
-```
-
-**Session Transfer**:
-```python
-async def test_transfer_sessions_updates_ownership(self) -> None:
-    """Transferring sessions should update user_id on all records."""
-    service = GuestDataMergeService()
-
-    await service.transfer_sessions(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    # Guest sessions should now belong to user
-    guest_sessions = await service.get_sessions(guest_id="guest-123")
-    user_sessions = await service.get_sessions(user_id="user-456")
-
-    assert len(guest_sessions) == 0
-    assert len(user_sessions) >= 1
-
-async def test_transfer_sessions_preserves_timestamps(self) -> None:
-    """Transferred sessions should retain original timestamps."""
-    service = GuestDataMergeService()
-    original_sessions = await service.get_sessions(guest_id="guest-123")
-    original_timestamps = [s["created_at"] for s in original_sessions]
-
-    await service.transfer_sessions(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    user_sessions = await service.get_sessions(user_id="user-456")
-    transferred_timestamps = [s["created_at"] for s in user_sessions]
-
-    assert all(ts in transferred_timestamps for ts in original_timestamps)
-```
-
-**Lesson Progress Merge**:
-```python
-async def test_merge_lesson_progress_takes_higher_completion(self) -> None:
-    """Merging lesson progress should keep higher completion percentage."""
-    service = GuestDataMergeService()
-
-    # Guest: lesson at step 5/8
-    # User: same lesson at step 3/8
-    await service.merge_lesson_progress(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    user_progress = await service.get_lesson_progress(
-        user_id="user-456",
-        lesson_id="greetings-a1"
-    )
-
-    # Should keep guest progress (step 5) as it's higher
-    assert user_progress["current_step"] == 5
-
-async def test_merge_lesson_progress_preserves_completion_status(self) -> None:
-    """Completed lessons should remain completed after merge."""
-    service = GuestDataMergeService()
-
-    # Guest completed the lesson
-    await service.merge_lesson_progress(
-        guest_id="guest-123",
-        user_id="user-456"
-    )
-
-    user_progress = await service.get_lesson_progress(
-        user_id="user-456",
-        lesson_id="greetings-a1"
-    )
-
-    assert user_progress["completed"] is True
-```
-
-**Signup/Login Merge Triggers**:
-```python
-async def test_signup_triggers_merge(self, async_client) -> None:
-    """New user signup should trigger guest data merge."""
-    # Create guest activity first
-    await async_client.post(
-        "/chat",
-        data={"message": "Hola"},
-        cookies={"guest_id": "guest-123"}
-    )
-
-    # Signup with same session
-    response = await async_client.post(
-        "/auth/signup",
-        data={"email": "new@example.com", "password": "secure123"},  # pragma: allowlist secret
-        cookies={"guest_id": "guest-123"}
-    )
-
-    assert response.status_code == 200
-
-    # Verify guest data merged to new user
-    vocab_response = await async_client.get(
-        "/progress/vocabulary",
-        headers={"Authorization": f"Bearer {response.json()['token']}"}
-    )
-    assert len(vocab_response.json()["vocabulary"]) > 0
-
-async def test_login_triggers_merge(self, async_client) -> None:
-    """Existing user login should trigger guest data merge."""
-    # Create guest activity
-    await async_client.post(
-        "/chat",
-        data={"message": "Buenos dias"},
-        cookies={"guest_id": "guest-456"}
-    )
-
-    # Login with same session
-    response = await async_client.post(
-        "/auth/login",
-        data={"email": "existing@example.com", "password": "password123"},  # pragma: allowlist secret
-        cookies={"guest_id": "guest-456"}
-    )
-
-    assert response.status_code == 200
-
-    # Guest vocabulary should be merged
-    vocab_response = await async_client.get(
-        "/progress/vocabulary",
-        headers={"Authorization": f"Bearer {response.json()['token']}"}
-    )
-    vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
-    assert "buenos" in vocab_words or "dias" in vocab_words
-```
-
----
-
-### Guest Progress E2E Tests (`tests/test_guest_progress.py`)
-
-**23+ test cases** covering end-to-end guest flow scenarios.
-
-#### Test Classes
-
-| Class | Tests | Purpose |
-|-------|-------|---------|
-| `TestGuestChatCapture` | 6 | Guest vocabulary capture during chat |
-| `TestGuestLessonCompletion` | 6 | Guest lesson progress tracking |
-| `TestGuestProgressView` | 6 | Guest progress dashboard access |
-| `TestGuestEmptyState` | 5 | Empty state for new guests |
-
-#### Key Test Scenarios
-
-**Guest Chat Captures Vocabulary**:
-```python
-async def test_guest_chat_captures_vocabulary(self, async_client) -> None:
-    """Guest chat should capture vocabulary without authentication."""
-    # No auth header, just guest cookie
-    response = await async_client.post(
-        "/chat",
-        data={"message": "Hola, me llamo Ana"},
-        cookies={"guest_id": "guest-new-user"}
-    )
-
-    assert response.status_code == 200
-
-    # Guest can view their captured vocabulary
-    vocab_response = await async_client.get(
-        "/progress/vocabulary",
-        cookies={"guest_id": "guest-new-user"}
-    )
-
-    assert vocab_response.status_code == 200
-    assert len(vocab_response.json()["vocabulary"]) > 0
-
-async def test_guest_vocabulary_persists_across_requests(self, async_client) -> None:
-    """Guest vocabulary should persist across multiple chat requests."""
-    guest_cookie = {"guest_id": "guest-persistent"}
-
-    # First chat
-    await async_client.post(
-        "/chat",
-        data={"message": "Hola"},
-        cookies=guest_cookie
-    )
-
-    # Second chat
-    await async_client.post(
-        "/chat",
-        data={"message": "Adios"},
-        cookies=guest_cookie
-    )
-
-    # Vocabulary from both chats should be captured
-    vocab_response = await async_client.get(
-        "/progress/vocabulary",
-        cookies=guest_cookie
-    )
-
-    vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
-    assert len(vocab_words) >= 2
-```
-
-**Guest Completes Lesson**:
-```python
-async def test_guest_completes_lesson(self, async_client) -> None:
-    """Guest should be able to complete a lesson and track progress."""
-    guest_cookie = {"guest_id": "guest-lesson-user"}
-
-    # Navigate through entire lesson
-    for step in range(1, 9):
-        response = await async_client.get(
-            f"/lessons/greetings-a1/play?step={step}",
-            cookies=guest_cookie
-        )
-        assert response.status_code == 200
-
-    # Verify lesson marked as complete
-    progress_response = await async_client.get(
-        "/lessons/greetings-a1/progress",
-        cookies=guest_cookie
-    )
-
-    assert progress_response.json()["completed"] is True
-    assert progress_response.json()["completion_percentage"] == 100.0
-
-async def test_guest_lesson_progress_saves_to_session(self, async_client) -> None:
-    """Guest lesson progress should be stored in session storage."""
-    guest_cookie = {"guest_id": "guest-session-user"}
-
-    # Partial lesson completion
-    await async_client.get(
-        "/lessons/greetings-a1/play?step=4",
-        cookies=guest_cookie
-    )
-
-    # Progress should be retrievable
-    progress_response = await async_client.get(
-        "/lessons/greetings-a1/progress",
-        cookies=guest_cookie
-    )
-
-    assert progress_response.json()["current_step"] == 4
-```
-
-**Guest Views Progress Dashboard**:
-```python
-async def test_guest_views_progress_dashboard(self, async_client) -> None:
-    """Guest should access progress dashboard with their session data."""
-    guest_cookie = {"guest_id": "guest-dashboard-user"}
-
-    # Create some activity
-    await async_client.post(
-        "/chat",
-        data={"message": "Hola, como estas?"},
-        cookies=guest_cookie
-    )
-
-    # Access progress dashboard
-    dashboard_response = await async_client.get(
-        "/progress",
-        cookies=guest_cookie
-    )
-
-    assert dashboard_response.status_code == 200
-    stats = dashboard_response.json()
-    assert stats["total_vocabulary"] >= 1
-    assert stats["total_sessions"] >= 1
-
-async def test_guest_dashboard_shows_signup_prompt(self, async_client) -> None:
-    """Guest progress dashboard should prompt signup to save data."""
-    guest_cookie = {"guest_id": "guest-prompt-user"}
-
-    response = await async_client.get(
-        "/progress",
-        cookies=guest_cookie
-    )
-
-    assert response.status_code == 200
-    # Response should include signup prompt indicator
-    assert response.json().get("is_guest") is True
-```
-
-**Empty State for New Guest**:
-```python
-async def test_new_guest_empty_vocabulary(self, async_client) -> None:
-    """New guest with no activity should see empty vocabulary."""
-    response = await async_client.get(
-        "/progress/vocabulary",
-        cookies={"guest_id": "brand-new-guest"}
-    )
-
-    assert response.status_code == 200
-    assert response.json()["vocabulary"] == []
-
-async def test_no_cookie_returns_empty_state(self, async_client) -> None:
-    """Request without guest cookie should return empty state."""
-    response = await async_client.get("/progress/vocabulary")
-
-    assert response.status_code == 200
-    assert response.json()["vocabulary"] == []
-    assert response.json().get("is_guest") is True
-
-async def test_no_cookie_progress_dashboard_empty(self, async_client) -> None:
-    """Progress dashboard without cookie should show zero stats."""
-    response = await async_client.get("/progress")
-
-    assert response.status_code == 200
-    stats = response.json()
-    assert stats["total_vocabulary"] == 0
-    assert stats["total_sessions"] == 0
-    assert stats["current_streak"] == 0
-```
-
----
-
 ## Phase 12 Test Coverage
 
-Phase 12 introduced spaced repetition for vocabulary review using the SM-2 algorithm. Tests validate the review scheduling service and the core SM-2 interval/easiness calculations.
+Phase 12 introduced spaced repetition for vocabulary review. Tests validate the review scheduling service.
 
-### Review Service Tests (`tests/test_review_service.py`)
+### Review Service Tests (`tests/services/test_review.py`)
 
 **30+ test cases** covering the ReviewService for spaced repetition scheduling.
 
@@ -1105,18 +745,6 @@ Phase 12 introduced spaced repetition for vocabulary review using the SM-2 algor
 | `TestReviewScheduling` | 10+ | Review interval scheduling and due date calculation |
 | `TestReviewQualityProcessing` | 10+ | Quality response processing and repetition updates |
 | `TestReviewServiceEdgeCases` | 10+ | Edge cases, empty queues, new vs existing items |
-
-### SM-2 Algorithm Tests (`tests/test_sm2.py`)
-
-**25+ test cases** covering the SM-2 spaced repetition algorithm implementation.
-
-#### Test Classes
-
-| Class | Tests | Purpose |
-|-------|-------|---------|
-| `TestSM2IntervalCalculation` | 10+ | Interval growth based on repetition count |
-| `TestSM2EasinessFactor` | 8+ | Easiness factor adjustments from quality ratings |
-| `TestSM2EdgeCases` | 7+ | Boundary values, minimum intervals, factor floors |
 
 ---
 
@@ -1130,7 +758,7 @@ Phase 13 focused on mobile responsive design improvements (CSS/template changes)
 
 Phase 14 introduced learning paths and adaptive recommendations. 99 new tests were added covering the PathService, AdaptiveService, and learn routes.
 
-### Path Service Tests (`tests/test_paths_service.py`)
+### Path Service Tests (`tests/services/test_paths.py`)
 
 **27 test cases** covering the PathService for structured learning path management.
 
@@ -1143,7 +771,7 @@ Phase 14 introduced learning paths and adaptive recommendations. 99 new tests we
 | `TestNextLessonDetection` | 6+ | Next recommended lesson identification |
 | `TestPathEdgeCases` | 5+ | Empty paths, missing lessons, boundary conditions |
 
-### Adaptive Service Tests (`tests/test_adaptive_service.py`)
+### Adaptive Service Tests (`tests/services/test_adaptive.py`)
 
 **49 test cases** covering the AdaptiveService for personalized learning recommendations.
 
@@ -1157,7 +785,7 @@ Phase 14 introduced learning paths and adaptive recommendations. 99 new tests we
 | `TestSuggestionTextBuilding` | 10+ | Human-readable suggestion text generation |
 | `TestWeakCategoryDetection` | 9+ | Weak category identification and targeting |
 
-### Learn Route Tests (`tests/test_learn_routes.py`)
+### Learn Route Tests (`tests/api/routes/test_learn.py`)
 
 **23 test cases** covering the learn page endpoints and HTMX partial rendering.
 
@@ -1282,26 +910,38 @@ pytest tests/ -v
 pytest tests/ --cov=src --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_scaffold_node.py -v
+pytest tests/agent/nodes/test_scaffold.py -v
 
 # Run specific test class
-pytest tests/test_routing.py::TestNeedsScaffoldingBasicRouting -v
+pytest tests/agent/test_routing.py::TestNeedsScaffoldingBasicRouting -v
 
 # Run specific test method
-pytest tests/test_scaffold_node.py::TestScaffoldNodeLevelBehavior::test_a0_level_gets_scaffolding_response -v
+pytest tests/agent/nodes/test_scaffold.py::TestScaffoldNodeLevelBehavior::test_a0_level_gets_scaffolding_response -v
 ```
 
 ### Run Tests by Category
 
 ```bash
 # Agent tests only
-pytest tests/test_agent_*.py -v
+pytest tests/agent/ -v
 
 # API tests only
-pytest tests/test_api_*.py -v
+pytest tests/api/ -v
+
+# Service tests only
+pytest tests/services/ -v
+
+# DB tests only
+pytest tests/db/ -v
+
+# Lesson tests only
+pytest tests/lessons/ -v
+
+# Route tests only
+pytest tests/api/routes/ -v
 
 # Phase 3 specific tests
-pytest tests/test_scaffold_node.py tests/test_routing.py -v
+pytest tests/agent/nodes/test_scaffold.py tests/agent/test_routing.py -v
 ```
 
 ### Run with Markers
@@ -1391,16 +1031,12 @@ def base_state(self) -> ConversationState:
 
 | Module | Current | Target |
 |--------|---------|--------|
-| `src/agent/` | 90%+ | 85%+ |
-| `src/api/` | 85%+ | 80%+ |
-| `src/db/` | 85%+ | 80%+ |
-| `src/services/` | 90%+ | 85%+ |
-| `src/lessons/` | 88%+ | 85%+ |
-| `src/progress/` | 88%+ | 85%+ |
-| `src/merge/` | 90%+ | 85%+ |
-| `src/review/` | 88%+ | 85%+ |
-| `src/learn/` | 88%+ | 85%+ |
-| **Overall** | **86%+** | **70%+** |
+| `src/agent/` | 97%+ | 90%+ |
+| `src/api/` | 96%+ | 90%+ |
+| `src/db/` | 97%+ | 90%+ |
+| `src/services/` | 97%+ | 90%+ |
+| `src/lessons/` | 97%+ | 90%+ |
+| **Overall** | **97%** | **90%+** |
 
 ### Coverage Commands
 
@@ -1412,7 +1048,7 @@ pytest tests/ --cov=src --cov-report=html
 pytest tests/ --cov=src --cov-report=term-missing
 
 # Check coverage threshold
-pytest tests/ --cov=src --cov-fail-under=95
+pytest tests/ --cov=src --cov-fail-under=97
 ```
 
 ---
@@ -1423,32 +1059,58 @@ pytest tests/ --cov=src --cov-fail-under=95
 
 ```
 tests/
+├── conftest.py                    # Shared fixtures
 ├── __init__.py
-├── conftest.py              # Shared fixtures
-├── test_agent_graph.py      # Graph structure tests
-├── test_agent_nodes.py      # Node function tests
-├── test_agent_prompts.py    # Prompt template tests
-├── test_agent_state.py      # State definition tests
-├── test_analyze_node.py     # Phase 2 analyze node
-├── test_scaffold_node.py    # Phase 3 scaffold node
-├── test_routing.py          # Phase 3 routing logic
-├── test_api_config.py       # Configuration tests
-├── test_api_routes.py       # Endpoint tests
-├── test_database.py         # Database layer tests
-├── test_lessons_progress_routes.py  # Lesson endpoints
-├── test_lesson_models.py    # Phase 6 lesson data models
-├── test_lesson_service.py   # Phase 6 lesson service
-├── test_lesson_routes.py    # Phase 6 lesson API endpoints
-├── test_progress_service.py # Phase 7 progress dashboard service
-├── test_data_capture.py     # Phase 7 vocabulary/session capture
-├── test_merge_service.py    # Phase 8 guest data merge
-├── test_guest_progress.py   # Phase 8 E2E guest flows
-├── test_review_service.py   # Phase 12 spaced repetition review service
-├── test_sm2.py              # Phase 12 SM-2 algorithm
-├── test_paths_service.py    # Phase 14 learning path service
-├── test_adaptive_service.py # Phase 14 adaptive recommendations
-├── test_learn_routes.py     # Phase 14 learn page routes
-└── test_services.py         # Service layer tests
+├── agent/                         # Agent module tests (mirrors src/agent/)
+│   ├── __init__.py
+│   ├── test_graph.py              # Graph structure tests
+│   ├── test_state.py              # State definition tests
+│   ├── test_prompts.py            # Prompt template tests
+│   ├── test_routing.py            # Phase 3 routing logic
+│   ├── test_checkpointer.py       # Checkpointer fallback tests
+│   ├── test_review_graph.py       # Review graph tests
+│   ├── test_coverage.py           # Agent coverage validation
+│   └── nodes/                     # Agent node tests (mirrors src/agent/nodes/)
+│       ├── __init__.py
+│       ├── test_nodes.py          # Node function tests
+│       ├── test_analyze.py        # Phase 2 analyze node
+│       ├── test_scaffold.py       # Phase 3 scaffold node
+│       └── test_review.py         # Review node tests
+├── api/                           # API module tests (mirrors src/api/)
+│   ├── __init__.py
+│   ├── test_auth.py               # JWT validation, signup/login flows
+│   ├── test_config.py             # Configuration tests
+│   ├── test_session.py            # Thread ID management, cookies
+│   ├── test_supabase_client.py    # Client singleton tests
+│   ├── test_data_capture.py       # Vocabulary/session capture
+│   ├── test_persistence.py        # Auth + persistence integration
+│   └── routes/                    # Route tests (mirrors src/api/routes/)
+│       ├── __init__.py
+│       ├── test_chat.py           # Chat endpoint tests
+│       ├── test_auth.py           # Auth route tests
+│       ├── test_learn.py          # Learn page routes
+│       ├── test_lessons.py        # Lesson API endpoints
+│       ├── test_progress.py       # Progress route tests
+│       ├── test_review.py         # Review route tests
+│       ├── test_validation.py     # Input validation tests
+│       └── test_e2e.py            # E2E route integration tests
+├── db/                            # Database tests (mirrors src/db/)
+│   ├── __init__.py
+│   ├── test_models.py             # Pydantic models for Supabase
+│   └── test_repository.py         # Data access layer tests
+├── lessons/                       # Lesson tests (mirrors src/lessons/)
+│   ├── __init__.py
+│   ├── test_models.py             # Lesson data model validation
+│   └── test_service.py            # Lesson service functionality
+└── services/                      # Service tests (mirrors src/services/)
+    ├── __init__.py
+    ├── test_adaptive.py           # Adaptive recommendations
+    ├── test_coverage.py           # Service coverage validation
+    ├── test_progress.py           # Progress dashboard service
+    ├── test_review.py             # Spaced repetition review service
+    ├── test_paths.py              # Learning path service
+    ├── test_levels.py             # CEFR level detection
+    └── test_vocabulary.py         # Vocabulary tracking
 ```
 
 ### Test Naming Conventions
@@ -1492,7 +1154,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -e ".[dev]"
-      - run: pytest tests/ --cov=src --cov-fail-under=95
+      - run: pytest tests/ --cov=src --cov-fail-under=97
 ```
 
 ---

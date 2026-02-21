@@ -32,7 +32,7 @@
 
 **Branch**: `feature/phase14-learning-paths`
 **Phase**: Phase 14 Complete (Structured Learning Paths + Adaptive Recommendations)
-**Test Coverage**: 1569+ tests passing (99 new Phase 14 tests)
+**Test Coverage**: 1810 tests passing, 97% coverage
 
 ### Phase 14 Implementation Tasks
 
@@ -62,9 +62,9 @@
 
 | # | Task | Status | Files | Notes |
 |---|------|--------|-------|-------|
-| 8 | Write PathService tests | ✅ | `tests/test_paths_service.py` | 27 tests: path building, progress, next lesson |
-| 9 | Write AdaptiveService tests | ✅ | `tests/test_adaptive_service.py` | 49 tests: strengths, readiness, recommendations |
-| 10 | Write learn routes tests | ✅ | `tests/test_learn_routes.py` | 23 tests: pages, partials, error handling |
+| 8 | Write PathService tests | ✅ | `tests/services/test_paths.py` | 27 tests: path building, progress, next lesson |
+| 9 | Write AdaptiveService tests | ✅ | `tests/services/test_adaptive.py` | 49 tests: strengths, readiness, recommendations |
+| 10 | Write learn routes tests | ✅ | `tests/api/routes/test_learn.py` | 23 tests: pages, partials, error handling |
 | 11 | Run full test suite | ✅ | - | 1569 passed, 1 pre-existing failure (unrelated) |
 
 ---
@@ -328,9 +328,9 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 - Task 5: `src/api/main.py` — mounted learn router at /learn prefix
 - Task 6: `src/api/routes/lessons.py` — added next_path_lesson computation to complete_lesson
 - Task 7: `src/templates/partials/lesson_complete.html` — added "Continue Path" button
-- Task 8: `tests/test_paths_service.py` — 27 tests (path building, progress, next lesson)
-- Task 9: `tests/test_adaptive_service.py` — 49 tests (strengths, readiness, recommendations, suggestion text)
-- Task 10: `tests/test_learn_routes.py` — 23 tests (pages, partials, error handling, guest access)
+- Task 8: `tests/services/test_paths.py` — 27 tests (path building, progress, next lesson)
+- Task 9: `tests/services/test_adaptive.py` — 49 tests (strengths, readiness, recommendations, suggestion text)
+- Task 10: `tests/api/routes/test_learn.py` — 23 tests (pages, partials, error handling, guest access)
 - Task 11: Full suite — 1569 passed, 1 pre-existing failure (unrelated)
 
 **Template Fixes**:
@@ -401,9 +401,9 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 - `src/agent/nodes/analyze.py` (3-tuple return, pronunciation extraction)
 - `src/templates/partials/message_pair.html` (include pronunciation partial)
 - `src/api/routes/chat.py` (pass pronunciation_tips and level to template)
-- `tests/test_analyze_node.py` (3-tuple unpacking)
-- `tests/test_agent_state.py` (7 fields, new test)
-- `tests/test_api_routes.py` (conversation partner assertion)
+- `tests/agent/nodes/test_analyze.py` (3-tuple unpacking)
+- `tests/agent/test_state.py` (7 fields, new test)
+- `tests/api/routes/test_chat.py` (conversation partner assertion)
 
 **Branch**: `main`
 
@@ -531,8 +531,8 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 - `src/agent/nodes/analyze.py` (lazy import fix)
 - `src/agent/nodes/respond.py` (lazy import fix)
 - `src/agent/nodes/scaffold.py` (lazy import fix)
-- `tests/test_agent_nodes.py` (mock patch fix)
-- `tests/test_analyze_node.py` (mock patch fix)
+- `tests/agent/nodes/test_nodes.py` (mock patch fix)
+- `tests/agent/nodes/test_analyze.py` (mock patch fix)
 
 **Branch**: `main`
 
@@ -566,7 +566,7 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 - **Issue**: AsyncSqliteSaver throws `AttributeError: 'Connection' object has no attribute 'is_alive'`
 - **Root Cause**: Bug in langgraph-checkpoint-sqlite 3.0.2
 - **Fix**: Switched to MemorySaver for in-process persistence
-- **Files Changed**: `src/agent/checkpointer.py`, `tests/test_checkpointer.py`, `tests/test_persistence_integration.py`
+- **Files Changed**: `src/agent/checkpointer.py`, `tests/agent/test_checkpointer.py`, `tests/api/test_persistence.py`
 
 **E2E Validation** (Playwright):
 - ✅ Chat working with MemorySaver
@@ -625,9 +625,9 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 
 **Test Coverage**:
 - 72 new tests across 3 test files
-- `tests/test_checkpointer.py` - Checkpointer functionality
-- `tests/test_session.py` - Session management
-- `tests/test_persistence_integration.py` - Integration tests
+- `tests/agent/test_checkpointer.py` - Checkpointer functionality
+- `tests/api/test_session.py` - Session management
+- `tests/api/test_persistence.py` - Integration tests
 - Total: 827 tests, 98% coverage
 
 **Key Fixes During Implementation**:
@@ -746,9 +746,9 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 - Learned: Routing functions return node names
 
 **Test Coverage**:
-- 16 new tests in `tests/test_scaffold_node.py`
-- 10 new tests in `tests/test_routing.py`
-- Updated `tests/test_agent_graph.py` for Phase 3 structure
+- 16 new tests in `tests/agent/nodes/test_scaffold.py`
+- 10 new tests in `tests/agent/test_routing.py`
+- Updated `tests/agent/test_graph.py` for Phase 3 structure
 
 **E2E Testing**:
 - ✅ A0 scaffold auto-expanded with translated word bank
@@ -854,7 +854,7 @@ Prompts use `{language_name}`, `{hello}`, etc. placeholders filled via `.format(
 - **Persistence**: PostgresSaver (Supabase) with MemorySaver fallback for dev
 - **Auth**: Email/password via Supabase Auth with JWT tokens + guest sessions
 - **UI Features**: Nordic Minimal design (3 themes), 3 languages, optimistic UI, grammar feedback, collapsible pronunciation tips, scaffolding, AI-enhanced lessons, progress dashboard, spaced repetition, mobile responsive, structured learning paths, adaptive recommendations
-- **Test Coverage**: 1569+ tests, 86%+ coverage
+- **Test Coverage**: 1810 tests, 97% coverage
 - **Branch**: `feature/phase14-learning-paths`
 
 ### Phase 14: Learning Paths (Complete)

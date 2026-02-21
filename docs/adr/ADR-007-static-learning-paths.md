@@ -187,9 +187,9 @@ Without a guided path, users face a wall of 60 lessons with no clear direction. 
 ### Testing
 
 99 new tests across 3 test files:
-- `test_paths_service.py` (27 tests): Path building, progress overlay, next lesson, edge cases
-- `test_adaptive_service.py` (49 tests): Recommendations, category strengths, level readiness
-- `test_learn_routes.py` (23 tests): Page rendering, HTMX partial, guest/auth, error handling
+- `tests/services/test_paths.py` (27 tests): Path building, progress overlay, next lesson, edge cases
+- `tests/services/test_adaptive.py` (49 tests): Recommendations, category strengths, level readiness
+- `tests/api/routes/test_learn.py` (23 tests): Page rendering, HTMX partial, guest/auth, error handling
 
 ---
 
@@ -200,9 +200,9 @@ Without a guided path, users face a wall of 60 lessons with no clear direction. 
 - `src/api/routes/learn.py` — Learn page and recommendation routes
 - `src/templates/learn.html` — Learning path page template
 - `src/templates/partials/learn_recommendation.html` — Recommendation card partial
-- `tests/test_paths_service.py` — PathService tests (27)
-- `tests/test_adaptive_service.py` — AdaptiveService tests (49)
-- `tests/test_learn_routes.py` — Learn routes tests (23)
+- `tests/services/test_paths.py` — PathService tests (27)
+- `tests/services/test_adaptive.py` — AdaptiveService tests (49)
+- `tests/api/routes/test_learn.py` — Learn routes tests (23)
 
 ---
 
