@@ -701,6 +701,7 @@ async def complete_lesson(
         new_session_id = str(uuid.uuid4())
         effective_id = new_session_id
 
+    repo = None
     if effective_id:
         try:
             client = None
@@ -719,6 +720,20 @@ async def complete_lesson(
         except Exception:
             logger.exception("Failed to persist lesson completion for user %s", effective_id)
 
+    # Phase 14: Compute next lesson in the learning path
+    next_path_lesson = None
+    if repo:
+        try:
+            from src.services.paths import get_path_service
+
+            path_service = get_path_service()
+            all_progress = repo.get_completed()
+            next_path_lesson = path_service.get_next_path_lesson(
+                lesson.metadata.language, all_progress
+            )
+        except Exception:
+            logger.exception("Failed to get next path lesson for user %s", effective_id)
+
     response = templates.TemplateResponse(
         request=request,
         name="partials/lesson_complete.html",
@@ -729,6 +744,7 @@ async def complete_lesson(
             "score": score,
             "vocab_count": vocab_count,
             "user": user,
+            "next_path_lesson": next_path_lesson,
         },
     )
 

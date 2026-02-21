@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ path.language_name }} Learning Path - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="h-full overflow-y-auto bg-surface">
+    <div class="max-w-3xl mx-auto px-4 py-8">
+
+        <!-- Header -->
+        <header class="mb-8 animate-fade-in">
+            <div class="flex items-center gap-3 mb-1">
+                <a href="/lessons/" class="p-2 -ml-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-overlay transition-all duration-150" aria-label="Back to lessons">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h1 class="text-2xl font-semibold text-text">{{ path.language_name }} Learning Path</h1>
+            </div>
+
+            {% if path_progress %}
+            <!-- Overall Progress -->
+            <div class="mt-4 p-4 bg-surface-elevated rounded-xl border border-border" role="region" aria-label="Overall progress">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-text-muted">
+                        {{ path_progress.overall_completed }}/{{ path_progress.overall_total }} lessons completed
+                    </span>
+                    <span class="text-sm font-medium text-accent">{{ path_progress.completion_percentage }}%</span>
+                </div>
+                <div class="h-2 bg-surface-overlay rounded-full overflow-hidden" role="progressbar" aria-valuenow="{{ path_progress.completion_percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="Path completion">
+                    <div class="h-full bg-accent rounded-full transition-all duration-500 ease-out" style="width: {{ path_progress.completion_percentage }}%;"></div>
+                </div>
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- Continue Learning CTA -->
+        {% if path_progress and path_progress.next_lesson %}
+        <section class="mb-6 animate-fade-in" aria-label="Continue learning">
+            <a
+                href="/lessons/{{ path_progress.next_lesson.metadata.id }}/play"
+                class="group block p-5 bg-surface-elevated rounded-xl border border-border border-l-4 border-l-accent hover:border-accent hover:bg-accent-muted/50 transition-all duration-150 hover-lift"
+            >
+                <p class="text-xs font-medium text-accent uppercase tracking-wide mb-2">Continue where you left off</p>
+                <div class="flex items-center gap-4">
+                    <span class="text-3xl flex-shrink-0" aria-hidden="true">{{ path_progress.next_lesson.metadata.icon }}</span>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-medium text-text group-hover:text-accent transition-colors">{{ path_progress.next_lesson.metadata.title }}</h3>
+                        <p class="text-sm text-text-muted mt-0.5 line-clamp-2">{{ path_progress.next_lesson.metadata.description }}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-10 h-10 bg-accent rounded-full flex items-center justify-center group-hover:bg-accent-hover transition-colors">
+                        <svg class="w-5 h-5 text-accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+        </section>
+        {% endif %}
+
+        <!-- Daily Recommendation -->
+        {% if recommendation %}
+        <section class="mb-8 animate-fade-in" aria-label="Daily recommendation">
+            {% include "partials/learn_recommendation.html" %}
+        </section>
+        {% endif %}
+
+        <!-- Path Timeline -->
+        <section
+            class="mb-10"
+            aria-label="Learning path units"
+            x-data="{ expandedUnit: {{ path_progress.current_unit_index if path_progress else 0 }} }"
+        >
+            <h2 class="text-lg font-semibold text-text mb-5">Your Path</h2>
+
+            <div class="relative stagger-in">
+                {% if path_progress %}
+                    {% for up in path_progress.units %}
+                        {% set unit_index = loop.index0 %}
+                        {% set is_last = loop.last %}
+                        {% include "partials/learn_unit.html" %}
+                    {% endfor %}
+                {% else %}
+                    {% for unit in path.units %}
+                        {% set up = None %}
+                        {% set unit_index = loop.index0 %}
+                        {% set is_last = loop.last %}
+                        {% include "partials/learn_unit.html" %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Footer link -->
+        <div class="text-center pb-8">
+            <a href="/lessons/" class="text-sm text-text-muted hover:text-accent transition-colors">
+                Or browse all lessons
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

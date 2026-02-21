@@ -22,6 +22,18 @@
 
     <!-- Actions -->
     <div class="space-y-3 max-w-xs mx-auto">
+        {% if next_path_lesson %}
+        <a
+            href="/lessons/{{ next_path_lesson.metadata.id }}/play"
+            class="w-full px-6 py-3 bg-success hover:bg-success/80 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+            Next: {{ next_path_lesson.metadata.title }}
+        </a>
+        {% endif %}
+
         <button
             hx-post="/lessons/{{ lesson_id }}/handoff"
             hx-swap="none"

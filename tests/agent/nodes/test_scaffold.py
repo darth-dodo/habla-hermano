@@ -523,7 +523,11 @@ class TestScaffoldNodeJSONParsing:
 {"word_bank": ["hola"], "hint": "test", "sentence_starter": null}
 ```"""
         # Extract JSON from code block
-        json_str = content.split("```json")[1].split("```")[0] if "```json" in content else content
+        json_str = (
+            content.split("```json", maxsplit=1)[1].split("```", maxsplit=1)[0]
+            if "```json" in content
+            else content
+        )
 
         result = json.loads(json_str.strip())
         assert result["word_bank"] == ["hola"]

@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.5 | **Tests**: 1440+ | **Coverage**: 86%+ | **Date**: February 2026
+**Version**: 1.6 | **Tests**: 1810 | **Coverage**: 97% | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -25,7 +25,7 @@ block-beta
         K["Persistence"] L["PostgreSQL checkpointing (LangGraph)"]
         M["Config"] N["Environment-based Pydantic Settings"]
         O["Deployment"] P["Docker + Render.com"]
-        Q["Lessons"] R["YAML micro-lessons with exercises (5 Spanish A0)"]
+        Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
         S["UI"] T["Hamburger menu, lesson player, step navigation"]
     end
 ```
@@ -40,7 +40,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 1440+ tests with 86%+ coverage, strict typing
+- ✅ 1810 tests with 97% coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -50,6 +50,9 @@ block-beta
 - ✅ Progress tracking dashboard with Chart.js visualizations
 - ✅ User-authenticated Supabase client for RLS compliance
 - ✅ AI-enhanced lessons via LangGraph subgraphs (Phase 9)
+- ✅ Learning paths with structured progression: PathService, AdaptiveService (Phase 14)
+- ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
+- ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
 
 ---
 
@@ -178,7 +181,8 @@ habla-hermano/
 │   │       ├── auth.py               # Signup, login, logout
 │   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
-│   │       └── review.py             # Spaced repetition review sessions (auth-only)
+│   │       ├── review.py             # Spaced repetition review sessions (auth-only)
+│   │       └── learn.py              # Learning paths & adaptive recommendations
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -210,7 +214,9 @@ habla-hermano/
 │   │   ├── vocabulary.py             # Vocab tracking
 │   │   ├── levels.py                 # Level detection
 │   │   ├── progress.py               # ProgressService: dashboard aggregation
-│   │   └── review.py                 # ReviewService: spaced repetition (SM-2)
+│   │   ├── review.py                 # ReviewService: spaced repetition (SM-2)
+│   │   ├── paths.py                  # PathService: structured learning paths per language
+│   │   └── adaptive.py               # AdaptiveService: daily adaptive recommendations
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
@@ -218,6 +224,7 @@ habla-hermano/
 │   │   ├── lessons.html              # Lesson catalog page
 │   │   ├── lesson_player.html        # Interactive lesson player
 │   │   ├── progress.html             # Progress dashboard with charts
+│   │   ├── learn.html                # Learning paths overview page
 │   │   └── partials/
 │   │       ├── message_pair.html     # User + AI message
 │   │       ├── grammar_feedback.html # Collapsible grammar tips
@@ -227,23 +234,58 @@ habla-hermano/
 │   │       ├── lesson_exercise.html  # Exercise forms
 │   │       ├── lesson_complete.html  # Completion celebration
 │   │       ├── progress_vocab.html   # Vocabulary list partial
-│   │       └── stats_summary.html    # Stats card partial
+│   │       ├── stats_summary.html    # Stats card partial
+│   │       └── learn_recommendation.html # Adaptive recommendation partial (HTMX)
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/app.js                 # HTMX handlers, virtual keyboard handling
 │
-├── tests/                            # 1440+ tests, 86%+ coverage
+├── tests/                            # 1810 tests, 97% coverage
 │   ├── conftest.py                   # Fixtures
-│   ├── test_agent_*.py               # LangGraph tests
-│   ├── test_api_*.py                 # API route tests
-│   ├── test_auth*.py                 # Auth tests
-│   ├── test_db_*.py                  # Database tests
-│   └── test_services_*.py            # Service tests
-│   ├── test_lesson_models.py         # Lesson data model tests
-│   ├── test_lesson_service.py        # Lesson service tests
-│   ├── test_lesson_routes.py         # Lesson API endpoint tests
-│   └── test_lessons_progress_routes.py # Lesson progress tests
+│   ├── agent/
+│   │   ├── test_graph.py             # LangGraph pipeline tests
+│   │   ├── test_state.py             # ConversationState tests
+│   │   ├── test_prompts.py           # System prompt tests
+│   │   ├── test_routing.py           # Conditional routing tests
+│   │   ├── test_checkpointer.py      # Checkpointer tests
+│   │   ├── test_review_graph.py      # Review subgraph tests
+│   │   ├── test_coverage.py          # Agent coverage tests
+│   │   └── nodes/
+│   │       ├── test_nodes.py         # Node integration tests
+│   │       ├── test_analyze.py       # analyze_node tests
+│   │       ├── test_scaffold.py      # scaffold_node tests
+│   │       └── test_review.py        # Review node tests
+│   ├── api/
+│   │   ├── test_auth.py              # JWT validation tests
+│   │   ├── test_config.py            # Settings tests
+│   │   ├── test_session.py           # Session management tests
+│   │   ├── test_supabase_client.py   # Supabase client tests
+│   │   ├── test_data_capture.py      # Data capture tests
+│   │   ├── test_persistence.py       # Persistence tests
+│   │   └── routes/
+│   │       ├── test_chat.py          # POST /chat endpoint tests
+│   │       ├── test_auth.py          # Auth route tests
+│   │       ├── test_learn.py         # Learn route tests
+│   │       ├── test_lessons.py       # Lesson route tests
+│   │       ├── test_progress.py      # Progress route tests
+│   │       ├── test_review.py        # Review route tests
+│   │       ├── test_validation.py    # Validation tests
+│   │       └── test_e2e.py           # End-to-end route tests
+│   ├── db/
+│   │   ├── test_models.py            # Database model tests
+│   │   └── test_repository.py        # Repository tests
+│   ├── lessons/
+│   │   ├── test_models.py            # Lesson data model tests
+│   │   └── test_service.py           # Lesson service tests
+│   └── services/
+│       ├── test_adaptive.py          # AdaptiveService tests
+│       ├── test_coverage.py          # Service coverage tests
+│       ├── test_progress.py          # ProgressService tests
+│       ├── test_review.py            # ReviewService tests
+│       ├── test_paths.py             # PathService tests
+│       ├── test_levels.py            # Level detection tests
+│       └── test_vocabulary.py        # Vocabulary tracking tests
 │
 ├── docs/
 │   ├── architecture.md
@@ -252,13 +294,22 @@ habla-hermano/
 │   └── design/phase*.md
 │
 ├── data/
-│   └── lessons/                      # YAML lesson content
-│       └── es/A0/                    # Spanish beginner lessons
-│           ├── greetings-001.yaml
-│           ├── introductions-001.yaml
-│           ├── numbers-001.yaml
-│           ├── colors-001.yaml
-│           └── family-001.yaml
+│   └── lessons/                      # YAML lesson content (60 total lessons)
+│       ├── es/                       # Spanish lessons
+│       │   ├── A0/                   # 5 lessons (greetings, introductions, numbers, colors, family)
+│       │   ├── A1/                   # 5 lessons
+│       │   ├── A2/                   # 5 lessons
+│       │   └── B1/                   # 5 lessons
+│       ├── de/                       # German lessons
+│       │   ├── A0/                   # 5 lessons
+│       │   ├── A1/                   # 5 lessons
+│       │   ├── A2/                   # 5 lessons
+│       │   └── B1/                   # 5 lessons
+│       └── fr/                       # French lessons
+│           ├── A0/                   # 5 lessons
+│           ├── A1/                   # 5 lessons
+│           ├── A2/                   # 5 lessons
+│           └── B1/                   # 5 lessons
 │
 ├── pyproject.toml
 ├── .env.example
@@ -519,6 +570,8 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 | GET | `/progress/stats` | Stats summary partial (HTMX) |
 | GET | `/progress/chart-data` | JSON chart data for Chart.js |
 | DELETE | `/progress/vocabulary/{id}` | Remove word from vocabulary |
+| GET | `/learn/` | Learning paths overview page |
+| GET | `/learn/recommendation` | Adaptive recommendation partial (HTMX) |
 
 ### Chat Request/Response
 
@@ -679,19 +732,19 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 86%+ (1016 tests)
+### Coverage: 97% (1810 tests)
 
 ### Test Categories
 
-| Category | Files | Focus |
-|----------|-------|-------|
-| Agent | 8 | LangGraph nodes, state, routing |
-| API | 5 | FastAPI endpoints |
-| Auth | 3 | JWT validation, auth flows |
-| Database | 3 | Models, repository |
-| Services | 2 | Vocabulary, levels |
-| Integration | 3 | End-to-end flows |
-| Lessons | 4 | Models, service, routes, progress |
+| Category | Directory | Focus |
+|----------|-----------|-------|
+| Agent | `tests/agent/` | LangGraph nodes, state, routing, checkpointer |
+| Agent Nodes | `tests/agent/nodes/` | Individual node tests (analyze, scaffold, review) |
+| API | `tests/api/` | Auth, config, session, supabase client |
+| API Routes | `tests/api/routes/` | Chat, auth, learn, lessons, progress, review, e2e |
+| Database | `tests/db/` | Models, repository |
+| Lessons | `tests/lessons/` | Lesson models, lesson service |
+| Services | `tests/services/` | Adaptive, coverage, progress, review, paths, levels, vocabulary |
 
 ### Key Fixtures
 
@@ -802,6 +855,9 @@ src/agent/nodes/*.py         # Pipeline nodes
 src/agent/prompts.py         # Level-specific prompts
 src/services/progress.py     # ProgressService: dashboard aggregation
 src/services/review.py       # ReviewService: spaced repetition (SM-2)
+src/services/paths.py        # PathService: structured learning paths per language
+src/services/adaptive.py     # AdaptiveService: daily adaptive recommendations
+src/api/routes/learn.py      # Learn routes: paths overview, recommendation partial
 ```
 
 ### Commands
@@ -826,4 +882,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.5 — Habla Hermano (1440+ tests, 86%+ coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive)*
+*Crash Course v1.6 — Habla Hermano (1810 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations)*
