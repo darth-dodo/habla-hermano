@@ -11,7 +11,7 @@ Targets:
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -335,7 +335,7 @@ class TestRespondNodeReviewWords:
     """Tests for respond_node covering spaced repetition lines 439-448 and 464."""
 
     async def test_respond_node_with_user_id_fetches_review_words(
-        self, mock_settings: "Settings"
+        self, mock_settings: Settings
     ) -> None:
         """respond_node should fetch review words when user_id is present."""
         from src.agent.nodes.respond import respond_node
@@ -375,7 +375,7 @@ class TestRespondNodeReviewWords:
             assert result["review_words_offered"] == review_words
 
     async def test_respond_node_without_user_id_skips_review(
-        self, mock_settings: "Settings"
+        self, mock_settings: Settings
     ) -> None:
         """respond_node should not fetch review words when no user_id."""
         from src.agent.nodes.respond import respond_node
@@ -396,7 +396,7 @@ class TestRespondNodeReviewWords:
             assert "review_words_offered" not in result
 
     async def test_respond_node_no_review_words_offered_key_when_empty(
-        self, mock_settings: "Settings"
+        self, mock_settings: Settings
     ) -> None:
         """respond_node should not include review_words_offered when list is empty."""
         from src.agent.nodes.respond import respond_node
@@ -1019,7 +1019,7 @@ class TestGetExerciseFeedbackPrompt:
 class TestLessonGetLlm:
     """Tests for lesson.py _get_llm covering lines 32-35."""
 
-    def test_get_llm_creates_instance(self, mock_settings: "Settings") -> None:
+    def test_get_llm_creates_instance(self, mock_settings: Settings) -> None:
         """Should create ChatAnthropic with higher temperature for creativity."""
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
@@ -1275,7 +1275,7 @@ class TestLoadStepNode:
 class TestEnhanceStepNode:
     """Tests for enhance_step_node covering lines 155-181."""
 
-    async def test_enhances_step_content(self, mock_settings: "Settings") -> None:
+    async def test_enhances_step_content(self, mock_settings: Settings) -> None:
         """Should call LLM and return enhanced content with intro."""
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
@@ -1309,7 +1309,7 @@ class TestEnhanceStepNode:
             assert "Welcome to greetings!" in result["hermano_intro"]
             mock_llm.ainvoke.assert_called_once()
 
-    async def test_enhance_with_vocabulary_step(self, mock_settings: "Settings") -> None:
+    async def test_enhance_with_vocabulary_step(self, mock_settings: Settings) -> None:
         """Should handle vocabulary step type with vocab data."""
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
@@ -1433,7 +1433,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_multiple_choice_correct(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should validate correct multiple choice answer."""
         from src.lessons.models import MultipleChoiceExercise
@@ -1475,7 +1475,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_multiple_choice_incorrect(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should validate incorrect multiple choice answer."""
         from src.lessons.models import MultipleChoiceExercise
@@ -1516,7 +1516,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_multiple_choice_invalid_input(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should handle non-numeric input for multiple choice."""
         from src.lessons.models import MultipleChoiceExercise
@@ -1557,7 +1557,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_fill_blank_correct(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should validate correct fill-in-the-blank answer."""
         from src.lessons.models import FillBlankExercise
@@ -1597,7 +1597,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_translate_correct(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should validate correct translation answer."""
         from src.lessons.models import TranslateExercise
@@ -1640,7 +1640,7 @@ class TestValidateExerciseNode:
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
     async def test_validates_translate_incorrect(
-        self, mock_get_service: MagicMock, mock_settings: "Settings"
+        self, mock_get_service: MagicMock, mock_settings: Settings
     ) -> None:
         """Should validate incorrect translation answer."""
         from src.lessons.models import TranslateExercise
@@ -1682,8 +1682,7 @@ class TestValidateExerciseNode:
 
 
 # =============================================================================
-# lesson_graph.py: build_lesson_subgraph and build_exercise_validation_graph
-# (lines 15-103)
+# Lesson graph builders — subgraph and exercise validation graph
 # =============================================================================
 
 
