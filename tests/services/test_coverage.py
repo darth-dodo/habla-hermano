@@ -32,8 +32,11 @@ class TestLevelServiceAssessLevel:
 
     def test_upgrade_when_consecutive_correct_meets_threshold(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=5, consecutive_errors=0,
-            grammar_error_rate=0.1, vocabulary_use_rate=0.8, message_complexity=0.6,
+            consecutive_correct=5,
+            consecutive_errors=0,
+            grammar_error_rate=0.1,
+            vocabulary_use_rate=0.8,
+            message_complexity=0.6,
         )
         result = self.service.assess_level(CEFRLevel.A1, metrics)
         assert result.should_adjust is True
@@ -42,8 +45,11 @@ class TestLevelServiceAssessLevel:
 
     def test_upgrade_confidence_calculation(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=5, consecutive_errors=0,
-            grammar_error_rate=0.1, vocabulary_use_rate=0.8, message_complexity=0.6,
+            consecutive_correct=5,
+            consecutive_errors=0,
+            grammar_error_rate=0.1,
+            vocabulary_use_rate=0.8,
+            message_complexity=0.6,
         )
         result = self.service.assess_level(CEFRLevel.A0, metrics)
         # min(0.9, 0.5 + 5 * 0.1) = min(0.9, 1.0) = 0.9
@@ -51,8 +57,11 @@ class TestLevelServiceAssessLevel:
 
     def test_no_upgrade_when_at_highest_level(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=10, consecutive_errors=0,
-            grammar_error_rate=0.0, vocabulary_use_rate=1.0, message_complexity=1.0,
+            consecutive_correct=10,
+            consecutive_errors=0,
+            grammar_error_rate=0.0,
+            vocabulary_use_rate=1.0,
+            message_complexity=1.0,
         )
         result = self.service.assess_level(CEFRLevel.B1, metrics)
         assert result.should_adjust is False
@@ -60,8 +69,11 @@ class TestLevelServiceAssessLevel:
 
     def test_upgrade_from_a2_to_b1(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=6, consecutive_errors=0,
-            grammar_error_rate=0.05, vocabulary_use_rate=0.85, message_complexity=0.7,
+            consecutive_correct=6,
+            consecutive_errors=0,
+            grammar_error_rate=0.05,
+            vocabulary_use_rate=0.85,
+            message_complexity=0.7,
         )
         result = self.service.assess_level(CEFRLevel.A2, metrics)
         assert result.suggested_level == CEFRLevel.B1
@@ -69,8 +81,11 @@ class TestLevelServiceAssessLevel:
 
     def test_downgrade_when_consecutive_errors_meets_threshold(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=0, consecutive_errors=3,
-            grammar_error_rate=0.5, vocabulary_use_rate=0.2, message_complexity=0.1,
+            consecutive_correct=0,
+            consecutive_errors=3,
+            grammar_error_rate=0.5,
+            vocabulary_use_rate=0.2,
+            message_complexity=0.1,
         )
         result = self.service.assess_level(CEFRLevel.A2, metrics)
         assert result.suggested_level == CEFRLevel.A1
@@ -79,8 +94,11 @@ class TestLevelServiceAssessLevel:
 
     def test_downgrade_confidence_capped(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=0, consecutive_errors=4,
-            grammar_error_rate=0.6, vocabulary_use_rate=0.1, message_complexity=0.1,
+            consecutive_correct=0,
+            consecutive_errors=4,
+            grammar_error_rate=0.6,
+            vocabulary_use_rate=0.1,
+            message_complexity=0.1,
         )
         result = self.service.assess_level(CEFRLevel.B1, metrics)
         # min(0.9, 0.5 + 4 * 0.1) = 0.9
@@ -89,8 +107,11 @@ class TestLevelServiceAssessLevel:
 
     def test_downgrade_confidence_below_cap(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=0, consecutive_errors=3,
-            grammar_error_rate=0.5, vocabulary_use_rate=0.2, message_complexity=0.1,
+            consecutive_correct=0,
+            consecutive_errors=3,
+            grammar_error_rate=0.5,
+            vocabulary_use_rate=0.2,
+            message_complexity=0.1,
         )
         result = self.service.assess_level(CEFRLevel.A1, metrics)
         # min(0.9, 0.5 + 3 * 0.1) = 0.8
@@ -99,8 +120,11 @@ class TestLevelServiceAssessLevel:
 
     def test_no_downgrade_when_at_lowest_level(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=0, consecutive_errors=10,
-            grammar_error_rate=0.9, vocabulary_use_rate=0.0, message_complexity=0.0,
+            consecutive_correct=0,
+            consecutive_errors=10,
+            grammar_error_rate=0.9,
+            vocabulary_use_rate=0.0,
+            message_complexity=0.0,
         )
         result = self.service.assess_level(CEFRLevel.A0, metrics)
         assert result.should_adjust is False
@@ -108,8 +132,11 @@ class TestLevelServiceAssessLevel:
 
     def test_no_change_when_below_thresholds(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=3, consecutive_errors=1,
-            grammar_error_rate=0.2, vocabulary_use_rate=0.6, message_complexity=0.5,
+            consecutive_correct=3,
+            consecutive_errors=1,
+            grammar_error_rate=0.2,
+            vocabulary_use_rate=0.6,
+            message_complexity=0.5,
         )
         result = self.service.assess_level(CEFRLevel.A1, metrics)
         assert result.should_adjust is False
@@ -119,8 +146,11 @@ class TestLevelServiceAssessLevel:
 
     def test_upgrade_takes_priority_over_downgrade(self) -> None:
         metrics = PerformanceMetrics(
-            consecutive_correct=5, consecutive_errors=3,
-            grammar_error_rate=0.3, vocabulary_use_rate=0.5, message_complexity=0.5,
+            consecutive_correct=5,
+            consecutive_errors=3,
+            grammar_error_rate=0.3,
+            vocabulary_use_rate=0.5,
+            message_complexity=0.5,
         )
         result = self.service.assess_level(CEFRLevel.A1, metrics)
         assert result.suggested_level == CEFRLevel.A2
@@ -192,8 +222,11 @@ class TestLevelServiceGetScaffoldingRequirements:
 
     def test_all_levels_return_five_keys(self) -> None:
         expected_keys = {
-            "show_word_bank", "show_translation", "show_hints",
-            "show_sentence_starter", "auto_show_help",
+            "show_word_bank",
+            "show_translation",
+            "show_hints",
+            "show_sentence_starter",
+            "auto_show_help",
         }
         for level in CEFRLevel:
             result = self.service.get_scaffolding_requirements(level)
@@ -224,6 +257,7 @@ class TestEnsureUserProfile:
             mock_repo_cls.return_value = mock_repo
 
             from src.db.seed import ensure_user_profile
+
             ensure_user_profile("user-123")
 
             mock_repo.get.assert_called_once()
@@ -238,6 +272,7 @@ class TestEnsureUserProfile:
             mock_repo_cls.return_value = mock_repo
 
             from src.db.seed import ensure_user_profile
+
             ensure_user_profile("user-123")
 
             mock_get_supabase.assert_not_called()
@@ -258,14 +293,17 @@ class TestEnsureUserProfile:
             mock_repo_cls.return_value = mock_repo
 
             from src.db.seed import ensure_user_profile
+
             ensure_user_profile("user-456")
 
             mock_client.table.assert_called_once_with("user_profiles")
-            mock_table.insert.assert_called_once_with({
-                "id": "user-456",
-                "preferred_language": "es",
-                "current_level": "A1",
-            })
+            mock_table.insert.assert_called_once_with(
+                {
+                    "id": "user-456",
+                    "preferred_language": "es",
+                    "current_level": "A1",
+                }
+            )
 
 
 class TestResetUserData:
@@ -281,6 +319,7 @@ class TestResetUserData:
 
         with patch("src.db.seed.get_supabase", return_value=mock_client):
             from src.db.seed import reset_user_data
+
             reset_user_data("user-789")
 
         table_calls = [call[0][0] for call in mock_client.table.call_args_list]
@@ -295,6 +334,7 @@ class TestSeedModuleConstants:
 
     def test_default_user_settings(self) -> None:
         from src.db.seed import DEFAULT_USER_SETTINGS
+
         assert DEFAULT_USER_SETTINGS["preferred_language"] == "es"
         assert DEFAULT_USER_SETTINGS["current_level"] == "A1"
 
@@ -311,6 +351,7 @@ class TestGetSupabaseForUser:
         with patch("src.api.supabase_client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = False
             from src.api.supabase_client import get_supabase_for_user
+
             with pytest.raises(ValueError, match="not configured"):
                 get_supabase_for_user("some-access-token")
 
@@ -325,6 +366,7 @@ class TestGetSupabaseForUser:
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
             from src.api.supabase_client import get_supabase_for_user
+
             result = get_supabase_for_user("user-jwt-token")
 
         assert result is mock_client
@@ -341,6 +383,7 @@ class TestGetSupabaseForUser:
             mock_settings.return_value.SUPABASE_ANON_KEY = "my-anon-key"
 
             from src.api.supabase_client import get_supabase_for_user
+
             get_supabase_for_user("token-abc")
 
         mock_create.assert_called_once_with("https://myproject.supabase.co", "my-anon-key")
@@ -356,6 +399,7 @@ class TestEffectiveUser:
 
     def test_create_authenticated_effective_user(self) -> None:
         from src.api.auth import EffectiveUser
+
         user = EffectiveUser(id="user-123", is_guest=False, email="test@example.com")
         assert user.id == "user-123"
         assert user.is_guest is False
@@ -363,6 +407,7 @@ class TestEffectiveUser:
 
     def test_create_guest_effective_user(self) -> None:
         from src.api.auth import EffectiveUser
+
         user = EffectiveUser(id="session-abc", is_guest=True)
         assert user.id == "session-abc"
         assert user.is_guest is True
@@ -370,6 +415,7 @@ class TestEffectiveUser:
 
     def test_effective_user_is_frozen(self) -> None:
         from src.api.auth import EffectiveUser
+
         user = EffectiveUser(id="user-123", is_guest=False)
         with pytest.raises(AttributeError):
             user.id = "changed"  # type: ignore[misc]
@@ -381,6 +427,7 @@ class TestGetEffectiveUser:
     @pytest.mark.asyncio
     async def test_returns_authenticated_effective_user(self) -> None:
         from src.api.auth import AuthenticatedUser, EffectiveUser, get_effective_user
+
         request = MagicMock()
         auth_user = AuthenticatedUser(id="auth-user-id", email="auth@test.com")
         result = await get_effective_user(request, user=auth_user)
@@ -391,6 +438,7 @@ class TestGetEffectiveUser:
     @pytest.mark.asyncio
     async def test_returns_guest_effective_user_from_session_cookie(self) -> None:
         from src.api.auth import EffectiveUser, get_effective_user
+
         request = MagicMock()
         request.cookies.get.return_value = "guest-session-id-456"
         result = await get_effective_user(request, user=None)
@@ -401,6 +449,7 @@ class TestGetEffectiveUser:
     @pytest.mark.asyncio
     async def test_returns_none_when_no_identity(self) -> None:
         from src.api.auth import get_effective_user
+
         request = MagicMock()
         request.cookies.get.return_value = None
         result = await get_effective_user(request, user=None)
@@ -412,6 +461,7 @@ class TestGetClientForUser:
 
     def test_returns_admin_client_for_guest(self) -> None:
         from src.api.auth import EffectiveUser, get_client_for_user
+
         guest = EffectiveUser(id="session-abc", is_guest=True)
         mock_admin_client = MagicMock()
         with patch("src.api.auth.get_supabase_admin", return_value=mock_admin_client):
@@ -420,6 +470,7 @@ class TestGetClientForUser:
 
     def test_returns_anon_client_for_authenticated(self) -> None:
         from src.api.auth import EffectiveUser, get_client_for_user
+
         auth_user = EffectiveUser(id="user-123", is_guest=False)
         mock_anon_client = MagicMock()
         with patch("src.api.auth.get_supabase", return_value=mock_anon_client):
@@ -462,6 +513,7 @@ class TestGetPostgresCheckpointerSuccessPath:
             ) as mock_from_conn,
         ):
             from src.agent.checkpointer import get_postgres_checkpointer
+
             async with get_postgres_checkpointer() as checkpointer:
                 assert checkpointer is mock_checkpointer
             mock_from_conn.assert_called_once_with("postgresql://user:pass@localhost:5432/test")
@@ -494,6 +546,7 @@ class TestGetPostgresCheckpointerSuccessPath:
             ),
         ):
             from src.agent.checkpointer import get_checkpointer
+
             async with get_checkpointer() as checkpointer:
                 assert checkpointer is mock_checkpointer
 
@@ -516,5 +569,6 @@ class TestGetPostgresCheckpointerSuccessPath:
 
         with patch("src.agent.checkpointer.get_settings", return_value=mock_settings):
             from src.agent.checkpointer import get_checkpointer
+
             async with get_checkpointer() as checkpointer:
                 assert isinstance(checkpointer, MemorySaver)

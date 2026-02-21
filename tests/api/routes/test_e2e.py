@@ -198,8 +198,7 @@ def _create_templates(tmp_path: Path) -> Jinja2Templates:
     )
 
     (partials_dir / "lesson_step.html").write_text(
-        '<div class="step" data-step="{{ step_index }}">'
-        "{{ step.content }}</div>"
+        '<div class="step" data-step="{{ step_index }}">{{ step.content }}</div>'
     )
 
     (partials_dir / "lesson_exercise.html").write_text(
@@ -253,13 +252,11 @@ def _create_templates(tmp_path: Path) -> Jinja2Templates:
     )
 
     (partials_dir / "progress_vocab.html").write_text(
-        '<div class="vocab-list">'
-        "{% for v in vocabulary %}{{ v.word }}{% endfor %}</div>"
+        '<div class="vocab-list">{% for v in vocabulary %}{{ v.word }}{% endfor %}</div>'
     )
 
     (partials_dir / "stats_summary.html").write_text(
-        '<div class="stats">'
-        "Words: {{ total_words }} Sessions: {{ total_sessions }}</div>"
+        '<div class="stats">Words: {{ total_words }} Sessions: {{ total_sessions }}</div>'
     )
 
     # Chat templates
@@ -281,14 +278,10 @@ def _create_templates(tmp_path: Path) -> Jinja2Templates:
         "</div></body></html>"
     )
 
-    (partials_dir / "message_pair.html").write_text(
-        '<div class="bg-ai">{{ ai_response }}</div>'
-    )
+    (partials_dir / "message_pair.html").write_text('<div class="bg-ai">{{ ai_response }}</div>')
 
     # Review templates
-    (partials_dir / "review_empty.html").write_text(
-        '<div class="review-empty">{{ message }}</div>'
-    )
+    (partials_dir / "review_empty.html").write_text('<div class="review-empty">{{ message }}</div>')
 
     (partials_dir / "review_question.html").write_text(
         '<div class="review-question" data-word-id="{{ question.word_id }}">'
@@ -639,9 +632,7 @@ class TestLessonsUncoveredLines:
     ) -> None:
         """GET enhanced step for nonexistent lesson returns 404 (line 528-530)."""
         mock_lesson_service.get_lesson.return_value = None
-        response = await client.get(
-            "/lessons/nonexistent/step/0/enhanced?level=A1&language=es"
-        )
+        response = await client.get("/lessons/nonexistent/step/0/enhanced?level=A1&language=es")
         assert response.status_code == 404
 
     async def test_enhanced_lesson_step_out_of_range(
@@ -649,9 +640,7 @@ class TestLessonsUncoveredLines:
         client: AsyncClient,
     ) -> None:
         """GET enhanced step with invalid index returns 404 (lines 533-537)."""
-        response = await client.get(
-            "/lessons/greetings-001/step/99/enhanced?level=A1&language=es"
-        )
+        response = await client.get("/lessons/greetings-001/step/99/enhanced?level=A1&language=es")
         assert response.status_code == 404
 
     # --- Lines 609-634: Enhanced exercise submission ---
@@ -1560,9 +1549,11 @@ class TestChatUncoveredLines:
         app = FastAPI()
 
         if user:
+
             async def get_user_optional():
                 return user
         else:
+
             async def get_user_optional():
                 return None
 
@@ -1661,9 +1652,7 @@ class TestChatUncoveredLines:
         tmp_path: Path,
     ) -> None:
         """Chat page skips warmup when no words are due (line 115)."""
-        app = self._create_chat_app(
-            mock_user, mock_review_service_no_due, tmp_path
-        )
+        app = self._create_chat_app(mock_user, mock_review_service_no_due, tmp_path)
 
         with patch(
             "src.api.routes.chat.ReviewService",
@@ -1684,9 +1673,7 @@ class TestChatUncoveredLines:
         tmp_path: Path,
     ) -> None:
         """Chat page continues when ReviewService raises (line 118-119, covers 148)."""
-        app = self._create_chat_app(
-            mock_user, mock_review_service_with_error, tmp_path
-        )
+        app = self._create_chat_app(mock_user, mock_review_service_with_error, tmp_path)
 
         with patch(
             "src.api.routes.chat.ReviewService",
@@ -1787,9 +1774,7 @@ class TestChatUncoveredLines:
             mock_cp.return_value = mock_ctx
 
             transport = ASGITransport(app=app)
-            async with AsyncClient(
-                transport=transport, base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=transport, base_url="http://test") as c:
                 response = await c.post(
                     "/chat",
                     data={"message": "hola", "level": "A1", "language": "xx"},

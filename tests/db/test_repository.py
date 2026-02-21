@@ -457,23 +457,37 @@ class TestVocabularyRepositorySR:
         )
         mock_query.execute.return_value = MagicMock(data=[updated_row])
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "easiness_factor": 2.1, "interval_days": 6, "repetition_count": 3,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "easiness_factor": 2.1,
+                "interval_days": 6,
+                "repetition_count": 3,
+            },
+        )
         assert result is not None
         assert result.easiness_factor == 2.1
         assert result.interval_days == 6
 
-    def test_update_review_schedule_with_datetime_fields(self, mock_get_supabase: MagicMock) -> None:
+    def test_update_review_schedule_with_datetime_fields(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         updated_row = _make_vocab_row(
-            "hola", "hello", next_review_at=FIXED_NOW_ISO, last_reviewed_at=FIXED_NOW_ISO,
+            "hola",
+            "hello",
+            next_review_at=FIXED_NOW_ISO,
+            last_reviewed_at=FIXED_NOW_ISO,
         )
         mock_query.execute.return_value = MagicMock(data=[updated_row])
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "next_review_at": FIXED_NOW, "last_reviewed_at": FIXED_NOW,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "next_review_at": FIXED_NOW,
+                "last_reviewed_at": FIXED_NOW,
+            },
+        )
         assert result is not None
         call_args = mock_query.update.call_args[0][0]
         assert call_args["next_review_at"] == FIXED_NOW_ISO
@@ -486,14 +500,20 @@ class TestVocabularyRepositorySR:
             MagicMock(data=[updated_row]),
         ]
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "easiness_factor": 2.5, "increment_seen": True,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "easiness_factor": 2.5,
+                "increment_seen": True,
+            },
+        )
         assert result is not None
         call_args = mock_query.update.call_args[0][0]
         assert call_args["times_seen"] == 6
 
-    def test_update_review_schedule_with_increment_correct(self, mock_get_supabase: MagicMock) -> None:
+    def test_update_review_schedule_with_increment_correct(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         updated_row = _make_vocab_row("hola", "hello", times_correct=3)
         mock_query.execute.side_effect = [
@@ -501,14 +521,20 @@ class TestVocabularyRepositorySR:
             MagicMock(data=[updated_row]),
         ]
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "easiness_factor": 2.5, "increment_correct": True,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "easiness_factor": 2.5,
+                "increment_correct": True,
+            },
+        )
         assert result is not None
         call_args = mock_query.update.call_args[0][0]
         assert call_args["times_correct"] == 3
 
-    def test_update_review_schedule_with_both_increments(self, mock_get_supabase: MagicMock) -> None:
+    def test_update_review_schedule_with_both_increments(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         updated_row = _make_vocab_row("hola", "hello", times_seen=6, times_correct=3)
         mock_query.execute.side_effect = [
@@ -516,9 +542,13 @@ class TestVocabularyRepositorySR:
             MagicMock(data=[updated_row]),
         ]
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "increment_seen": True, "increment_correct": True,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "increment_seen": True,
+                "increment_correct": True,
+            },
+        )
         assert result is not None
         call_args = mock_query.update.call_args[0][0]
         assert call_args["times_seen"] == 6
@@ -532,9 +562,13 @@ class TestVocabularyRepositorySR:
             MagicMock(data=[updated_row]),
         ]
         repo = VocabularyRepository("user-123")
-        result = repo.update_review_schedule(1, {
-            "easiness_factor": 2.0, "increment_seen": True,
-        })
+        result = repo.update_review_schedule(
+            1,
+            {
+                "easiness_factor": 2.0,
+                "increment_seen": True,
+            },
+        )
         assert result is not None
         call_args = mock_query.update.call_args[0][0]
         assert "times_seen" not in call_args
@@ -544,14 +578,18 @@ class TestVocabularyRepositorySR:
         result = repo.update_review_schedule(1, {})
         assert result is None
 
-    def test_update_review_schedule_only_increment_not_found(self, mock_get_supabase: MagicMock) -> None:
+    def test_update_review_schedule_only_increment_not_found(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(data=[])
         repo = VocabularyRepository("user-123")
         result = repo.update_review_schedule(1, {"increment_seen": True})
         assert result is None
 
-    def test_update_review_schedule_returns_none_on_empty(self, mock_get_supabase: MagicMock) -> None:
+    def test_update_review_schedule_returns_none_on_empty(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(data=[])
         repo = VocabularyRepository("user-123")
@@ -560,20 +598,31 @@ class TestVocabularyRepositorySR:
 
     def test_build_review_update_data_direct_fields(self, mock_get_supabase: MagicMock) -> None:
         repo = VocabularyRepository("user-123")
-        result = repo._build_review_update_data({
-            "easiness_factor": 1.8, "interval_days": 10, "repetition_count": 4,
-        })
+        result = repo._build_review_update_data(
+            {
+                "easiness_factor": 1.8,
+                "interval_days": 10,
+                "repetition_count": 4,
+            }
+        )
         assert result == {"easiness_factor": 1.8, "interval_days": 10, "repetition_count": 4}
 
-    def test_build_review_update_data_datetime_conversion(self, mock_get_supabase: MagicMock) -> None:
+    def test_build_review_update_data_datetime_conversion(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         repo = VocabularyRepository("user-123")
-        result = repo._build_review_update_data({
-            "next_review_at": FIXED_NOW, "last_reviewed_at": FIXED_NOW,
-        })
+        result = repo._build_review_update_data(
+            {
+                "next_review_at": FIXED_NOW,
+                "last_reviewed_at": FIXED_NOW,
+            }
+        )
         assert result["next_review_at"] == FIXED_NOW_ISO
         assert result["last_reviewed_at"] == FIXED_NOW_ISO
 
-    def test_build_review_update_data_string_passthrough(self, mock_get_supabase: MagicMock) -> None:
+    def test_build_review_update_data_string_passthrough(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
         repo = VocabularyRepository("user-123")
         result = repo._build_review_update_data({"next_review_at": FIXED_NOW_ISO})
         assert result["next_review_at"] == FIXED_NOW_ISO
@@ -590,9 +639,7 @@ class TestVocabularyRepositorySR:
 
     def test_apply_increment_flags_seen(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        mock_query.execute.return_value = MagicMock(
-            data=[{"times_seen": 10, "times_correct": 5}]
-        )
+        mock_query.execute.return_value = MagicMock(data=[{"times_seen": 10, "times_correct": 5}])
         repo = VocabularyRepository("user-123")
         update_data: dict = {}
         repo._apply_increment_flags(1, {"increment_seen": True}, update_data)
@@ -600,9 +647,7 @@ class TestVocabularyRepositorySR:
 
     def test_apply_increment_flags_correct(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        mock_query.execute.return_value = MagicMock(
-            data=[{"times_seen": 10, "times_correct": 5}]
-        )
+        mock_query.execute.return_value = MagicMock(data=[{"times_seen": 10, "times_correct": 5}])
         repo = VocabularyRepository("user-123")
         update_data: dict = {}
         repo._apply_increment_flags(1, {"increment_correct": True}, update_data)
@@ -610,9 +655,7 @@ class TestVocabularyRepositorySR:
 
     def test_apply_increment_flags_both(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        mock_query.execute.return_value = MagicMock(
-            data=[{"times_seen": 10, "times_correct": 5}]
-        )
+        mock_query.execute.return_value = MagicMock(data=[{"times_seen": 10, "times_correct": 5}])
         repo = VocabularyRepository("user-123")
         update_data: dict = {}
         repo._apply_increment_flags(
@@ -699,9 +742,14 @@ class TestLearningSessionRepository:
     def test_create_returns_learning_session(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         session_row = {
-            "id": 42, "user_id": "user-123", "language": "es", "level": "A1",
-            "started_at": FIXED_NOW_ISO, "ended_at": None,
-            "messages_count": 0, "words_learned": 0,
+            "id": 42,
+            "user_id": "user-123",
+            "language": "es",
+            "level": "A1",
+            "started_at": FIXED_NOW_ISO,
+            "ended_at": None,
+            "messages_count": 0,
+            "words_learned": 0,
         }
         mock_query.execute.return_value = MagicMock(data=[session_row])
         repo = LearningSessionRepository("user-123")
@@ -714,9 +762,14 @@ class TestLearningSessionRepository:
     def test_get_by_id_found(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         session_row = {
-            "id": 42, "user_id": "user-123", "language": "es", "level": "A1",
-            "started_at": FIXED_NOW_ISO, "ended_at": None,
-            "messages_count": 5, "words_learned": 3,
+            "id": 42,
+            "user_id": "user-123",
+            "language": "es",
+            "level": "A1",
+            "started_at": FIXED_NOW_ISO,
+            "ended_at": None,
+            "messages_count": 5,
+            "words_learned": 3,
         }
         mock_query.execute.return_value = MagicMock(data=[session_row])
         repo = LearningSessionRepository("user-123")
@@ -746,12 +799,26 @@ class TestLearningSessionRepository:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[
-                {"id": 1, "user_id": "user-123", "language": "es", "level": "A1",
-                 "started_at": FIXED_NOW_ISO, "ended_at": FIXED_NOW_ISO,
-                 "messages_count": 10, "words_learned": 5},
-                {"id": 2, "user_id": "user-123", "language": "de", "level": "A2",
-                 "started_at": FIXED_NOW_ISO, "ended_at": None,
-                 "messages_count": 3, "words_learned": 1},
+                {
+                    "id": 1,
+                    "user_id": "user-123",
+                    "language": "es",
+                    "level": "A1",
+                    "started_at": FIXED_NOW_ISO,
+                    "ended_at": FIXED_NOW_ISO,
+                    "messages_count": 10,
+                    "words_learned": 5,
+                },
+                {
+                    "id": 2,
+                    "user_id": "user-123",
+                    "language": "de",
+                    "level": "A2",
+                    "started_at": FIXED_NOW_ISO,
+                    "ended_at": None,
+                    "messages_count": 3,
+                    "words_learned": 1,
+                },
             ]
         )
         repo = LearningSessionRepository("user-123")
@@ -769,9 +836,14 @@ class TestLearningSessionRepository:
     def test_get_active_found(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         session_row = {
-            "id": 42, "user_id": "user-123", "language": "es", "level": "A1",
-            "started_at": FIXED_NOW_ISO, "ended_at": None,
-            "messages_count": 3, "words_learned": 1,
+            "id": 42,
+            "user_id": "user-123",
+            "language": "es",
+            "level": "A1",
+            "started_at": FIXED_NOW_ISO,
+            "ended_at": None,
+            "messages_count": 3,
+            "words_learned": 1,
         }
         mock_query.execute.return_value = MagicMock(data=[session_row])
         repo = LearningSessionRepository("user-123")
@@ -807,8 +879,10 @@ class TestLessonProgressRepository:
     def test_get_by_lesson_id_found(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         progress_row = {
-            "user_id": "user-123", "lesson_id": "lesson-1",
-            "completed_at": FIXED_NOW_ISO, "score": 85,
+            "user_id": "user-123",
+            "lesson_id": "lesson-1",
+            "completed_at": FIXED_NOW_ISO,
+            "score": 85,
         }
         mock_query.execute.return_value = MagicMock(data=[progress_row])
         repo = LessonProgressRepository("user-123")
@@ -827,8 +901,10 @@ class TestLessonProgressRepository:
     def test_complete_lesson_new(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         new_row = {
-            "user_id": "user-123", "lesson_id": "lesson-1",
-            "completed_at": FIXED_NOW_ISO, "score": 90,
+            "user_id": "user-123",
+            "lesson_id": "lesson-1",
+            "completed_at": FIXED_NOW_ISO,
+            "score": 90,
         }
         mock_query.execute.side_effect = [
             MagicMock(data=[]),  # get_by_lesson_id finds nothing
@@ -842,12 +918,16 @@ class TestLessonProgressRepository:
     def test_complete_lesson_re_complete(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         existing_row = {
-            "user_id": "user-123", "lesson_id": "lesson-1",
-            "completed_at": "2025-06-10T12:00:00+00:00", "score": 70,
+            "user_id": "user-123",
+            "lesson_id": "lesson-1",
+            "completed_at": "2025-06-10T12:00:00+00:00",
+            "score": 70,
         }
         updated_row = {
-            "user_id": "user-123", "lesson_id": "lesson-1",
-            "completed_at": FIXED_NOW_ISO, "score": 95,
+            "user_id": "user-123",
+            "lesson_id": "lesson-1",
+            "completed_at": FIXED_NOW_ISO,
+            "score": 95,
         }
         mock_query.execute.side_effect = [
             MagicMock(data=[existing_row]),  # get_by_lesson_id finds existing
@@ -860,8 +940,10 @@ class TestLessonProgressRepository:
     def test_complete_lesson_without_score(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         new_row = {
-            "user_id": "user-123", "lesson_id": "lesson-1",
-            "completed_at": FIXED_NOW_ISO, "score": None,
+            "user_id": "user-123",
+            "lesson_id": "lesson-1",
+            "completed_at": FIXED_NOW_ISO,
+            "score": None,
         }
         mock_query.execute.side_effect = [
             MagicMock(data=[]),
@@ -875,10 +957,18 @@ class TestLessonProgressRepository:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[
-                {"user_id": "user-123", "lesson_id": "lesson-1",
-                 "completed_at": FIXED_NOW_ISO, "score": 85},
-                {"user_id": "user-123", "lesson_id": "lesson-2",
-                 "completed_at": FIXED_NOW_ISO, "score": 92},
+                {
+                    "user_id": "user-123",
+                    "lesson_id": "lesson-1",
+                    "completed_at": FIXED_NOW_ISO,
+                    "score": 85,
+                },
+                {
+                    "user_id": "user-123",
+                    "lesson_id": "lesson-2",
+                    "completed_at": FIXED_NOW_ISO,
+                    "score": 92,
+                },
             ]
         )
         repo = LessonProgressRepository("user-123")
@@ -897,8 +987,12 @@ class TestLessonProgressRepository:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[
-                {"user_id": "user-123", "lesson_id": "lesson-1",
-                 "completed_at": FIXED_NOW_ISO, "score": 85},
+                {
+                    "user_id": "user-123",
+                    "lesson_id": "lesson-1",
+                    "completed_at": FIXED_NOW_ISO,
+                    "score": 85,
+                },
             ]
         )
         repo = LessonProgressRepository("user-123")

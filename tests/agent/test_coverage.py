@@ -198,18 +198,14 @@ class TestGetTopicalReviewWords:
         """Should return empty list when user_id is None."""
         from src.agent.nodes.respond import _get_topical_review_words
 
-        result = await _get_topical_review_words(
-            user_id=None, language="es", messages=[], limit=5
-        )
+        result = await _get_topical_review_words(user_id=None, language="es", messages=[], limit=5)
         assert result == []
 
     async def test_returns_empty_for_empty_user_id(self) -> None:
         """Should return empty list when user_id is empty string."""
         from src.agent.nodes.respond import _get_topical_review_words
 
-        result = await _get_topical_review_words(
-            user_id="", language="es", messages=[], limit=5
-        )
+        result = await _get_topical_review_words(user_id="", language="es", messages=[], limit=5)
         assert result == []
 
     async def test_returns_review_words_on_success(self) -> None:
@@ -374,9 +370,7 @@ class TestRespondNodeReviewWords:
             assert "review_words_offered" in result
             assert result["review_words_offered"] == review_words
 
-    async def test_respond_node_without_user_id_skips_review(
-        self, mock_settings: Settings
-    ) -> None:
+    async def test_respond_node_without_user_id_skips_review(self, mock_settings: Settings) -> None:
         """respond_node should not fetch review words when no user_id."""
         from src.agent.nodes.respond import respond_node
 
@@ -1279,9 +1273,7 @@ class TestEnhanceStepNode:
         """Should call LLM and return enhanced content with intro."""
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
-            return_value=AIMessage(
-                content="INTRO: Welcome to greetings!\n\nEXTRA: More details."
-            )
+            return_value=AIMessage(content="INTRO: Welcome to greetings!\n\nEXTRA: More details.")
         )
 
         with (
@@ -1382,9 +1374,7 @@ class TestValidateExerciseNode:
         assert result["exercise_feedback"] is None
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
-    async def test_returns_false_when_lesson_not_found(
-        self, mock_get_service: MagicMock
-    ) -> None:
+    async def test_returns_false_when_lesson_not_found(self, mock_get_service: MagicMock) -> None:
         """Should return false with message when lesson not found."""
         mock_service = MagicMock()
         mock_service.get_lesson.return_value = None
@@ -1406,9 +1396,7 @@ class TestValidateExerciseNode:
         assert "lesson not found" in result["exercise_feedback"]
 
     @patch("src.agent.nodes.lesson.get_lesson_service")
-    async def test_returns_false_when_exercise_not_found(
-        self, mock_get_service: MagicMock
-    ) -> None:
+    async def test_returns_false_when_exercise_not_found(self, mock_get_service: MagicMock) -> None:
         """Should return false with message when exercise not found."""
         mock_lesson = MagicMock()
         mock_lesson.content.get_exercise_by_id.return_value = None
