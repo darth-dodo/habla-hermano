@@ -19,7 +19,6 @@ from src.agent.state import ConversationState, ReviewWordOffered
 logger = logging.getLogger(__name__)
 
 
-
 def _extract_keywords_from_messages(
     messages: list[Any],
     num_recent: int = 4,

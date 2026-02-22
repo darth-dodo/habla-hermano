@@ -196,10 +196,7 @@ class VocabularyRepository:
         existing = self.get_by_word_and_language(word, language)
         if existing is None:
             # Should not happen, but guard against unexpected state
-            msg = (
-                f"Vocabulary entry not found after conflict: "
-                f"word={word!r}, language={language!r}"
-            )
+            msg = f"Vocabulary entry not found after conflict: word={word!r}, language={language!r}"
             raise RuntimeError(msg)
 
         response = (

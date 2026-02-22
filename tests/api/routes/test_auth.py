@@ -318,9 +318,7 @@ class TestSignupEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock invalid email error
-            mock_client.auth.sign_up.side_effect = AuthApiError(
-                "Invalid email address", 422, None
-            )
+            mock_client.auth.sign_up.side_effect = AuthApiError("Invalid email address", 422, None)
 
             response = client.post(
                 "/auth/signup",

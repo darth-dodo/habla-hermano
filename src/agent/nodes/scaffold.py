@@ -40,7 +40,6 @@ Return ONLY valid JSON:
 """
 
 
-
 def _get_language_name(code: str) -> str:
     """Convert language code to full name."""
     names = {

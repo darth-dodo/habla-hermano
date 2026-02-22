@@ -17,7 +17,6 @@ from typing import Any
 
 from langchain_anthropic import ChatAnthropic
 
-
 # Profile configurations: (temperature, max_tokens)
 # A None temperature means "use the value from application settings".
 _PROFILES: dict[str, tuple[float | None, int]] = {
@@ -51,14 +50,13 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
     """
     if profile not in _PROFILES:
         raise ValueError(
-            f"Unknown LLM profile '{profile}'. "
-            f"Valid profiles: {', '.join(sorted(_PROFILES))}"
+            f"Unknown LLM profile '{profile}'. Valid profiles: {', '.join(sorted(_PROFILES))}"
         )
 
     temperature_override, max_tokens = _PROFILES[profile]
 
     # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
+    from src.api.config import get_settings  # noqa: PLC0415
 
     settings = get_settings()
 

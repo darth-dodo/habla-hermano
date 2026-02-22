@@ -23,7 +23,6 @@ from src.lessons.models import (
 from src.lessons.service import get_lesson_service
 
 
-
 def _extract_intro(content: str) -> str:
     """Extract the intro portion from enhanced content.
 

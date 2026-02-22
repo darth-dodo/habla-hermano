@@ -4,7 +4,6 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
@@ -731,12 +730,9 @@ class TestNewConversationEndpoint:
 
             assert response.status_code == 200
             assert response.headers.get("HX-Redirect") == "/"
-            set_cookie_headers = [
-                h for h in response.headers.raw if h[0] == b"set-cookie"
-            ]
+            set_cookie_headers = [h for h in response.headers.raw if h[0] == b"set-cookie"]
             session_deleted = any(
-                b"session_id" in h[1] and b"Max-Age=0" in h[1]
-                for h in set_cookie_headers
+                b"session_id" in h[1] and b"Max-Age=0" in h[1] for h in set_cookie_headers
             )
             assert session_deleted
 

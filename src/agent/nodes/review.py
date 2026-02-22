@@ -16,8 +16,6 @@ from src.agent.llm import get_llm
 from src.agent.prompts import LANGUAGE_ADAPTER
 from src.agent.review_state import ReviewState
 
-
-
 # Question generation prompts by type
 QUESTION_PROMPTS = {
     "translate": """You are Hermano, a friendly language buddy helping someone review vocabulary.

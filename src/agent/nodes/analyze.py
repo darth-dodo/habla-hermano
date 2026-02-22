@@ -86,7 +86,6 @@ If there are no tricky pronunciations, return an empty array for pronunciation_t
 Keep explanations brief and encouraging. Maximum 3 grammar errors, 5 vocabulary words, and 2 pronunciation tips."""
 
 
-
 def _get_language_name(code: str) -> str:
     """Convert language code to full name."""
     names = {
