@@ -129,10 +129,13 @@ async def chat_page(
 def _resolve_chat_identity(
     user: AuthenticatedUser | None,
     session_id: str | None,
+    conversation_version: str | None = None,
 ) -> tuple[str, str | None, str | None]:
     """Resolve thread_id and user_id for chat.
 
     For authenticated users, returns their user ID for both thread and user tracking.
+    If a conversation_version cookie is present, it is incorporated into the thread_id
+    so that starting a new conversation effectively abandons old checkpoints.
     For guests, returns session_id for thread (checkpointing) but None for user_id
     (no progress tracking).
 
@@ -143,7 +146,12 @@ def _resolve_chat_identity(
         - new_session_id: Set only for first-time anonymous users (for cookie)
     """
     if user:
-        return get_user_thread_id(user.id), user.id, None
+        base_thread_id = get_user_thread_id(user.id)
+        if conversation_version:
+            thread_id = f"{base_thread_id}:{conversation_version}"
+        else:
+            thread_id = base_thread_id
+        return thread_id, user.id, None
     if session_id:
         # Guest with existing session - thread_id for chat, but NO user_id for progress
         return session_id, None, None
@@ -163,6 +171,7 @@ async def send_message(
     language: Annotated[str, Form()] = "es",
     session_id: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+    conversation_version: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Process a chat message and return the response as partial HTML.
 
@@ -212,7 +221,9 @@ async def send_message(
         )
 
     # Resolve identity for thread_id and effective user_id
-    thread_id, effective_user_id, new_session_id = _resolve_chat_identity(user, session_id)
+    thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
+        user, session_id, conversation_version
+    )
 
     # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
     # Only available for authenticated users with a valid access token
@@ -295,12 +306,9 @@ async def new_conversation(
     """Start a new conversation by clearing conversation history.
 
     Supports both authenticated and anonymous users:
-    - Authenticated: Would clear the user's checkpoint in the database
-    - Anonymous: Clears the session cookie, generating a new thread on next message
-
-    Note: The actual checkpoint clearing would require additional implementation
-    in the checkpointer. For now, this redirects to the chat page. In a future
-    enhancement, we could add a delete_thread() method to the checkpointer.
+    - Authenticated: Sets a new conversation_version cookie so the next message
+      uses a fresh thread_id, effectively abandoning old checkpoints.
+    - Anonymous: Clears the session cookie, generating a new thread on next message.
 
     Args:
         response: FastAPI response object.
@@ -309,10 +317,18 @@ async def new_conversation(
     Returns:
         Response: Empty response with HX-Redirect header to reload page.
     """
-    # TODO: Implement checkpoint deletion for user's thread (Phase 8)
-
-    # For anonymous users, delete the session cookie to start fresh
-    if not user:
+    if user:
+        # Rotate to a new conversation by setting a version cookie.
+        # The thread_id will become "user:{id}:{version}", abandoning old checkpoints.
+        response.set_cookie(
+            key="conversation_version",
+            value=str(uuid.uuid4()),
+            httponly=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 365,  # 1 year
+        )
+    else:
+        # For anonymous users, delete the session cookie to start fresh
         response.delete_cookie(key="session_id")
 
     response.headers["HX-Redirect"] = "/"

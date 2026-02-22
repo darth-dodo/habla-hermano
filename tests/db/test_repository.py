@@ -443,6 +443,7 @@ def _chainable_query(mock_client: MagicMock) -> MagicMock:
     mock_query.is_.return_value = mock_query
     mock_query.lte.return_value = mock_query
     mock_query.gt.return_value = mock_query
+    mock_query.or_.return_value = mock_query
     mock_query.order.return_value = mock_query
     mock_query.limit.return_value = mock_query
     return mock_query
@@ -520,19 +521,20 @@ class TestVocabularyRepositorySR:
         mock_query.execute.return_value = MagicMock(
             data=[
                 _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
-                _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
             ]
         )
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["gato"])
         assert len(result) == 1
         assert result[0].word == "gato"
+        mock_query.or_.assert_called_once_with(
+            "word.ilike.%gato%,translation.ilike.%gato%"
+        )
 
     def test_get_due_by_keywords_matches_translation(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[
-                _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
                 _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
             ]
         )
@@ -540,8 +542,12 @@ class TestVocabularyRepositorySR:
         result = repo.get_due_by_keywords("es", ["dog"])
         assert len(result) == 1
         assert result[0].word == "perro"
+        mock_query.or_.assert_called_once_with(
+            "word.ilike.%dog%,translation.ilike.%dog%"
+        )
 
     def test_get_due_by_keywords_case_insensitive(self, mock_get_supabase: MagicMock) -> None:
+        """ilike is case-insensitive in PostgreSQL, so the filter uses keywords as-is."""
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[_make_vocab_row("Gato", "Cat", word_id=1, next_review_at=FIXED_NOW_ISO)]
@@ -549,12 +555,13 @@ class TestVocabularyRepositorySR:
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["GATO"])
         assert len(result) == 1
+        mock_query.or_.assert_called_once_with(
+            "word.ilike.%GATO%,translation.ilike.%GATO%"
+        )
 
     def test_get_due_by_keywords_no_matches(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        mock_query.execute.return_value = MagicMock(
-            data=[_make_vocab_row("hola", "hello", word_id=1, next_review_at=FIXED_NOW_ISO)]
-        )
+        mock_query.execute.return_value = MagicMock(data=[])
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["zzzzz"])
         assert result == []
@@ -565,12 +572,28 @@ class TestVocabularyRepositorySR:
             data=[
                 _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
                 _make_vocab_row("gata", "female cat", word_id=2, next_review_at=FIXED_NOW_ISO),
-                _make_vocab_row("gatito", "kitten", word_id=3, next_review_at=FIXED_NOW_ISO),
             ]
         )
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["gat"], limit=2)
         assert len(result) == 2
+        mock_query.limit.assert_called_with(2)
+
+    def test_get_due_by_keywords_multiple_keywords(self, mock_get_supabase: MagicMock) -> None:
+        mock_query = _chainable_query(mock_get_supabase)
+        mock_query.execute.return_value = MagicMock(
+            data=[
+                _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
+                _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
+            ]
+        )
+        repo = VocabularyRepository("user-123")
+        result = repo.get_due_by_keywords("es", ["gato", "perro"])
+        assert len(result) == 2
+        mock_query.or_.assert_called_once_with(
+            "word.ilike.%gato%,translation.ilike.%gato%,"
+            "word.ilike.%perro%,translation.ilike.%perro%"
+        )
 
     def test_update_review_schedule_with_direct_fields(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)

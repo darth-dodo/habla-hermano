@@ -5,14 +5,10 @@ Uses the anon key for regular operations and service key for admin tasks.
 """
 
 from functools import lru_cache
-from typing import Any
 
-from supabase import create_client
+from supabase import Client as SupabaseClient, create_client
 
 from src.api.config import get_settings
-
-# Type alias for Supabase client
-SupabaseClient = Any
 
 
 @lru_cache

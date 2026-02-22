@@ -310,7 +310,8 @@ class VocabularyRepository:
         """Get due words where the word or translation contains any of the keywords.
 
         Used for intelligent chat weaving - finding review words that match
-        the current conversation topic.
+        the current conversation topic. Keyword matching is performed server-side
+        using Supabase's .or_() filter with ilike conditions.
 
         Args:
             language: Language code (es, de).
@@ -323,27 +324,28 @@ class VocabularyRepository:
         if not keywords:
             return []
 
-        # Get all due words first (filtering by keywords requires client-side processing
-        # since Supabase doesn't support OR across multiple ilike conditions easily)
-        all_due = self.get_due_for_review(language)
+        # Build OR filter for keyword matching across word and translation columns
+        or_conditions = []
+        for kw in keywords:
+            escaped = kw.replace("%", "\\%")
+            or_conditions.append(f"word.ilike.%{escaped}%")
+            or_conditions.append(f"translation.ilike.%{escaped}%")
 
-        # Filter by keywords (case-insensitive match)
-        keywords_lower = [kw.lower() for kw in keywords]
-        matching = []
+        or_filter = ",".join(or_conditions)
 
-        for vocab in all_due:
-            word_lower = vocab.word.lower()
-            translation_lower = vocab.translation.lower()
-
-            for keyword in keywords_lower:
-                if keyword in word_lower or keyword in translation_lower:
-                    matching.append(vocab)
-                    break  # Avoid duplicates if multiple keywords match
-
-            if len(matching) >= limit:
-                break
-
-        return matching
+        response = (
+            self._client.table("vocabulary")
+            .select("*")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .lte("next_review_at", datetime.now(UTC).isoformat())
+            .or_(or_filter)
+            .order("next_review_at", desc=False)
+            .limit(limit)
+            .execute()
+        )
+        return [Vocabulary(**item) for item in response.data]
 
     def update_review_schedule(self, vocab_id: int, updates: dict[str, Any]) -> Vocabulary | None:
         """Update SM-2 spaced repetition fields for a vocabulary entry.

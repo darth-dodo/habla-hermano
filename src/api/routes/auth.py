@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from supabase import Client, create_client
+from supabase import AuthApiError, Client, create_client
 
 from src.api.config import get_settings
 from src.api.dependencies import SettingsDep, TemplatesDep
@@ -217,7 +217,7 @@ async def signup(
         response.headers["HX-Redirect"] = "/"
         return response
 
-    except Exception as e:
+    except AuthApiError as e:
         logger.exception("Signup error")
         error_message = str(e)
 
@@ -293,7 +293,7 @@ async def login(
         response.headers["HX-Redirect"] = "/"
         return response
 
-    except Exception as e:
+    except AuthApiError as e:
         logger.exception("Login error")
         error_message = str(e)
 

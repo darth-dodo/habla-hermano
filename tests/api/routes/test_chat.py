@@ -4,9 +4,13 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
+
+from src.api.auth import AuthenticatedUser
+from src.api.routes.chat import _resolve_chat_identity
 
 
 class TestChatPageEndpoint:
@@ -613,3 +617,142 @@ class TestDifferentAgentResponses:
             with TestClient(app) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
+
+
+class TestResolveChatIdentity:
+    """Tests for _resolve_chat_identity with conversation_version support."""
+
+    def test_authenticated_user_without_version(self) -> None:
+        """Authenticated user without conversation_version gets base thread_id."""
+        user = AuthenticatedUser(id="user-abc", email="a@b.com")
+        thread_id, user_id, new_session = _resolve_chat_identity(user, None)
+
+        assert thread_id == "user:user-abc"
+        assert user_id == "user-abc"
+        assert new_session is None
+
+    def test_authenticated_user_with_version(self) -> None:
+        """Authenticated user with conversation_version gets versioned thread_id."""
+        user = AuthenticatedUser(id="user-abc", email="a@b.com")
+        version = "some-uuid-v4"
+        thread_id, user_id, new_session = _resolve_chat_identity(
+            user, None, conversation_version=version
+        )
+
+        assert thread_id == f"user:user-abc:{version}"
+        assert user_id == "user-abc"
+        assert new_session is None
+
+    def test_authenticated_user_different_versions_produce_different_threads(self) -> None:
+        """Different conversation versions produce different thread_ids."""
+        user = AuthenticatedUser(id="user-abc", email="a@b.com")
+        thread_v1, _, _ = _resolve_chat_identity(user, None, conversation_version="v1")
+        thread_v2, _, _ = _resolve_chat_identity(user, None, conversation_version="v2")
+
+        assert thread_v1 != thread_v2
+        assert thread_v1 == "user:user-abc:v1"
+        assert thread_v2 == "user:user-abc:v2"
+
+    def test_authenticated_user_empty_string_version_treated_as_no_version(self) -> None:
+        """Empty string conversation_version falls back to base thread_id."""
+        user = AuthenticatedUser(id="user-abc", email="a@b.com")
+        thread_id, _, _ = _resolve_chat_identity(user, None, conversation_version="")
+
+        assert thread_id == "user:user-abc"
+
+    def test_guest_user_ignores_conversation_version(self) -> None:
+        """Guest user with existing session ignores conversation_version."""
+        thread_id, user_id, new_session = _resolve_chat_identity(
+            None, "session-123", conversation_version="some-version"
+        )
+
+        assert thread_id == "session-123"
+        assert user_id is None
+        assert new_session is None
+
+    def test_first_time_guest_ignores_conversation_version(self) -> None:
+        """First-time guest ignores conversation_version and generates session."""
+        thread_id, user_id, new_session = _resolve_chat_identity(
+            None, None, conversation_version="some-version"
+        )
+
+        assert thread_id is not None
+        assert user_id is None
+        assert new_session is not None
+        assert thread_id == new_session
+
+
+class TestNewConversationEndpoint:
+    """Tests for POST /new - New conversation creation."""
+
+    def test_new_conversation_authenticated_sets_version_cookie(
+        self, test_client: TestClient
+    ) -> None:
+        """POST /new for authenticated user should set conversation_version cookie."""
+        response = test_client.post("/new", follow_redirects=False)
+
+        assert response.status_code == 200
+        assert response.headers.get("HX-Redirect") == "/"
+
+        cookies = response.cookies
+        assert "conversation_version" in cookies
+        version_value = cookies["conversation_version"]
+        assert len(version_value) == 36
+
+    def test_new_conversation_authenticated_generates_unique_versions(
+        self, test_client: TestClient
+    ) -> None:
+        """Each POST /new should generate a unique conversation_version."""
+        response1 = test_client.post("/new", follow_redirects=False)
+        response2 = test_client.post("/new", follow_redirects=False)
+
+        version1 = response1.cookies.get("conversation_version")
+        version2 = response2.cookies.get("conversation_version")
+
+        assert version1 is not None
+        assert version2 is not None
+        assert version1 != version2
+
+    def test_new_conversation_anonymous_deletes_session_cookie(
+        self,
+        app_with_mocked_graph: Any,
+    ) -> None:
+        """POST /new for anonymous user should delete session_id cookie."""
+        from src.api.auth import get_current_user_optional
+
+        async def mock_no_user():
+            return None
+
+        app_with_mocked_graph.dependency_overrides[get_current_user_optional] = mock_no_user
+
+        with TestClient(app_with_mocked_graph) as client:
+            client.cookies.set("session_id", "old-session-id")
+            response = client.post("/new", follow_redirects=False)
+
+            assert response.status_code == 200
+            assert response.headers.get("HX-Redirect") == "/"
+            set_cookie_headers = [
+                h for h in response.headers.raw if h[0] == b"set-cookie"
+            ]
+            session_deleted = any(
+                b"session_id" in h[1] and b"Max-Age=0" in h[1]
+                for h in set_cookie_headers
+            )
+            assert session_deleted
+
+    def test_new_conversation_anonymous_does_not_set_version_cookie(
+        self,
+        app_with_mocked_graph: Any,
+    ) -> None:
+        """POST /new for anonymous user should NOT set conversation_version cookie."""
+        from src.api.auth import get_current_user_optional
+
+        async def mock_no_user():
+            return None
+
+        app_with_mocked_graph.dependency_overrides[get_current_user_optional] = mock_no_user
+
+        with TestClient(app_with_mocked_graph) as client:
+            response = client.post("/new", follow_redirects=False)
+
+            assert "conversation_version" not in response.cookies

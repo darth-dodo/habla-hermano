@@ -23,7 +23,7 @@
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 | **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
 
-**Test Coverage**: 1810 tests (97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 1809 tests (97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -191,7 +191,7 @@ habla-hermano/
 │   │       ├── scaffold.py      # [Implemented] Generate scaffolding (word banks, hints, sentence starters)
 │   │       ├── lesson.py        # [Implemented] AI-enhanced lesson nodes (load_step, enhance_step, validate_exercise)
 │   │       ├── review.py        # [Implemented] Review nodes (generate_question, evaluate_answer, update_sm2)
-│   │       └── feedback.py      # [Planned] Format corrections
+│   │       └── feedback.py      # [Removed] Previously planned for format corrections
 │   │
 │   ├── agent/
 │   │   ├── lesson_state.py      # [Implemented] LessonState TypedDict for lesson subgraph
@@ -1776,6 +1776,46 @@ async def submit_review_answer(
 @router.post("/end")
 async def end_review_session() -> HTMLResponse:
     """End session early and show summary. Reads session state from cookie."""
+```
+
+### Learn (Phase 14)
+
+The learn module provides the structured learning path overview and adaptive recommendation endpoints. It integrates `PathService` (for structured unit/lesson path data and progress overlay) and `AdaptiveService` (for personalized daily recommendations based on completed lessons, vocabulary, and review stats). Both authenticated users and guests are supported via `OptionalUserDep`; guests see the path structure with no progress data.
+
+**Learn Page**:
+```python
+@router.get("/", response_class=HTMLResponse)
+async def get_learn_page(
+    request: Request,
+    templates: TemplatesDep,
+    user: OptionalUserDep,
+    language: str = "es",
+    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+) -> HTMLResponse:
+    """Render the learning path overview page.
+
+    Shows the structured path with units and lessons, overlaid with the
+    user's completion progress. Authenticated users see full progress and
+    an adaptive recommendation; guests see the path structure with no
+    progress data. Redirects to /lessons if the language has no path defined."""
+```
+
+**Recommendation (HTMX Partial)**:
+```python
+@router.get("/recommendation", response_class=HTMLResponse)
+async def get_recommendation(
+    request: Request,
+    templates: TemplatesDep,
+    user: OptionalUserDep,
+    language: str = "es",
+    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+) -> HTMLResponse:
+    """Return the recommendation card as an HTMX partial.
+
+    Designed for lazy loading via hx-get. Computes the adaptive daily
+    recommendation using AdaptiveService and returns just the card HTML fragment."""
 ```
 
 ---

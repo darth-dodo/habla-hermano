@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import Response
 from fastapi.testclient import TestClient
+from supabase import AuthApiError
 
 from src.api.main import app
 from src.api.routes.auth import (
@@ -294,7 +295,9 @@ class TestSignupEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock already registered error
-            mock_client.auth.sign_up.side_effect = Exception("User already registered")
+            mock_client.auth.sign_up.side_effect = AuthApiError(
+                "User already registered", 422, None
+            )
 
             response = client.post(
                 "/auth/signup",
@@ -315,7 +318,9 @@ class TestSignupEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock invalid email error
-            mock_client.auth.sign_up.side_effect = Exception("Invalid email address")
+            mock_client.auth.sign_up.side_effect = AuthApiError(
+                "Invalid email address", 422, None
+            )
 
             response = client.post(
                 "/auth/signup",
@@ -392,8 +397,8 @@ class TestLoginEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock invalid credentials error
-            mock_client.auth.sign_in_with_password.side_effect = Exception(
-                "Invalid login credentials"
+            mock_client.auth.sign_in_with_password.side_effect = AuthApiError(
+                "Invalid login credentials", 401, None
             )
 
             response = client.post(
@@ -414,7 +419,9 @@ class TestLoginEndpoint:
             mock_get_client.return_value = mock_client
 
             # Mock email not confirmed error
-            mock_client.auth.sign_in_with_password.side_effect = Exception("Email not confirmed")
+            mock_client.auth.sign_in_with_password.side_effect = AuthApiError(
+                "Email not confirmed", 401, None
+            )
 
             response = client.post(
                 "/auth/login",

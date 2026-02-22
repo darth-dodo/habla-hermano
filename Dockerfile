@@ -12,7 +12,10 @@
 # Optional environment variables (see .env.example for full list):
 #   - DEBUG: true|false (default: false)
 #   - LLM_MODEL: Model to use (default: claude-sonnet-4-20250514)
-#   - DATABASE_URL: SQLite database path (default: sqlite:///data/habla.db)
+#   - SUPABASE_URL: Supabase project URL
+#   - SUPABASE_ANON_KEY: Supabase anonymous/public key
+#   - SUPABASE_SERVICE_KEY: Supabase service role key
+#   - SUPABASE_DB_URL: Supabase PostgreSQL connection string
 
 FROM python:3.12-slim
 
@@ -27,9 +30,7 @@ COPY pyproject.toml .
 COPY uv.lock* .
 COPY README.md .
 COPY src/ src/
-
-# Create data directory for SQLite database
-RUN mkdir -p data
+COPY data/ data/
 
 # Create venv and install the package (production dependencies only)
 # Using --system to install into the container's Python environment
