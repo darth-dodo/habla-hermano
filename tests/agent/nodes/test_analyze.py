@@ -856,7 +856,7 @@ class TestAnalyzeNodeLLMResponse:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=mock_response)
 
-        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
                 "messages": [
                     HumanMessage(content="Hola amigo"),
@@ -883,7 +883,7 @@ class TestAnalyzeNodeLLMExceptions:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(side_effect=Exception("API Error"))
 
-        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
                 "messages": [
                     HumanMessage(content="Hola amigo"),
@@ -905,7 +905,7 @@ class TestAnalyzeNodeLLMExceptions:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(side_effect=TimeoutError())
 
-        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
                 "messages": [
                     HumanMessage(content="Hola"),
@@ -947,7 +947,7 @@ class TestAnalyzeNodeWithMockedLLMSuccess:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=mock_response)
 
-        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
                 "messages": [
                     HumanMessage(content="Yo es estudiante"),
@@ -964,10 +964,10 @@ class TestAnalyzeNodeWithMockedLLMSuccess:
 
 
 class TestGetLlmAnalyze:
-    """Tests for _get_llm helper in analyze module."""
+    """Tests for get_llm with analysis profile."""
 
     def test_get_llm_creates_chat_anthropic(self) -> None:
-        """_get_llm should create a ChatAnthropic instance."""
+        """get_llm('analysis') should create a ChatAnthropic instance."""
         from unittest.mock import MagicMock, patch
 
         from src.api.config import Settings
@@ -980,11 +980,11 @@ class TestGetLlmAnalyze:
         )
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.analyze.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                from src.agent.nodes.analyze import _get_llm
+                from src.agent.llm import get_llm
 
-                _get_llm()
+                get_llm("analysis")
                 mock_chat.assert_called_once()
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["temperature"] == 0.3  # Fixed lower temp for analysis

@@ -92,7 +92,7 @@ def _verify_token_via_supabase(token: str) -> AuthenticatedUser:
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
 
-    if response.user is None:
+    if response is None or response.user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

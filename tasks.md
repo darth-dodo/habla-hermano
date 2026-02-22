@@ -13,9 +13,9 @@
 
 ## Current State
 
-**Branch**: `feature/phase14-learning-paths`
-**Phase**: Phase 14 Complete (Structured Learning Paths + Adaptive Recommendations)
-**Test Coverage**: 1810 tests passing, 97% coverage
+**Branch**: `fix/codebase-improvements`
+**Phase**: Phase 14 Complete + Codebase Improvements In Progress
+**Test Coverage**: 1820 tests passing, 97% coverage
 
 ### What's Working
 
@@ -62,35 +62,35 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 
 Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 
-#### Priority: 🔴 High
+#### Priority: 🔴 High — ✅ All Done
 
-| # | Task | Effort | Files | Notes |
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1 | Fix `VocabularyRepository.upsert()` race condition | ✅ Done | Insert-first pattern catching PostgreSQL `23505`. `complete_lesson()` also switched to single `.upsert(on_conflict=...)`. `increment_correct()` documented as concurrency-limited. |
+| 2 | Remove `get_supabase_admin()` from agent nodes | ✅ Done | User-scoped Supabase client flows through `ConversationState`/`ReviewState` → `supabase_client` field. `chat.py` passes `user_client` into graph state. |
+
+#### Priority: 🟡 Medium — ✅ All Done
+
+| # | Task | Status | Files | Notes |
 |---|------|--------|-------|-------|
-| 1 | Fix `VocabularyRepository.upsert()` race condition | Low | `src/db/repository.py` | Read-then-write pattern; use Supabase `upsert()` with `on_conflict`. Same issue in `increment_correct()`. |
-| 2 | Remove `get_supabase_admin()` from agent nodes | Medium | `respond.py`, `analyze.py`, `review.py`, `learn.py` | Agent nodes bypass RLS via admin client. Pass user-scoped client through `ConversationState` instead. |
+| 3 | Extract shared `_get_llm()` factory | ✅ Done | `src/agent/llm.py` | Profile-based config: conversational, analysis, structured, creative, enhancement. |
+| 4 | Fix `SupabaseClient = Any` type alias | ✅ Done | `src/api/supabase_client.py` | Now imports `supabase.Client as SupabaseClient`. |
+| 5 | Add chat message length validation | ✅ Already done | `src/api/routes/chat.py` | `MAX_MESSAGE_LENGTH = 2000` already exists at line 198. |
+| 6 | Fix `new_conversation` checkpoint clearing | ✅ Done | `src/api/routes/chat.py` | Conversation versioning via cookie — new UUID per "new conversation" creates fresh thread_id. |
+| 7 | Narrow broad `except Exception` blocks | ✅ Done | `auth.py`, `service.py` | `AuthApiError` in auth routes, `(YAMLError, ValidationError, OSError)` in lesson service. |
+| 8 | Move keyword filtering server-side in `get_due_by_keywords()` | ✅ Done | `src/db/repository.py` | Uses `.or_()` with `ilike` filters — no more fetching all rows. |
 
-#### Priority: 🟡 Medium
+#### Priority: 🟢 Low — ✅ All Done
 
-| # | Task | Effort | Files | Notes |
+| # | Task | Status | Files | Notes |
 |---|------|--------|-------|-------|
-| 3 | Extract shared `_get_llm()` factory | Low | 5 node files under `src/agent/nodes/` | Create `src/agent/llm.py` with `get_llm(profile: str)`. |
-| 4 | Fix `SupabaseClient = Any` type alias | Medium | `src/api/supabase_client.py`, `pyproject.toml` | Use `supabase.Client` or a Protocol. |
-| 5 | Add chat message length validation | Trivial | `src/api/routes/chat.py` | No limit on user message length. |
-| 6 | Fix `new_conversation` checkpoint clearing | Medium | `src/api/routes/chat.py` | Old checkpoints never cleaned up. |
-| 7 | Narrow broad `except Exception` blocks | Medium | 21 instances across codebase | Catch specific exceptions. |
-| 8 | Move keyword filtering server-side in `get_due_by_keywords()` | Low | `src/db/repository.py` | Fetches ALL due words then filters in Python. |
-
-#### Priority: 🟢 Low
-
-| # | Task | Effort | Files | Notes |
-|---|------|--------|-------|-------|
-| 9 | Remove dead `EffectiveUser` code | Low | `src/api/auth.py` | ~65 lines of dead code from pre-Phase 8. |
-| 10 | Delete dead `feedback.py` stub node | Trivial | `src/agent/nodes/feedback.py` | 51-line stub, never imported. |
-| 11 | Remove stub methods in `VocabularyService` | Low | `src/services/vocabulary.py` | `extract_vocabulary()` and `get_word_bank()` always return `[]`. |
-| 12 | Clean up f-string logging | Low | `src/agent/nodes/scaffold.py` | Use lazy `%s` formatting. |
-| 13 | Document `learn.py` route in architecture.md | Low | `docs/architecture.md` | Phase 14 route undocumented. |
-| 14 | Update stale deployment configs | Low | `render.yaml`, `Dockerfile` | Reference SQLite but app uses Supabase. |
-| 15 | Consider LLM instance caching | Low | `src/agent/nodes/*` | New `ChatAnthropic` per invocation. |
+| 9 | ~~Remove dead `EffectiveUser` code~~ | ❌ Not dead | `src/api/auth.py` | Actively used for guest session handling. Task invalid. |
+| 10 | Delete dead `feedback.py` stub node | ✅ Done | Deleted | 51-line stub, never imported. |
+| 11 | Remove stub methods in `VocabularyService` | ✅ Partial | `src/services/vocabulary.py` | `extract_vocabulary()` removed. `get_word_bank()` is NOT a stub — it calls `self._repo.get_recent()`. |
+| 12 | Clean up f-string logging | ✅ Done | All agent nodes | Fixed across `scaffold.py`, `analyze.py`, `respond.py`, `review.py`. |
+| 13 | Document `learn.py` route in architecture.md | ✅ Done | `docs/architecture.md` | Added Learn (Phase 14) section with endpoint signatures. |
+| 14 | Update stale deployment configs | ✅ Done | `render.yaml`, `Dockerfile` | Replaced SQLite references with Supabase env vars. |
+| 15 | Consider LLM instance caching | ✅ Done | `src/agent/llm.py` | Profile-based caching via `get_llm()` — instances reused per profile. |
 
 ### Future Ideas
 
@@ -128,6 +128,22 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 ---
 
 ## Session Logs
+
+### 2026-02-22: Codebase Improvements — Full Backlog Sweep
+- **Branch**: `fix/codebase-improvements`
+- **Session 1**: Completed tasks #1, #2, #3, #5, #10, #11 (partial), #12 from the improvement backlog
+  - Key fixes: VocabularyRepository race condition (insert-first pattern), admin client removal from agent nodes (RLS enforcement via state), shared LLM factory extraction
+  - Discovered: Task #5 already done, Task #9 (`EffectiveUser`) is NOT dead code, Task #11 `get_word_bank()` is not a stub
+  - 4 parallel subagents, 20 files changed, net -107 lines
+- **Session 2**: Completed remaining tasks #4, #6, #7, #8, #13, #14, #15 via 7 parallel worktree agents
+  - Task #4: `SupabaseClient = Any` → `from supabase import Client as SupabaseClient`
+  - Task #6: Conversation versioning via `conversation_version` cookie — fresh thread_id per "new conversation"
+  - Task #7: Narrowed `except Exception` → `except AuthApiError` (auth), `except (YAMLError, ValidationError, OSError)` (lessons)
+  - Task #8: Server-side keyword filtering with `.or_()` + `ilike` — no longer fetches all due words
+  - Task #13: Documented learn.py routes in architecture.md
+  - Task #14: Dockerfile + render.yaml updated for Supabase (removed SQLite references)
+  - Task #15: LLM instance caching already done via profile-based `get_llm()`
+  - 11 new tests added (10 chat, 1 repository), 1820 tests passing
 
 ### 2026-02-19: Phase 14 — Learning Paths + Adaptive Recommendations
 - **Branch**: `feature/phase14-learning-paths`

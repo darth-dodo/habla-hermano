@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 import yaml
+from pydantic import ValidationError
 
 from src.lessons.models import (
     AnyExercise,
@@ -80,7 +81,7 @@ class LessonService:
                 if lesson:
                     key = self._get_lesson_key(lesson)
                     self._lessons[key] = lesson
-            except Exception as e:
+            except (yaml.YAMLError, ValidationError, OSError) as e:
                 # Log but continue loading other lessons
                 print(f"Warning: Failed to load lesson from {yaml_file}: {e}")
 
@@ -91,7 +92,7 @@ class LessonService:
                 if lesson:
                     key = self._get_lesson_key(lesson)
                     self._lessons[key] = lesson
-            except Exception as e:
+            except (yaml.YAMLError, ValidationError, OSError) as e:
                 print(f"Warning: Failed to load lesson from {yaml_file}: {e}")
 
     def _load_lesson_file(self, path: Path) -> Lesson | None:

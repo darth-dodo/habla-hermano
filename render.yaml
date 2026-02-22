@@ -71,21 +71,20 @@ services:
         value: "0.7"
 
       # -----------------------------------------------------------------------
-      # Database Configuration
+      # Database Configuration - Supabase PostgreSQL
       # -----------------------------------------------------------------------
-      # SQLite will be stored in Render's ephemeral disk
-      # For persistent storage, consider upgrading plan or using external DB
-      - key: DATABASE_URL
-        value: "sqlite:///data/hermano.db"
+      # All Supabase credentials must be set via Render dashboard (secrets)
+      - key: SUPABASE_URL
+        sync: false  # Must be set manually in Render dashboard
 
-      # -----------------------------------------------------------------------
-      # Feature Flags
-      # -----------------------------------------------------------------------
-      - key: ENABLE_VOICE_INPUT
-        value: "false"
+      - key: SUPABASE_ANON_KEY
+        sync: false  # Must be set manually in Render dashboard
 
-      - key: ENABLE_SPACED_REPETITION
-        value: "false"
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # Must be set manually in Render dashboard
+
+      - key: SUPABASE_DB_URL
+        sync: false  # Must be set manually in Render dashboard
 
       # -----------------------------------------------------------------------
       # Python Runtime Configuration

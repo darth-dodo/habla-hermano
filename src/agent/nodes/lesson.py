@@ -10,10 +10,10 @@ Phase 9: These nodes work together to:
 import re
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agent.lesson_state import LessonState
+from src.agent.llm import get_llm
 from src.agent.prompts import get_exercise_feedback_prompt, get_lesson_enhance_prompt
 from src.lessons.models import (
     FillBlankExercise,
@@ -21,23 +21,6 @@ from src.lessons.models import (
     TranslateExercise,
 )
 from src.lessons.service import get_lesson_service
-
-
-def _get_llm() -> ChatAnthropic:
-    """Create and return a ChatAnthropic instance for lesson enhancement.
-
-    Uses claude-sonnet for good balance of quality and speed.
-    """
-    # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
-
-    settings = get_settings()
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
-        temperature=0.7,  # Slightly higher for creative enhancements
-        max_tokens=1024,  # type: ignore[call-arg]
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-    )
 
 
 def _extract_intro(content: str) -> str:
@@ -152,7 +135,7 @@ async def enhance_step_node(state: LessonState) -> dict[str, Any]:
     Returns:
         Dictionary with enhanced_content and hermano_intro.
     """
-    llm = _get_llm()
+    llm = get_llm("enhancement")
 
     # Build the enhancement prompt
     prompt = get_lesson_enhance_prompt(
@@ -255,7 +238,7 @@ async def validate_exercise_node(state: LessonState) -> dict[str, Any]:
         exercise_description = f"Translate '{exercise.source_text}' to {exercise.target_language}"
 
     # Generate personalized feedback with AI
-    llm = _get_llm()
+    llm = get_llm("enhancement")
     feedback_prompt = get_exercise_feedback_prompt(
         language=state["language"],
         level=state["level"],

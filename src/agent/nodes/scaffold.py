@@ -9,9 +9,9 @@ import json
 import logging
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
+from src.agent.llm import get_llm
 from src.agent.state import ConversationState, ScaffoldingConfig
 
 logger = logging.getLogger(__name__)
@@ -38,24 +38,6 @@ Return ONLY valid JSON:
     "sentence_starter": "Me gusta..." or null
 }}
 """
-
-
-def _get_llm() -> ChatAnthropic:
-    """
-    Create and return a ChatAnthropic instance for scaffolding generation.
-
-    Uses a lower temperature for more consistent JSON output.
-    """
-    # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
-
-    settings = get_settings()
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
-        temperature=0.3,  # Lower temperature for structured output
-        max_tokens=512,  # type: ignore[call-arg]
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-    )
 
 
 def _get_language_name(code: str) -> str:
@@ -114,7 +96,7 @@ def _parse_scaffold_response(content: str, level: str) -> ScaffoldingConfig:
         )
 
     except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
-        logger.warning(f"Failed to parse scaffold response: {e}")
+        logger.warning("Failed to parse scaffold response: %s", e)
         # Return a minimal scaffolding config on failure
         return ScaffoldingConfig(
             enabled=True,
@@ -164,10 +146,10 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
         Dictionary with scaffolding config as a dict (from model_dump()).
     """
     # Debug logging
-    logger.info(f"scaffold_node called with level={state.get('level')}")
-    logger.info(f"scaffold_node messages count: {len(state.get('messages', []))}")
+    logger.info("scaffold_node called with level=%s", state.get("level"))
+    logger.info("scaffold_node messages count: %d", len(state.get("messages", [])))
     for i, msg in enumerate(state.get("messages", [])):
-        logger.info(f"  msg[{i}]: {type(msg).__name__} = {str(msg.content)[:50]}...")
+        logger.info("  msg[%d]: %s = %s...", i, type(msg).__name__, str(msg.content)[:50])
 
     # Get the AI's last response
     ai_response = _get_ai_response(state)
@@ -188,7 +170,7 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
     )
 
     # Call Claude for scaffolding generation
-    llm = _get_llm()
+    llm = get_llm("structured")
     try:
         response = await llm.ainvoke(
             [
@@ -208,7 +190,7 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
             )
 
     except Exception as e:
-        logger.error(f"Scaffold LLM call failed: {e}")
+        logger.error("Scaffold LLM call failed: %s", e)
         config = ScaffoldingConfig(
             enabled=True,
             word_bank=[],

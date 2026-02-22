@@ -6,14 +6,19 @@ through the Supabase client. All repositories are user-scoped for RLS compliance
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
+
+from postgrest.exceptions import APIError
 
 from src.api.supabase_client import get_supabase
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
 from src.db.models import LearningSession, LessonProgress, UserProfile, Vocabulary
+
+logger = logging.getLogger(__name__)
 
 
 class UserProfileRepository:
@@ -143,6 +148,11 @@ class VocabularyRepository:
 
         If the word already exists for this user/language, increments times_seen.
 
+        Uses an insert-first strategy to avoid the race condition inherent in
+        read-then-write. If a concurrent insert wins the unique constraint
+        (user_id, word, language), the duplicate key error (23505) is caught
+        and the method falls back to an update on the existing row.
+
         Args:
             word: The vocabulary word.
             translation: Translation to user's native language.
@@ -152,24 +162,8 @@ class VocabularyRepository:
         Returns:
             The created or updated Vocabulary entry.
         """
-        existing = self.get_by_word_and_language(word, language)
-
-        if existing:
-            # Update existing entry - increment times_seen
-            response = (
-                self._client.table("vocabulary")
-                .update(
-                    {
-                        "translation": translation,
-                        "part_of_speech": part_of_speech,
-                        "times_seen": existing.times_seen + 1,
-                    }
-                )
-                .eq("id", existing.id)
-                .execute()
-            )
-        else:
-            # Insert new entry
+        try:
+            # Optimistic path: try inserting a new entry first
             response = (
                 self._client.table("vocabulary")
                 .insert(
@@ -186,7 +180,37 @@ class VocabularyRepository:
                 )
                 .execute()
             )
+            return Vocabulary(**response.data[0])
+        except APIError as exc:
+            if exc.code != "23505":
+                raise
 
+            # Duplicate key: word already exists, fall back to update
+            logger.debug(
+                "Vocabulary insert conflict for word=%s language=%s, updating instead",
+                word,
+                language,
+            )
+
+        # Row definitely exists now - read current state and update
+        existing = self.get_by_word_and_language(word, language)
+        if existing is None:
+            # Should not happen, but guard against unexpected state
+            msg = f"Vocabulary entry not found after conflict: word={word!r}, language={language!r}"
+            raise RuntimeError(msg)
+
+        response = (
+            self._client.table("vocabulary")
+            .update(
+                {
+                    "translation": translation,
+                    "part_of_speech": part_of_speech,
+                    "times_seen": existing.times_seen + 1,
+                }
+            )
+            .eq("id", existing.id)
+            .execute()
+        )
         return Vocabulary(**response.data[0])
 
     def get_recent(self, language: str, limit: int = 20) -> list[Vocabulary]:
@@ -222,6 +246,13 @@ class VocabularyRepository:
 
     def increment_correct(self, word_id: int) -> None:
         """Increment the times_correct counter for a vocabulary entry.
+
+        Note: This uses a read-then-write pattern which is technically
+        susceptible to lost updates under concurrent writes. In practice the
+        risk is negligible because a single user rarely triggers concurrent
+        correct-answer submissions for the same word. An atomic Postgres
+        RPC (e.g. ``vocabulary_increment_correct(word_id)``) would eliminate
+        the window entirely if higher concurrency is needed in the future.
 
         Args:
             word_id: The vocabulary entry ID.
@@ -276,7 +307,8 @@ class VocabularyRepository:
         """Get due words where the word or translation contains any of the keywords.
 
         Used for intelligent chat weaving - finding review words that match
-        the current conversation topic.
+        the current conversation topic. Keyword matching is performed server-side
+        using Supabase's .or_() filter with ilike conditions.
 
         Args:
             language: Language code (es, de).
@@ -289,27 +321,28 @@ class VocabularyRepository:
         if not keywords:
             return []
 
-        # Get all due words first (filtering by keywords requires client-side processing
-        # since Supabase doesn't support OR across multiple ilike conditions easily)
-        all_due = self.get_due_for_review(language)
+        # Build OR filter for keyword matching across word and translation columns
+        or_conditions = []
+        for kw in keywords:
+            escaped = kw.replace("%", "\\%")
+            or_conditions.append(f"word.ilike.%{escaped}%")
+            or_conditions.append(f"translation.ilike.%{escaped}%")
 
-        # Filter by keywords (case-insensitive match)
-        keywords_lower = [kw.lower() for kw in keywords]
-        matching = []
+        or_filter = ",".join(or_conditions)
 
-        for vocab in all_due:
-            word_lower = vocab.word.lower()
-            translation_lower = vocab.translation.lower()
-
-            for keyword in keywords_lower:
-                if keyword in word_lower or keyword in translation_lower:
-                    matching.append(vocab)
-                    break  # Avoid duplicates if multiple keywords match
-
-            if len(matching) >= limit:
-                break
-
-        return matching
+        response = (
+            self._client.table("vocabulary")
+            .select("*")
+            .eq("user_id", self._user_id)
+            .eq("language", language)
+            .not_.is_("next_review_at", "null")
+            .lte("next_review_at", datetime.now(UTC).isoformat())
+            .or_(or_filter)
+            .order("next_review_at", desc=False)
+            .limit(limit)
+            .execute()
+        )
+        return [Vocabulary(**item) for item in response.data]
 
     def update_review_schedule(self, vocab_id: int, updates: dict[str, Any]) -> Vocabulary | None:
         """Update SM-2 spaced repetition fields for a vocabulary entry.
@@ -381,6 +414,10 @@ class VocabularyRepository:
         self, vocab_id: int, updates: dict[str, Any], update_data: dict[str, Any]
     ) -> None:
         """Apply increment_seen and increment_correct flags to update_data.
+
+        Note: Uses a read-then-write pattern for the increment. See the
+        concurrency note on :meth:`increment_correct` -- the same low-risk
+        trade-off applies here.
 
         Args:
             vocab_id: The vocabulary entry ID.
@@ -620,6 +657,10 @@ class LessonProgressRepository:
     def complete_lesson(self, lesson_id: str, score: int | None = None) -> LessonProgress:
         """Mark lesson as completed with optional score.
 
+        Uses Supabase upsert with the primary key (user_id, lesson_id) to
+        atomically insert or update in a single round-trip, eliminating the
+        race condition from the previous read-then-write approach.
+
         Args:
             lesson_id: The lesson identifier.
             score: Optional score (0-100).
@@ -627,35 +668,21 @@ class LessonProgressRepository:
         Returns:
             The created or updated LessonProgress.
         """
-        existing = self.get_by_lesson_id(lesson_id)
         completed_at = datetime.now(UTC).isoformat()
 
-        if existing:
-            response = (
-                self._client.table("lesson_progress")
-                .update(
-                    {
-                        "completed_at": completed_at,
-                        "score": score,
-                    }
-                )
-                .eq("user_id", self._user_id)
-                .eq("lesson_id", lesson_id)
-                .execute()
+        response = (
+            self._client.table("lesson_progress")
+            .upsert(
+                {
+                    "user_id": self._user_id,
+                    "lesson_id": lesson_id,
+                    "completed_at": completed_at,
+                    "score": score,
+                },
+                on_conflict="user_id,lesson_id",
             )
-        else:
-            response = (
-                self._client.table("lesson_progress")
-                .insert(
-                    {
-                        "user_id": self._user_id,
-                        "lesson_id": lesson_id,
-                        "completed_at": completed_at,
-                        "score": score,
-                    }
-                )
-                .execute()
-            )
+            .execute()
+        )
 
         return LessonProgress(**response.data[0])
 

@@ -10,32 +10,13 @@ Phase 12: Adds intelligent chat weaving for spaced repetition review words.
 import logging
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from src.agent.llm import get_llm
 from src.agent.prompts import get_prompt_for_level
 from src.agent.state import ConversationState, ReviewWordOffered
 
 logger = logging.getLogger(__name__)
-
-
-def _get_llm() -> ChatAnthropic:
-    """
-    Create and return a ChatAnthropic instance.
-
-    Uses claude-sonnet-4-20250514 for good balance of quality and speed.
-    API key is read from application settings.
-    """
-    # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
-
-    settings = get_settings()
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
-        temperature=settings.LLM_TEMPERATURE,
-        max_tokens=1024,  # type: ignore[call-arg]
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-    )
 
 
 def _extract_keywords_from_messages(
@@ -322,6 +303,7 @@ async def _get_topical_review_words(
     user_id: str | None,
     language: str,
     messages: list[Any],
+    supabase_client: Any = None,
     limit: int = 5,
 ) -> list[ReviewWordOffered]:
     """
@@ -334,6 +316,7 @@ async def _get_topical_review_words(
         user_id: User UUID for database access (None if not available).
         language: Target language code (es, de).
         messages: Recent conversation messages for keyword extraction.
+        supabase_client: User-scoped Supabase client for RLS-safe DB access.
         limit: Maximum number of words to return.
 
     Returns:
@@ -344,7 +327,6 @@ async def _get_topical_review_words(
 
     try:
         # Import here to avoid circular imports
-        from src.api.supabase_client import get_supabase_admin
         from src.services.review import ReviewService
 
         # Extract topic keywords from recent messages
@@ -355,10 +337,8 @@ async def _get_topical_review_words(
             # (they might still fit naturally)
             keywords = []
 
-        # Get admin client for guest users (session-based access)
-        # The route will have set user_id to either auth user ID or session ID
-        client = get_supabase_admin()
-        review_service = ReviewService(user_id, client=client)
+        # Use user-scoped client passed through state for RLS compliance
+        review_service = ReviewService(user_id, client=supabase_client)
 
         # Get topical review words
         due_words = review_service.get_topical_review_words(
@@ -379,7 +359,7 @@ async def _get_topical_review_words(
         ]
 
     except Exception as e:
-        logger.warning(f"Failed to get topical review words: {e}")
+        logger.warning("Failed to get topical review words: %s", e)
         return []
 
 
@@ -440,6 +420,7 @@ async def respond_node(state: ConversationState) -> dict[str, Any]:
             user_id=user_id,
             language=state["language"],
             messages=state["messages"],
+            supabase_client=state.get("supabase_client"),
             limit=5,
         )
 
@@ -454,7 +435,7 @@ async def respond_node(state: ConversationState) -> dict[str, Any]:
     ]
 
     # Call Claude
-    llm = _get_llm()
+    llm = get_llm("conversational")
     response = await llm.ainvoke(messages)
 
     # Return response and review words offered

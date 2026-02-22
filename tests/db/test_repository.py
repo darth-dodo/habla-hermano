@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+from postgrest.exceptions import APIError
 
 from src.db.models import LearningSession, LessonProgress, UserProfile, Vocabulary
 from src.db.repository import (
@@ -258,6 +259,119 @@ class TestVocabularyRepository:
 
 
 # =============================================================================
+# VocabularyRepository.upsert() Tests
+# =============================================================================
+
+
+class TestVocabularyUpsert:
+    """Tests for VocabularyRepository.upsert() race-condition-safe implementation."""
+
+    def test_upsert_inserts_new_word(self, mock_get_supabase: MagicMock) -> None:
+        """Insert succeeds on first attempt for a new word."""
+        mock_query = _chainable_query(mock_get_supabase)
+        new_row = _make_vocab_row("hola", "hello", word_id=1)
+        mock_query.execute.return_value = MagicMock(data=[new_row])
+
+        repo = VocabularyRepository("user-123")
+        result = repo.upsert("hola", "hello", "es", part_of_speech="interjection")
+
+        assert isinstance(result, Vocabulary)
+        assert result.word == "hola"
+        assert result.times_seen == 1
+        mock_query.insert.assert_called_once()
+        call_data = mock_query.insert.call_args[0][0]
+        assert call_data["word"] == "hola"
+        assert call_data["times_seen"] == 1
+        assert call_data["times_correct"] == 0
+
+    def test_upsert_updates_on_duplicate_key(self, mock_get_supabase: MagicMock) -> None:
+        """Insert fails with 23505, then falls back to read + update."""
+        mock_query = _chainable_query(mock_get_supabase)
+
+        existing_row = _make_vocab_row("hola", "hello", word_id=1, times_seen=3)
+        updated_row = _make_vocab_row("hola", "hi", word_id=1, times_seen=4)
+
+        # insert raises duplicate key error, then select returns existing,
+        # then update returns updated row
+        mock_query.execute.side_effect = [
+            APIError({"code": "23505", "message": "duplicate key", "hint": None, "details": None}),
+            MagicMock(data=[existing_row]),  # get_by_word_and_language
+            MagicMock(data=[updated_row]),  # update
+        ]
+
+        # Override insert to raise the APIError
+        def _raise_on_execute():
+            raise _make_api_error()
+
+        # Reset the mock - insert().execute() should raise
+        mock_insert_chain = MagicMock()
+        mock_query.insert.return_value = mock_insert_chain
+        mock_insert_chain.execute.side_effect = _make_api_error()
+
+        # select chain returns existing row
+        mock_select_chain = MagicMock()
+        mock_query.select.return_value = mock_select_chain
+        mock_select_chain.eq.return_value = mock_select_chain
+        mock_select_chain.execute.return_value = MagicMock(data=[existing_row])
+
+        # update chain returns updated row
+        mock_update_chain = MagicMock()
+        mock_query.update.return_value = mock_update_chain
+        mock_update_chain.eq.return_value = mock_update_chain
+        mock_update_chain.execute.return_value = MagicMock(data=[updated_row])
+
+        repo = VocabularyRepository("user-123")
+        result = repo.upsert("hola", "hi", "es")
+
+        assert isinstance(result, Vocabulary)
+        assert result.times_seen == 4
+        mock_query.insert.assert_called_once()
+        mock_query.update.assert_called_once()
+        update_data = mock_query.update.call_args[0][0]
+        assert update_data["translation"] == "hi"
+        assert update_data["times_seen"] == 4
+
+    def test_upsert_reraises_non_duplicate_api_error(self, mock_get_supabase: MagicMock) -> None:
+        """Non-23505 APIError is not swallowed."""
+        mock_query = _chainable_query(mock_get_supabase)
+
+        mock_insert_chain = MagicMock()
+        mock_query.insert.return_value = mock_insert_chain
+        mock_insert_chain.execute.side_effect = _make_api_error(
+            code="42501", message="permission denied"
+        )
+
+        repo = VocabularyRepository("user-123")
+
+        with pytest.raises(APIError) as exc_info:
+            repo.upsert("hola", "hello", "es")
+
+        assert exc_info.value.code == "42501"
+
+    def test_upsert_raises_runtime_error_if_missing_after_conflict(
+        self, mock_get_supabase: MagicMock
+    ) -> None:
+        """RuntimeError raised if row vanishes between conflict and select."""
+        mock_query = _chainable_query(mock_get_supabase)
+
+        # insert raises duplicate key
+        mock_insert_chain = MagicMock()
+        mock_query.insert.return_value = mock_insert_chain
+        mock_insert_chain.execute.side_effect = _make_api_error()
+
+        # select returns empty (row was somehow deleted between conflict and read)
+        mock_select_chain = MagicMock()
+        mock_query.select.return_value = mock_select_chain
+        mock_select_chain.eq.return_value = mock_select_chain
+        mock_select_chain.execute.return_value = MagicMock(data=[])
+
+        repo = VocabularyRepository("user-123")
+
+        with pytest.raises(RuntimeError, match="not found after conflict"):
+            repo.upsert("hola", "hello", "es")
+
+
+# =============================================================================
 # Repository Pattern Tests
 # =============================================================================
 
@@ -319,6 +433,7 @@ def _chainable_query(mock_client: MagicMock) -> MagicMock:
     mock_query.select.return_value = mock_query
     mock_query.insert.return_value = mock_query
     mock_query.update.return_value = mock_query
+    mock_query.upsert.return_value = mock_query
     mock_query.delete.return_value = mock_query
     mock_query.eq.return_value = mock_query
     mock_query.not_.return_value = mock_query
@@ -326,9 +441,15 @@ def _chainable_query(mock_client: MagicMock) -> MagicMock:
     mock_query.is_.return_value = mock_query
     mock_query.lte.return_value = mock_query
     mock_query.gt.return_value = mock_query
+    mock_query.or_.return_value = mock_query
     mock_query.order.return_value = mock_query
     mock_query.limit.return_value = mock_query
     return mock_query
+
+
+def _make_api_error(code: str = "23505", message: str = "duplicate key") -> APIError:
+    """Build a postgrest APIError for testing conflict handling."""
+    return APIError({"code": code, "message": message, "hint": None, "details": None})
 
 
 def _make_vocab_row(
@@ -398,19 +519,18 @@ class TestVocabularyRepositorySR:
         mock_query.execute.return_value = MagicMock(
             data=[
                 _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
-                _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
             ]
         )
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["gato"])
         assert len(result) == 1
         assert result[0].word == "gato"
+        mock_query.or_.assert_called_once_with("word.ilike.%gato%,translation.ilike.%gato%")
 
     def test_get_due_by_keywords_matches_translation(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[
-                _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
                 _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
             ]
         )
@@ -418,8 +538,10 @@ class TestVocabularyRepositorySR:
         result = repo.get_due_by_keywords("es", ["dog"])
         assert len(result) == 1
         assert result[0].word == "perro"
+        mock_query.or_.assert_called_once_with("word.ilike.%dog%,translation.ilike.%dog%")
 
     def test_get_due_by_keywords_case_insensitive(self, mock_get_supabase: MagicMock) -> None:
+        """ilike is case-insensitive in PostgreSQL, so the filter uses keywords as-is."""
         mock_query = _chainable_query(mock_get_supabase)
         mock_query.execute.return_value = MagicMock(
             data=[_make_vocab_row("Gato", "Cat", word_id=1, next_review_at=FIXED_NOW_ISO)]
@@ -427,12 +549,11 @@ class TestVocabularyRepositorySR:
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["GATO"])
         assert len(result) == 1
+        mock_query.or_.assert_called_once_with("word.ilike.%GATO%,translation.ilike.%GATO%")
 
     def test_get_due_by_keywords_no_matches(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        mock_query.execute.return_value = MagicMock(
-            data=[_make_vocab_row("hola", "hello", word_id=1, next_review_at=FIXED_NOW_ISO)]
-        )
+        mock_query.execute.return_value = MagicMock(data=[])
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["zzzzz"])
         assert result == []
@@ -443,12 +564,28 @@ class TestVocabularyRepositorySR:
             data=[
                 _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
                 _make_vocab_row("gata", "female cat", word_id=2, next_review_at=FIXED_NOW_ISO),
-                _make_vocab_row("gatito", "kitten", word_id=3, next_review_at=FIXED_NOW_ISO),
             ]
         )
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["gat"], limit=2)
         assert len(result) == 2
+        mock_query.limit.assert_called_with(2)
+
+    def test_get_due_by_keywords_multiple_keywords(self, mock_get_supabase: MagicMock) -> None:
+        mock_query = _chainable_query(mock_get_supabase)
+        mock_query.execute.return_value = MagicMock(
+            data=[
+                _make_vocab_row("gato", "cat", word_id=1, next_review_at=FIXED_NOW_ISO),
+                _make_vocab_row("perro", "dog", word_id=2, next_review_at=FIXED_NOW_ISO),
+            ]
+        )
+        repo = VocabularyRepository("user-123")
+        result = repo.get_due_by_keywords("es", ["gato", "perro"])
+        assert len(result) == 2
+        mock_query.or_.assert_called_once_with(
+            "word.ilike.%gato%,translation.ilike.%gato%,"
+            "word.ilike.%perro%,translation.ilike.%perro%"
+        )
 
     def test_update_review_schedule_with_direct_fields(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
@@ -906,36 +1043,33 @@ class TestLessonProgressRepository:
             "completed_at": FIXED_NOW_ISO,
             "score": 90,
         }
-        mock_query.execute.side_effect = [
-            MagicMock(data=[]),  # get_by_lesson_id finds nothing
-            MagicMock(data=[new_row]),  # insert returns new row
-        ]
+        mock_query.execute.return_value = MagicMock(data=[new_row])
         repo = LessonProgressRepository("user-123")
         result = repo.complete_lesson("lesson-1", score=90)
         assert isinstance(result, LessonProgress)
         assert result.score == 90
+        # Verify it uses upsert with on_conflict
+        mock_query.upsert.assert_called_once()
+        call_data = mock_query.upsert.call_args[0][0]
+        assert call_data["user_id"] == "user-123"
+        assert call_data["lesson_id"] == "lesson-1"
+        assert call_data["score"] == 90
+        assert mock_query.upsert.call_args[1]["on_conflict"] == "user_id,lesson_id"
 
     def test_complete_lesson_re_complete(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
-        existing_row = {
-            "user_id": "user-123",
-            "lesson_id": "lesson-1",
-            "completed_at": "2025-06-10T12:00:00+00:00",
-            "score": 70,
-        }
         updated_row = {
             "user_id": "user-123",
             "lesson_id": "lesson-1",
             "completed_at": FIXED_NOW_ISO,
             "score": 95,
         }
-        mock_query.execute.side_effect = [
-            MagicMock(data=[existing_row]),  # get_by_lesson_id finds existing
-            MagicMock(data=[updated_row]),  # update returns updated row
-        ]
+        mock_query.execute.return_value = MagicMock(data=[updated_row])
         repo = LessonProgressRepository("user-123")
         result = repo.complete_lesson("lesson-1", score=95)
         assert result.score == 95
+        # Still uses upsert - same code path for new and existing
+        mock_query.upsert.assert_called_once()
 
     def test_complete_lesson_without_score(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
@@ -945,13 +1079,12 @@ class TestLessonProgressRepository:
             "completed_at": FIXED_NOW_ISO,
             "score": None,
         }
-        mock_query.execute.side_effect = [
-            MagicMock(data=[]),
-            MagicMock(data=[new_row]),
-        ]
+        mock_query.execute.return_value = MagicMock(data=[new_row])
         repo = LessonProgressRepository("user-123")
         result = repo.complete_lesson("lesson-1")
         assert result.score is None
+        call_data = mock_query.upsert.call_args[0][0]
+        assert call_data["score"] is None
 
     def test_get_completed_returns_list(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)

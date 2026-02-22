@@ -221,20 +221,22 @@ class TestGetTopicalReviewWords:
         mock_review_instance.get_topical_review_words.return_value = [mock_vocab]
 
         mock_review_cls = MagicMock(return_value=mock_review_instance)
-        mock_get_admin = MagicMock(return_value=MagicMock())
+        mock_client = MagicMock()
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", mock_get_admin),
-            patch("src.services.review.ReviewService", mock_review_cls),
-        ):
+        with patch("src.services.review.ReviewService", mock_review_cls):
             messages = [HumanMessage(content="I want to buy a house")]
             result = await _get_topical_review_words(
-                user_id="user-123", language="es", messages=messages, limit=5
+                user_id="user-123",
+                language="es",
+                messages=messages,
+                supabase_client=mock_client,
+                limit=5,
             )
             assert len(result) == 1
             assert result[0]["vocab_id"] == 42
             assert result[0]["word"] == "casa"
             assert result[0]["translation"] == "house"
+            mock_review_cls.assert_called_once_with("user-123", client=mock_client)
 
     async def test_filters_vocab_with_none_id(self) -> None:
         """Should filter out vocab entries with None id."""
@@ -257,12 +259,8 @@ class TestGetTopicalReviewWords:
         ]
 
         mock_review_cls = MagicMock(return_value=mock_review_instance)
-        mock_get_admin = MagicMock(return_value=MagicMock())
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", mock_get_admin),
-            patch("src.services.review.ReviewService", mock_review_cls),
-        ):
+        with patch("src.services.review.ReviewService", mock_review_cls):
             result = await _get_topical_review_words(
                 user_id="user-123", language="es", messages=[], limit=5
             )
@@ -274,7 +272,7 @@ class TestGetTopicalReviewWords:
         from src.agent.nodes.respond import _get_topical_review_words
 
         with patch(
-            "src.api.supabase_client.get_supabase_admin",
+            "src.services.review.ReviewService",
             side_effect=Exception("DB error"),
         ):
             result = await _get_topical_review_words(
@@ -346,7 +344,7 @@ class TestRespondNodeReviewWords:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.respond._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
             patch(
                 "src.agent.nodes.respond._get_topical_review_words",
                 new_callable=AsyncMock,
@@ -365,6 +363,7 @@ class TestRespondNodeReviewWords:
                 user_id="test-user-123",
                 language="es",
                 messages=state["messages"],
+                supabase_client=None,
                 limit=5,
             )
             assert "review_words_offered" in result
@@ -379,7 +378,7 @@ class TestRespondNodeReviewWords:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.respond._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
         ):
             state: ConversationState = {
                 "messages": [HumanMessage(content="Hola!")],
@@ -400,7 +399,7 @@ class TestRespondNodeReviewWords:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.respond._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
             patch(
                 "src.agent.nodes.respond._get_topical_review_words",
                 new_callable=AsyncMock,
@@ -671,18 +670,16 @@ class TestUpdateSm2ForUsedWords:
 
         mock_review_instance = MagicMock()
         mock_review_cls = MagicMock(return_value=mock_review_instance)
-        mock_get_admin = MagicMock(return_value=MagicMock())
+        mock_client = MagicMock()
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", mock_get_admin),
-            patch("src.services.review.ReviewService", mock_review_cls),
-        ):
+        with patch("src.services.review.ReviewService", mock_review_cls):
             words = [
                 ReviewWordUsed(vocab_id=1, word="casa", quality=4),
                 ReviewWordUsed(vocab_id=2, word="gato", quality=4),
             ]
-            await _update_sm2_for_used_words("user-123", words)
+            await _update_sm2_for_used_words("user-123", words, supabase_client=mock_client)
 
+            mock_review_cls.assert_called_once_with("user-123", client=mock_client)
             assert mock_review_instance.update_sm2.call_count == 2
             mock_review_instance.update_sm2.assert_any_call(vocab_id=1, quality=4)
             mock_review_instance.update_sm2.assert_any_call(vocab_id=2, quality=4)
@@ -698,18 +695,15 @@ class TestUpdateSm2ForUsedWords:
             None,  # Second word succeeds
         ]
         mock_review_cls = MagicMock(return_value=mock_review_instance)
-        mock_get_admin = MagicMock(return_value=MagicMock())
+        mock_client = MagicMock()
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", mock_get_admin),
-            patch("src.services.review.ReviewService", mock_review_cls),
-        ):
+        with patch("src.services.review.ReviewService", mock_review_cls):
             words = [
                 ReviewWordUsed(vocab_id=1, word="casa", quality=4),
                 ReviewWordUsed(vocab_id=2, word="gato", quality=4),
             ]
             # Should not raise
-            await _update_sm2_for_used_words("user-123", words)
+            await _update_sm2_for_used_words("user-123", words, supabase_client=mock_client)
             assert mock_review_instance.update_sm2.call_count == 2
 
     async def test_handles_outer_exception(self) -> None:
@@ -718,8 +712,8 @@ class TestUpdateSm2ForUsedWords:
         from src.agent.state import ReviewWordUsed
 
         with patch(
-            "src.api.supabase_client.get_supabase_admin",
-            side_effect=Exception("Import error"),
+            "src.services.review.ReviewService",
+            side_effect=Exception("Service init error"),
         ):
             words = [ReviewWordUsed(vocab_id=1, word="casa", quality=4)]
             # Should not raise
@@ -752,7 +746,7 @@ class TestAnalyzeNodeReviewWordTracking:
         ]
 
         with (
-            patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm),
             patch(
                 "src.agent.nodes.analyze._update_sm2_for_used_words",
                 new_callable=AsyncMock,
@@ -787,7 +781,7 @@ class TestAnalyzeNodeReviewWordTracking:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=mock_response)
 
-        with patch("src.agent.nodes.analyze._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
                 "messages": [
                     HumanMessage(content="Mi casa es grande"),
@@ -1006,23 +1000,23 @@ class TestGetExerciseFeedbackPrompt:
 
 
 # =============================================================================
-# lesson.py: _get_llm (lines 32-35)
+# llm.py: get_llm enhancement profile
 # =============================================================================
 
 
 class TestLessonGetLlm:
-    """Tests for lesson.py _get_llm covering lines 32-35."""
+    """Tests for get_llm with enhancement profile."""
 
     def test_get_llm_creates_instance(self, mock_settings: Settings) -> None:
         """Should create ChatAnthropic with higher temperature for creativity."""
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson.ChatAnthropic") as mock_chat,
+            patch("src.agent.llm.ChatAnthropic") as mock_chat,
         ):
             mock_chat.return_value = MagicMock()
-            from src.agent.nodes.lesson import _get_llm
+            from src.agent.llm import get_llm
 
-            result = _get_llm()
+            result = get_llm("enhancement")
             assert result is not None
             mock_chat.assert_called_once()
             call_kwargs = mock_chat.call_args[1]
@@ -1278,7 +1272,7 @@ class TestEnhanceStepNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import enhance_step_node
 
@@ -1310,7 +1304,7 @@ class TestEnhanceStepNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import enhance_step_node
 
@@ -1444,7 +1438,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 
@@ -1486,7 +1480,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 
@@ -1527,7 +1521,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 
@@ -1567,7 +1561,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 
@@ -1609,7 +1603,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 
@@ -1652,7 +1646,7 @@ class TestValidateExerciseNode:
 
         with (
             patch("src.api.config.get_settings", return_value=mock_settings),
-            patch("src.agent.nodes.lesson._get_llm", return_value=mock_llm),
+            patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
 

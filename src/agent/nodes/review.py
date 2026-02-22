@@ -10,29 +10,11 @@ Phase 12: These nodes work together to:
 import random
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from src.agent.llm import get_llm
 from src.agent.prompts import LANGUAGE_ADAPTER
 from src.agent.review_state import ReviewState
-
-
-def _get_llm() -> ChatAnthropic:
-    """Create and return a ChatAnthropic instance for review interactions.
-
-    Uses claude-sonnet for good balance of quality and speed.
-    """
-    # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
-
-    settings = get_settings()
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
-        temperature=0.7,  # Slightly higher for natural conversation
-        max_tokens=512,  # Keep feedback concise
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-    )
-
 
 # Question generation prompts by type
 QUESTION_PROMPTS = {
@@ -317,7 +299,7 @@ async def generate_question_node(state: ReviewState) -> dict[str, Any]:
     language_name = lang_data["language_name"]
 
     # Generate question with LLM
-    llm = _get_llm()
+    llm = get_llm("creative")
     prompt = QUESTION_PROMPTS[question_type].format(
         word=word.get("word", ""),
         translation=word.get("translation", ""),
@@ -387,7 +369,7 @@ async def evaluate_answer_node(state: ReviewState) -> dict[str, Any]:
         feedback_type = "incorrect"
 
     # Generate feedback with LLM
-    llm = _get_llm()
+    llm = get_llm("creative")
     prompt = FEEDBACK_PROMPTS[feedback_type].format(
         word=word.get("word", ""),
         translation=word.get("translation", ""),
@@ -444,10 +426,10 @@ async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
     if word and quality_score is not None and word_id is not None:
         try:
             # Import lazily to avoid circular imports
-            from src.api.supabase_client import get_supabase_admin
             from src.services.review import ReviewService
 
-            client = get_supabase_admin()
+            # Use user-scoped client passed through state for RLS compliance
+            client = state.get("supabase_client")
             service = ReviewService(user_id, client=client)
             service.update_sm2(vocab_id=word_id, quality=quality_score)
         except Exception as e:
@@ -455,7 +437,7 @@ async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.warning(f"Failed to update SM-2 for word {word_id}: {e}")
+            logger.warning("Failed to update SM-2 for word %s: %s", word_id, e)
 
     # Increment index to move to next word
     return {
