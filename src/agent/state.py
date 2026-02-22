@@ -129,6 +129,7 @@ class ConversationState(TypedDict):
 
     Identity fields (Phase 12):
     - user_id: User UUID for database access (authenticated or guest session ID)
+    - supabase_client: User-scoped Supabase client for RLS-safe DB access
 
     Analysis fields (Phase 2):
     - grammar_feedback: List of grammar corrections from user's last message
@@ -152,6 +153,7 @@ class ConversationState(TypedDict):
     level: str  # A0, A1, A2, B1
     language: str  # es, de, fr
     user_id: NotRequired[str]  # UUID for database access
+    supabase_client: NotRequired[Any]  # User-scoped Supabase client for RLS
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
     scaffolding: NotRequired[dict[str, Any]]  # ScaffoldingConfig.model_dump() for A0-A1

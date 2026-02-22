@@ -11,9 +11,9 @@ import json
 import logging
 from typing import Any, Literal, cast
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from src.agent.llm import get_llm
 from src.agent.state import (
     ConversationState,
     GrammarFeedback,
@@ -85,23 +85,6 @@ If there's no notable vocabulary, return an empty array for new_vocabulary.
 If there are no tricky pronunciations, return an empty array for pronunciation_tips.
 Keep explanations brief and encouraging. Maximum 3 grammar errors, 5 vocabulary words, and 2 pronunciation tips."""
 
-
-def _get_llm() -> ChatAnthropic:
-    """
-    Create and return a ChatAnthropic instance for analysis.
-
-    Uses a lower temperature for more consistent JSON output.
-    """
-    # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings
-
-    settings = get_settings()
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
-        temperature=0.3,  # Lower temperature for structured output
-        max_tokens=1024,  # type: ignore[call-arg]
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
-    )
 
 
 def _get_language_name(code: str) -> str:
@@ -206,7 +189,7 @@ def _parse_analysis_response(
         return grammar_feedback, new_vocabulary, pronunciation_tips
 
     except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as e:
-        logger.warning(f"Failed to parse analysis response: {e}")
+        logger.warning("Failed to parse analysis response: %s", e)
         return [], [], []
 
 
@@ -254,6 +237,7 @@ def _check_review_word_usage(
 async def _update_sm2_for_used_words(
     user_id: str | None,
     used_words: list[ReviewWordUsed],
+    supabase_client: Any = None,
 ) -> None:
     """
     Update SM-2 scheduling for review words that were used correctly.
@@ -264,17 +248,17 @@ async def _update_sm2_for_used_words(
     Args:
         user_id: User UUID for database access.
         used_words: List of words the user correctly used.
+        supabase_client: User-scoped Supabase client for RLS-safe DB access.
     """
     if not user_id or not used_words:
         return
 
     try:
         # Import here to avoid circular imports
-        from src.api.supabase_client import get_supabase_admin
         from src.services.review import ReviewService
 
-        client = get_supabase_admin()
-        review_service = ReviewService(user_id, client=client)
+        # Use user-scoped client passed through state for RLS compliance
+        review_service = ReviewService(user_id, client=supabase_client)
 
         for word in used_words:
             try:
@@ -283,13 +267,15 @@ async def _update_sm2_for_used_words(
                     quality=word["quality"],
                 )
                 logger.debug(
-                    f"Updated SM-2 for word '{word['word']}' with quality {word['quality']}"
+                    "Updated SM-2 for word '%s' with quality %s",
+                    word["word"],
+                    word["quality"],
                 )
             except Exception as e:
-                logger.warning(f"Failed to update SM-2 for word '{word['word']}': {e}")
+                logger.warning("Failed to update SM-2 for word '%s': %s", word["word"], e)
 
     except Exception as e:
-        logger.warning(f"Failed to update SM-2 for used words: {e}")
+        logger.warning("Failed to update SM-2 for used words: %s", e)
 
 
 async def analyze_node(state: ConversationState) -> dict[str, Any]:
@@ -352,7 +338,9 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         if used_words:
             # Update SM-2 scheduling for correctly used words
             user_id = state.get("user_id")
-            await _update_sm2_for_used_words(user_id, used_words)
+            await _update_sm2_for_used_words(
+                user_id, used_words, supabase_client=state.get("supabase_client")
+            )
             result["review_words_used"] = used_words
 
     # Build the analysis prompt
@@ -363,7 +351,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
     )
 
     # Call Claude for analysis
-    llm = _get_llm()
+    llm = get_llm("analysis")
     try:
         response = await llm.ainvoke(
             [
@@ -380,7 +368,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
             grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
     except Exception as e:
-        logger.error(f"Analysis LLM call failed: {e}")
+        logger.error("Analysis LLM call failed: %s", e)
         grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
     result["grammar_feedback"] = grammar_feedback

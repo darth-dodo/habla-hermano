@@ -37,28 +37,6 @@ class VocabularyService:
         self._user_id = user_id
         self._repo = VocabularyRepository(user_id)
 
-    def extract_vocabulary(
-        self,
-        text: str,  # noqa: ARG002
-        language: str,  # noqa: ARG002
-        level: str,  # noqa: ARG002
-    ) -> list[ExtractedWord]:
-        """
-        Extract notable vocabulary from text based on learner level.
-
-        This is a stub implementation. In production, this would use
-        LLM analysis to identify words appropriate for the learner's level.
-
-        Args:
-            text: The text to extract vocabulary from
-            language: Target language code (es, de)
-            level: CEFR level (A0, A1, A2, B1)
-
-        Returns:
-            List of extracted words with translations and metadata
-        """
-        return []
-
     def save_vocabulary(
         self,
         words: list[ExtractedWord],

@@ -1,6 +1,6 @@
-"""Comprehensive tests for agent nodes: respond, feedback, and scaffold.
+"""Comprehensive tests for agent nodes: respond and scaffold.
 
-This module tests the three agent node functions that form the core of the
+This module tests the agent node functions that form the core of the
 Habla Hermano conversation flow.
 """
 
@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.agent.nodes.feedback import feedback_node
-from src.agent.nodes.respond import _get_llm, respond_node
+from src.agent.llm import get_llm
+from src.agent.nodes.respond import respond_node
 from src.agent.nodes.scaffold import scaffold_node
 
 if TYPE_CHECKING:
@@ -21,46 +21,46 @@ if TYPE_CHECKING:
 
 
 # =============================================================================
-# _get_llm() TESTS
+# get_llm() TESTS
 # =============================================================================
 
 
 class TestGetLlmFunction:
-    """Tests for _get_llm helper function."""
+    """Tests for get_llm factory function (conversational profile)."""
 
     def test_get_llm_returns_chat_anthropic(self, mock_settings: "Settings") -> None:
-        """_get_llm should return a ChatAnthropic instance."""
+        """get_llm should return a ChatAnthropic instance."""
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                result = _get_llm()
+                result = get_llm("conversational")
                 assert result is not None
                 mock_chat.assert_called_once()
 
     def test_get_llm_uses_settings_api_key(self, mock_settings: "Settings") -> None:
-        """_get_llm should use API key from settings."""
+        """get_llm should use API key from settings."""
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                _get_llm()
+                get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["api_key"] == mock_settings.ANTHROPIC_API_KEY
 
     def test_get_llm_uses_settings_model(self, mock_settings: "Settings") -> None:
-        """_get_llm should use model from settings."""
+        """get_llm should use model from settings."""
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                _get_llm()
+                get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["model"] == mock_settings.LLM_MODEL
 
     def test_get_llm_uses_settings_temperature(self, mock_settings: "Settings") -> None:
-        """_get_llm should use temperature from settings."""
+        """get_llm conversational profile should use temperature from settings."""
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                _get_llm()
+                get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["temperature"] == mock_settings.LLM_TEMPERATURE
 
@@ -84,7 +84,7 @@ class TestRespondNodeBasic:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
                     "level": "A1",
@@ -100,7 +100,7 @@ class TestRespondNodeBasic:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
                     "level": "A1",
@@ -116,7 +116,7 @@ class TestRespondNodeBasic:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
                     "level": "A1",
@@ -132,7 +132,7 @@ class TestRespondNodeBasic:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Hola amigo!"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
                     "level": "A1",
@@ -156,7 +156,7 @@ class TestRespondNodeLevels:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hello")],
                     "level": level,
@@ -173,7 +173,7 @@ class TestRespondNodeLevels:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 with patch(
                     "src.agent.nodes.respond.get_prompt_for_level",
                     return_value="Test prompt",
@@ -200,7 +200,7 @@ class TestRespondNodeLanguages:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hello")],
                     "level": "A1",
@@ -216,7 +216,7 @@ class TestRespondNodeLanguages:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 with patch(
                     "src.agent.nodes.respond.get_prompt_for_level",
                     return_value="German prompt",
@@ -242,7 +242,7 @@ class TestRespondNodeConversationHistory:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [
                         HumanMessage(content="Hola!"),
@@ -271,7 +271,7 @@ class TestRespondNodeConversationHistory:
         msg3 = HumanMessage(content="Third")
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.respond._get_llm", return_value=mock_llm):
+            with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [msg1, msg2, msg3],
                     "level": "A1",
@@ -284,153 +284,6 @@ class TestRespondNodeConversationHistory:
                 assert call_args[1] == msg1
                 assert call_args[2] == msg2
                 assert call_args[3] == msg3
-
-
-# =============================================================================
-# FEEDBACK NODE TESTS
-# =============================================================================
-
-
-class TestFeedbackNodeStructure:
-    """Tests for feedback_node function structure."""
-
-    def test_feedback_node_is_async(self) -> None:
-        """feedback_node should be an async function."""
-        assert inspect.iscoroutinefunction(feedback_node)
-
-    @pytest.mark.asyncio
-    async def test_feedback_node_returns_dict(self) -> None:
-        """feedback_node should return a dictionary."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Hola!")],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert isinstance(result, dict)
-
-    @pytest.mark.asyncio
-    async def test_feedback_node_returns_formatted_feedback_key(self) -> None:
-        """feedback_node should return dict with 'formatted_feedback' key."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Hola!")],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert "formatted_feedback" in result
-
-    @pytest.mark.asyncio
-    async def test_feedback_node_formatted_feedback_is_list(self) -> None:
-        """formatted_feedback should be a list."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Hola!")],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert isinstance(result["formatted_feedback"], list)
-
-
-class TestFeedbackNodeStubBehavior:
-    """Tests for feedback_node stub implementation (Phase 1)."""
-
-    @pytest.mark.asyncio
-    async def test_stub_returns_empty_list(self) -> None:
-        """Current stub should return empty formatted_feedback list."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Yo es estudiante")],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert result["formatted_feedback"] == []
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("level", ["A0", "A1", "A2", "B1"])
-    async def test_stub_returns_empty_for_all_levels(self, level: str) -> None:
-        """Stub should return empty list for all CEFR levels."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Test message")],
-            "level": level,
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert result["formatted_feedback"] == []
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("language", ["es", "de", "fr"])
-    async def test_stub_returns_empty_for_all_languages(self, language: str) -> None:
-        """Stub should return empty list for all languages."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Test message")],
-            "level": "A1",
-            "language": language,
-        }
-        result = await feedback_node(state)
-        assert result["formatted_feedback"] == []
-
-    @pytest.mark.asyncio
-    async def test_stub_handles_state_with_grammar_feedback(self) -> None:
-        """Stub should handle state that includes grammar_feedback."""
-        state: ConversationState = {
-            "messages": [HumanMessage(content="Test")],
-            "level": "A1",
-            "language": "es",
-            "grammar_feedback": [
-                {
-                    "original": "Yo es",
-                    "correction": "Yo soy",
-                    "explanation": "Use soy with yo",
-                    "severity": "moderate",
-                }
-            ],
-        }
-        result = await feedback_node(state)
-        # Stub ignores grammar_feedback for now
-        assert result["formatted_feedback"] == []
-
-
-class TestFeedbackNodeEdgeCases:
-    """Edge case tests for feedback_node."""
-
-    @pytest.mark.asyncio
-    async def test_handles_empty_messages(self) -> None:
-        """feedback_node should handle empty messages list."""
-        state: ConversationState = {
-            "messages": [],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert result["formatted_feedback"] == []
-
-    @pytest.mark.asyncio
-    async def test_handles_only_ai_messages(self) -> None:
-        """feedback_node should handle state with only AI messages."""
-        state: ConversationState = {
-            "messages": [AIMessage(content="Hola!")],
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert result["formatted_feedback"] == []
-
-    @pytest.mark.asyncio
-    async def test_handles_long_conversation(self) -> None:
-        """feedback_node should handle long conversation histories."""
-        messages = []
-        for i in range(20):
-            messages.append(HumanMessage(content=f"Message {i}"))
-            messages.append(AIMessage(content=f"Response {i}"))
-
-        state: ConversationState = {
-            "messages": messages,
-            "level": "A1",
-            "language": "es",
-        }
-        result = await feedback_node(state)
-        assert isinstance(result["formatted_feedback"], list)
 
 
 # =============================================================================
@@ -788,13 +641,6 @@ class TestNodeIntegration:
         assert respond_node is not None
         assert callable(respond_node)
 
-    def test_feedback_node_importable(self) -> None:
-        """feedback_node should be importable from module."""
-        from src.agent.nodes.feedback import feedback_node
-
-        assert feedback_node is not None
-        assert callable(feedback_node)
-
     def test_scaffold_node_importable(self) -> None:
         """scaffold_node should be importable from module."""
         from src.agent.nodes.scaffold import scaffold_node
@@ -803,18 +649,16 @@ class TestNodeIntegration:
         assert callable(scaffold_node)
 
     def test_get_llm_helper_importable(self) -> None:
-        """_get_llm helper should be importable from respond module."""
-        from src.agent.nodes.respond import _get_llm
+        """get_llm should be importable from the shared llm module."""
+        from src.agent.llm import get_llm as _get_llm
 
         assert _get_llm is not None
         assert callable(_get_llm)
 
     def test_all_nodes_are_async(self) -> None:
         """All node functions should be async."""
-        from src.agent.nodes.feedback import feedback_node
         from src.agent.nodes.respond import respond_node
         from src.agent.nodes.scaffold import scaffold_node
 
         assert inspect.iscoroutinefunction(respond_node)
-        assert inspect.iscoroutinefunction(feedback_node)
         assert inspect.iscoroutinefunction(scaffold_node)

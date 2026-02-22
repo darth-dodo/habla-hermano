@@ -9,7 +9,7 @@ This state is designed to:
 3. Store answer evaluation (quality score, feedback)
 """
 
-from typing import NotRequired
+from typing import Any, NotRequired
 
 from typing_extensions import TypedDict
 
@@ -21,6 +21,7 @@ class ReviewState(TypedDict):
         user_id: Supabase auth user UUID or guest session UUID.
         language: Target language code (es, de, fr).
         level: CEFR level (A0, A1, A2, B1).
+        supabase_client: User-scoped Supabase client for RLS-safe DB access.
 
     Session tracking:
         words_to_review: Queue of vocabulary items to review.
@@ -45,6 +46,7 @@ class ReviewState(TypedDict):
     user_id: str
     language: str
     level: str
+    supabase_client: NotRequired[Any]  # User-scoped Supabase client for RLS
 
     # Session tracking
     words_to_review: list[dict[str, object]]  # List of vocab items as dicts

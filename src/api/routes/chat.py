@@ -214,6 +214,10 @@ async def send_message(
     # Resolve identity for thread_id and effective user_id
     thread_id, effective_user_id, new_session_id = _resolve_chat_identity(user, session_id)
 
+    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
+    # Only available for authenticated users with a valid access token
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+
     # Invoke LangGraph agent with checkpointing
     async with get_checkpointer() as checkpointer:
         graph = build_graph(checkpointer=checkpointer)
@@ -223,6 +227,7 @@ async def send_message(
                 "level": level,
                 "language": language,
                 "user_id": effective_user_id,  # Phase 12: For review word weaving
+                "supabase_client": user_client,  # User-scoped client for RLS
             },
             config={"configurable": {"thread_id": thread_id}},
         )
@@ -242,10 +247,9 @@ async def send_message(
 
     # Capture vocabulary and session data for authenticated users only
     # Guests get chat but no progress tracking (simplifies architecture, no service key needed)
-    if new_vocabulary and effective_user_id and user and sb_access_token:
+    if new_vocabulary and effective_user_id and user and user_client:
         try:
-            # Use user-authenticated client for RLS to work with auth.uid()
-            user_client = get_supabase_for_user(sb_access_token)
+            # Reuse the user-scoped client created above for RLS compliance
             progress_service = ProgressService(effective_user_id, client=user_client)
             progress_service.record_chat_activity(
                 language=language,

@@ -438,7 +438,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await generate_question_node(state)
 
         assert "current_word" in result
@@ -460,7 +460,7 @@ class TestGenerateQuestionNode:
         ]
         state = _make_review_state(words_to_review=words, current_word_index=1)
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await generate_question_node(state)
 
         assert result["current_word"] == words[1]
@@ -476,7 +476,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await generate_question_node(state)
 
         assert result["question_type"] in {"translate", "fill_blank", "recognize"}
@@ -493,7 +493,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await generate_question_node(state)
 
         assert result["question_text"] == expected_text
@@ -532,7 +532,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await generate_question_node(state)
 
         mock_llm.ainvoke.assert_called_once()
@@ -554,7 +554,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state(language="de")
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await generate_question_node(state)
 
         # Verify the prompt contains the German language name
@@ -573,7 +573,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state(language="xx")
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await generate_question_node(state)
 
         call_args = mock_llm.ainvoke.call_args[0][0]
@@ -588,7 +588,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             with pytest.raises(Exception, match="API Error"):
                 await generate_question_node(state)
 
@@ -600,7 +600,7 @@ class TestGenerateQuestionNode:
 
         state = _make_review_state()
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             with pytest.raises(TimeoutError):
                 await generate_question_node(state)
 
@@ -632,7 +632,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert "quality_score" in result
@@ -654,7 +654,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 5
@@ -674,7 +674,7 @@ class TestEvaluateAnswerNode:
             question_type="recognize",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 5
@@ -694,7 +694,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 5
@@ -714,7 +714,7 @@ class TestEvaluateAnswerNode:
             question_type="fill_blank",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 5
@@ -734,7 +734,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 1
@@ -754,7 +754,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 0
@@ -790,7 +790,7 @@ class TestEvaluateAnswerNode:
             results=existing_results,
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert len(result["results"]) == 2
@@ -815,7 +815,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 3
@@ -836,7 +836,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] <= 2
@@ -857,7 +857,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await evaluate_answer_node(state)
 
         call_args = mock_llm.ainvoke.call_args[0][0]
@@ -880,7 +880,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await evaluate_answer_node(state)
 
         call_args = mock_llm.ainvoke.call_args[0][0]
@@ -902,7 +902,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             await evaluate_answer_node(state)
 
         call_args = mock_llm.ainvoke.call_args[0][0]
@@ -925,7 +925,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["feedback_text"] == expected_feedback
@@ -945,7 +945,7 @@ class TestEvaluateAnswerNode:
             # user_answer intentionally omitted
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         assert result["quality_score"] == 0
@@ -965,7 +965,7 @@ class TestEvaluateAnswerNode:
             # question_type intentionally omitted
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         # Default question_type is "translate", so correct_answer = word ("hola")
@@ -983,7 +983,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             with pytest.raises(Exception, match="LLM Error"):
                 await evaluate_answer_node(state)
 
@@ -999,7 +999,7 @@ class TestEvaluateAnswerNode:
             question_type="translate",
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             with pytest.raises(TimeoutError):
                 await evaluate_answer_node(state)
 
@@ -1020,7 +1020,7 @@ class TestEvaluateAnswerNode:
             results=original_results,
         )
 
-        with patch("src.agent.nodes.review._get_llm", return_value=mock_llm):
+        with patch("src.agent.nodes.review.get_llm", return_value=mock_llm):
             result = await evaluate_answer_node(state)
 
         # Original should not have been mutated
@@ -1037,10 +1037,9 @@ class TestEvaluateAnswerNode:
 class TestUpdateSm2Node:
     """Tests for update_sm2_node async function.
 
-    Note: update_sm2_node does lazy imports inside its try block:
-        from src.api.supabase_client import get_supabase_admin
-        from src.services.review import ReviewService
-    So we patch at the source module locations, not on src.agent.nodes.review.
+    Note: update_sm2_node uses state.get("supabase_client") to get the
+    user-scoped Supabase client, and does a lazy import of ReviewService.
+    We pass the mock client through state and patch ReviewService.
     """
 
     def test_is_async(self) -> None:
@@ -1050,16 +1049,15 @@ class TestUpdateSm2Node:
     @pytest.mark.asyncio
     async def test_increments_current_word_index(self) -> None:
         """Should always increment current_word_index by 1."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
             current_word_index=0,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -1070,16 +1068,15 @@ class TestUpdateSm2Node:
     @pytest.mark.asyncio
     async def test_increments_from_nonzero_index(self) -> None:
         """Should increment from whatever the current index is."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": 2, "word": "gracias", "translation": "thank you"},
             quality_score=4,
             current_word_index=3,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -1090,15 +1087,14 @@ class TestUpdateSm2Node:
     @pytest.mark.asyncio
     async def test_calls_review_service_update_sm2(self) -> None:
         """Should call ReviewService.update_sm2 with correct args."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": 42, "word": "hola", "translation": "hello"},
             quality_score=5,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -1107,28 +1103,23 @@ class TestUpdateSm2Node:
         mock_service.update_sm2.assert_called_once_with(vocab_id=42, quality=5)
 
     @pytest.mark.asyncio
-    async def test_creates_service_with_user_id_and_admin_client(self) -> None:
-        """Should create ReviewService with the user_id and admin client."""
-        mock_admin_client = MagicMock()
+    async def test_creates_service_with_user_id_and_user_client(self) -> None:
+        """Should create ReviewService with the user_id and user-scoped client."""
+        mock_user_client = MagicMock()
         state = _make_review_state(
             user_id="user-xyz-789",
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
+            supabase_client=mock_user_client,
         )
 
-        with (
-            patch(
-                "src.api.supabase_client.get_supabase_admin",
-                return_value=mock_admin_client,
-            ),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
             await update_sm2_node(state)
 
-        mock_service_cls.assert_called_once_with("user-xyz-789", client=mock_admin_client)
+        mock_service_cls.assert_called_once_with("user-xyz-789", client=mock_user_client)
 
     @pytest.mark.asyncio
     async def test_handles_missing_current_word(self) -> None:
@@ -1172,16 +1163,15 @@ class TestUpdateSm2Node:
     @pytest.mark.asyncio
     async def test_service_exception_does_not_crash(self) -> None:
         """If ReviewService.update_sm2 raises, should log warning and continue."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
             current_word_index=0,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.update_sm2.side_effect = Exception("Database error")
             mock_service_cls.return_value = mock_service
@@ -1193,35 +1183,36 @@ class TestUpdateSm2Node:
         assert result["current_word_index"] == 1
 
     @pytest.mark.asyncio
-    async def test_supabase_admin_exception_does_not_crash(self) -> None:
-        """If get_supabase_admin raises, should log warning and continue."""
+    async def test_none_supabase_client_still_works(self) -> None:
+        """If supabase_client is None, ReviewService should be created with None client."""
         state = _make_review_state(
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
             current_word_index=0,
+            # No supabase_client - defaults to None
         )
 
-        with patch(
-            "src.api.supabase_client.get_supabase_admin",
-            side_effect=Exception("No admin client"),
-        ):
-            # Should not raise
+        with patch("src.services.review.ReviewService") as mock_service_cls:
+            mock_service = MagicMock()
+            mock_service_cls.return_value = mock_service
+
             result = await update_sm2_node(state)
 
+        # Service should be created with None client
+        mock_service_cls.assert_called_once_with("test-user-abc", client=None)
         assert result["current_word_index"] == 1
 
     @pytest.mark.asyncio
     async def test_word_id_converted_to_int(self) -> None:
         """word_id should be converted to int even if stored as string."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": "42", "word": "hola", "translation": "hello"},
             quality_score=5,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -1232,16 +1223,15 @@ class TestUpdateSm2Node:
     @pytest.mark.asyncio
     async def test_only_returns_current_word_index(self) -> None:
         """Return dict should only contain current_word_index."""
+        mock_client = MagicMock()
         state = _make_review_state(
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
             current_word_index=0,
+            supabase_client=mock_client,
         )
 
-        with (
-            patch("src.api.supabase_client.get_supabase_admin", return_value=MagicMock()),
-            patch("src.services.review.ReviewService") as mock_service_cls,
-        ):
+        with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
@@ -1251,15 +1241,15 @@ class TestUpdateSm2Node:
 
 
 # =============================================================================
-# _get_llm helper
+# get_llm helper (creative profile)
 # =============================================================================
 
 
 class TestGetLlm:
-    """Tests for the _get_llm helper function."""
+    """Tests for get_llm with creative profile."""
 
     def test_creates_chat_anthropic(self) -> None:
-        """_get_llm should create a ChatAnthropic instance with correct params."""
+        """get_llm('creative') should create a ChatAnthropic instance with correct params."""
         from src.api.config import Settings
 
         mock_settings = Settings(
@@ -1270,11 +1260,11 @@ class TestGetLlm:
         )
 
         with patch("src.api.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.nodes.review.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
-                from src.agent.nodes.review import _get_llm
+                from src.agent.llm import get_llm
 
-                _get_llm()
+                get_llm("creative")
 
                 mock_chat.assert_called_once()
                 call_kwargs = mock_chat.call_args[1]

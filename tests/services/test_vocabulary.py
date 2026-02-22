@@ -117,19 +117,6 @@ class TestVocabularyService:
 
             mock_class.assert_called_once_with("user-123")
 
-    def test_extract_vocabulary_returns_empty_list(self, mock_repo: MagicMock) -> None:
-        """Test extract_vocabulary returns empty list (stub implementation)."""
-        service = VocabularyService("user-123")
-
-        result = service.extract_vocabulary(
-            text="Hola, ¿cómo estás?",
-            language="es",
-            level="A1",
-        )
-
-        assert result == []
-        assert isinstance(result, list)
-
     def test_save_vocabulary_counts_new_words(self, mock_repo: MagicMock) -> None:
         """Test save_vocabulary counts new words correctly."""
         mock_repo.get_by_word_and_language.return_value = None  # Word doesn't exist
