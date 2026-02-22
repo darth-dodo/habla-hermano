@@ -24,7 +24,7 @@ grep -rn "breakpoint()\|import pdb\|print(" src/ --include="*.py" || echo "Clean
 | `ANTHROPIC_API_KEY` | LLM API access | Yes |
 | `SUPABASE_URL` | Database connection | Yes |
 | `SUPABASE_KEY` | Database auth | Yes |
-| `LLM_MODEL` | Model (default: `claude-sonnet-4-20250514`) | No |
+| `LLM_MODEL` | Model (default: `claude-haiku-4-5-20251001`) | No |
 | `LLM_TEMPERATURE` | Creativity (default: `0.7`) | No |
 
 ### Pre-Deploy Checklist

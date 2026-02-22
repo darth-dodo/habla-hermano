@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # LLM settings
-    LLM_MODEL: str = "claude-sonnet-4-20250514"
+    LLM_MODEL: str = "claude-haiku-4-5-20251001"
     LLM_TEMPERATURE: float = 0.7
 
     # Server settings
