@@ -1,378 +1,110 @@
 # Feature Development Workflow
 
-**Purpose**: Structured workflow for developing new features with design-first approach and quality gates.
+**Purpose**: Structured workflow for new features in the habla-hermano AI language tutor.
 
-**Duration**: 2-6 hours (depending on complexity)
-
-**Agents**: Architect → Developer → QA
+**Agents**: Architect --> Developer --> QA
 
 ---
 
-## Phase 1: Design (Architect Agent)
+## Phase 1: Design (Architect)
 
-**Duration**: 30-60 minutes
-
-**Objective**: Create comprehensive technical design and implementation plan.
+**Objective**: Technical design and implementation plan.
 
 ### Tasks
 
-- [ ] Analyze feature requirements and user stories
-- [ ] Define acceptance criteria and success metrics
-- [ ] Design system architecture and component structure
-- [ ] Identify dependencies and integration points
-- [ ] Document data models and interfaces
-- [ ] Plan API contracts and communication patterns
-- [ ] Assess technical risks and mitigation strategies
-- [ ] Create implementation task breakdown
-- [ ] Estimate complexity and resource requirements
-- [ ] Review design with stakeholders (if applicable)
+- [ ] Analyze feature requirements and define acceptance criteria
+- [ ] Design component structure (which modules in `src/` are affected)
+- [ ] Define data models, API contracts, and state schema changes
+- [ ] Identify dependencies (LangGraph nodes, Supabase tables, prompt templates)
+- [ ] Create implementation task breakdown (<4h chunks)
+- [ ] Assess risks and plan testing strategy
 
-### Outputs
+### Key Design Questions
 
-**Design Document** (`docs/design/FEATURE-NAME.md`):
-
-````markdown
-# Feature: [Name]
-
-## Overview
-
-Brief description and business value
-
-## Requirements
-
-- Functional requirement 1
-- Functional requirement 2
-- Non-functional requirements (performance, security, etc.)
-
-## Architecture
-
-### Components
-
-- Component A: Responsibility and interfaces
-- Component B: Responsibility and interfaces
-
-### Data Models
-
-```language
-interface/class definitions
-```
-````
-
-### API Contracts
-
-Endpoints, methods, request/response formats
-
-## Dependencies
-
-- External libraries or services
-- Internal modules or components
-
-## Implementation Plan
-
-1. Task 1 (estimate: Xh)
-2. Task 2 (estimate: Xh)
-
-## Risks & Mitigations
-
-- Risk 1 → Mitigation strategy
-- Risk 2 → Mitigation strategy
-
-## Testing Strategy
-
-- Unit test coverage targets
-- Integration test scenarios
-- E2E test critical paths
-
-````
-
-### Session Log Update
-```markdown
-## Session [N]: Feature Design - [Feature Name]
-
-**Agent**: Architect
-**Duration**: [X] minutes
-**Status**: Design Complete
-
-### Completed
-- Technical design document created
-- Architecture and interfaces defined
-- Implementation plan with [X] tasks
-- Risk assessment completed
-
-### Decisions
-- [Key architectural decision 1]
-- [Key architectural decision 2]
-
-### Next Steps
-- Hand off to Developer for implementation
-- Begin Phase 2: Implementation
-````
+- Does this touch `ConversationState`? If so, use `NotRequired` for new fields
+- Does this need a new LangGraph node in `src/agent/nodes/`?
+- Does this need new prompt templates in `src/templates/`?
+- Does this need new API routes in `src/api/`?
+- Does this affect Supabase schema in `src/db/`?
 
 ### Quality Gate: Design Review
 
-**Criteria**:
-
-- [ ] Requirements clearly defined with acceptance criteria
-- [ ] Architecture supports scalability and maintainability
+- [ ] Requirements have clear acceptance criteria
+- [ ] Architecture fits existing LangGraph graph structure
 - [ ] Data models and interfaces documented
-- [ ] Implementation tasks broken into <4h chunks
-- [ ] Risks identified with mitigation plans
-- [ ] Testing strategy defined
-
-**Exit Condition**: All criteria met, design approved.
+- [ ] Tasks broken into <4h chunks
+- [ ] Testing strategy defined (unit + integration)
 
 ---
 
-## Phase 2: Implementation (Developer Agent)
+## Phase 2: Implementation (Developer)
 
-**Duration**: 1-4 hours
-
-**Objective**: Implement feature following TDD/BDD approach with quality gates.
+**Objective**: Implement feature following TDD approach.
 
 ### Tasks
 
-- [ ] Set up development environment and dependencies
-- [ ] Create feature branch from main
-- [ ] Implement data models and interfaces
-- [ ] Write failing tests (RED phase)
-- [ ] Implement minimal code to pass tests (GREEN phase)
-- [ ] Refactor for quality and maintainability (REFACTOR phase)
+- [ ] Create feature branch: `git checkout -b feature/descriptive-name`
+- [ ] Write failing tests in `tests/` (RED)
+- [ ] Implement minimal code to pass tests (GREEN)
+- [ ] Refactor for quality (REFACTOR)
 - [ ] Add integration tests for component interactions
 - [ ] Implement error handling and edge cases
-- [ ] Add logging and monitoring hooks
-- [ ] Update relevant documentation
-- [ ] Run full test suite
-- [ ] Perform self-code review
+- [ ] Run full validation:
+  ```bash
+  uv run ruff check src/ tests/
+  uv run mypy src/
+  uv run pytest
+  ```
 
-### BDD Test-Driven Approach
+### Implementation Checklist
 
-**Red Phase**:
-
-1. Write test describing expected behavior
-2. Run test (should fail)
-3. Verify failure message is correct
-
-**Green Phase**:
-
-1. Write minimal code to make test pass
-2. Run test (should pass)
-3. Verify implementation meets requirement
-
-**Refactor Phase**:
-
-1. Improve code quality without changing behavior
-2. Run tests (should still pass)
-3. Check for code smells and patterns
-
-### Code Quality Checklist
-
-- [ ] No hardcoded values (use configuration)
+- [ ] No hardcoded values (use `src/services/` or env config)
 - [ ] Error handling for all failure scenarios
-- [ ] Input validation and sanitization
-- [ ] Consistent naming conventions
-- [ ] Modular and reusable components
-- [ ] No code duplication (DRY principle)
-- [ ] Comments only for complex logic
-- [ ] Accessibility considerations (if UI)
-- [ ] Performance optimizations where needed
-- [ ] Security best practices followed
-
-### Session Log Update
-
-```markdown
-## Session [N]: Feature Implementation - [Feature Name]
-
-**Agent**: Developer
-**Duration**: [X] hours
-**Status**: Implementation Complete
-
-### Completed
-
-- [x] components implemented
-- [x] unit tests written (coverage: X%)
-- [x] integration tests added
-- All tests passing
-- Code review self-performed
-
-### Technical Details
-
-- Files modified: [list]
-- New dependencies: [list or "none"]
-- Known limitations: [list or "none"]
-
-### Next Steps
-
-- Hand off to QA for validation
-- Begin Phase 3: Validation
-```
+- [ ] Input validation on any new API endpoints
+- [ ] Consistent naming conventions (snake_case throughout)
+- [ ] Type hints on all function signatures
 
 ### Quality Gate: Implementation Review
 
-**Criteria**:
-
 - [ ] All planned functionality implemented
-- [ ] Unit test coverage ≥80%
+- [ ] Unit test coverage >= 80% for new code
 - [ ] Integration tests for critical paths
-- [ ] All tests passing
-- [ ] Code follows project conventions
-- [ ] No linting or type errors
-- [ ] Documentation updated
+- [ ] All tests passing: `uv run pytest`
+- [ ] No lint errors: `uv run ruff check src/ tests/`
+- [ ] No type errors: `uv run mypy src/`
 - [ ] Self-review completed
-
-**Exit Condition**: All criteria met, code ready for QA.
 
 ---
 
-## Phase 3: Validation (QA Agent)
+## Phase 3: Validation (QA)
 
-**Duration**: 30-90 minutes
-
-**Objective**: Comprehensive testing and quality validation before merge.
+**Objective**: Verify feature works correctly and passes all quality gates.
 
 ### Tasks
 
 - [ ] Review implementation against design document
 - [ ] Verify all acceptance criteria met
-- [ ] Run full test suite (unit + integration)
-- [ ] Perform manual exploratory testing
-- [ ] Test edge cases and error scenarios
-- [ ] Validate accessibility compliance (if UI)
-- [ ] Check performance benchmarks
-- [ ] Review security considerations
-- [ ] Test cross-browser/platform compatibility (if applicable)
-- [ ] Verify documentation accuracy and completeness
-- [ ] Create test report with findings
+- [ ] Run full test suite: `uv run pytest --tb=short`
+- [ ] Test edge cases and error scenarios manually
+- [ ] Test conversation flow end-to-end (if agent changes)
+- [ ] Check for regressions in related features
 - [ ] Approve or request changes
 
-### Test Scenarios
-
-**Functional Testing**:
-
-- [ ] Happy path: Feature works as designed
-- [ ] Edge cases: Boundary conditions handled
-- [ ] Error scenarios: Failures handled gracefully
-- [ ] Integration: Works with existing features
-
-**Non-Functional Testing**:
-
-- [ ] Performance: Meets response time requirements
-- [ ] Security: No vulnerabilities introduced
-- [ ] Accessibility: WCAG compliance (if UI)
-- [ ] Usability: Intuitive and user-friendly (if UI)
-
-### Session Log Update
-
-```markdown
-## Session [N]: Feature Validation - [Feature Name]
-
-**Agent**: QA
-**Duration**: [X] minutes
-**Status**: [Approved / Changes Requested]
-
-### Test Results
-
-- Unit tests: [X/X] passing
-- Integration tests: [X/X] passing
-- Manual testing: [Pass/Fail]
-- Performance: [Within/Outside] benchmarks
-
-### Issues Found
-
-- [Issue 1: severity, description]
-- [Issue 2: severity, description]
-
-### Recommendations
-
-- [Recommendation 1]
-- [Recommendation 2]
-
-### Decision
-
-[Approved for merge / Request changes: list required fixes]
-```
-
 ### Quality Gate: Final Validation
-
-**Criteria**:
 
 - [ ] All acceptance criteria verified
 - [ ] Test suite passing (100%)
 - [ ] No critical or high-severity issues
-- [ ] Performance within acceptable range
-- [ ] Security review passed
-- [ ] Documentation accurate and complete
-- [ ] Ready for production deployment
-
-**Exit Condition**: All criteria met, feature approved for merge.
+- [ ] No regressions in existing conversation flows
+- [ ] Ready for merge to main
 
 ---
 
-## Workflow Completion
+## Merge Checklist
 
-### Merge Checklist
-
-- [ ] All three phases completed successfully
+- [ ] All three phases completed
 - [ ] All quality gates passed
-- [ ] Git branch up-to-date with main
-- [ ] Commit messages follow conventions
-- [ ] Pull request created with description
-- [ ] CI/CD pipeline passing
-- [ ] Code review requested (if required)
-
-### Final Session Log
-
-```markdown
-## Feature Development Complete: [Feature Name]
-
-**Total Duration**: [X] hours
-**Phases**: Design → Implementation → Validation
-**Status**: Ready for Merge
-
-### Summary
-
-- Design: [Brief summary of architecture]
-- Implementation: [Brief summary of changes]
-- Validation: [Test results summary]
-
-### Metrics
-
-- Files changed: [X]
-- Lines of code: +[X] -[X]
-- Test coverage: [X]%
-- Performance impact: [measurement]
-
-### Deployment Notes
-
-- Dependencies: [list or "none"]
-- Configuration changes: [list or "none"]
-- Migration required: [yes/no]
-```
-
----
-
-## Best Practices
-
-### Communication Between Agents
-
-- **Architect → Developer**: Clear design document with implementation guidance
-- **Developer → QA**: Detailed change description and testing instructions
-- **QA → Developer**: Specific, actionable feedback on issues
-
-### Version Control
-
-- Branch naming: `feature/descriptive-name`
-- Commit messages: Conventional format (`feat:`, `fix:`, etc.)
-- Frequent commits: Checkpoint progress regularly
-
-### Documentation
-
-- Update README if user-facing changes
-- Add inline comments for complex logic only
-- Keep design documents current with implementation
-- Document breaking changes prominently
-
-### Iteration
-
-- If QA requests changes: Developer fixes → QA re-validates
-- If design issues found during implementation: Architect revises → Developer adjusts
-- Continuous feedback loop until quality gates pass
+- [ ] Branch up-to-date with main
+- [ ] Commit messages follow conventional format (`feat:`, `fix:`, etc.)
+- [ ] PR created with description
+- [ ] `uv run ruff check && uv run mypy src/ && uv run pytest` all pass

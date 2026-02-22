@@ -1,0 +1,273 @@
+# Habla Hermano - Agentic Framework Configuration
+
+project:
+  name: habla-hermano
+  description: 'AI language tutor: A0 to B1 with LangGraph'
+  type: api
+
+stack:
+  languages:
+    primary: python
+    version: '3.11+'
+    secondary: []
+
+  frameworks:
+    backend: fastapi
+    agent: langgraph
+    ai: langchain-anthropic
+    database: supabase
+    testing: pytest
+
+  build_tools:
+    package_manager: uv
+    task_runner: make
+
+quality_gates:
+  syntax:
+    enabled: true
+    commands:
+      - 'uv run python -m py_compile src/api/main.py'
+
+  types:
+    enabled: true
+    strict_mode: true
+    commands:
+      - 'uv run mypy src/'
+
+  lint:
+    enabled: true
+    zero_warnings: true
+    commands:
+      - 'uv run ruff check src/ tests/'
+
+  format:
+    enabled: true
+    commands:
+      - 'uv run ruff format --check src/ tests/'
+
+  security:
+    enabled: true
+    audit_level: moderate
+    commands:
+      - 'uv run pip-audit'
+
+  tests:
+    enabled: true
+    coverage_threshold: 70
+    commands:
+      - 'uv run pytest --cov=src --cov-report=term-missing'
+
+  performance:
+    enabled: false
+
+  accessibility:
+    enabled: false
+
+  integration:
+    enabled: true
+    commands:
+      - 'uv run pytest -m integration'
+
+commands:
+  install: 'uv sync --dev'
+  dev: 'uv run uvicorn src.api.main:app --reload --port 8000'
+  test: 'uv run pytest'
+  test_cov: 'uv run pytest --cov=src --cov-report=html --cov-report=term-missing'
+  test_fast: 'uv run pytest -m "not slow"'
+  lint: 'uv run ruff check src/ tests/'
+  lint_fix: 'uv run ruff check --fix src/ tests/'
+  format: 'uv run ruff format src/ tests/'
+  format_check: 'uv run ruff format --check src/ tests/'
+  typecheck: 'uv run mypy src/'
+  check_all: 'make check'
+  pre_commit: 'uv run pre-commit run --all-files'
+  clean: 'make clean'
+  db_init: 'uv run python -c "from src.db.models import init_db; init_db()"'
+  db_seed: 'uv run python src/db/seed.py'
+
+personas:
+  architect:
+    enabled: true
+    mcp_primary: sequential
+    mcp_secondary: context7
+    focus: ['langgraph design', 'agent orchestration', 'state management', 'graph topology']
+
+  backend:
+    enabled: true
+    mcp_primary: context7
+    mcp_secondary: sequential
+    focus: ['fastapi routes', 'langgraph nodes', 'supabase integration', 'prompt engineering']
+
+  writer:
+    enabled: true
+    mcp_primary: context7
+    mcp_secondary: sequential
+    focus: ['curriculum content', 'lesson plans', 'prompt templates', 'API documentation']
+
+  qa:
+    enabled: true
+    mcp_primary: sequential
+    mcp_secondary: context7
+    focus: ['pytest suites', 'agent behavior testing', 'API endpoint validation', 'coverage']
+
+  security:
+    enabled: true
+    mcp_primary: sequential
+    focus: ['jwt verification', 'supabase auth', 'input validation', 'rate limiting']
+
+workflows:
+  feature_development:
+    file: feature-development.md
+    phases:
+      - name: Design
+        persona: architect
+        duration: '15-30min'
+      - name: Implementation
+        persona: backend
+        duration: '1-2hr'
+      - name: Validation
+        persona: qa
+        duration: '30min'
+
+  agent_development:
+    file: agent-development.md
+    phases:
+      - name: 'Graph Design'
+        persona: architect
+        duration: '15min'
+      - name: 'Node Implementation'
+        persona: backend
+        duration: '30-60min'
+      - name: 'Prompt Authoring'
+        persona: writer
+        duration: '15-30min'
+      - name: 'Testing'
+        persona: qa
+        duration: '30min'
+
+  lesson_creation:
+    # Config-only workflow, no dedicated file
+    phases:
+      - name: 'Curriculum Design'
+        persona: writer
+        duration: '30min'
+      - name: 'Template Implementation'
+        persona: backend
+        duration: '30-60min'
+      - name: 'Agent Integration'
+        persona: architect
+        duration: '15-30min'
+
+  bug_fix:
+    file: bug-fix.md
+    phases:
+      - name: Investigate
+        persona: backend
+        duration: '15-30min'
+      - name: Fix
+        persona: backend
+        duration: '30-60min'
+      - name: Verify
+        persona: qa
+        duration: '15min'
+
+  deployment:
+    file: deployment.md
+    phases:
+      - name: 'Pre-Deploy'
+        persona: backend
+        duration: '15min'
+      - name: 'Deploy'
+        persona: backend
+        duration: '10min'
+      - name: 'Post-Deploy Verification'
+        persona: qa
+        duration: '15min'
+
+multi_agent:
+  enabled: true
+  max_parallel_agents: 3
+
+  patterns:
+    parallel:
+      description: 'Independent tasks across modules'
+      use_when: 'Changes span agent/, api/, lessons/ without dependencies'
+      example: '3 agents: node logic, API route, lesson content'
+
+    sequential:
+      description: 'Dependent pipeline'
+      use_when: 'Graph state changes flow through nodes'
+      example: 'State schema -> Node logic -> Graph wiring -> API route'
+
+    hierarchical:
+      description: 'Architect leads workers'
+      use_when: 'New lesson type or graph redesign'
+      example: 'Architect defines graph -> Backend implements nodes -> QA validates'
+
+session:
+  checkpoint_interval: '30min'
+  auto_save: true
+
+  context_retention:
+    target: 90
+    compress_at: 75
+
+  handoff:
+    required_fields:
+      - current_task
+      - next_action
+      - blockers
+      - quality_status
+
+mcp_servers:
+  context7:
+    description: 'LangGraph, LangChain, FastAPI documentation'
+    use_for: ['langgraph patterns', 'langchain APIs', 'fastapi routes', 'pydantic models']
+    auto_activate: ['langgraph imports', 'langchain usage', 'fastapi decorators']
+
+  sequential:
+    description: 'Multi-step reasoning for agent design'
+    use_for: ['graph topology', 'state machine design', 'debugging agent flows', 'prompt optimization']
+    auto_activate: ['--think flags', 'agent architecture', 'complex debugging']
+
+  serena:
+    description: 'Semantic navigation across agent codebase'
+    use_for: ['refactoring nodes', 'state schema changes', 'cross-module references']
+    auto_activate: ['rename operations', 'large refactors']
+
+extensions:
+  deployment:
+    platform: render
+    config_file: render.yaml
+    runtime: python
+    region: oregon
+    branch: main
+    start_command: 'uv run uvicorn src.api.main:app --host 0.0.0.0 --port $PORT --workers 1'
+    health_check: /health
+
+  source_layout:
+    agent: 'src/agent/ - LangGraph nodes, graphs, state schemas'
+    api: 'src/api/ - FastAPI routes, middleware, config'
+    db: 'src/db/ - Supabase client, models, migrations'
+    lessons: 'src/lessons/ - Curriculum YAML, lesson definitions'
+    services: 'src/services/ - External service integrations'
+    templates: 'src/templates/ - Jinja2 + prompt templates'
+    static: 'src/static/ - CSS, JS, images'
+
+  test_layout:
+    agent: 'tests/agent/ - Node and graph tests'
+    api: 'tests/api/ - Route and middleware tests'
+    db: 'tests/db/ - Database integration tests'
+    lessons: 'tests/lessons/ - Curriculum validation tests'
+    services: 'tests/services/ - Service mock tests'
+
+  env_vars:
+    required:
+      - ANTHROPIC_API_KEY
+      - SUPABASE_URL
+      - SUPABASE_KEY
+      - SUPABASE_JWT_SECRET
+    optional:
+      - LLM_MODEL
+      - LLM_TEMPERATURE
+      - DEBUG
