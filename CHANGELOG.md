@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.11.0] - 2026-02-20
+## [0.14.0] - 2026-02-22
+
+### Added
+- **Claude Code skills** (`.claude/skills/`): 11 project-specific development workflow skills covering LangGraph nodes, FastAPI routes, services, repositories, prompts, HTMX templates, YAML lessons, testing, debugging, quality checks, and feature phase planning
+
+### Changed
+- **Default LLM switched to Haiku 4.5** from Claude Sonnet 4 — ~10x lower cost and faster response times while retaining sufficient capability for structured language tutoring tasks (ADR-008)
+
+### Fixed
+- **VocabularyRepository race condition**: Switch `upsert()` to insert-first pattern catching PostgreSQL duplicate key errors (23505)
+- **LessonProgressRepository race condition**: Switch `complete_lesson()` to single upsert operation
+- **RLS enforcement in agent nodes**: Remove `get_supabase_admin()` from agent nodes; pass user-scoped Supabase client through LangGraph state so Row Level Security policies are always enforced
+- **Centralized LLM factory**: Extract shared `src/agent/llm.py` from 5 duplicate `_get_llm()` functions with profile-based configuration (`conversation`, `analysis`, `scaffolding`, `review`)
+- **Dead code removal**: Delete unused `feedback.py` stub node, remove unused `extract_vocabulary()`, clean up dead `EffectiveUser` code
+- **Logging hygiene**: Replace f-string logging with lazy `%`-formatting across all agent nodes
+- **Agentic framework cleanup**: Audit and streamline `.agentic-framework/` for habla-hermano (net -10K lines)
+
+## [0.13.0] - 2026-02-21
 
 ### Added - Phase 14: Learning Paths & Adaptive Recommendations
-- **PathService** (`src/services/paths.py`): Structured learning paths organizing 60 lessons into language → CEFR level units → category-ordered progressions
+- **PathService** (`src/services/paths.py`): Structured learning paths organizing 60 lessons into language -> CEFR level units -> category-ordered progressions
 - **AdaptiveService** (`src/services/adaptive.py`): Personalized daily recommendations combining path progress, vocabulary accuracy (category strengths), level readiness, and review schedules
 - **Learning path page** (`GET /learn/`): Full-page path overview with visual timeline, unit progress, and adaptive recommendation card
 - **Recommendation endpoint** (`GET /learn/recommendation`): HTMX lazy-loaded partial for the daily recommendation card
@@ -17,10 +34,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Templates**: `learn.html` (full path page), `partials/learn_recommendation.html` (recommendation card)
 - **99 new tests**: PathService (27), AdaptiveService (49), learn routes (23) — total suite now 1569+ tests at 86%+ coverage
 
-## [0.10.0] - 2026-02-15
+## [0.12.0] - 2026-02-17
 
-### Changed
-- Phase 13: Comprehensive mobile-responsive design across all pages
+### Added - Security Hardening
+- **Server-side JWT verification** (#20): Replace insecure `verify_signature=False` with Supabase `auth.get_user()` server-side validation; forged tokens now rejected; local dev uses explicit fallback with WARNING log
+- **Chat input validation** (#21): MAX_MESSAGE_LENGTH (2000 chars), CEFR level validation (A0/A1/A2/B1 only), language validation (es/de/fr only), empty/whitespace rejection; returns HTMX-compatible HTML error fragments (422)
+- **Rate limiting** (#23): IP-based rate limiting via `ratelimit` library — auth endpoints: 5 req/min, chat endpoint: 20 req/min; custom async-compatible decorator factory for FastAPI
+
+## [0.11.0] - 2026-02-16
+
+### Changed - Simplified Guest Auth Model
+- **Guest access simplified to chat-only** (#18): Remove guest data persistence (vocabulary, progress, sessions); remove `GuestDataMergeService` and guest-to-auth merge logic; remove service key requirement for guest operations
+- Guests now get full chat functionality (LangGraph checkpointing), grammar feedback, and pronunciation tips — but no vocabulary tracking, progress data, or spaced repetition (requires authentication)
+- **User-scoped Supabase client** for RLS compliance: Add `get_supabase_for_user()` to create JWT-authenticated clients; all data routes now use the user's token instead of the anon client
+- Clear architectural separation: chat for all, persistence for authenticated users only
+
+## [0.10.0] - 2026-02-16
+
+### Changed - Phase 13: Mobile-Responsive Design
+- Comprehensive mobile-responsive design across all pages
 - Added `viewport-fit=cover` for edge-to-edge rendering on notched devices
 - Added dynamic viewport height (`100dvh`) to account for mobile browser chrome
 - Added safe area inset utilities (`safe-top`, `safe-bottom`, `safe-x`) for notched phones
@@ -36,10 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mobile scrollbar hiding for native overlay scrollbar experience
 - Design doc: docs/design/phase13-mobile-responsive.md
 
-## [0.9.0] - 2026-02-04
+## [0.9.0] - 2026-02-12
 
-### Added
-- Phase 12: Spaced repetition system with SM-2 algorithm
+### Added - Phase 12: Spaced Repetition
 - ReviewService with SM-2 scheduling (easiness factor, intervals, repetition count)
 - Intelligent chat weaving: due review words naturally woven into Hermano's conversations
 - Dedicated review mode with conversational micro-quizzes (not flashcards)
@@ -60,10 +91,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Respond node fetches topical review words and adds them to system prompt
 - Analyze node tracks review word usage and updates SM-2 silently
 
-## [0.8.0] - 2026-02-02
+## [0.8.0] - 2026-02-04
 
-### Added
-- Phase 11: Nordic Minimal design system with clean, modern aesthetic
+### Added - Phase 11: Nordic Minimal Design & Pronunciation
 - Pronunciation tips integrated into all CEFR level prompts (A0-B1)
 - Language-specific pronunciation data: tricky_sounds, stress_rule, sound_tip
 - PRONUNCIATION TIPS sections in prompts for natural pronunciation coaching
@@ -79,51 +109,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0] - 2026-02-01
 
-### Added
-- Phase 10: Lesson content expansion from 5 to 60 lessons
+### Added - Phase 10: Lesson Content Expansion
 - German lessons: 20 lessons (A0-B1) with noun genders, umlauts, formal/informal distinction
 - French lessons: 20 lessons (A0-B1) with accents, liaison rules, formal/informal distinction
 - Spanish A1-B1 lessons: 15 new lessons building on existing A0 content
 - Composite key system for LessonService (`lang/level/id` format)
-- Level-appropriate exercise types: A0 (MC only) → B1 (MC + fill + translate)
+- Level-appropriate exercise types: A0 (MC only) -> B1 (MC + fill + translate)
 
 ### Changed
 - LessonService now uses composite keys for unique lesson identification
 - get_lesson() supports scoped lookups by language and level
 
-## [0.6.0] - 2025-01-28
+## [0.6.1] - 2026-02-01
 
-### Added
-- Phase 8: Guest session support for unauthenticated users
-- Session-based guest tracking via session_id cookie (httponly, 7-day expiry)
-- Guest data stored in same Supabase tables using admin client to bypass RLS
-- GuestDataMergeService for merging guest vocabulary and progress data on signup/login
-- _resolve_identity() helper for unified auth/guest handling across routes
-- Fire-and-forget pattern for data capture (failures don't block responses)
+### Added - Phase 9: AI-Enhanced Lessons with LangGraph Subgraphs
+- LessonState TypedDict for lesson subgraph state management
+- Lesson subgraph: load_step -> enhance_step -> END
+- Exercise validation subgraph with AI-generated feedback
+- Lesson nodes: load_step_node, enhance_step_node, validate_exercise_node
+- Lesson prompts: get_lesson_enhance_prompt, get_exercise_feedback_prompt
+- API endpoints for AI-enhanced step content and exercise feedback
+- Templates for enhanced lesson display
+- 1016 total tests
 
-### Changed
-- Chat and lesson routes now capture data for both authenticated users and guests
-- Schema migration to drop FK constraints for guest UUIDs
-- Progress tracking works identically for guests and authenticated users
+### Fixed
+- Circular imports resolved with lazy `get_settings` imports in agent nodes and lesson routes
 
-## [0.5.0] - 2025-01-25
+## [0.6.0] - 2026-01-28
 
-### Added
-- Phase 7: Progress tracking dashboard with vocabulary and session analytics
-- ProgressService for dashboard stats computation and chart data generation
-- VocabularyRepository for storing and retrieving learned vocabulary items
-- LearningSessionRepository for tracking learning session metadata
-- LessonProgressRepository for micro-lesson completion tracking
+### Added - Phase 7 & 8: Progress Tracking & Guest Sessions
+- **ProgressService** for dashboard stats computation and chart data generation
+- **VocabularyRepository** for storing and retrieving learned vocabulary items
+- **LearningSessionRepository** for tracking learning session metadata
+- **LessonProgressRepository** for micro-lesson completion tracking
 - Progress dashboard page with vocabulary list, stats summary, and interactive charts
 - Chart.js integration for visualizing learning progress over time
 - Vocabulary and session data capture in chat and lesson routes
 - HTMX partials: progress_vocab.html and stats_summary.html for dynamic updates
+- Session-based guest tracking via session_id cookie (httponly, 7-day expiry)
+- GuestDataMergeService for merging guest vocabulary and progress data on signup/login
+- `_resolve_identity()` helper for unified auth/guest handling across routes
+- Fire-and-forget pattern for data capture (failures don't block responses)
 
 ### Changed
 - Navigation updated to include progress dashboard link
-- User profile extended with progress statistics
+- Chat and lesson routes now capture data for both authenticated users and guests
+- Schema migration to drop FK constraints for guest UUIDs
 
-## [0.4.0] - 2025-01-18
+### Fixed
+- Progress route type annotation corrected for `_resolve_identity` return type (#12)
+
+## [0.5.0] - 2026-01-25
+
+### Added - Phase 6: Micro-Lessons
+- 5 initial Spanish A0 lessons in YAML format (greetings, numbers, colors, family, introductions)
+- LessonService for loading and validating YAML lesson files
+- Lesson models: Lesson, LessonStep, LessonExercise with Pydantic validation
+- Lesson catalog page with card-based browsing
+- Lesson player with step navigation and exercise submission (HTMX-driven)
+- Lesson completion tracking and handoff to chat
+- Hamburger menu navigation for mobile
+
+## [0.4.0] - 2026-01-18
 
 ### Added
 - Hermano personality: friendly big brother language tutor with consistent voice across all levels
@@ -143,10 +190,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A2: Challenges learners while keeping it fun and conversational
 - B1: Peer-to-peer natural conversation partner
 
-## [0.3.0] - 2025-01-18
+## [0.3.0] - 2026-01-18
 
-### Added
-- Phase 3: Scaffold node with conditional routing
+### Added - Phase 3: Scaffold Node
 - Word bank generation for A0-A1 learners with contextual vocabulary
 - Hint text to guide learner responses
 - Sentence starters to help beginners formulate responses
@@ -163,10 +209,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated message_pair.html template to include scaffold partial
 - Added Alpine.js interactions for collapsible scaffold UI
 
-## [0.2.0] - 2025-01-15
+## [0.2.0] - 2026-01-15
 
-### Added
-- Phase 2: LangGraph analyze node with grammar feedback
+### Added - Phase 2: Grammar Analysis
 - Grammar correction detection and gentle feedback generation
 - Collapsible grammar feedback UI with expand/collapse animations
 - Grammar tips displayed inline with conversation flow
@@ -179,10 +224,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Message pair template updated to include grammar feedback section
 - UI styling enhanced for grammar tip visibility
 
-## [0.1.0] - 2025-01-13
+## [0.1.0] - 2026-01-13
 
-### Added
-- Phase 1: LangGraph chat with HTMX UI
+### Added - Phase 1: Core Chat
 - Basic conversation flow with respond node
 - HTMX-powered real-time chat interface
 - Jinja2 templates with Tailwind CSS styling
@@ -198,7 +242,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project structure established with src/ directory layout
 - Development tooling configured (Ruff, MyPy, pre-commit)
 
-## [0.0.1] - 2025-01-12
+## [0.0.1] - 2026-01-12
 
 ### Added
 - Initial project setup
