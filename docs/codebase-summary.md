@@ -703,7 +703,7 @@ SUPABASE_SERVICE_KEY=eyJ...       # For admin ops
 # Application
 APP_NAME="Habla Hermano"
 DEBUG=false
-LLM_MODEL=claude-sonnet-4-20250514
+LLM_MODEL=claude-haiku-4-5-20251001
 LLM_TEMPERATURE=0.7
 HOST=127.0.0.1
 PORT=8000
@@ -720,7 +720,7 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
-    LLM_MODEL: str = "claude-sonnet-4-20250514"
+    LLM_MODEL: str = "claude-haiku-4-5-20251001"
 
     model_config = SettingsConfigDict(
         env_file=".env",

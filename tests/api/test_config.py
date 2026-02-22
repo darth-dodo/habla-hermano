@@ -36,7 +36,7 @@ class TestSettingsClass:
         # Check defaults
         assert settings.APP_NAME == "Habla Hermano"
         assert settings.DEBUG is False
-        assert settings.LLM_MODEL == "claude-sonnet-4-20250514"
+        assert settings.LLM_MODEL == "claude-haiku-4-5-20251001"
         assert settings.LLM_TEMPERATURE == 0.7
         assert settings.HOST == "127.0.0.1"
         assert settings.PORT == 8000

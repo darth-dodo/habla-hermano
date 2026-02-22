@@ -11,7 +11,7 @@
 #
 # Optional environment variables (see .env.example for full list):
 #   - DEBUG: true|false (default: false)
-#   - LLM_MODEL: Model to use (default: claude-sonnet-4-20250514)
+#   - LLM_MODEL: Model to use (default: claude-haiku-4-5-20251001)
 #   - SUPABASE_URL: Supabase project URL
 #   - SUPABASE_ANON_KEY: Supabase anonymous/public key
 #   - SUPABASE_SERVICE_KEY: Supabase service role key
