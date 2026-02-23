@@ -168,7 +168,7 @@ async def stream_chat_events(  # noqa: PLR0912
                         if used:
                             result.review_words_used = used
 
-    except Exception:
+    except Exception:  # noqa: BLE001 — top-level SSE boundary; must catch all to send error event
         logger.exception("Error during chat streaming")
         yield _make_sse_event(
             "error", {"message": "Sorry, something went wrong. Please try again."}

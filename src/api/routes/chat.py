@@ -37,6 +37,7 @@ from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
 from langchain_core.messages import HumanMessage
 from markupsafe import escape
+from postgrest.exceptions import APIError
 from sse_starlette.sse import EventSourceResponse
 
 from src.agent.checkpointer import get_checkpointer, get_user_thread_id
@@ -121,7 +122,7 @@ async def chat_page(
             elif review_stats.due_count > 0 and not warmup_dismissed:
                 # Show warmup prompt if words are due and not dismissed
                 context["show_warmup"] = True
-        except Exception:
+        except APIError:
             logger.exception("Failed to get review stats for user %s", user.id)
 
     return templates.TemplateResponse(
@@ -272,7 +273,7 @@ async def send_message(
                 level=level,
                 new_vocab=new_vocabulary,
             )
-        except Exception:
+        except APIError:
             logger.exception("Failed to capture chat activity for user %s", effective_user_id)
 
     # Create template response
@@ -419,7 +420,7 @@ async def stream_message(
                     level=level,
                     new_vocab=result.new_vocabulary,
                 )
-            except Exception:
+            except APIError:
                 logger.exception("Failed to capture chat activity for user %s", effective_user_id)
 
     headers: dict[str, str] = {"Cache-Control": "no-cache"}

@@ -12,6 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
@@ -77,7 +78,8 @@ async def get_progress_page(
     try:
         review_service = ReviewService(user.id, client=user_client)
         review_stats = review_service.get_stats(language=validate_language(language))
-    except Exception:
+    except APIError:
+>>>>>>> worktree-agent-a4375da1
         logger.exception("Failed to get review stats for user %s", user.id)
 
     return templates.TemplateResponse(

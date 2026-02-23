@@ -18,6 +18,7 @@ from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from postgrest.exceptions import APIError
 
 from src.api.auth import CurrentUserDep
 from src.api.cookies import delete_secure_cookie, set_secure_cookie
@@ -355,7 +356,7 @@ async def submit_review_answer(
     # Update SM-2 scheduling
     try:
         service.update_sm2(word_id, quality)
-    except Exception:
+    except APIError:
         logger.exception("Failed to update SM-2 for word %d", word_id)
 
     # Record result

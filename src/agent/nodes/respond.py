@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
 from src.agent.prompts import get_prompt_for_level
@@ -148,7 +149,7 @@ async def _get_topical_review_words(
             if vocab.id is not None
         ]
 
-    except Exception as e:
+    except APIError as e:
         logger.warning("Failed to get topical review words: %s", e)
         return []
 
