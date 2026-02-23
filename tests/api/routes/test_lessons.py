@@ -261,7 +261,7 @@ def app(
         patch("src.api.routes.lessons.LessonProgressRepository") as mock_repo_cls,
         patch("src.api.routes.lessons.VocabularyRepository") as mock_vocab_cls,
         patch("src.api.routes.lessons.get_supabase_admin") as mock_admin,
-        patch("src.services.review.ReviewService") as mock_review_cls,
+        patch("src.api.routes.lessons.ReviewService") as mock_review_cls,
     ):
         mock_repo_cls.return_value = MagicMock()
         mock_vocab_cls.return_value = MagicMock()
