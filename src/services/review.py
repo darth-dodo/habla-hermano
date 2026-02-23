@@ -109,9 +109,7 @@ class ReviewService:
         now = datetime.now(UTC)
 
         # Filter to words in rotation that are due
-        due_words = [
-            v for v in vocab if v.next_review_at is not None and v.next_review_at <= now
-        ]
+        due_words = [v for v in vocab if v.next_review_at is not None and v.next_review_at <= now]
 
         # Sort by most overdue first (earliest next_review_at)
         due_words.sort(key=lambda v: v.next_review_at or now)

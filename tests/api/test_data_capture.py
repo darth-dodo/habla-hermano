@@ -573,7 +573,12 @@ class TestLessonCompletionErrorResilience:
 
         with patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo:
             MockRepo.side_effect = APIError(
-                {"code": "500", "message": "Cannot connect to Supabase", "hint": None, "details": None}
+                {
+                    "code": "500",
+                    "message": "Cannot connect to Supabase",
+                    "hint": None,
+                    "details": None,
+                }
             )
 
             app.include_router(lessons.router, prefix="/lessons")

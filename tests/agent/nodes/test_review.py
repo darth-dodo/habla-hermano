@@ -1174,7 +1174,9 @@ class TestUpdateSm2Node:
 
         with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.update_sm2.side_effect = APIError({"code": "500", "message": "Database error", "hint": None, "details": None})
+            mock_service.update_sm2.side_effect = APIError(
+                {"code": "500", "message": "Database error", "hint": None, "details": None}
+            )
             mock_service_cls.return_value = mock_service
 
             # Should not raise

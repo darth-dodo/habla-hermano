@@ -913,9 +913,7 @@ class TestAnalyzeNodeLLMExceptions:
         import anthropic
 
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(
-            side_effect=anthropic.APIConnectionError(request=MagicMock())
-        )
+        mock_llm.ainvoke = AsyncMock(side_effect=anthropic.APIConnectionError(request=MagicMock()))
 
         with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {

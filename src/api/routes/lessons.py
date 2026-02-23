@@ -486,9 +486,7 @@ async def submit_exercise(
         else ""
     )
     explanation_html = (
-        f'<p class="explanation">{escape(exercise.explanation)}</p>'
-        if exercise.explanation
-        else ""
+        f'<p class="explanation">{escape(exercise.explanation)}</p>' if exercise.explanation else ""
     )
     feedback_html = f"""
     <div class="exercise-feedback {css_class}">

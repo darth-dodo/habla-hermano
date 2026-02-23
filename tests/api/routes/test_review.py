@@ -793,7 +793,9 @@ class TestSubmitReviewAnswer:
         self, client: AsyncClient, mock_review_service: MagicMock
     ) -> None:
         """If update_sm2 raises, the answer still returns feedback."""
-        mock_review_service.update_sm2.side_effect = APIError({"code": "500", "message": "DB error", "hint": None, "details": None})
+        mock_review_service.update_sm2.side_effect = APIError(
+            {"code": "500", "message": "DB error", "hint": None, "details": None}
+        )
         session_cookie = _build_session_cookie(word_ids=[1, 2], current_index=0)
         response = await client.post(
             "/review/answer",

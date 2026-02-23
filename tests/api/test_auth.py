@@ -1075,11 +1075,13 @@ class TestTokenRefreshIntegration:
         }
         expiring_token = create_test_token(payload)
 
-        new_token = create_test_token({
-            "sub": "test-user-123",
-            "email": "test@example.com",
-            "exp": int(time.time()) + 3600,
-        })
+        new_token = create_test_token(
+            {
+                "sub": "test-user-123",
+                "email": "test@example.com",
+                "exp": int(time.time()) + 3600,
+            }
+        )
 
         mock_supabase_user = MagicMock()
         mock_supabase_user.id = "test-user-123"

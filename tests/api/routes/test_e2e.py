@@ -1014,7 +1014,9 @@ class TestLearnUncoveredLines:
         """Exception in data loading falls back to empty progress (line 129-130)."""
         with patch(
             "src.api.routes.learn.LessonProgressRepository",
-            side_effect=APIError({"code": "500", "message": "DB error", "hint": None, "details": None}),
+            side_effect=APIError(
+                {"code": "500", "message": "DB error", "hint": None, "details": None}
+            ),
         ):
             response = await client.get("/learn/")
         assert response.status_code == 200
@@ -1027,7 +1029,9 @@ class TestLearnUncoveredLines:
         """Exception in recommendation loading is caught (line 203-204)."""
         with patch(
             "src.api.routes.learn.LessonProgressRepository",
-            side_effect=APIError({"code": "500", "message": "DB error", "hint": None, "details": None}),
+            side_effect=APIError(
+                {"code": "500", "message": "DB error", "hint": None, "details": None}
+            ),
         ):
             response = await client.get("/learn/recommendation")
         assert response.status_code == 200
@@ -1383,7 +1387,9 @@ class TestProgressUncoveredLines:
         tmp_path: Path,
     ) -> None:
         """Progress page continues when ReviewService raises (lines 79-80)."""
-        mock_review_service.get_stats.side_effect = APIError({"code": "500", "message": "Review DB error", "hint": None, "details": None})
+        mock_review_service.get_stats.side_effect = APIError(
+            {"code": "500", "message": "Review DB error", "hint": None, "details": None}
+        )
         transport = ASGITransport(app=progress_app)
         async with AsyncClient(transport=transport, base_url="http://test") as c:
             response = await c.get(
@@ -1524,7 +1530,9 @@ class TestChatUncoveredLines:
     @pytest.fixture
     def mock_review_service_with_error(self) -> MagicMock:
         service = MagicMock()
-        service.get_stats.side_effect = APIError({"code": "500", "message": "Review service error", "hint": None, "details": None})
+        service.get_stats.side_effect = APIError(
+            {"code": "500", "message": "Review service error", "hint": None, "details": None}
+        )
         return service
 
     @pytest.fixture

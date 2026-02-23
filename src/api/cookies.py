@@ -128,9 +128,7 @@ def sign_cookie_value(data: dict[str, Any]) -> str:
     return serializer.dumps(data)  # type: ignore[no-any-return]
 
 
-def unsign_json_cookie(
-    raw_value: str | None, max_age: int | None = None
-) -> dict[str, Any] | None:
+def unsign_json_cookie(raw_value: str | None, max_age: int | None = None) -> dict[str, Any] | None:
     """Verify and deserialize a signed JSON cookie, or return None.
 
     Handles the common pattern where the raw cookie value may be None

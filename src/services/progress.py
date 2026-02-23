@@ -175,7 +175,9 @@ class ProgressService:
 
         return ChartData(vocab_growth=vocab_growth, accuracy_trend=accuracy_trend)
 
-    def record_chat_activity(self, language: str, level: str, new_vocab: list[dict[str, Any]]) -> None:
+    def record_chat_activity(
+        self, language: str, level: str, new_vocab: list[dict[str, Any]]
+    ) -> None:
         """Record vocabulary and session data after a chat interaction.
 
         Fire-and-forget: logs errors but does not raise, so callers

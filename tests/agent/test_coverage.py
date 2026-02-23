@@ -274,7 +274,9 @@ class TestGetTopicalReviewWords:
 
         with patch(
             "src.services.review.ReviewService",
-            side_effect=APIError({"code": "500", "message": "DB error", "hint": None, "details": None}),
+            side_effect=APIError(
+                {"code": "500", "message": "DB error", "hint": None, "details": None}
+            ),
         ):
             result = await _get_topical_review_words(
                 user_id="user-123", language="es", messages=[], limit=5
@@ -692,7 +694,9 @@ class TestUpdateSm2ForUsedWords:
 
         mock_review_instance = MagicMock()
         mock_review_instance.update_sm2.side_effect = [
-            APIError({"code": "500", "message": "DB error", "hint": None, "details": None}),  # First word fails
+            APIError(
+                {"code": "500", "message": "DB error", "hint": None, "details": None}
+            ),  # First word fails
             None,  # Second word succeeds
         ]
         mock_review_cls = MagicMock(return_value=mock_review_instance)
@@ -714,7 +718,9 @@ class TestUpdateSm2ForUsedWords:
 
         with patch(
             "src.services.review.ReviewService",
-            side_effect=APIError({"code": "500", "message": "Service init error", "hint": None, "details": None}),
+            side_effect=APIError(
+                {"code": "500", "message": "Service init error", "hint": None, "details": None}
+            ),
         ):
             words = [ReviewWordUsed(vocab_id=1, word="casa", quality=4)]
             # Should not raise

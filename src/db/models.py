@@ -76,5 +76,3 @@ class LessonProgress(BaseModel):
         """Pydantic configuration."""
 
         from_attributes = True
-
-
