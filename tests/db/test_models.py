@@ -11,7 +11,6 @@ from pydantic import ValidationError
 from src.db.models import (
     LearningSession,
     LessonProgress,
-    Setting,
     UserProfile,
     Vocabulary,
 )
@@ -199,31 +198,6 @@ class TestLessonProgress:
     def test_from_attributes_config(self) -> None:
         """Test from_attributes config is enabled."""
         assert LessonProgress.model_config.get("from_attributes") is True
-
-
-# =============================================================================
-# Setting Tests
-# =============================================================================
-
-
-class TestSetting:
-    """Tests for Setting model."""
-
-    def test_create_setting(self) -> None:
-        """Test creating Setting."""
-        setting = Setting(
-            user_id="user-123",
-            key="theme",
-            value="dark",
-        )
-
-        assert setting.user_id == "user-123"
-        assert setting.key == "theme"
-        assert setting.value == "dark"
-
-    def test_from_attributes_config(self) -> None:
-        """Test from_attributes config is enabled."""
-        assert Setting.model_config.get("from_attributes") is True
 
 
 # =============================================================================
