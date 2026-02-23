@@ -32,6 +32,9 @@ dependencies = [
 
     # Rate limiting
     "ratelimit>=2.2.1",
+
+    # SSE streaming
+    "sse-starlette>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -133,6 +136,7 @@ module = [
     "yaml.*",
     "jwt.*",
     "ratelimit.*",
+    "sse_starlette.*",
 ]
 ignore_missing_imports = true
 

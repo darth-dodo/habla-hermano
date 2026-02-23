@@ -22,6 +22,7 @@
 | **Phase 12** | Spaced Repetition - SM-2 algorithm, intelligent chat weaving, review mode | ✅ Completed |
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 | **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
+| **Phase 15** | SSE Streaming - Real-time token streaming via POST /chat/stream and stream.js | ✅ Completed |
 
 **Test Coverage**: 1809 tests (97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
@@ -167,9 +168,10 @@ habla-hermano/
 │   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep, OptionalUserDep, EffectiveUser (legacy)
 │   │   ├── session.py           # [Implemented] Thread ID management
 │   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + user-authenticated)
+│   │   ├── streaming.py         # [Implemented] SSE streaming: StreamResult dataclass, stream_chat_events() async generator
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
-│   │       ├── chat.py          # [Implemented] POST /chat (protected)
+│   │       ├── chat.py          # [Implemented] POST /chat, POST /chat/stream (SSE streaming)
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
@@ -252,7 +254,8 @@ habla-hermano/
 │   └── static/
 │       ├── css/
 │       └── js/
-│           └── app.js           # [Implemented] HTMX handlers, optimistic UI, keyboard shortcuts
+│           ├── app.js           # [Implemented] HTMX handlers, optimistic UI, keyboard shortcuts
+│           └── stream.js        # [Implemented] SSE streaming client (fetch + ReadableStream for /chat/stream)
 │
 ├── tests/
 ├── data/
@@ -820,6 +823,148 @@ easiness_factor = max(1.3, EF + 0.1 - (5 - quality) × (0.08 + (5 - quality) × 
 - Silent background updates triggered by conversation analysis
 - SM-2 scheduling algorithm implementation with database persistence
 - Composing LLM evaluation with algorithmic updates in a single subgraph
+
+---
+
+### Phase 15: SSE Streaming
+
+Phase 15 replaces the 5-15 second full-wait for the LangGraph pipeline with real-time token streaming. Uses `fetch()` + `ReadableStream` with server-sent events (SSE), so the user sees Hermano's response appear token by token.
+
+**Overview**: The existing `POST /chat` endpoint (HTMX-driven, returns full HTML) is preserved as a non-streaming fallback. A new `POST /chat/stream` endpoint returns an SSE event stream. On the frontend, `stream.js` intercepts the chat form submission (the form no longer uses `hx-post`), creates a streaming message bubble with a blinking cursor, and appends tokens as they arrive.
+
+**No node or LLM changes needed**: LangGraph's `astream()` wraps LLM callbacks automatically even when nodes use `ainvoke()` internally. The existing respond, scaffold, and analyze nodes work unmodified.
+
+**Backend** (`src/api/streaming.py`):
+
+```python
+@dataclass
+class StreamResult:
+    """Accumulated result from streaming a chat graph invocation."""
+    response_text: str           # Full AI response (assembled from tokens)
+    scaffolding: dict | None     # ScaffoldingConfig dict (from scaffold node update)
+    grammar_feedback: list       # Grammar feedback list (from analyze node update)
+    pronunciation_tips: list     # Pronunciation tips list (from analyze node update)
+    new_vocabulary: list         # New vocabulary list (from analyze node update)
+
+
+async def stream_chat_events(
+    graph: CompiledGraph,
+    message: str,
+    thread_id: str,
+    language: str,
+    level: str,
+    user_id: str | None = None,
+) -> AsyncGenerator[str, None]:
+    """Async generator yielding SSE-formatted events from the LangGraph pipeline.
+
+    Uses graph.astream(stream_mode=["messages", "updates"]) to get both
+    per-token message chunks and per-node state updates in a single pass.
+    Only tokens from the 'respond' node are streamed to the client;
+    tokens from scaffold and analyze nodes are filtered out silently.
+    """
+    ...
+```
+
+**SSE Event Protocol**:
+
+The stream emits events in this order:
+
+```
+event: token
+data: {"token": "Hola"}
+
+event: token
+data: {"token": " amigo"}
+
+event: token
+data: {"token": "!"}
+
+event: response_complete
+data: {"text": "Hola amigo!"}
+
+event: scaffolding          (only for A0/A1 learners)
+data: {"enabled": true, "word_bank": [...], "hint_text": "...", ...}
+
+event: grammar
+data: [{"original": "...", "correction": "...", ...}]
+
+event: pronunciation
+data: [{"word": "...", "phonetic": "...", "tip": "..."}]
+
+event: done
+data: {}
+```
+
+- `token` events stream as each token arrives from the `respond` node
+- `response_complete` fires once with the full assembled response text
+- `scaffolding`, `grammar`, and `pronunciation` events fire after the full pipeline completes (from scaffold and analyze node updates)
+- `done` signals the client to finalize the UI
+
+**Frontend** (`src/static/js/stream.js`):
+
+```javascript
+// Intercepts the chat form submit event (form no longer has hx-post)
+// 1. Prevents default, posts via fetch() to /chat/stream
+// 2. Creates a streaming AI bubble with a blinking cursor
+// 3. Reads the SSE response via ReadableStream line-by-line
+// 4. On 'token' events: appends text via insertAdjacentText('beforeend', token)
+// 5. On 'response_complete': removes blinking cursor
+// 6. On 'scaffolding'/'grammar'/'pronunciation': injects feedback HTML
+//    with Alpine.js x-data attributes, then calls Alpine.initTree()
+//    to activate the newly injected interactive components
+// 7. On 'done': re-enables the input form
+// 8. AbortController with 60s timeout for safety
+```
+
+**Streaming Flow**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     SSE STREAMING FLOW                                    │
+│                                                                         │
+│  Chat form submit (stream.js intercepts, no hx-post)                   │
+│  ┌──────────────────────────────────────────────────┐                  │
+│  │  fetch('/chat/stream', { method: 'POST', body }) │                  │
+│  │  + AbortController (60s timeout)                 │                  │
+│  └──────────────────────┬───────────────────────────┘                  │
+│                          │                                              │
+│                          ▼                                              │
+│  ┌──────────────────────────────────────────────────┐                  │
+│  │  POST /chat/stream endpoint                      │                  │
+│  │  → StreamingResponse(stream_chat_events(...))    │                  │
+│  └──────────────────────┬───────────────────────────┘                  │
+│                          │                                              │
+│                          ▼                                              │
+│  ┌──────────────────────────────────────────────────┐                  │
+│  │  graph.astream(stream_mode=["messages","updates"])│                  │
+│  │                                                   │                  │
+│  │  respond node tokens ──► event: token             │──► append to    │
+│  │  (scaffold/analyze tokens filtered out)           │    bubble       │
+│  │                                                   │                  │
+│  │  scaffold node update ──► event: scaffolding      │──► inject HTML  │
+│  │  analyze node update  ──► event: grammar          │──► inject HTML  │
+│  │                       ──► event: pronunciation    │──► inject HTML  │
+│  │                                                   │                  │
+│  │  pipeline END ──────────► event: done             │──► finalize UI  │
+│  └──────────────────────────────────────────────────┘                  │
+│                                                                         │
+│  Alpine.initTree() called after each HTML injection to activate        │
+│  x-data bindings on dynamically inserted feedback components.          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Chat Form Change**:
+
+The chat form in `chat.html` no longer uses HTMX for submission (`hx-post` removed). Instead, `stream.js` attaches an event listener to the form's `submit` event and handles the request via `fetch()` POST. This allows streaming the response incrementally rather than waiting for the full HTML partial. The existing `POST /chat` endpoint remains available as a non-streaming fallback (e.g., for clients without JavaScript).
+
+**What you learned**:
+- Using LangGraph's `astream(stream_mode=["messages", "updates"])` for combined token + state streaming
+- Filtering streamed tokens by node name (only `respond` node tokens are user-visible)
+- SSE event protocol design with typed events for progressive UI updates
+- `fetch()` + `ReadableStream` as a lightweight SSE client (no EventSource needed for POST)
+- Dynamic Alpine.js component initialization via `Alpine.initTree()` for injected HTML
+- `AbortController` timeout patterns for streaming request safety
+- Coexistence of streaming and non-streaming endpoints for graceful degradation
 
 ---
 
@@ -1580,32 +1725,24 @@ PRONUNCIATION TIPS: Polish their accent naturally:
 
 ### Chat
 
+The primary chat endpoint is `POST /chat/stream`, which returns SSE events for real-time token streaming. The `POST /chat` endpoint remains as a non-streaming fallback that returns a complete HTML partial.
+
+The frontend uses `stream.js` (fetch + ReadableStream) to intercept the chat form submit, POST to `/chat/stream`, and parse SSE events. HTMX is **not** used for chat form submission. Other pages continue to use HTMX.
+
 ```python
+# Non-streaming fallback
 @router.post("/chat")
-async def send_message(
-    message: str = Form(...),
-    request: Request,
-    graph: CompiledGraph = Depends(get_graph),
-):
-    """Send a message, get AI response with scaffolding/feedback"""
+async def send_message(...):
+    """Send a message, get complete AI response with scaffolding/feedback"""
+    ...
 
-    thread_id = get_or_create_thread_id(request)
-
-    result = await graph.ainvoke(
-        {"messages": [HumanMessage(content=message)]},
-        config={"configurable": {"thread_id": thread_id}}
-    )
-
-    return templates.TemplateResponse(
-        "partials/message.html",
-        {
-            "request": request,
-            "ai_message": result["messages"][-1].content,
-            "scaffolding": result.get("scaffolding", {}),
-            "feedback": result.get("grammar_feedback", []),
-            "new_vocab": result.get("new_vocabulary", [])
-        }
-    )
+# Primary streaming endpoint (Phase 15)
+@router.post("/chat/stream")
+async def stream_message(...):
+    """Send a message, get SSE streaming response with tokens + feedback HTML"""
+    # Returns StreamingResponse with text/event-stream content type
+    # Events: token, response_complete, scaffolding, grammar, pronunciation, done, error
+    ...
 ```
 
 ### Level Selection
@@ -2057,3 +2194,23 @@ asyncio_mode = "auto"
 5. Partial components: full-width scaffolding/pronunciation/grammar on mobile, responsive review buttons
 6. Lessons page: multi-line card descriptions on mobile
 7. Auth pages: safe area padding for notched devices
+
+### Week 12: Learning Paths (Phase 14) - COMPLETED
+1. PathService for structured unit/lesson path data with progress overlay
+2. AdaptiveService for personalized daily recommendations
+3. Learn page with unit cards and completion progress
+4. HTMX lazy-loaded recommendation card
+5. Guest support (path structure visible, no progress data)
+6. Fallback redirect to /lessons for languages without defined paths
+
+### Week 13: SSE Streaming (Phase 15) - COMPLETED
+1. `StreamResult` dataclass and `stream_chat_events()` async generator (`src/api/streaming.py`)
+2. `POST /chat/stream` endpoint returning SSE via `StreamingResponse`
+3. LangGraph `astream(stream_mode=["messages", "updates"])` for combined token + state streaming
+4. Node-level token filtering: only `respond` node tokens streamed, scaffold/analyze tokens suppressed
+5. SSE event protocol: `token` → `response_complete` → `scaffolding?` → `grammar?` → `pronunciation?` → `done`
+6. `stream.js` frontend: form submit interception, streaming bubble with blinking cursor, `insertAdjacentText` token appending
+7. Alpine.js dynamic initialization via `Alpine.initTree()` for injected feedback HTML
+8. 60-second `AbortController` timeout for streaming safety
+9. Chat form migrated from HTMX (`hx-post` removed) to `fetch()` POST via `stream.js`
+10. Existing `POST /chat` preserved as non-streaming fallback

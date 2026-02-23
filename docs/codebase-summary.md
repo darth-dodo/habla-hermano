@@ -83,7 +83,7 @@ block-beta
 ```mermaid
 flowchart TB
     subgraph Client
-        Browser["Browser<br/>(HTMX + Tailwind)"]
+        Browser["Browser<br/>(HTMX + stream.js + Tailwind)"]
     end
 
     subgraph Server["FastAPI Backend"]
@@ -104,8 +104,8 @@ flowchart TB
         Checkpoint[(LangGraph Checkpoints)]
     end
 
-    Browser -->|HTMX POST| API
-    API -->|HTML Partial| Browser
+    Browser -->|fetch POST /chat/stream| API
+    API -->|SSE token stream + HTML partials| Browser
     API --> Respond
     Respond --> Claude
     Respond -->|A0/A1| Scaffold
@@ -121,7 +121,7 @@ flowchart TB
 |----------|--------|-----------|
 | Pipeline Framework | LangGraph | StateGraph with conditional routing for level-based behavior |
 | LLM | Claude Sonnet 4 | Superior language understanding for multiple languages |
-| Frontend | HTMX + Jinja2 | Server-driven UI, no complex JS framework |
+| Frontend | HTMX + Jinja2 + stream.js | Server-driven UI; chat uses SSE streaming via stream.js, other pages use HTMX |
 | Auth | Supabase Auth | Managed auth with JWT, easy integration |
 | Persistence | PostgreSQL + LangGraph | Conversation checkpointing with AsyncPostgresSaver |
 | Config | Pydantic Settings | Type-safe, environment-based configuration |
@@ -176,8 +176,9 @@ habla-hermano/
 │   │   ├── auth.py                   # JWT validation
 │   │   ├── session.py                # Session management
 │   │   ├── supabase_client.py        # Supabase client singleton
+│   │   ├── streaming.py              # SSE streaming: StreamResult, stream_chat_events()
 │   │   └── routes/
-│   │       ├── chat.py               # POST /chat, GET /
+│   │       ├── chat.py               # POST /chat, POST /chat/stream (SSE), GET /
 │   │       ├── auth.py               # Signup, login, logout
 │   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
@@ -239,7 +240,9 @@ habla-hermano/
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
-│       └── js/app.js                 # HTMX handlers, virtual keyboard handling
+│       └── js/
+│           ├── app.js                # HTMX handlers, virtual keyboard handling
+│           └── stream.js             # SSE streaming client (fetch + ReadableStream for /chat/stream)
 │
 ├── tests/                            # 1810 tests, 97% coverage
 │   ├── conftest.py                   # Fixtures
@@ -330,8 +333,8 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant PS as ProgressService
 
-    U->>API: POST /chat {message, level, language}
-    API->>G: Start pipeline with state
+    U->>API: POST /chat/stream {message, level, language}
+    API->>G: Start pipeline with state (SSE streaming)
 
     rect rgb(240, 248, 255)
         Note over G,AI: respond_node
@@ -357,7 +360,7 @@ sequenceDiagram
     G-->>API: Final state
     API->>PS: Record vocabulary & session activity
     PS->>DB: Upsert vocabulary, update session
-    API-->>U: HTML partial (message_pair.html)
+    API-->>U: SSE events (tokens, then feedback HTML partials)
 ```
 
 ### Progress Capture (Authenticated Users Only)
@@ -554,7 +557,8 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | GET | `/` | Render chat page |
-| POST | `/chat` | Send message, get AI response |
+| POST | `/chat` | Send message, get AI response (non-streaming fallback) |
+| POST | `/chat/stream` | Send message, get SSE streaming response (used by stream.js) |
 | POST | `/new` | Start new conversation |
 | POST | `/auth/signup` | Register user |
 | POST | `/auth/login` | Authenticate |
@@ -673,14 +677,18 @@ score: INT
 }
 ```
 
-### HTMX Pattern
+### Chat Form Submission
+
+The chat form uses **stream.js** (fetch + ReadableStream) to POST to `/chat/stream` and parse SSE events for real-time token streaming. The form submit is intercepted by JavaScript; HTMX is **not** used for chat submission. Other parts of the UI (lessons, progress, review, learn) continue to use HTMX for partial updates.
+
+### HTMX Pattern (non-chat pages)
 
 ```html
-<form hx-post="/chat"
-      hx-target="#chat-container"
-      hx-swap="beforeend">
-    <input name="message" />
-    <button type="submit">Send</button>
+<!-- Used for lessons, progress, review, learn — NOT for chat submission -->
+<form hx-post="/lessons/{id}/step/next"
+      hx-target="#step-content"
+      hx-swap="innerHTML">
+    ...
 </form>
 ```
 
@@ -848,7 +856,9 @@ CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", 
 ```
 src/api/main.py              # FastAPI app entry
 src/api/config.py            # Settings
-src/api/routes/chat.py       # Chat endpoint
+src/api/routes/chat.py       # Chat endpoints (POST /chat, POST /chat/stream)
+src/api/streaming.py         # SSE streaming logic
+src/static/js/stream.js      # SSE client (fetch + ReadableStream)
 src/api/routes/progress.py   # Progress dashboard endpoints
 src/agent/graph.py           # LangGraph pipeline
 src/agent/nodes/*.py         # Pipeline nodes

@@ -301,12 +301,6 @@
         <div class="max-w-3xl mx-auto">
             <form
                 id="chat-form"
-                hx-post="/chat"
-                hx-target="#chat-messages"
-                hx-swap="beforeend"
-                hx-indicator="#loading-indicator"
-                hx-on::before-request="showLoading()"
-                hx-on::after-request="hideLoading(); clearInput()"
                 class="flex gap-3"
             >
                 <!-- Hidden inputs -->

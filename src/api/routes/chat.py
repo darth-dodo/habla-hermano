@@ -1,5 +1,6 @@
 """Chat router for handling conversation interactions.
 
+Phase 15: Added SSE streaming endpoint for real-time token delivery.
 Phase 13: Simplified guest model - guests get chat only, no persistence.
 Phase 12: Added review mode support for spaced repetition.
 Phase 7: Added vocabulary and session data capture for authenticated users.
@@ -7,11 +8,12 @@ Phase 5: Added user authentication with Supabase.
 Phase 4: Added conversation persistence with LangGraph checkpointing.
 
 Provides endpoints for the main chat interface and message handling.
-Uses HTMX for partial HTML responses.
+Uses HTMX for partial HTML responses, plus SSE streaming for real-time chat.
 
 Authentication:
 - GET / supports both authenticated and guest users (OptionalUserDep)
 - POST /chat supports both authenticated and guest users (OptionalUserDep)
+- POST /chat/stream supports both authenticated and guest users (OptionalUserDep)
 - POST /new supports both authenticated and guest users (OptionalUserDep)
 
 Thread IDs are user-scoped for authenticated users (persistent across sessions),
@@ -25,19 +27,23 @@ Guest users get:
 - NO spaced repetition (requires account)
 """
 
+import json
 import logging
 import uuid
-from typing import Annotated
+from collections.abc import AsyncGenerator
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
 from langchain_core.messages import HumanMessage
+from sse_starlette.sse import EventSourceResponse
 
 from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
+from src.api.streaming import StreamResult, stream_chat_events
 from src.api.supabase_client import get_supabase_for_user
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
@@ -296,6 +302,159 @@ async def send_message(
         )
 
     return template_response
+
+
+@router.post("/chat/stream")
+@rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
+async def stream_message(
+    request: Request,  # noqa: ARG001 — kept for FastAPI DI consistency with other endpoints
+    templates: TemplatesDep,
+    user: OptionalUserDep,
+    message: Annotated[str, Form()],
+    level: Annotated[str, Form()] = "A1",
+    language: Annotated[str, Form()] = "es",
+    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+    conversation_version: Annotated[str | None, Cookie()] = None,
+) -> EventSourceResponse:
+    """Stream a chat response as server-sent events.
+
+    Phase 15: Real-time token streaming for the chat interface.
+
+    Streams the AI response token-by-token as SSE events, then sends
+    feedback sections (grammar, pronunciation, scaffolding) as rendered HTML.
+    Uses the same LangGraph pipeline as POST /chat but with astream().
+
+    SSE event flow:
+        1. token events (AI response text, one per LLM token)
+        2. response_complete (full accumulated response)
+        3. scaffolding (rendered HTML, A0-A1 only)
+        4. grammar (rendered HTML)
+        5. pronunciation (rendered HTML)
+        6. done (stream complete)
+
+    Args:
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        user: Optional authenticated user (None for anonymous/guest).
+        message: User's message from form data.
+        level: CEFR level (A0, A1, A2, B1). Defaults to A1.
+        language: Target language (es, de, fr). Defaults to es.
+        session_id: Session cookie for anonymous users.
+        sb_access_token: Supabase access token cookie.
+        conversation_version: Conversation version cookie for new conversations.
+
+    Returns:
+        EventSourceResponse: SSE stream of chat events.
+    """
+    # --- Input validation (same as send_message) ---
+    message = message.strip()
+
+    if not message:
+        return EventSourceResponse(
+            content=_stream_error("Message cannot be empty."),
+            media_type="text/event-stream",
+        )
+
+    if len(message) > MAX_MESSAGE_LENGTH:
+        return EventSourceResponse(
+            content=_stream_error(f"Message is too long (max {MAX_MESSAGE_LENGTH} characters)."),
+            media_type="text/event-stream",
+        )
+
+    if level not in VALID_LEVELS:
+        return EventSourceResponse(
+            content=_stream_error(
+                f"Invalid level '{level}'. Must be one of: {', '.join(sorted(VALID_LEVELS))}."
+            ),
+            media_type="text/event-stream",
+        )
+
+    if language not in VALID_LANGUAGES:
+        return EventSourceResponse(
+            content=_stream_error(
+                f"Invalid language '{language}'. Must be one of: {', '.join(sorted(VALID_LANGUAGES))}."
+            ),
+            media_type="text/event-stream",
+        )
+
+    # Resolve identity for thread_id and effective user_id
+    thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
+        user, session_id, conversation_version
+    )
+
+    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+
+    async def event_generator() -> AsyncGenerator[dict[str, str], None]:
+        """Wrap streaming with checkpointer lifecycle and post-stream actions."""
+        result = StreamResult()
+
+        async with get_checkpointer() as checkpointer:
+            graph = build_graph(checkpointer=checkpointer)
+
+            inputs: dict[str, Any] = {
+                "messages": [HumanMessage(content=message)],
+                "level": level,
+                "language": language,
+                "user_id": effective_user_id,
+                "supabase_client": user_client,
+            }
+            graph_config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
+
+            async for event in stream_chat_events(
+                graph=graph,
+                inputs=inputs,
+                config=graph_config,
+                templates=templates,
+                level=level,
+                result=result,
+            ):
+                yield event
+
+        # Post-stream: capture vocabulary for authenticated users
+        if result.new_vocabulary and effective_user_id and user and user_client:
+            try:
+                progress_service = ProgressService(effective_user_id, client=user_client)
+                progress_service.record_chat_activity(
+                    language=language,
+                    level=level,
+                    new_vocab=result.new_vocabulary,
+                )
+            except Exception:
+                logger.exception("Failed to capture chat activity for user %s", effective_user_id)
+
+    headers: dict[str, str] = {"Cache-Control": "no-cache"}
+    response = EventSourceResponse(
+        content=event_generator(),
+        headers=headers,
+        send_timeout=60,
+    )
+
+    # Set session cookie for first-time anonymous users
+    if new_session_id:
+        response.set_cookie(
+            key="session_id",
+            value=new_session_id,
+            httponly=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 7,  # 7 days
+        )
+
+    return response
+
+
+async def _stream_error(error_message: str) -> AsyncGenerator[dict[str, str], None]:
+    """Yield a single error event for validation failures.
+
+    Args:
+        error_message: Human-readable error message.
+
+    Yields:
+        Error SSE event followed by done event.
+    """
+    yield {"event": "error", "data": json.dumps({"message": error_message})}
+    yield {"event": "done", "data": "{}"}
 
 
 @router.post("/new", response_class=HTMLResponse)

@@ -42,7 +42,6 @@ class TestChatPageEndpoint:
         """GET / should include the chat form element."""
         response = test_client.get("/")
         assert 'id="chat-form"' in response.text
-        assert 'hx-post="/chat"' in response.text
 
     def test_chat_page_contains_message_input(self, test_client: TestClient) -> None:
         """GET / should include the message input field."""

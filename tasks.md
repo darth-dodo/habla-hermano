@@ -13,9 +13,10 @@
 
 ## Current State
 
-**Branch**: `fix/codebase-improvements`
-**Phase**: Phase 14 Complete + Codebase Improvements In Progress
-**Test Coverage**: 1820 tests passing, 97% coverage
+**Branch**: `main`
+**Phase**: Phase 14 Complete
+**Test Coverage**: 1820 tests passing, 97% coverage (298 deprecation warnings)
+**Last Audit**: 2026-02-22 (multi-dimensional: security, architecture, dependencies, deployment)
 
 ### What's Working
 
@@ -58,9 +59,61 @@ Auth: Supabase Auth → JWT cookie → Protected routes
 
 ## Up Next
 
-### Codebase Improvements (From Analysis)
+### Codebase Audit Findings (2026-02-22)
 
-Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
+Full audit covering security, architecture, code quality, dependencies, and deployment.
+Ordered by severity. Previous improvement backlog (2026-02-18) is complete — see [Session Logs](#session-logs).
+
+#### Priority: P0 — Security Critical (Fix Before Production)
+
+| # | Task | Severity | Files | Status | Notes |
+|---|------|----------|-------|--------|-------|
+| A1 | Add security headers middleware | CRITICAL | `src/api/main.py` | ⬜ Todo | No CORS, no CSP, no X-Frame-Options, no HSTS. Add `CORSMiddleware` + custom security headers middleware. |
+| A2 | Guard JWT unverified fallback path | CRITICAL | `src/api/auth.py:87-93,108-156` | ⬜ Todo | `_decode_token_unverified()` accepts any forged JWT when Supabase not configured. Add explicit env guard (e.g. `ALLOW_UNVERIFIED_JWT`) that defaults to `false`. |
+| A3 | Validate guest `session_id` format | CRITICAL | `src/api/auth.py:260-262` | ⬜ Todo | Raw cookie value used as identity with zero validation. Enforce UUID v4 format before accepting. |
+| A4 | Add `secure` flag to all cookies | HIGH | `chat.py`, `review.py`, `lessons.py`, `session.py` | ⬜ Todo | Only auth cookie sets `secure=True`. 7+ other cookie setters omit it. Create centralized cookie utility. |
+
+#### Priority: P1 — Security & Quality (This Sprint)
+
+| # | Task | Severity | Files | Status | Notes |
+|---|------|----------|-------|--------|-------|
+| A5 | Sanitize LLM output before `\| safe` rendering | HIGH | `src/templates/partials/message_pair.html`, `message.html`, `lesson_step_enhanced.html`, `exercise_feedback_enhanced.html` | ⬜ Todo | Stored XSS risk. Use `nh3` or `bleach` to whitelist-sanitize LLM HTML output server-side. |
+| A6 | Escape f-string HTML construction | HIGH | `src/api/routes/chat.py:57-58`, `lessons.py:478-484` | ⬜ Todo | `_make_error_html()` and exercise feedback use raw f-string interpolation. Use `markupsafe.escape()` or template rendering. |
+| A7 | Replace `datetime.utcnow()` with `datetime.now(UTC)` | MEDIUM | `src/db/models.py:19,20,32,54`, `src/lessons/models.py:367` + tests | ⬜ Todo | Deprecated since Python 3.12. Produces 298 test warnings. 5 source instances + ~10 test instances. |
+| A8 | Centralize input validation (language, level, days) | MEDIUM | `progress.py`, `learn.py`, `lessons.py`, `review.py` | ⬜ Todo | Chat route validates correctly; all other routes accept arbitrary values. Extract shared `VALID_LANGUAGES`/`VALID_LEVELS` constants + `days` bounds (1-365). |
+| A9 | Add non-root user to Dockerfile | MEDIUM | `Dockerfile` | ⬜ Todo | Container runs as root. Add `RUN useradd -m appuser` + `USER appuser`. |
+
+#### Priority: P2 — Hardening (Next Sprint)
+
+| # | Task | Severity | Files | Status | Notes |
+|---|------|----------|-------|--------|-------|
+| A10 | Implement per-IP rate limiting | HIGH | `src/api/rate_limit.py` | ⬜ Todo | Current rate limiter is global (not per-IP). One client can exhaust limit for all users. Consider `slowapi` or Redis-backed. |
+| A11 | Narrow remaining `except Exception` blocks | MEDIUM | 17 instances across `src/` | ⬜ Todo | Auth routes partially narrowed (prev sprint). Still 17 broad handlers in agent nodes, routes, services. Catch specific exceptions per context. |
+| A12 | Sign review session cookies | MEDIUM | `src/api/routes/review.py:282-288` | ⬜ Todo | Session state stored as plain unsigned JSON in cookie. Users can tamper with scores/word_ids. Use `itsdangerous` or server-side storage. |
+| A13 | Implement JWT token refresh | MEDIUM | `src/api/routes/auth.py` | ⬜ Todo | Cookie persists 7 days but Supabase JWT expires in ~1 hour. No refresh mechanism. Users silently lose auth after 1 hour. |
+| A14 | Consolidate language metadata (DRY) | MEDIUM | `scaffold.py`, `analyze.py`, `prompts.py`, `paths.py` | ⬜ Todo | `_get_language_name()` duplicated in 2 files. Language metadata fragmented across 3+ modules. Extract to `src/shared/languages.py`. |
+| A15 | Extract JSON parsing utility | LOW | `scaffold.py`, `analyze.py` | ⬜ Todo | Identical markdown→JSON extraction pattern duplicated. Create `src/agent/utils.py` with `extract_json_from_markdown()`. |
+
+#### Priority: P3 — Tech Debt (Backlog)
+
+| # | Task | Severity | Files | Status | Notes |
+|---|------|----------|-------|--------|-------|
+| A16 | Re-enable mypy for `db/` and `services/` | MEDIUM | `pyproject.toml:140-145` | ⬜ Todo | `disallow_untyped_defs = false` for both. Add annotations incrementally. |
+| A17 | Add Dockerfile HEALTHCHECK | LOW | `Dockerfile` | ⬜ Todo | Render has health check configured, but Docker itself doesn't. |
+| A18 | Remove dead code | LOW | `src/db/models.py` (Setting), `src/agent/checkpointer.py:25,141-151` (SQLite legacy) | ⬜ Todo | Unused `Setting` model, legacy `CHECKPOINT_DB_PATH` + `get_checkpoint_db_path()`. |
+| A19 | Extract stopwords to config | LOW | `src/agent/nodes/respond.py:40-270` | ⬜ Todo | 170+ line hardcoded stopwords set. Move to `src/shared/stopwords.py` or YAML config. |
+| A20 | Fix `type: ignore` suppressions | LOW | `src/agent/llm.py:68-71`, `src/api/rate_limit.py:55,71` | ⬜ Todo | 7 instances. Some unavoidable (Anthropic SDK), some fixable (ratelimit stubs). |
+| A21 | Reduce JWT error detail leakage | LOW | `src/api/auth.py:153-156` | ⬜ Todo | `f"Invalid token: {e}"` exposes PyJWT internals. Use generic message. |
+| A22 | Change `.env.example` DEBUG default | LOW | `.env.example:39` | ⬜ Todo | Defaults to `DEBUG=true`. Should be `false` for production safety. |
+| A23 | Enforce coverage in CI | LOW | `.github/workflows/ci.yml:125` | ⬜ Todo | `fail_ci_if_error: false` in Codecov action. pyproject.toml enforces locally but CI doesn't. |
+| A24 | Reduce conversation version cookie max_age | LOW | `src/api/routes/chat.py:328` | ⬜ Todo | 1-year max_age is excessive. Reduce to 30 days. |
+
+---
+
+### Previous Improvements (2026-02-18) — ✅ All Complete
+
+<details>
+<summary>Expand completed improvement backlog</summary>
 
 #### Priority: 🔴 High — ✅ All Done
 
@@ -91,6 +144,10 @@ Identified via deep codebase analysis on 2026-02-18. Ordered by severity/impact.
 | 13 | Document `learn.py` route in architecture.md | ✅ Done | `docs/architecture.md` | Added Learn (Phase 14) section with endpoint signatures. |
 | 14 | Update stale deployment configs | ✅ Done | `render.yaml`, `Dockerfile` | Replaced SQLite references with Supabase env vars. |
 | 15 | Consider LLM instance caching | ✅ Done | `src/agent/llm.py` | Profile-based caching via `get_llm()` — instances reused per profile. |
+
+</details>
+
+---
 
 ### Future Ideas
 
@@ -128,6 +185,16 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 ---
 
 ## Session Logs
+
+### 2026-02-22: Comprehensive Codebase Audit
+- **Branch**: `main`
+- **Scope**: Multi-dimensional audit — security, architecture, code quality, dependencies, deployment
+- **Method**: 3 parallel background agents (security-engineer, architecture-explorer, dependency-explorer) + main thread analysis
+- **Results**: 1820 tests pass (97% coverage), clean lint/format/mypy, 298 deprecation warnings
+- **Findings**: 24 items cataloged (A1-A24): 4 P0 (security critical), 5 P1 (this sprint), 6 P2 (next sprint), 9 P3 (backlog)
+- **Key Critical Issues**: Unverified JWT fallback, missing security headers, unvalidated guest session_id, inconsistent cookie `secure` flags
+- **Architecture Strengths**: Clean LangGraph pipeline, proper service/repo separation, smart upsert strategy, accurate SM-2 implementation, comprehensive logging
+- **Positive Findings**: No eval/exec/os.system, no hardcoded secrets, no SQL injection, no circular imports, rate limiting present on auth+chat
 
 ### 2026-02-22: Codebase Improvements — Full Backlog Sweep
 - **Branch**: `fix/codebase-improvements`
@@ -186,6 +253,14 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 - **Guest Flow**: Session cookie for chat, auth-gated data features (progress, vocab, review)
 - **Checkpointer**: PostgresSaver for production, MemorySaver fallback for dev
 - **Key Constraint**: `lesson_progress` stores base IDs without language/level scoping; PathService always scopes calls
+
+### Audit Context (2026-02-22)
+- **Security Priority**: P0 items (A1-A4) must be fixed before any production deployment
+- **Cookie Pattern**: Auth cookies use `secure=True`, all others don't — needs centralized utility
+- **Exception Handling**: Auth routes partially narrowed (sprint 2026-02-22), but 17 broad `except Exception` remain across agent nodes and routes
+- **Language Metadata**: Duplicated in 3+ places — consolidation into shared module will fix both DRY and input validation issues
+- **Template XSS**: `| safe` filter used on LLM output in 4 templates — sanitize server-side before rendering
+- **Rate Limiting**: Global (function-level), not per-IP — single abusive client can lock out all users
 
 ### Key Docs
 - `docs/product.md` — What we're building
