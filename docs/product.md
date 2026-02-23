@@ -430,6 +430,8 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
 | **Phase 12** | Spaced Repetition | SM-2 algorithm, intelligent chat weaving, dedicated review mode | ✅ Complete |
 | **Phase 13** | Mobile Responsive | Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Complete |
+| **Phase 14** | Learning Paths | Structured A0→B1 progression with adaptive daily recommendations | ✅ Complete |
+| **Phase 15** | SSE Streaming | Real-time token streaming via Server-Sent Events; POST /chat/stream endpoint, frontend ReadableStream with blinking cursor, feedback sections arrive as server-rendered HTML after response completes; existing POST /chat preserved as fallback | ✅ Complete |
 
 ### Future Ideas
 
