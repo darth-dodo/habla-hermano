@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from dataclasses import asdict, dataclass
 from datetime import date, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from postgrest.exceptions import APIError
 
@@ -24,6 +24,8 @@ from src.services.review import ReviewService
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
+
+    from src.db.models import LearningSession
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +66,7 @@ class ChartData:
     vocab_growth: list[VocabGrowthPoint]
     accuracy_trend: list[AccuracyPoint]
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize chart data to a plain dictionary for JSON responses.
 
         Returns:
@@ -173,7 +175,7 @@ class ProgressService:
 
         return ChartData(vocab_growth=vocab_growth, accuracy_trend=accuracy_trend)
 
-    def record_chat_activity(self, language: str, level: str, new_vocab: list[dict]) -> None:
+    def record_chat_activity(self, language: str, level: str, new_vocab: list[dict[str, Any]]) -> None:
         """Record vocabulary and session data after a chat interaction.
 
         Fire-and-forget: logs errors but does not raise, so callers
@@ -215,7 +217,7 @@ class ProgressService:
         except APIError:
             logger.exception("Failed to record chat activity for user %s", self._user_id)
 
-    def _calculate_streak(self, sessions: list) -> int:
+    def _calculate_streak(self, sessions: list[LearningSession]) -> int:
         """Calculate consecutive days with activity from today backwards.
 
         A streak counts the number of consecutive calendar days (ending today)

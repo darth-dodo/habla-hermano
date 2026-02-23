@@ -65,8 +65,8 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
     )
 
     return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]
+        model=settings.LLM_MODEL,  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
         temperature=temperature,
-        max_tokens=max_tokens,  # type: ignore[call-arg]
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]
+        max_tokens=max_tokens,  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
+        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]  # SecretStr vs str mismatch in stubs
     )
