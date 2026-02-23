@@ -221,6 +221,12 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 - **Results**: 1893 tests passing (up from 1820), ruff clean, mypy clean
 - **Key new files**: `src/api/cookies.py`, `src/api/middleware.py`, `src/api/validation.py`, `src/agent/utils.py`, `data/stopwords.json`
 
+### 2026-02-23: Phase 15 SSE Streaming + Bug Fixes
+- **Branch**: `feature/sse-streaming` → merged to main as PR #29
+- **Deliverables**: `POST /chat/stream` SSE endpoint, `src/api/streaming.py`, `src/static/js/stream.js`, 34 new tests
+- **Bug Fix** (PR #30): SSE line ending normalization (CRLF→LF), window.addUserMessage/escapeHtml exports for stream.js
+- **Docs**: ADR-009 (ES module refactor), Phase 16 design doc for planned JS restructuring
+
 ### 2026-02-22: Comprehensive Codebase Audit
 - **Branch**: `main`
 - **Scope**: Multi-dimensional audit — security, architecture, code quality, dependencies, deployment
