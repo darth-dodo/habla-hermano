@@ -353,6 +353,8 @@
     window.insertWord = insertWord;
     window.insertStarter = insertStarter;
     window.handleNewConversation = handleNewConversation;
+    window.addUserMessage = addUserMessage;
+    window.escapeHtml = escapeHtml;
 
     // ============================================
     // Start
