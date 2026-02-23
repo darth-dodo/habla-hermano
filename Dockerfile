@@ -39,6 +39,10 @@ RUN uv pip install --system .
 # Expose the application port
 EXPOSE 8000
 
+# Health check to verify the application is responding
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
 # Run the FastAPI application with uvicorn
 # --host 0.0.0.0 allows connections from outside the container
 # PORT environment variable support for Render compatibility (defaults to 8000)
