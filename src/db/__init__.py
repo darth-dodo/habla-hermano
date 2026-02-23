@@ -7,7 +7,6 @@ All repositories are user-scoped to comply with Row Level Security.
 from src.db.models import (
     LearningSession,
     LessonProgress,
-    Setting,
     UserProfile,
     Vocabulary,
 )
@@ -23,7 +22,6 @@ __all__ = [
     "LearningSessionRepository",
     "LessonProgress",
     "LessonProgressRepository",
-    "Setting",
     "UserProfile",
     "UserProfileRepository",
     "Vocabulary",

@@ -11,7 +11,6 @@ across sessions using a thread_id tied to the user.
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Any, cast
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -19,10 +18,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from src.api.config import get_settings
-
-# Database path for checkpoints (legacy, kept for compatibility)
-# Located in data/ directory alongside other persistent storage
-CHECKPOINT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "checkpoints.db"
 
 # Type alias for checkpointer return type
 CheckpointerType = AsyncPostgresSaver | MemorySaver
@@ -136,19 +131,6 @@ async def get_checkpointer() -> AsyncGenerator[BaseCheckpointSaver[Any], None]:
     else:
         # Fall back to MemorySaver for local development or when DB URL not set
         yield _get_memory_saver()
-
-
-def get_checkpoint_db_path() -> Path:
-    """
-    Get the path to the checkpoint database file.
-
-    Note: This is kept for backward compatibility. When Supabase is
-    configured, checkpoints are stored in Postgres instead.
-
-    Returns:
-        Path: Absolute path to checkpoints.db file.
-    """
-    return CHECKPOINT_DB_PATH
 
 
 def clear_memory_saver() -> None:

@@ -76,20 +76,3 @@ class LessonProgress(BaseModel):
         """Pydantic configuration."""
 
         from_attributes = True
-
-
-class Setting(BaseModel):
-    """User settings stored per user.
-
-    Note: In the Supabase schema, settings are stored in user_profiles.
-    This model is kept for backwards compatibility during migration.
-    """
-
-    user_id: str
-    key: str
-    value: str
-
-    class Config:
-        """Pydantic configuration."""
-
-        from_attributes = True
