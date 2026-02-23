@@ -7,6 +7,7 @@ Also provides EffectiveUser for unified authenticated/guest identity.
 Security:
 - Production: Tokens are verified server-side via Supabase auth.get_user()
 - Local dev: Falls back to unverified JWT decode with a WARNING log
+- Token refresh: Proactively refreshes tokens nearing expiry (within 5 minutes)
 """
 
 import logging
@@ -15,13 +16,17 @@ import uuid
 from dataclasses import dataclass
 from typing import Annotated
 
-import jwt
-from fastapi import Depends, HTTPException, Request, status
+import jwt as pyjwt
+from fastapi import Depends, HTTPException, Request, Response, status
 
 from src.api.config import get_settings
 from src.api.supabase_client import SupabaseClient, get_supabase, get_supabase_admin
 
 logger = logging.getLogger(__name__)
+
+# Threshold in seconds before expiry to trigger a refresh attempt.
+# If a token expires within this window, we try to refresh proactively.
+TOKEN_REFRESH_THRESHOLD_SECONDS = 300  # 5 minutes
 
 
 @dataclass(frozen=True)
@@ -79,6 +84,100 @@ def _get_token_from_request(request: Request) -> str | None:
         return auth_header[7:]  # Remove "Bearer " prefix
 
     return None
+
+
+def _get_refresh_token_from_request(request: Request) -> str | None:
+    """Extract refresh token from request cookies.
+
+    Args:
+        request: FastAPI request object.
+
+    Returns:
+        Refresh token string if found, None otherwise.
+    """
+    return request.cookies.get("sb-refresh-token")
+
+
+def _is_token_expiring_soon(token: str) -> bool:
+    """Check if a JWT token is expiring within the refresh threshold.
+
+    Decodes the token without signature verification to read the 'exp' claim.
+    This is safe because we only use this to decide whether to attempt a
+    refresh -- the actual authentication still goes through Supabase's
+    server-side verification.
+
+    Args:
+        token: Raw JWT access token string.
+
+    Returns:
+        True if the token expires within TOKEN_REFRESH_THRESHOLD_SECONDS,
+        or if expiry cannot be determined. False otherwise.
+    """
+    try:
+        payload = pyjwt.decode(
+            token,
+            options={"verify_signature": False},
+            algorithms=["HS256"],
+        )
+        exp = payload.get("exp")
+        if exp is None:
+            return False
+        return time.time() > (exp - TOKEN_REFRESH_THRESHOLD_SECONDS)
+    except pyjwt.PyJWTError:
+        # If we cannot decode the token at all, do not attempt refresh.
+        # Let the normal verification path handle the error.
+        return False
+
+
+def _try_refresh_token(refresh_token: str, response: Response) -> str | None:
+    """Attempt to refresh a Supabase session using the refresh token.
+
+    On success, sets new access and refresh token cookies on the response
+    and returns the new access token. On failure, returns None so the
+    caller can fall through to normal verification with the existing token.
+
+    Args:
+        refresh_token: The Supabase refresh token from the cookie.
+        response: FastAPI response object to set new cookies on.
+
+    Returns:
+        New access token string if refresh succeeded, None otherwise.
+    """
+    try:
+        from src.api.routes.auth import set_auth_cookies
+
+        client = get_supabase()
+        refresh_response = client.auth.refresh_session(refresh_token)
+
+        if refresh_response is None or refresh_response.session is None:
+            logger.debug("Token refresh returned no session")
+            return None
+
+        new_session = refresh_response.session
+        new_access_token = new_session.access_token
+        new_refresh_token = new_session.refresh_token
+
+        # Set updated cookies on the response
+        set_auth_cookies(
+            response,
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+        )
+
+        logger.debug("Successfully refreshed JWT token")
+        return new_access_token
+
+    except ValueError:
+        # Supabase not configured -- should not happen since we check before
+        # calling this, but handle gracefully.
+        logger.debug("Token refresh skipped: Supabase not configured")
+        return None
+    except Exception:
+        # Any refresh failure is non-fatal. The user continues with
+        # their current token (which may still be valid, or will fail
+        # at the normal verification step).
+        logger.debug("Token refresh failed", exc_info=True)
+        return None
 
 
 def _verify_token_via_supabase(token: str) -> AuthenticatedUser:
@@ -141,7 +240,7 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
         HTTPException: 401 if token is malformed, expired, or missing 'sub'.
     """
     try:
-        payload = jwt.decode(
+        payload = pyjwt.decode(
             token,
             options={"verify_signature": False},
             algorithms=["HS256"],
@@ -168,7 +267,7 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
 
         return AuthenticatedUser(id=user_id, email=email)
 
-    except jwt.PyJWTError as e:
+    except pyjwt.PyJWTError as e:
         logger.warning("JWT decode failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -177,7 +276,7 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
         ) from e
 
 
-async def get_current_user(request: Request) -> AuthenticatedUser:
+async def get_current_user(request: Request, response: Response) -> AuthenticatedUser:
     """FastAPI dependency to get the current authenticated user.
 
     Extracts the JWT token from the request and verifies it:
@@ -185,8 +284,14 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
     - If Supabase is NOT configured (local dev): falls back to unverified
       decode with a WARNING log.
 
+    Token refresh: When Supabase is configured and the access token is
+    within 5 minutes of expiry, attempts to refresh using the refresh
+    token cookie. If refresh succeeds, the new tokens are set as cookies
+    on the response. If refresh fails, the original token is used.
+
     Args:
         request: FastAPI request object.
+        response: FastAPI response object (for setting refreshed cookies).
 
     Returns:
         AuthenticatedUser with id and email.
@@ -206,6 +311,14 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
     settings = get_settings()
 
     if settings.supabase_configured:
+        # Attempt proactive token refresh if close to expiry
+        if _is_token_expiring_soon(token):
+            refresh_token = _get_refresh_token_from_request(request)
+            if refresh_token:
+                new_token = _try_refresh_token(refresh_token, response)
+                if new_token:
+                    token = new_token
+
         # Production path: verify token server-side via Supabase
         return _verify_token_via_supabase(token)
 
@@ -228,7 +341,9 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
     return _decode_token_unverified(token)
 
 
-async def get_current_user_optional(request: Request) -> AuthenticatedUser | None:
+async def get_current_user_optional(
+    request: Request, response: Response
+) -> AuthenticatedUser | None:
     """FastAPI dependency to optionally get the current user.
 
     Unlike get_current_user, this does not raise an exception if no user
@@ -236,12 +351,13 @@ async def get_current_user_optional(request: Request) -> AuthenticatedUser | Non
 
     Args:
         request: FastAPI request object.
+        response: FastAPI response object (for setting refreshed cookies).
 
     Returns:
         AuthenticatedUser if authenticated, None otherwise.
     """
     try:
-        return await get_current_user(request)
+        return await get_current_user(request, response)
     except HTTPException:
         return None
 
