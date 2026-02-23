@@ -31,7 +31,7 @@ def _sanitize_filter(value: str) -> markupsafe.Markup:
     Returns:
         markupsafe.Markup: Sanitized HTML that Jinja2 treats as safe.
     """
-    return markupsafe.Markup(sanitize_html(value))
+    return markupsafe.Markup(sanitize_html(value))  # nosec B704 - input sanitized by nh3
 
 
 def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
