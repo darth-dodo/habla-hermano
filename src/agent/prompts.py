@@ -14,10 +14,12 @@ Each prompt defines:
 Language adaptation uses a dictionary adapter pattern for clean switching.
 """
 
+from src.api.validation import LANGUAGE_NAMES
+
 # Language adapter dictionary for localization
 LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
     "es": {
-        "language_name": "Spanish",
+        "language_name": LANGUAGE_NAMES["es"],
         "hello": "Hola",
         "my_name_is": "Me llamo",
         "goodbye": "Adiós",
@@ -31,7 +33,7 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "sound_tip": "'ll' sounds like 'y' in most places, 'z' sounds like 'th' in Spain but 's' in Latin America",
     },
     "de": {
-        "language_name": "German",
+        "language_name": LANGUAGE_NAMES["de"],
         "hello": "Hallo",
         "my_name_is": "Ich heiße",
         "goodbye": "Tschüss",
@@ -45,7 +47,7 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "sound_tip": "'w' sounds like English 'v', 'v' sounds like English 'f', and 'ie' is 'ee' while 'ei' is 'eye'",
     },
     "fr": {
-        "language_name": "French",
+        "language_name": LANGUAGE_NAMES["fr"],
         "hello": "Bonjour",
         "my_name_is": "Je m'appelle",
         "goodbye": "Au revoir",

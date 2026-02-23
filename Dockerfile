@@ -36,8 +36,16 @@ COPY data/ data/
 # Using --system to install into the container's Python environment
 RUN uv pip install --system .
 
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
+
 # Expose the application port
 EXPOSE 8000
+
+# Health check to monitor application availability
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/health')" || exit 1
 
 # Run the FastAPI application with uvicorn
 # --host 0.0.0.0 allows connections from outside the container

@@ -9,12 +9,42 @@ session management, and LangGraph checkpointing.
 from functools import lru_cache
 from typing import Annotated
 
+import markupsafe
 from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates
 
 from src.api.config import Settings, get_settings
+from src.api.sanitize import sanitize_html
 from src.api.session import get_thread_id as _get_thread_id
 from src.lessons.service import LessonService, get_lesson_service
+
+
+def _sanitize_filter(value: str) -> markupsafe.Markup:
+    """Jinja2 filter that sanitizes HTML and marks it safe for rendering.
+
+    Runs the value through nh3 sanitization, then wraps in Markup so
+    Jinja2 does not double-escape the already-sanitized output.
+
+    Args:
+        value: Raw HTML string from LLM output.
+
+    Returns:
+        markupsafe.Markup: Sanitized HTML that Jinja2 treats as safe.
+    """
+    return markupsafe.Markup(sanitize_html(value))  # nosec B704 - input sanitized by nh3
+
+
+def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
+    """Register custom Jinja2 filters on a templates instance.
+
+    Args:
+        templates: Jinja2Templates instance to register filters on.
+
+    Returns:
+        Jinja2Templates: Same instance with filters registered.
+    """
+    templates.env.filters["sanitize"] = _sanitize_filter
+    return templates
 
 
 def get_templates(
@@ -28,7 +58,8 @@ def get_templates(
     Returns:
         Jinja2Templates: Configured template engine.
     """
-    return Jinja2Templates(directory=str(settings.templates_dir))
+    templates = Jinja2Templates(directory=str(settings.templates_dir))
+    return _register_filters(templates)
 
 
 @lru_cache
@@ -42,7 +73,8 @@ def get_cached_templates() -> Jinja2Templates:
         Jinja2Templates: Cached template engine instance.
     """
     settings = get_settings()
-    return Jinja2Templates(directory=str(settings.templates_dir))
+    templates = Jinja2Templates(directory=str(settings.templates_dir))
+    return _register_filters(templates)
 
 
 def get_thread_id_dep(request: Request) -> str:

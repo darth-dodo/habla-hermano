@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
+from src.api.validation import LANGUAGE_NAMES
+
 if TYPE_CHECKING:
     from src.db.models import LessonProgress
     from src.lessons.models import Lesson
@@ -22,7 +24,8 @@ if TYPE_CHECKING:
 
 CATEGORY_ORDER: tuple[str, ...] = ("greetings", "introductions", "numbers", "colors", "family")
 LEVEL_ORDER: tuple[str, ...] = ("A0", "A1", "A2", "B1")
-LANGUAGE_META: dict[str, str] = {"es": "Spanish", "de": "German", "fr": "French"}
+# Re-export for backwards compatibility with tests
+LANGUAGE_META: dict[str, str] = LANGUAGE_NAMES
 LEVEL_META: dict[str, dict[str, str]] = {
     "A0": {
         "title": "Absolute Beginner",

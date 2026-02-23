@@ -10,8 +10,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.cors import CORSMiddleware
 
 from src.api.config import get_settings
+from src.api.middleware import SecurityHeadersMiddleware
 from src.api.routes import auth, chat, learn, lessons, progress, review
 
 # Configure logging
@@ -57,6 +59,16 @@ def create_app() -> FastAPI:
         version="0.1.0",
         debug=settings.DEBUG,
         lifespan=lifespan,
+    )
+
+    # Security middleware (applied in reverse order — last added runs first)
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"] if settings.DEBUG else [f"http://{settings.HOST}:{settings.PORT}"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_headers=["*"],
     )
 
     # Mount static files

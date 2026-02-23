@@ -383,10 +383,21 @@ def test_app(
         "src.api.routes.progress.get_supabase_for_user",
         return_value=MagicMock(),
     )
+    # Patch VocabularyRepository and ReviewService in lessons routes (CI has no Supabase)
+    app._lessons_vocab_repo_patcher = patch(
+        "src.api.routes.lessons.VocabularyRepository",
+        return_value=MagicMock(),
+    )
+    app._lessons_review_service_patcher = patch(
+        "src.api.routes.lessons.ReviewService",
+        return_value=MagicMock(),
+    )
     app._progress_service_patcher.start()
     app._vocab_repo_patcher.start()
     app._lesson_progress_repo_patcher.start()
     app._supabase_for_user_patcher.start()
+    app._lessons_vocab_repo_patcher.start()
+    app._lessons_review_service_patcher.start()
 
     return app
 
@@ -411,6 +422,8 @@ def client(test_app: FastAPI) -> Generator[TestClient, None, None]:
     test_app._vocab_repo_patcher.stop()
     test_app._lesson_progress_repo_patcher.stop()
     test_app._supabase_for_user_patcher.stop()
+    test_app._lessons_vocab_repo_patcher.stop()
+    test_app._lessons_review_service_patcher.stop()
 
 
 @pytest.fixture
@@ -436,6 +449,8 @@ async def async_client(test_app: FastAPI) -> AsyncClient:
     test_app._vocab_repo_patcher.stop()
     test_app._lesson_progress_repo_patcher.stop()
     test_app._supabase_for_user_patcher.stop()
+    test_app._lessons_vocab_repo_patcher.stop()
+    test_app._lessons_review_service_patcher.stop()
 
 
 # =============================================================================

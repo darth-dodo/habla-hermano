@@ -52,12 +52,14 @@ class TestSetAuthCookie:
         assert "httponly" in cookie_header.lower()
 
     def test_sets_cookie_with_secure(self) -> None:
-        """Test cookie is secure."""
-        response = Response()
-        set_auth_cookie(response, "test-token")
+        """Test cookie is secure in production mode (DEBUG=False)."""
+        with patch("src.api.cookies.get_settings") as mock_settings:
+            mock_settings.return_value.DEBUG = False
+            response = Response()
+            set_auth_cookie(response, "test-token")
 
-        cookie_header = response.headers["set-cookie"]
-        assert "secure" in cookie_header.lower()
+            cookie_header = response.headers["set-cookie"]
+            assert "secure" in cookie_header.lower()
 
     def test_sets_cookie_with_samesite_lax(self) -> None:
         """Test cookie has samesite=lax."""

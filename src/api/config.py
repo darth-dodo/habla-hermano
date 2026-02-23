@@ -21,6 +21,7 @@ class Settings(BaseSettings):
         LLM_TEMPERATURE: Sampling temperature for LLM responses.
         HOST: Server host address.
         PORT: Server port number.
+        SECRET_KEY: Secret key for signing cookies and other tokens.
     """
 
     model_config = SettingsConfigDict(
@@ -43,6 +44,13 @@ class Settings(BaseSettings):
     # Application settings
     APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
+
+    # Security: allow unverified JWT decode when Supabase is not configured.
+    # WARNING: NEVER set to true in production. Only for local development.
+    ALLOW_UNVERIFIED_JWT: bool = False
+
+    # Secret key for signing cookies (review sessions, etc.)
+    SECRET_KEY: str = "habla-hermano-change-me-in-production"
 
     # LLM settings
     LLM_MODEL: str = "claude-haiku-4-5-20251001"
@@ -93,4 +101,4 @@ def get_settings() -> Settings:
     Returns:
         Settings: Application settings instance.
     """
-    return Settings()  # type: ignore[call-arg]
+    return Settings()  # type: ignore[call-arg]  # pydantic-settings populates fields from env

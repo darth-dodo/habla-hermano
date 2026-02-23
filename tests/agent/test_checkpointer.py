@@ -7,58 +7,11 @@ This module tests the checkpointer functionality for conversation persistence:
 - Helper functions for thread ID generation
 """
 
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
-
-
-class TestGetCheckpointDbPath:
-    """Tests for get_checkpoint_db_path function."""
-
-    def test_returns_path_object(self) -> None:
-        """get_checkpoint_db_path should return a Path object."""
-        from src.agent.checkpointer import get_checkpoint_db_path
-
-        result = get_checkpoint_db_path()
-        assert isinstance(result, Path)
-
-    def test_returns_absolute_path(self) -> None:
-        """get_checkpoint_db_path should return an absolute path."""
-        from src.agent.checkpointer import get_checkpoint_db_path
-
-        result = get_checkpoint_db_path()
-        assert result.is_absolute()
-
-    def test_path_ends_with_checkpoints_db(self) -> None:
-        """get_checkpoint_db_path should return path ending with checkpoints.db."""
-        from src.agent.checkpointer import get_checkpoint_db_path
-
-        result = get_checkpoint_db_path()
-        assert result.name == "checkpoints.db"
-
-    def test_path_parent_is_data_directory(self) -> None:
-        """get_checkpoint_db_path should place database in data directory."""
-        from src.agent.checkpointer import get_checkpoint_db_path
-
-        result = get_checkpoint_db_path()
-        assert result.parent.name == "data"
-
-    def test_path_is_consistent_across_calls(self) -> None:
-        """get_checkpoint_db_path should return same path on repeated calls."""
-        from src.agent.checkpointer import get_checkpoint_db_path
-
-        path1 = get_checkpoint_db_path()
-        path2 = get_checkpoint_db_path()
-        assert path1 == path2
-
-    def test_module_constant_matches_function(self) -> None:
-        """CHECKPOINT_DB_PATH constant should match get_checkpoint_db_path result."""
-        from src.agent.checkpointer import CHECKPOINT_DB_PATH, get_checkpoint_db_path
-
-        assert get_checkpoint_db_path() == CHECKPOINT_DB_PATH
 
 
 class TestGetUserThreadId:
@@ -294,8 +247,6 @@ class TestCheckpointerEdgeCases:
         from src.agent import checkpointer
 
         assert hasattr(checkpointer, "get_checkpointer")
-        assert hasattr(checkpointer, "get_checkpoint_db_path")
-        assert hasattr(checkpointer, "CHECKPOINT_DB_PATH")
         assert hasattr(checkpointer, "clear_memory_saver")
         assert hasattr(checkpointer, "get_user_thread_id")
         assert hasattr(checkpointer, "get_postgres_checkpointer")
@@ -312,23 +263,6 @@ class TestCheckpointerEdgeCases:
             assert isinstance(checkpointer, MemorySaver)
 
         assert entered
-
-
-class TestDataDirectoryConstants:
-    """Tests for data directory path constants."""
-
-    def test_checkpoint_path_under_data(self) -> None:
-        """CHECKPOINT_DB_PATH should be under a 'data' directory."""
-        from src.agent.checkpointer import CHECKPOINT_DB_PATH
-
-        # Path should have 'data' as parent directory name
-        assert CHECKPOINT_DB_PATH.parent.name == "data"
-
-    def test_checkpoint_path_is_db_file(self) -> None:
-        """CHECKPOINT_DB_PATH should have .db extension."""
-        from src.agent.checkpointer import CHECKPOINT_DB_PATH
-
-        assert CHECKPOINT_DB_PATH.suffix == ".db"
 
 
 class TestGetPostgresCheckpointer:

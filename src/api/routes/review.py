@@ -3,6 +3,9 @@
 Phase 12: Implements spaced repetition review sessions using the SM-2 algorithm.
 Requires authentication - spaced repetition is an authenticated-only feature.
 
+Session state is stored in a signed cookie (itsdangerous) to prevent
+clients from tampering with word IDs, scores, or progress.
+
 Endpoints:
 - GET /review/stats - Get review statistics (due count, next review time)
 - POST /review/start - Start a review session
@@ -11,15 +14,21 @@ Endpoints:
 - DELETE /review/warmup-prompt - Dismiss warmup prompt
 """
 
-import json
 import logging
 import random
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from postgrest.exceptions import APIError
 
 from src.api.auth import CurrentUserDep
+from src.api.cookies import (
+    delete_secure_cookie,
+    set_secure_cookie,
+    sign_cookie_value,
+    unsign_json_cookie,
+)
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.db.models import Vocabulary
@@ -29,6 +38,9 @@ from src.services.review import ReviewService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/review", tags=["review"])
+
+# Maximum age for review session cookie signatures (1 hour).
+_REVIEW_SESSION_MAX_AGE = 60 * 60
 
 
 # =============================================================================
@@ -224,8 +236,8 @@ async def start_review_session(
     """Initialize a review session and return the first question.
 
     Creates a review session with the specified number of words and stores
-    session state in a cookie. Returns the first question as an HTML partial.
-    Requires authentication.
+    session state in a signed cookie. Returns the first question as an HTML
+    partial. Requires authentication.
 
     Args:
         request: FastAPI request for template context.
@@ -278,13 +290,12 @@ async def start_review_session(
         },
     )
 
-    # Store session state in cookie
-    html_response.set_cookie(
+    # Store session state in a signed cookie
+    set_secure_cookie(
+        html_response,
         key=_get_review_session_cookie_name(),
-        value=json.dumps(session_state),
-        httponly=True,
-        samesite="lax",
-        max_age=60 * 60,  # 1 hour
+        value=sign_cookie_value(session_state),
+        max_age=_REVIEW_SESSION_MAX_AGE,
     )
 
     return html_response
@@ -306,28 +317,29 @@ async def submit_review_answer(
     and returns feedback along with the next question (or summary if complete).
     Requires authentication.
 
+    The review_session cookie is signed; tampered values are rejected.
+
     Args:
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user (required).
         word_id: The vocabulary ID being answered.
         user_answer: User's submitted answer.
-        review_session: Review session state cookie.
+        review_session: Signed review session state cookie.
         sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: Feedback partial with next question or session summary.
 
     Raises:
-        HTTPException: 400 if no active review session.
+        HTTPException: 400 if no active review session or invalid signature.
     """
     if not review_session:
         raise HTTPException(status_code=400, detail="No active review session.")
 
-    try:
-        session_state = json.loads(review_session)
-    except json.JSONDecodeError as err:
-        raise HTTPException(status_code=400, detail="Invalid review session.") from err
+    session_state = unsign_json_cookie(review_session, max_age=_REVIEW_SESSION_MAX_AGE)
+    if session_state is None:
+        raise HTTPException(status_code=400, detail="Invalid review session.")
 
     # Use user-authenticated client for RLS to work with auth.uid()
     user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
@@ -355,7 +367,7 @@ async def submit_review_answer(
     # Update SM-2 scheduling
     try:
         service.update_sm2(word_id, quality)
-    except Exception:
+    except APIError:
         logger.exception("Failed to update SM-2 for word %d", word_id)
 
     # Record result
@@ -396,7 +408,7 @@ async def submit_review_answer(
         )
 
         # Clear session cookie
-        html_response.delete_cookie(_get_review_session_cookie_name())
+        delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
 
         return html_response
 
@@ -430,13 +442,12 @@ async def submit_review_answer(
         },
     )
 
-    # Update session cookie
-    html_response.set_cookie(
+    # Update session cookie (signed)
+    set_secure_cookie(
+        html_response,
         key=_get_review_session_cookie_name(),
-        value=json.dumps(session_state),
-        httponly=True,
-        samesite="lax",
-        max_age=60 * 60,  # 1 hour
+        value=sign_cookie_value(session_state),
+        max_age=_REVIEW_SESSION_MAX_AGE,
     )
 
     return html_response
@@ -495,12 +506,11 @@ async def _handle_missing_word(
             )
 
             session_state["current_index"] = current_index
-            html_response.set_cookie(
+            set_secure_cookie(
+                html_response,
                 key=_get_review_session_cookie_name(),
-                value=json.dumps(session_state),
-                httponly=True,
-                samesite="lax",
-                max_age=60 * 60,
+                value=sign_cookie_value(session_state),
+                max_age=_REVIEW_SESSION_MAX_AGE,
             )
 
             return html_response
@@ -524,7 +534,7 @@ async def _handle_missing_word(
         },
     )
 
-    html_response.delete_cookie(_get_review_session_cookie_name())
+    delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
     return html_response
 
 
@@ -543,7 +553,7 @@ async def end_review_session(
     Args:
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
-        review_session: Review session state cookie.
+        review_session: Signed review session state cookie.
 
     Returns:
         HTMLResponse: Session summary partial.
@@ -555,9 +565,8 @@ async def end_review_session(
             context={"message": "No active review session."},
         )
 
-    try:
-        session_state = json.loads(review_session)
-    except json.JSONDecodeError:
+    session_state = unsign_json_cookie(review_session, max_age=_REVIEW_SESSION_MAX_AGE)
+    if session_state is None:
         return templates.TemplateResponse(
             request=request,
             name="partials/review_empty.html",
@@ -584,7 +593,7 @@ async def end_review_session(
     )
 
     # Clear session cookie
-    html_response.delete_cookie(_get_review_session_cookie_name())
+    delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
 
     return html_response
 
@@ -603,11 +612,10 @@ async def dismiss_warmup() -> HTMLResponse:
     html_response = HTMLResponse(content="", status_code=200)
 
     # Set dismissal cookie (expires at end of browser session)
-    html_response.set_cookie(
+    set_secure_cookie(
+        html_response,
         key=_get_warmup_dismissed_cookie_name(),
         value="1",
-        httponly=True,
-        samesite="lax",
         # No max_age = session cookie, expires when browser closes
     )
 

@@ -1,7 +1,8 @@
 """Authentication routes for user signup, login, and logout.
 
 Provides endpoints for Supabase authentication with HTMX support.
-Uses httponly cookies for secure JWT storage.
+Uses httponly cookies for secure JWT storage. Stores both access and
+refresh tokens to enable transparent token renewal.
 
 Note: Guest users have chat access only with no data persistence.
 Progress tracking requires signing up for an account.
@@ -15,6 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from supabase import AuthApiError, Client, create_client
 
 from src.api.config import get_settings
+from src.api.cookies import delete_secure_cookie, set_secure_cookie
 from src.api.dependencies import SettingsDep, TemplatesDep
 from src.api.rate_limit import AUTH_RATE_LIMIT_CALLS, AUTH_RATE_LIMIT_PERIOD, rate_limited
 
@@ -24,6 +26,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Cookie configuration
 COOKIE_NAME = "sb-access-token"
+REFRESH_COOKIE_NAME = "sb-refresh-token"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
 
 
@@ -48,29 +51,64 @@ def get_supabase_client() -> Client:
 
 
 def set_auth_cookie(response: Response, access_token: str) -> None:
-    """Set the authentication cookie on the response.
+    """Set the access token authentication cookie on the response.
+
+    Deprecated: Prefer set_auth_cookies() which also stores the refresh token.
 
     Args:
         response: FastAPI response object.
         access_token: JWT access token from Supabase.
     """
-    response.set_cookie(
+    set_secure_cookie(
+        response,
         key=COOKIE_NAME,
         value=access_token,
         max_age=COOKIE_MAX_AGE,
-        httponly=True,
-        secure=True,  # Only send over HTTPS
-        samesite="lax",
     )
 
 
+def set_auth_cookies(
+    response: Response,
+    access_token: str,
+    refresh_token: str | None = None,
+) -> None:
+    """Set authentication cookies (access + refresh) on the response.
+
+    Always sets the access token cookie. If a refresh token is provided,
+    also sets the refresh token cookie. Both cookies are httponly and
+    secure to prevent client-side script access and transmission over
+    plain HTTP.
+
+    Args:
+        response: FastAPI response object.
+        access_token: JWT access token from Supabase.
+        refresh_token: Optional refresh token from Supabase session.
+    """
+    set_secure_cookie(
+        response,
+        key=COOKIE_NAME,
+        value=access_token,
+        max_age=COOKIE_MAX_AGE,
+    )
+    if refresh_token:
+        set_secure_cookie(
+            response,
+            key=REFRESH_COOKIE_NAME,
+            value=refresh_token,
+            max_age=COOKIE_MAX_AGE,
+        )
+
+
 def clear_auth_cookie(response: Response) -> None:
-    """Clear the authentication cookie from the response.
+    """Clear the authentication cookies from the response.
+
+    Removes both the access token and refresh token cookies.
 
     Args:
         response: FastAPI response object.
     """
-    response.delete_cookie(key=COOKIE_NAME)
+    delete_secure_cookie(response, key=COOKIE_NAME)
+    delete_secure_cookie(response, key=REFRESH_COOKIE_NAME)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -135,7 +173,8 @@ async def signup(
     """Handle user signup with email and password.
 
     Creates a new user account via Supabase Auth. On success, sets
-    an httponly cookie with the JWT and redirects to the chat page.
+    httponly cookies with the JWT access and refresh tokens and redirects
+    to the chat page.
 
     Note: Guest data is not merged on signup. Guests have chat-only access
     without data persistence. Users must sign up to start tracking progress.
@@ -207,12 +246,16 @@ async def signup(
                 },
             )
 
-        # Session created - set cookie and redirect
+        # Session created - set cookies and redirect
         response = Response(status_code=status.HTTP_200_OK)
-        set_auth_cookie(response, auth_response.session.access_token)
+        set_auth_cookies(
+            response,
+            access_token=auth_response.session.access_token,
+            refresh_token=auth_response.session.refresh_token,
+        )
 
         # Clear any existing guest session cookie
-        response.delete_cookie(key="session_id")
+        delete_secure_cookie(response, key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response
@@ -248,8 +291,9 @@ async def login(
 ) -> Response:
     """Handle user login with email and password.
 
-    Authenticates user via Supabase Auth. On success, sets an httponly
-    cookie with the JWT and redirects to the chat page.
+    Authenticates user via Supabase Auth. On success, sets httponly
+    cookies with the JWT access and refresh tokens and redirects to
+    the chat page.
 
     Note: Guest data is not merged on login. Guests have chat-only access
     without data persistence. Users must sign up to start tracking progress.
@@ -283,12 +327,16 @@ async def login(
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # Set cookie and redirect via HTMX
+        # Set cookies and redirect via HTMX
         response = Response(status_code=status.HTTP_200_OK)
-        set_auth_cookie(response, auth_response.session.access_token)
+        set_auth_cookies(
+            response,
+            access_token=auth_response.session.access_token,
+            refresh_token=auth_response.session.refresh_token,
+        )
 
         # Clear any existing guest session cookie
-        response.delete_cookie(key="session_id")
+        delete_secure_cookie(response, key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response
@@ -316,7 +364,7 @@ async def login(
 
 @router.post("/logout")
 async def logout(response: Response) -> Response:
-    """Log out the current user by clearing the auth cookie.
+    """Log out the current user by clearing the auth cookies.
 
     Uses HTMX redirect to send user to the login page.
 
@@ -336,7 +384,7 @@ async def logout(response: Response) -> Response:
 async def logout_get() -> RedirectResponse:
     """Handle GET request for logout (e.g., direct link).
 
-    Clears the auth cookie and redirects to login page.
+    Clears the auth cookies and redirects to login page.
 
     Returns:
         RedirectResponse: Redirect to login page.

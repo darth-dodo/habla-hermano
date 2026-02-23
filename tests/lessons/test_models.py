@@ -6,7 +6,7 @@ Implementation follows to make these tests pass.
 Phase 6: Micro-lessons feature - structured 2-3 minute learning modules.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -497,7 +497,7 @@ class TestUserLessonProgress:
         progress = UserLessonProgress(
             user_id="user-123",
             lesson_id="greetings-001",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=0,
             completed_exercises=[],
         )
@@ -512,7 +512,7 @@ class TestUserLessonProgress:
         progress = UserLessonProgress(
             user_id="user-123",
             lesson_id="greetings-001",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=5,
             completed_exercises=["ex-1", "ex-2"],
         )
@@ -525,7 +525,7 @@ class TestUserLessonProgress:
         progress = UserLessonProgress(
             user_id="user-123",
             lesson_id="greetings-001",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=2,
             total_steps=5,
             completed_exercises=["ex-1"],
@@ -541,7 +541,7 @@ class TestUserLessonProgress:
         progress = UserLessonProgress(
             user_id="user-123",
             lesson_id="greetings-001",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=5,
             exercise_results={"ex-1": True, "ex-2": True, "ex-3": False},
         )
@@ -602,7 +602,7 @@ class TestEdgeCases:
         progress = UserLessonProgress(
             user_id="user-123",
             lesson_id="no-exercises",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=3,
             total_steps=3,
             completed_exercises=[],

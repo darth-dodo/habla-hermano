@@ -35,6 +35,12 @@ dependencies = [
 
     # SSE streaming
     "sse-starlette>=2.0.0",
+
+    # HTML sanitization
+    "nh3>=0.3.3",
+
+    # Cookie signing
+    "itsdangerous>=2.1.0",
 ]
 
 [project.optional-dependencies]
@@ -137,16 +143,21 @@ module = [
     "jwt.*",
     "ratelimit.*",
     "sse_starlette.*",
+    "itsdangerous.*",
 ]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "src.db.*"
-ignore_errors = true  # Phase 4+ stub files, not yet implemented
+module = "src.db.repository"
+ignore_errors = true  # Supabase client JSON types are too loose for strict mypy
+
+[[tool.mypy.overrides]]
+module = "src.db.models"
+disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "src.services.*"
-ignore_errors = true  # Phase 4+ stub files, not yet implemented
+disallow_untyped_defs = true
 
 # =============================================================================
 # Pytest Configuration

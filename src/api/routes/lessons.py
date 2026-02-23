@@ -20,8 +20,11 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
+from markupsafe import escape
+from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
+from src.api.cookies import set_secure_cookie
 from src.api.dependencies import LessonServiceDep, TemplatesDep
 from src.api.supabase_client import get_supabase_admin
 from src.db.repository import LessonProgressRepository, VocabularyRepository
@@ -82,7 +85,7 @@ def _initialize_lesson_vocabulary_for_review(
             # Schedule for review if not already scheduled
             if vocab.id and vocab.next_review_at is None:
                 review_service.initialize_word_for_review(vocab.id)
-        except Exception:
+        except APIError:
             # Log but continue with other words
             logger.exception(
                 "Failed to initialize word '%s' for review",
@@ -474,12 +477,22 @@ async def submit_exercise(
         is_correct = exercise.check_answer(answer)
         correct_answer = exercise.correct_translation
 
-    # Build feedback response
+    # Build feedback response (escape user-facing content to prevent XSS)
+    css_class = "correct" if is_correct else "incorrect"
+    result_text = "Correct!" if is_correct else "Incorrect - try again"
+    answer_html = (
+        f'<p class="correct-answer">Correct answer: {escape(correct_answer)}</p>'
+        if not is_correct
+        else ""
+    )
+    explanation_html = (
+        f'<p class="explanation">{escape(exercise.explanation)}</p>' if exercise.explanation else ""
+    )
     feedback_html = f"""
-    <div class="exercise-feedback {"correct" if is_correct else "incorrect"}">
-        <p class="result">{"Correct!" if is_correct else "Incorrect - try again"}</p>
-        {f'<p class="correct-answer">Correct answer: {correct_answer}</p>' if not is_correct else ""}
-        {f'<p class="explanation">{exercise.explanation}</p>' if exercise.explanation else ""}
+    <div class="exercise-feedback {css_class}">
+        <p class="result">{result_text}</p>
+        {answer_html}
+        {explanation_html}
     </div>
     """
 
@@ -717,7 +730,7 @@ async def complete_lesson(
                 language=lesson.metadata.language,
                 client=client,
             )
-        except Exception:
+        except APIError:
             logger.exception("Failed to persist lesson completion for user %s", effective_id)
 
     # Phase 14: Compute next lesson in the learning path
@@ -731,7 +744,7 @@ async def complete_lesson(
             next_path_lesson = path_service.get_next_path_lesson(
                 lesson.metadata.language, all_progress
             )
-        except Exception:
+        except (APIError, KeyError, ValueError):
             logger.exception("Failed to get next path lesson for user %s", effective_id)
 
     response = templates.TemplateResponse(
@@ -750,11 +763,10 @@ async def complete_lesson(
 
     # Set session cookie for first-time guests
     if new_session_id:
-        response.set_cookie(
+        set_secure_cookie(
+            response,
             key="session_id",
             value=new_session_id,
-            httponly=True,
-            samesite="lax",
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 

@@ -8,7 +8,6 @@ Tests cover authenticated users, unauthenticated rejection (401),
 edge cases, and error paths.
 """
 
-import json
 from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from http.cookies import SimpleCookie
@@ -19,8 +18,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.templating import Jinja2Templates
 from httpx import ASGITransport, AsyncClient
+from postgrest.exceptions import APIError
 
 from src.api.auth import AuthenticatedUser, get_current_user
+from src.api.cookies import sign_cookie_value, unsign_json_cookie
 from src.api.routes.review import (
     _evaluate_answer,
     _generate_question,
@@ -42,6 +43,9 @@ def _parse_session_cookie_from_response(response) -> dict:
     become \\054). This helper reads the raw Set-Cookie header and parses
     it with http.cookies.SimpleCookie which handles the un-quoting.
 
+    The cookie value is signed with itsdangerous, so we use unsign_json_cookie
+    to verify and decode it.
+
     Args:
         response: httpx Response object.
 
@@ -55,7 +59,8 @@ def _parse_session_cookie_from_response(response) -> dict:
             cookie.load(header)
             morsel = cookie.get("review_session")
             if morsel:
-                return json.loads(morsel.value)
+                result = unsign_json_cookie(morsel.value)
+                return result if result is not None else {}
     return {}
 
 
@@ -306,7 +311,7 @@ def _build_session_cookie(
     results: list[dict] | None = None,
     language: str = "es",
 ) -> str:
-    """Build a JSON-encoded review session cookie value.
+    """Build a signed review session cookie value.
 
     Args:
         word_ids: List of vocabulary IDs in the session.
@@ -315,9 +320,9 @@ def _build_session_cookie(
         language: Target language.
 
     Returns:
-        JSON string suitable for the review_session cookie.
+        Signed cookie string suitable for the review_session cookie.
     """
-    return json.dumps(
+    return sign_cookie_value(
         {
             "word_ids": word_ids,
             "current_index": current_index,
@@ -788,7 +793,9 @@ class TestSubmitReviewAnswer:
         self, client: AsyncClient, mock_review_service: MagicMock
     ) -> None:
         """If update_sm2 raises, the answer still returns feedback."""
-        mock_review_service.update_sm2.side_effect = Exception("DB error")
+        mock_review_service.update_sm2.side_effect = APIError(
+            {"code": "500", "message": "DB error", "hint": None, "details": None}
+        )
         session_cookie = _build_session_cookie(word_ids=[1, 2], current_index=0)
         response = await client.post(
             "/review/answer",
