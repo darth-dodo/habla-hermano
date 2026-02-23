@@ -21,6 +21,7 @@ class Settings(BaseSettings):
         LLM_TEMPERATURE: Sampling temperature for LLM responses.
         HOST: Server host address.
         PORT: Server port number.
+        SECRET_KEY: Secret key for signing cookies and other tokens.
     """
 
     model_config = SettingsConfigDict(
@@ -43,6 +44,9 @@ class Settings(BaseSettings):
     # Application settings
     APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
+
+    # Security settings
+    SECRET_KEY: str = "habla-hermano-change-me-in-production"
 
     # LLM settings
     LLM_MODEL: str = "claude-haiku-4-5-20251001"

@@ -57,6 +57,9 @@ MAX_MESSAGE_LENGTH = 2000
 VALID_LEVELS = {"A0", "A1", "A2", "B1"}
 VALID_LANGUAGES = {"es", "de", "fr"}
 
+# --- Cookie expiry ---
+_CONVERSATION_VERSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+
 
 def _make_error_html(error_message: str) -> HTMLResponse:
     """Return an HTMX-compatible HTML error fragment."""
@@ -484,7 +487,7 @@ async def new_conversation(
             value=str(uuid.uuid4()),
             httponly=True,
             samesite="lax",
-            max_age=60 * 60 * 24 * 365,  # 1 year
+            max_age=_CONVERSATION_VERSION_MAX_AGE,  # 30 days
         )
     else:
         # For anonymous users, delete the session cookie to start fresh
