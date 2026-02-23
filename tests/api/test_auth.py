@@ -501,7 +501,9 @@ class TestSupabaseVerification:
         forged_token = create_test_token(forged_payload, secret="wrong-secret")
 
         mock_client = MagicMock()
-        mock_client.auth.get_user.side_effect = Exception("Invalid JWT: signature mismatch")
+        import httpx
+
+        mock_client.auth.get_user.side_effect = httpx.HTTPError("Invalid JWT: signature mismatch")
 
         request = MagicMock()
         request.cookies.get.return_value = None
@@ -558,7 +560,9 @@ class TestSupabaseVerification:
         from fastapi import HTTPException
 
         mock_client = MagicMock()
-        mock_client.auth.get_user.side_effect = ConnectionError("Failed to connect to Supabase")
+        import httpx
+
+        mock_client.auth.get_user.side_effect = httpx.ConnectError("Failed to connect to Supabase")
 
         request = MagicMock()
         request.cookies.get.return_value = None
@@ -905,10 +909,10 @@ class TestTokenRefreshIntegration:
         mock_client.auth.refresh_session.return_value = mock_refresh_response
 
         request = MagicMock()
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": expiring_soon_token,
             "sb-refresh-token": "old-refresh-token",
-        }.get(key)
+        }.get
         request.headers.get.return_value = None
 
         response = Response()
@@ -944,10 +948,10 @@ class TestTokenRefreshIntegration:
         mock_client.auth.get_user.return_value = mock_user_response
 
         request = MagicMock()
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": valid_token,
             "sb-refresh-token": "some-refresh-token",
-        }.get(key)
+        }.get
         request.headers.get.return_value = None
 
         response = Response()
@@ -980,10 +984,10 @@ class TestTokenRefreshIntegration:
         mock_client.auth.get_user.return_value = mock_user_response
 
         request = MagicMock()
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": expiring_soon_token,
             "sb-refresh-token": None,
-        }.get(key)
+        }.get
         request.headers.get.return_value = None
 
         response = Response()
@@ -1017,10 +1021,10 @@ class TestTokenRefreshIntegration:
         mock_client.auth.refresh_session.side_effect = Exception("Refresh failed")
 
         request = MagicMock()
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": expiring_soon_token,
             "sb-refresh-token": "old-refresh-token",
-        }.get(key)
+        }.get
         request.headers.get.return_value = None
 
         response = Response()
@@ -1043,10 +1047,10 @@ class TestTokenRefreshIntegration:
     ) -> None:
         """Test that refresh is skipped in local dev mode (no Supabase)."""
         request = MagicMock()
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": expiring_soon_token,
             "sb-refresh-token": "some-refresh-token",
-        }.get(key)
+        }.get
         request.headers.get.return_value = None
 
         response = Response()
@@ -1097,10 +1101,10 @@ class TestTokenRefreshIntegration:
 
         request = MagicMock()
         # Token from header, no access token cookie
-        request.cookies.get.side_effect = lambda key: {
+        request.cookies.get.side_effect = {
             "sb-access-token": None,
             "sb-refresh-token": "refresh-token-from-cookie",
-        }.get(key)
+        }.get
         request.headers.get.return_value = f"Bearer {expiring_token}"
 
         response = Response()

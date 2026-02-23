@@ -9,6 +9,7 @@ from datetime import UTC, date, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
+from postgrest.exceptions import APIError
 
 from src.db.models import LearningSession, LessonProgress, Vocabulary
 from src.services.progress import (
@@ -665,7 +666,7 @@ class TestRecordChatActivity:
         self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test exceptions are caught, logged, and not re-raised."""
-        mock_vocab_repo.upsert.side_effect = RuntimeError("Supabase down")
+        mock_vocab_repo.upsert.side_effect = APIError({"code": "500", "message": "Supabase down", "hint": None, "details": None})
 
         # Should not raise
         service.record_chat_activity(
@@ -678,7 +679,7 @@ class TestRecordChatActivity:
         self, _mock_review, service, mock_vocab_repo, mock_session_repo, mock_lesson_repo
     ) -> None:
         """Test logged error includes the user_id for traceability."""
-        mock_vocab_repo.upsert.side_effect = RuntimeError("Connection lost")
+        mock_vocab_repo.upsert.side_effect = APIError({"code": "500", "message": "Connection lost", "hint": None, "details": None})
 
         with patch("src.services.progress.logger") as mock_logger:
             service.record_chat_activity(

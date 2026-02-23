@@ -79,7 +79,6 @@ async def get_progress_page(
         review_service = ReviewService(user.id, client=user_client)
         review_stats = review_service.get_stats(language=validate_language(language))
     except APIError:
->>>>>>> worktree-agent-a4375da1
         logger.exception("Failed to get review stats for user %s", user.id)
 
     return templates.TemplateResponse(

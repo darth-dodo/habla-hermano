@@ -23,7 +23,12 @@ from fastapi.responses import HTMLResponse
 from postgrest.exceptions import APIError
 
 from src.api.auth import CurrentUserDep
-from src.api.cookies import set_secure_cookie, sign_cookie_value, unsign_json_cookie
+from src.api.cookies import (
+    delete_secure_cookie,
+    set_secure_cookie,
+    sign_cookie_value,
+    unsign_json_cookie,
+)
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.db.models import Vocabulary

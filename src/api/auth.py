@@ -123,7 +123,7 @@ def _is_token_expiring_soon(token: str) -> bool:
         exp = payload.get("exp")
         if exp is None:
             return False
-        return time.time() > (exp - TOKEN_REFRESH_THRESHOLD_SECONDS)
+        return bool(time.time() > (exp - TOKEN_REFRESH_THRESHOLD_SECONDS))
     except pyjwt.PyJWTError:
         # If we cannot decode the token at all, do not attempt refresh.
         # Let the normal verification path handle the error.
@@ -145,7 +145,7 @@ def _try_refresh_token(refresh_token: str, response: Response) -> str | None:
         New access token string if refresh succeeded, None otherwise.
     """
     try:
-        from src.api.routes.auth import set_auth_cookies
+        from src.api.routes.auth import set_auth_cookies  # noqa: PLC0415
 
         client = get_supabase()
         refresh_response = client.auth.refresh_session(refresh_token)

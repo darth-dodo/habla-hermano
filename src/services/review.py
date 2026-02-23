@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.api.supabase_client import get_supabase
 from src.db.models import Vocabulary
@@ -311,7 +311,7 @@ class ReviewService:
         """
         client = self._client or get_supabase()
 
-        update_data: dict[str, object] = {
+        update_data: dict[str, Any] = {
             "easiness_factor": easiness_factor,
             "interval_days": interval_days,
             "repetition_count": repetition_count,
@@ -334,7 +334,7 @@ class ReviewService:
         if not response.data:
             raise ValueError(f"Failed to update vocabulary {vocab_id}")
 
-        return Vocabulary(**response.data[0])
+        return Vocabulary(**response.data[0])  # type: ignore[arg-type]  # Supabase JSON → dict
 
     def _calculate_next_review_in(
         self,

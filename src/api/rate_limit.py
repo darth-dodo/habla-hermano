@@ -52,7 +52,7 @@ def rate_limited(calls: int, period: int) -> Callable[[F], F]:
     limiter_instance = RateLimitDecorator(calls=calls, period=period)
     _active_limiters.append(limiter_instance)
 
-    @limiter_instance  # type: ignore[misc]  # ratelimit library lacks type stubs
+    @limiter_instance  # type: ignore[misc,untyped-decorator]  # ratelimit library lacks type stubs
     def _tracker() -> None:
         """Internal tracking function for rate limit counting."""
 

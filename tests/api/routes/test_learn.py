@@ -12,6 +12,7 @@ data/lessons/ so path construction and progress overlays are realistic.
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
+from postgrest.exceptions import APIError
 
 # Module path for patching helpers inside the learn route module.
 _LEARN_MODULE = "src.api.routes.learn"
@@ -218,7 +219,7 @@ class TestLearnPageErrorHandling:
 
     @patch(
         f"{_LEARN_MODULE}._get_user_learning_data",
-        side_effect=Exception("Supabase connection error"),
+        side_effect=APIError({"code": "500", "message": "Supabase connection error", "hint": None, "details": None}),
     )
     def test_db_error_still_returns_200(
         self, mock_data: MagicMock, test_client: TestClient
@@ -233,7 +234,7 @@ class TestLearnPageErrorHandling:
 
     @patch(
         f"{_LEARN_MODULE}._get_user_learning_data",
-        side_effect=Exception("Supabase connection error"),
+        side_effect=APIError({"code": "500", "message": "Supabase connection error", "hint": None, "details": None}),
     )
     def test_db_error_shows_path_structure(
         self, mock_data: MagicMock, test_client: TestClient
@@ -245,7 +246,7 @@ class TestLearnPageErrorHandling:
 
     @patch(
         f"{_LEARN_MODULE}._get_user_learning_data",
-        side_effect=Exception("Supabase timeout"),
+        side_effect=APIError({"code": "500", "message": "Supabase timeout", "hint": None, "details": None}),
     )
     def test_recommendation_db_error_returns_200(
         self, mock_data: MagicMock, test_client: TestClient

@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jinja2 import Environment, FileSystemLoader
 from langchain_core.messages import AIMessage, HumanMessage
+from postgrest.exceptions import APIError
 
 from src.api.auth import (
     AuthenticatedUser,
@@ -394,8 +395,8 @@ class TestChatDataCaptureErrorResilience:
             patch("src.api.routes.chat.get_supabase_for_user", return_value=mock_user_client),
         ):
             mock_service_instance = MagicMock()
-            mock_service_instance.record_chat_activity.side_effect = RuntimeError(
-                "DB connection failed"
+            mock_service_instance.record_chat_activity.side_effect = APIError(
+                {"code": "500", "message": "DB connection failed", "hint": None, "details": None}
             )
             MockProgressService.return_value = mock_service_instance
 
@@ -504,7 +505,9 @@ class TestLessonCompletionPersistenceGuest:
 
         with (
             patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
+            patch("src.api.routes.lessons.VocabularyRepository"),
             patch("src.api.routes.lessons.get_supabase_admin", return_value=mock_admin_client),
+            patch("src.services.review.ReviewService"),
         ):
             mock_repo_instance = MagicMock()
             MockRepo.return_value = mock_repo_instance
@@ -534,9 +537,15 @@ class TestLessonCompletionErrorResilience:
         app.dependency_overrides[get_current_user_optional] = lambda: mock_user
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
-        with patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo:
+        with (
+            patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
+            patch("src.api.routes.lessons.VocabularyRepository"),
+            patch("src.services.review.ReviewService"),
+        ):
             mock_repo_instance = MagicMock()
-            mock_repo_instance.complete_lesson.side_effect = RuntimeError("DB connection failed")
+            mock_repo_instance.complete_lesson.side_effect = APIError(
+                {"code": "500", "message": "DB connection failed", "hint": None, "details": None}
+            )
             MockRepo.return_value = mock_repo_instance
 
             app.include_router(lessons.router, prefix="/lessons")
@@ -563,7 +572,9 @@ class TestLessonCompletionErrorResilience:
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
         with patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo:
-            MockRepo.side_effect = RuntimeError("Cannot connect to Supabase")
+            MockRepo.side_effect = APIError(
+                {"code": "500", "message": "Cannot connect to Supabase", "hint": None, "details": None}
+            )
 
             app.include_router(lessons.router, prefix="/lessons")
             client = TestClient(app)

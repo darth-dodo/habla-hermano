@@ -881,7 +881,15 @@ class TestAnalyzeNodeLLMExceptions:
 
         # Create mock LLM that raises an exception
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(side_effect=Exception("API Error"))
+        import anthropic
+
+        mock_llm.ainvoke = AsyncMock(
+            side_effect=anthropic.APIError(
+                message="API Error",
+                request=MagicMock(),
+                body=None,
+            )
+        )
 
         with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
@@ -899,11 +907,15 @@ class TestAnalyzeNodeLLMExceptions:
 
     @pytest.mark.asyncio
     async def test_handles_timeout_exception(self) -> None:
-        """analyze_node should handle timeout exceptions gracefully."""
+        """analyze_node should handle connection exceptions gracefully."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
+        import anthropic
+
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(side_effect=TimeoutError())
+        mock_llm.ainvoke = AsyncMock(
+            side_effect=anthropic.APIConnectionError(request=MagicMock())
+        )
 
         with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
