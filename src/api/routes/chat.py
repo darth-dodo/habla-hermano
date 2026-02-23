@@ -57,6 +57,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["chat"])
 
 
+# --- Cookie expiry ---
+_CONVERSATION_VERSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+
 
 def _make_error_html(error_message: str) -> HTMLResponse:
     """Return an HTMX-compatible HTML error fragment."""

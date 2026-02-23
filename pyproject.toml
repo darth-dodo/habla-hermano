@@ -38,6 +38,9 @@ dependencies = [
 
     # HTML sanitization
     "nh3>=0.3.3",
+
+    # Cookie signing
+    "itsdangerous>=2.1.0",
 ]
 
 [project.optional-dependencies]
@@ -140,6 +143,7 @@ module = [
     "jwt.*",
     "ratelimit.*",
     "sse_starlette.*",
+    "itsdangerous.*",
 ]
 ignore_missing_imports = true
 
