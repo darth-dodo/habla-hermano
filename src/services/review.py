@@ -77,7 +77,9 @@ class ReviewService:
         total_in_rotation = len(in_rotation)
 
         # Words that are due (next_review_at <= now)
-        due_words = [v for v in in_rotation if v.next_review_at <= now]
+        due_words = [
+            v for v in in_rotation if v.next_review_at is not None and v.next_review_at <= now
+        ]
         due_count = len(due_words)
 
         # Calculate next review time for words not yet due
@@ -107,10 +109,12 @@ class ReviewService:
         now = datetime.now(UTC)
 
         # Filter to words in rotation that are due
-        due_words = [v for v in vocab if v.next_review_at is not None and v.next_review_at <= now]
+        due_words = [
+            v for v in vocab if v.next_review_at is not None and v.next_review_at <= now
+        ]
 
         # Sort by most overdue first (earliest next_review_at)
-        due_words.sort(key=lambda v: v.next_review_at)
+        due_words.sort(key=lambda v: v.next_review_at or now)
 
         if limit is not None:
             return due_words[:limit]
@@ -144,7 +148,7 @@ class ReviewService:
         keywords_lower = [kw.lower() for kw in topic_keywords]
 
         # Match words where the word or translation contains any keyword
-        matching_words = []
+        matching_words: list[Vocabulary] = []
         for vocab in due_words:
             word_lower = vocab.word.lower()
             translation_lower = vocab.translation.lower()
@@ -307,7 +311,7 @@ class ReviewService:
         """
         client = self._client or get_supabase()
 
-        update_data = {
+        update_data: dict[str, object] = {
             "easiness_factor": easiness_factor,
             "interval_days": interval_days,
             "repetition_count": repetition_count,
@@ -347,14 +351,19 @@ class ReviewService:
             Human-readable string like "2 hours", "tomorrow", or None if no upcoming.
         """
         # Find the next upcoming review (not yet due)
-        upcoming = [v for v in in_rotation if v.next_review_at > now]
+        upcoming = [
+            v for v in in_rotation if v.next_review_at is not None and v.next_review_at > now
+        ]
 
         if not upcoming:
             return None
 
         # Get the soonest upcoming review
-        next_review = min(upcoming, key=lambda v: v.next_review_at)
-        delta = next_review.next_review_at - now
+        next_review = min(upcoming, key=lambda v: v.next_review_at or now)
+        next_review_at = next_review.next_review_at
+        if next_review_at is None:
+            return None
+        delta = next_review_at - now
 
         return self._format_timedelta(delta)
 

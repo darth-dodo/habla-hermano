@@ -350,7 +350,7 @@ async def _get_topical_review_words(
         # Convert to ReviewWordOffered format
         return [
             ReviewWordOffered(
-                vocab_id=vocab.id,  # type: ignore[typeddict-item]
+                vocab_id=vocab.id,  # type: ignore[typeddict-item]  # guarded by vocab.id is not None below
                 word=vocab.word,
                 translation=vocab.translation,
             )
