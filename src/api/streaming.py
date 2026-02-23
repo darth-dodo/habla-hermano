@@ -170,7 +170,9 @@ async def stream_chat_events(  # noqa: PLR0912
 
     except Exception:
         logger.exception("Error during chat streaming")
-        yield _make_sse_event("error", {"message": "Sorry, something went wrong. Please try again."})
+        yield _make_sse_event(
+            "error", {"message": "Sorry, something went wrong. Please try again."}
+        )
         return
 
     yield _make_sse_event("done", {})

@@ -283,17 +283,25 @@ def mock_compiled_graph(mock_graph_result: dict[str, Any], sample_ai_response: s
         from langchain_core.messages import AIMessageChunk
 
         # Yield token from respond node
-        yield ("messages", (
-            AIMessageChunk(content=sample_ai_response),
-            {"langgraph_node": "respond"},
-        ))
+        yield (
+            "messages",
+            (
+                AIMessageChunk(content=sample_ai_response),
+                {"langgraph_node": "respond"},
+            ),
+        )
         # Yield respond node completion
         yield ("updates", {"respond": {}})
         # Yield analyze node completion (empty feedback)
-        yield ("updates", {"analyze": {
-            "grammar_feedback": [],
-            "pronunciation_tips": [],
-        }})
+        yield (
+            "updates",
+            {
+                "analyze": {
+                    "grammar_feedback": [],
+                    "pronunciation_tips": [],
+                }
+            },
+        )
 
     mock_graph.astream = mock_astream
     return mock_graph

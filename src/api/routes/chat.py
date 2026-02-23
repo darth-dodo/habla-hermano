@@ -358,9 +358,7 @@ async def stream_message(
 
     if len(message) > MAX_MESSAGE_LENGTH:
         return EventSourceResponse(
-            content=_stream_error(
-                f"Message is too long (max {MAX_MESSAGE_LENGTH} characters)."
-            ),
+            content=_stream_error(f"Message is too long (max {MAX_MESSAGE_LENGTH} characters)."),
             media_type="text/event-stream",
         )
 
@@ -424,9 +422,7 @@ async def stream_message(
                     new_vocab=result.new_vocabulary,
                 )
             except Exception:
-                logger.exception(
-                    "Failed to capture chat activity for user %s", effective_user_id
-                )
+                logger.exception("Failed to capture chat activity for user %s", effective_user_id)
 
     headers: dict[str, str] = {"Cache-Control": "no-cache"}
     response = EventSourceResponse(

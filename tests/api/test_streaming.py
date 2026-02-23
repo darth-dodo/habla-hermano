@@ -128,9 +128,7 @@ class TestStreamChatEvents:
         return mock_tmpl
 
     @pytest.mark.asyncio
-    async def test_streams_token_events_from_respond_node(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_streams_token_events_from_respond_node(self, mock_templates: MagicMock) -> None:
         """Should yield token events for chunks from the respond node."""
         chunk1 = AIMessageChunk(content="Hola")
         chunk2 = AIMessageChunk(content=" amigo")
@@ -160,9 +158,7 @@ class TestStreamChatEvents:
         assert json.loads(token_events[1]["data"])["content"] == " amigo"
 
     @pytest.mark.asyncio
-    async def test_filters_non_respond_node_tokens(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_filters_non_respond_node_tokens(self, mock_templates: MagicMock) -> None:
         """Should NOT yield tokens from scaffold or analyze nodes."""
         chunk = AIMessageChunk(content="scaffold internal")
         stream_events = [
@@ -173,8 +169,12 @@ class TestStreamChatEvents:
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -196,8 +196,12 @@ class TestStreamChatEvents:
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -207,9 +211,7 @@ class TestStreamChatEvents:
         assert data["content"] == "Full response"
 
     @pytest.mark.asyncio
-    async def test_captures_review_words_offered(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_captures_review_words_offered(self, mock_templates: MagicMock) -> None:
         """Should capture review_words_offered in StreamResult."""
         stream_events = [
             ("updates", {"respond": {"review_words_offered": ["hola", "amigo"]}}),
@@ -218,17 +220,19 @@ class TestStreamChatEvents:
         result = StreamResult()
 
         async for _ in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             pass
 
         assert result.review_words_offered == ["hola", "amigo"]
 
     @pytest.mark.asyncio
-    async def test_yields_scaffolding_for_enabled_scaffold(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_yields_scaffolding_for_enabled_scaffold(self, mock_templates: MagicMock) -> None:
         """Should yield scaffolding event when scaffold node returns enabled scaffolding."""
         stream_events = [
             ("updates", {"scaffold": {"scaffolding": {"enabled": True, "word_bank": []}}}),
@@ -238,8 +242,12 @@ class TestStreamChatEvents:
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A0", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A0",
+            result=result,
         ):
             events.append(event)
 
@@ -248,9 +256,7 @@ class TestStreamChatEvents:
         mock_templates.get_template.assert_any_call("partials/scaffold.html")
 
     @pytest.mark.asyncio
-    async def test_skips_scaffolding_when_not_enabled(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_skips_scaffolding_when_not_enabled(self, mock_templates: MagicMock) -> None:
         """Should NOT yield scaffolding when scaffolding is disabled or empty."""
         stream_events = [
             ("updates", {"scaffold": {"scaffolding": {"enabled": False}}}),
@@ -260,8 +266,12 @@ class TestStreamChatEvents:
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -269,23 +279,30 @@ class TestStreamChatEvents:
         assert len(scaffold_events) == 0
 
     @pytest.mark.asyncio
-    async def test_yields_grammar_feedback(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_yields_grammar_feedback(self, mock_templates: MagicMock) -> None:
         """Should yield grammar event when analyze node returns grammar feedback."""
         stream_events = [
-            ("updates", {"analyze": {
-                "grammar_feedback": [{"text": "good"}],
-                "pronunciation_tips": [],
-            }}),
+            (
+                "updates",
+                {
+                    "analyze": {
+                        "grammar_feedback": [{"text": "good"}],
+                        "pronunciation_tips": [],
+                    }
+                },
+            ),
         ]
         graph = await _make_mock_graph(stream_events)
         result = StreamResult()
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -293,23 +310,30 @@ class TestStreamChatEvents:
         assert len(grammar_events) == 1
 
     @pytest.mark.asyncio
-    async def test_yields_pronunciation_tips(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_yields_pronunciation_tips(self, mock_templates: MagicMock) -> None:
         """Should yield pronunciation event when analyze node returns tips."""
         stream_events = [
-            ("updates", {"analyze": {
-                "grammar_feedback": [],
-                "pronunciation_tips": [{"word": "hola", "tip": "oh-la"}],
-            }}),
+            (
+                "updates",
+                {
+                    "analyze": {
+                        "grammar_feedback": [],
+                        "pronunciation_tips": [{"word": "hola", "tip": "oh-la"}],
+                    }
+                },
+            ),
         ]
         graph = await _make_mock_graph(stream_events)
         result = StreamResult()
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -317,51 +341,62 @@ class TestStreamChatEvents:
         assert len(pronunciation_events) == 1
 
     @pytest.mark.asyncio
-    async def test_skips_empty_grammar_and_pronunciation(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_skips_empty_grammar_and_pronunciation(self, mock_templates: MagicMock) -> None:
         """Should NOT yield grammar/pronunciation events when lists are empty."""
         stream_events = [
-            ("updates", {"analyze": {
-                "grammar_feedback": [],
-                "pronunciation_tips": [],
-            }}),
+            (
+                "updates",
+                {
+                    "analyze": {
+                        "grammar_feedback": [],
+                        "pronunciation_tips": [],
+                    }
+                },
+            ),
         ]
         graph = await _make_mock_graph(stream_events)
         result = StreamResult()
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
-        feedback_events = [
-            e for e in events
-            if e["event"] in ("grammar", "pronunciation")
-        ]
+        feedback_events = [e for e in events if e["event"] in ("grammar", "pronunciation")]
         assert len(feedback_events) == 0
 
     @pytest.mark.asyncio
-    async def test_captures_vocabulary_from_analyze_node(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_captures_vocabulary_from_analyze_node(self, mock_templates: MagicMock) -> None:
         """Should capture new_vocabulary and review_words_used in StreamResult."""
         stream_events = [
-            ("updates", {"analyze": {
-                "grammar_feedback": [],
-                "pronunciation_tips": [],
-                "new_vocabulary": [{"word": "hola", "translation": "hello"}],
-                "review_words_used": ["amigo"],
-            }}),
+            (
+                "updates",
+                {
+                    "analyze": {
+                        "grammar_feedback": [],
+                        "pronunciation_tips": [],
+                        "new_vocabulary": [{"word": "hola", "translation": "hello"}],
+                        "review_words_used": ["amigo"],
+                    }
+                },
+            ),
         ]
         graph = await _make_mock_graph(stream_events)
         result = StreamResult()
 
         async for _ in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             pass
 
@@ -370,17 +405,19 @@ class TestStreamChatEvents:
         assert result.review_words_used == ["amigo"]
 
     @pytest.mark.asyncio
-    async def test_always_yields_done_event(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_always_yields_done_event(self, mock_templates: MagicMock) -> None:
         """Should always end with a done event."""
         graph = await _make_mock_graph([])
         result = StreamResult()
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -388,9 +425,7 @@ class TestStreamChatEvents:
         assert events[-1]["event"] == "done"
 
     @pytest.mark.asyncio
-    async def test_yields_error_event_on_exception(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_yields_error_event_on_exception(self, mock_templates: MagicMock) -> None:
         """Should yield error event when graph.astream raises an exception."""
         mock_graph = MagicMock()
 
@@ -403,8 +438,12 @@ class TestStreamChatEvents:
 
         events = []
         async for event in stream_chat_events(
-            graph=mock_graph, inputs={}, config={}, templates=mock_templates,
-            level="A1", result=result,
+            graph=mock_graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A1",
+            result=result,
         ):
             events.append(event)
 
@@ -414,9 +453,7 @@ class TestStreamChatEvents:
         assert "wrong" in data["message"].lower()
 
     @pytest.mark.asyncio
-    async def test_full_stream_sequence(
-        self, mock_templates: MagicMock
-    ) -> None:
+    async def test_full_stream_sequence(self, mock_templates: MagicMock) -> None:
         """Should produce the correct event sequence for a full conversation turn."""
         chunk1 = AIMessageChunk(content="Hola")
         chunk2 = AIMessageChunk(content=" Juan")
@@ -426,19 +463,28 @@ class TestStreamChatEvents:
             ("messages", (chunk2, {"langgraph_node": "respond"})),
             ("updates", {"respond": {}}),
             ("updates", {"scaffold": {"scaffolding": {"enabled": True, "word_bank": []}}}),
-            ("updates", {"analyze": {
-                "grammar_feedback": [{"text": "good"}],
-                "pronunciation_tips": [{"word": "hola"}],
-                "new_vocabulary": [{"word": "hola"}],
-            }}),
+            (
+                "updates",
+                {
+                    "analyze": {
+                        "grammar_feedback": [{"text": "good"}],
+                        "pronunciation_tips": [{"word": "hola"}],
+                        "new_vocabulary": [{"word": "hola"}],
+                    }
+                },
+            ),
         ]
         graph = await _make_mock_graph(stream_events)
         result = StreamResult()
 
         events = []
         async for event in stream_chat_events(
-            graph=graph, inputs={}, config={}, templates=mock_templates,
-            level="A0", result=result,
+            graph=graph,
+            inputs={},
+            config={},
+            templates=mock_templates,
+            level="A0",
+            result=result,
         ):
             events.append(event)
 
@@ -477,11 +523,13 @@ class TestStreamMessageEndpoint:
 
         mock_graph.astream = mock_astream
         # Keep ainvoke for the non-streaming endpoint
-        mock_graph.ainvoke = AsyncMock(return_value={
-            "messages": [AIMessageChunk(content=response_text)],
-            "level": "A1",
-            "language": "es",
-        })
+        mock_graph.ainvoke = AsyncMock(
+            return_value={
+                "messages": [AIMessageChunk(content=response_text)],
+                "level": "A1",
+                "language": "es",
+            }
+        )
         return mock_graph
 
     def test_stream_returns_200(self, test_client: TestClient) -> None:
@@ -492,9 +540,7 @@ class TestStreamMessageEndpoint:
         )
         assert response.status_code == 200
 
-    def test_stream_returns_event_stream_content_type(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_returns_event_stream_content_type(self, test_client: TestClient) -> None:
         """POST /chat/stream should return text/event-stream content type."""
         response = test_client.post(
             "/chat/stream",
@@ -502,9 +548,7 @@ class TestStreamMessageEndpoint:
         )
         assert "text/event-stream" in response.headers["content-type"]
 
-    def test_stream_empty_message_returns_error_event(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_empty_message_returns_error_event(self, test_client: TestClient) -> None:
         """POST /chat/stream with whitespace-only message should return error SSE event."""
         # Send whitespace (not empty string) — FastAPI's Form() rejects truly empty
         # strings with 422, but our handler catches whitespace via strip().
@@ -516,9 +560,7 @@ class TestStreamMessageEndpoint:
         assert "error" in response.text
         assert "empty" in response.text.lower()
 
-    def test_stream_too_long_message_returns_error_event(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_too_long_message_returns_error_event(self, test_client: TestClient) -> None:
         """POST /chat/stream with too-long message should return error SSE event."""
         response = test_client.post(
             "/chat/stream",
@@ -528,9 +570,7 @@ class TestStreamMessageEndpoint:
         assert "error" in response.text
         assert "long" in response.text.lower()
 
-    def test_stream_invalid_level_returns_error_event(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_invalid_level_returns_error_event(self, test_client: TestClient) -> None:
         """POST /chat/stream with invalid level should return error SSE event."""
         response = test_client.post(
             "/chat/stream",
@@ -539,9 +579,7 @@ class TestStreamMessageEndpoint:
         assert response.status_code == 200
         assert "error" in response.text
 
-    def test_stream_invalid_language_returns_error_event(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_invalid_language_returns_error_event(self, test_client: TestClient) -> None:
         """POST /chat/stream with invalid language should return error SSE event."""
         response = test_client.post(
             "/chat/stream",
@@ -550,9 +588,7 @@ class TestStreamMessageEndpoint:
         assert response.status_code == 200
         assert "error" in response.text
 
-    def test_stream_contains_sse_events(
-        self, test_client: TestClient
-    ) -> None:
+    def test_stream_contains_sse_events(self, test_client: TestClient) -> None:
         """POST /chat/stream response body should contain SSE-formatted events."""
         response = test_client.post(
             "/chat/stream",
@@ -574,9 +610,7 @@ class TestStreamMessageEndpoint:
         assert response.status_code == 200
 
     @pytest.mark.parametrize("level", ["A0", "A1", "A2", "B1"])
-    def test_stream_accepts_valid_levels(
-        self, test_client: TestClient, level: str
-    ) -> None:
+    def test_stream_accepts_valid_levels(self, test_client: TestClient, level: str) -> None:
         """POST /chat/stream should accept all valid CEFR levels."""
         response = test_client.post(
             "/chat/stream",
@@ -585,9 +619,7 @@ class TestStreamMessageEndpoint:
         assert response.status_code == 200
 
     @pytest.mark.parametrize("language", ["es", "de"])
-    def test_stream_accepts_valid_languages(
-        self, test_client: TestClient, language: str
-    ) -> None:
+    def test_stream_accepts_valid_languages(self, test_client: TestClient, language: str) -> None:
         """POST /chat/stream should accept all valid languages."""
         response = test_client.post(
             "/chat/stream",
