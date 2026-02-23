@@ -14,7 +14,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from src.agent.llm import get_llm
 from src.agent.state import ConversationState, ScaffoldingConfig
 from src.agent.utils import extract_json_from_response
-from src.api.validation import get_language_name as _get_language_name
+from src.api.validation import get_language_name
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
         }
 
     # Build the scaffold prompt
-    language_name = _get_language_name(state["language"])
+    language_name = get_language_name(state["language"])
     level = state["level"]
     prompt = SCAFFOLD_PROMPT.format(
         level=level,

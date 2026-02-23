@@ -23,7 +23,7 @@ from src.agent.state import (
     VocabWord,
 )
 from src.agent.utils import extract_json_from_response
-from src.api.validation import get_language_name as _get_language_name
+from src.api.validation import get_language_name
 
 # Type alias for severity values
 SeverityLevel = Literal["minor", "moderate", "significant"]
@@ -329,7 +329,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
             result["review_words_used"] = used_words
 
     # Build the analysis prompt
-    language_name = _get_language_name(state["language"])
+    language_name = get_language_name(state["language"])
     prompt = ANALYSIS_PROMPT.format(
         language=language_name,
         level=state["level"],
