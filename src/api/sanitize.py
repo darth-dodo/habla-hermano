@@ -7,8 +7,7 @@ stored XSS while preserving safe formatting tags.
 import nh3
 
 # Tags the LLM is allowed to produce for rich formatting
-ALLOWED_TAGS = frozenset(
-    {
+ALLOWED_TAGS: set[str] = {
         "p",
         "br",
         "strong",
@@ -38,7 +37,6 @@ ALLOWED_TAGS = frozenset(
         "th",
         "td",
     }
-)
 
 # Attributes allowed on specific tags
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {

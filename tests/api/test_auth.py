@@ -268,7 +268,7 @@ class TestGetCurrentUser:
                 await get_current_user(request)
 
         assert exc_info.value.status_code == 401
-        assert "Invalid token" in exc_info.value.detail
+        assert "Invalid or expired token" in exc_info.value.detail
 
     @pytest.mark.asyncio
     async def test_cookie_takes_precedence_over_header(
@@ -613,7 +613,7 @@ class TestDecodeTokenUnverified:
         with pytest.raises(HTTPException) as exc_info:
             _decode_token_unverified("not-a-jwt")
         assert exc_info.value.status_code == 401
-        assert "Invalid token" in exc_info.value.detail
+        assert "Invalid or expired token" in exc_info.value.detail
 
 
 # =============================================================================

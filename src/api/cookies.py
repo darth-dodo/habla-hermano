@@ -13,12 +13,14 @@ Security properties enforced by default:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from src.api.config import get_settings
 
 if TYPE_CHECKING:
     from fastapi import Response
+
+SameSitePolicy = Literal["lax", "strict", "none"]
 
 
 def _is_secure() -> bool:
@@ -38,7 +40,7 @@ def set_secure_cookie(
     *,
     max_age: int | None = None,
     httponly: bool = True,
-    samesite: str = "lax",
+    samesite: SameSitePolicy = "lax",
     path: str = "/",
 ) -> None:
     """Set a cookie with enforced security defaults.
@@ -71,7 +73,7 @@ def delete_secure_cookie(
     key: str,
     *,
     path: str = "/",
-    samesite: str = "lax",
+    samesite: SameSitePolicy = "lax",
 ) -> None:
     """Delete a cookie with matching path/samesite attributes.
 

@@ -69,11 +69,11 @@ class TestLearnPageRoute:
         assert response.status_code == 200
         assert "French" in response.text
 
-    def test_unsupported_language_redirects_to_lessons(self, test_client: TestClient) -> None:
-        """Unsupported language code should redirect to /lessons (302)."""
-        response = test_client.get("/learn/?language=xx", follow_redirects=False)
-        assert response.status_code == 302
-        assert response.headers["location"] == "/lessons"
+    def test_unsupported_language_falls_back_to_default(self, test_client: TestClient) -> None:
+        """Unsupported language code should fall back to default (Spanish)."""
+        response = test_client.get("/learn/?language=xx")
+        assert response.status_code == 200
+        assert "Spanish" in response.text
 
     @patch(f"{_LEARN_MODULE}._get_user_learning_data", return_value=([], [], 0))
     def test_contains_path_timeline_units(

@@ -13,6 +13,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.agent.llm import get_llm
 from src.agent.state import ConversationState, ScaffoldingConfig
+from src.agent.utils import extract_json_from_response
+from src.api.validation import get_language_name as _get_language_name
 
 logger = logging.getLogger(__name__)
 
@@ -40,16 +42,6 @@ Return ONLY valid JSON:
 """
 
 
-def _get_language_name(code: str) -> str:
-    """Convert language code to full name."""
-    names = {
-        "es": "Spanish",
-        "de": "German",
-        "fr": "French",
-    }
-    return names.get(code, "Spanish")
-
-
 def _parse_scaffold_response(content: str, level: str) -> ScaffoldingConfig:
     """
     Parse the LLM's JSON response into a ScaffoldingConfig.
@@ -62,13 +54,7 @@ def _parse_scaffold_response(content: str, level: str) -> ScaffoldingConfig:
         ScaffoldingConfig with parsed data, or a default config on parse failure.
     """
     try:
-        # Handle potential markdown code blocks
-        if "```json" in content:
-            content = content.split("```json", maxsplit=1)[1].split("```", maxsplit=1)[0]
-        elif "```" in content:
-            content = content.split("```", maxsplit=1)[1].split("```", maxsplit=1)[0]
-
-        data = json.loads(content.strip())
+        data = extract_json_from_response(content)
 
         # Validate word_bank is a list of strings
         word_bank = data.get("word_bank", [])

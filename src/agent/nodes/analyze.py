@@ -22,6 +22,8 @@ from src.agent.state import (
     ReviewWordUsed,
     VocabWord,
 )
+from src.agent.utils import extract_json_from_response
+from src.api.validation import get_language_name as _get_language_name
 
 # Type alias for severity values
 SeverityLevel = Literal["minor", "moderate", "significant"]
@@ -86,16 +88,6 @@ If there are no tricky pronunciations, return an empty array for pronunciation_t
 Keep explanations brief and encouraging. Maximum 3 grammar errors, 5 vocabulary words, and 2 pronunciation tips."""
 
 
-def _get_language_name(code: str) -> str:
-    """Convert language code to full name."""
-    names = {
-        "es": "Spanish",
-        "de": "German",
-        "fr": "French",
-    }
-    return names.get(code, "Spanish")
-
-
 def _parse_pronunciation_tips(data: dict[str, Any]) -> list[PronunciationTip]:
     """
     Parse pronunciation tips from the LLM response data.
@@ -142,13 +134,7 @@ def _parse_analysis_response(
         Returns empty lists on parse failure.
     """
     try:
-        # Handle potential markdown code blocks
-        if "```json" in content:
-            content = content.split("```json", maxsplit=1)[1].split("```", maxsplit=1)[0]
-        elif "```" in content:
-            content = content.split("```", maxsplit=1)[1].split("```", maxsplit=1)[0]
-
-        data = json.loads(content.strip())
+        data = extract_json_from_response(content)
 
         grammar_feedback: list[GrammarFeedback] = []
         for error in data.get("grammar_errors", []):
