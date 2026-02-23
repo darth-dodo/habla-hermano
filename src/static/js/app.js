@@ -125,34 +125,21 @@
 
     /**
      * Before HTMX request is sent
+     * Note: chat-form no longer uses HTMX (Phase 15 switched to SSE streaming).
+     * This handler now only processes non-chat HTMX requests.
      */
     function onBeforeRequest(event) {
-        // Only handle chat form requests
-        if (event.detail.elt.id !== 'chat-form') return;
-
-        // Get the message before it's cleared
-        const { messageInput } = getElements();
-        const message = messageInput ? messageInput.value : '';
-
-        // Show user message immediately (optimistic UI)
-        addUserMessage(message);
-
-        // Clear input right away for better UX
-        clearInput();
-
-        // Show loading indicator
-        showLoading();
+        // Skip chat-form — handled by stream.js via fetch() + SSE
+        if (event.detail.elt.id === 'chat-form') return;
     }
 
     /**
      * After HTMX request completes (success or error)
+     * Note: chat-form no longer uses HTMX (Phase 15 switched to SSE streaming).
      */
     function onAfterRequest(event) {
-        // Only handle chat form requests
-        if (event.detail.elt.id !== 'chat-form') return;
-
-        hideLoading();
-        focusInput();
+        // Skip chat-form — handled by stream.js
+        if (event.detail.elt.id === 'chat-form') return;
     }
 
     /**
@@ -208,7 +195,7 @@
             const { chatForm } = getElements();
             if (chatForm && document.activeElement.id === 'message-input') {
                 event.preventDefault();
-                htmx.trigger(chatForm, 'submit');
+                chatForm.requestSubmit();
             }
         }
 

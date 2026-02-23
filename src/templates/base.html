@@ -355,6 +355,22 @@
             }
         }
 
+        /* Streaming cursor - blinking caret for token-by-token display */
+        .streaming-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background-color: var(--accent);
+            animation: cursorBlink 0.7s infinite;
+            vertical-align: text-bottom;
+            margin-left: 1px;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
         /* Success state - warm glow */
         .success-glow {
             animation: warmGlow 0.6s ease-out;
@@ -518,6 +534,7 @@
 
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', path='js/app.js') }}"></script>
+    <script src="{{ url_for('static', path='js/stream.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

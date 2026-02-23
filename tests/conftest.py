@@ -262,17 +262,40 @@ def mock_graph_result(sample_ai_response: str) -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_compiled_graph(mock_graph_result: dict[str, Any]) -> MagicMock:
-    """Create mock compiled graph with ainvoke method.
+def mock_compiled_graph(mock_graph_result: dict[str, Any], sample_ai_response: str) -> MagicMock:
+    """Create mock compiled graph with ainvoke and astream methods.
+
+    Phase 15: Added astream mock for SSE streaming endpoint.
 
     Args:
         mock_graph_result: Result to return from ainvoke.
+        sample_ai_response: AI response text for streaming chunks.
 
     Returns:
-        MagicMock: Mock graph with async ainvoke method.
+        MagicMock: Mock graph with async ainvoke and astream methods.
     """
     mock_graph = MagicMock()
     mock_graph.ainvoke = AsyncMock(return_value=mock_graph_result)
+
+    # Phase 15: astream mock yields (mode, chunk) tuples matching LangGraph's
+    # dual stream_mode=["messages", "updates"] format.
+    async def mock_astream(inputs, config, stream_mode):
+        from langchain_core.messages import AIMessageChunk
+
+        # Yield token from respond node
+        yield ("messages", (
+            AIMessageChunk(content=sample_ai_response),
+            {"langgraph_node": "respond"},
+        ))
+        # Yield respond node completion
+        yield ("updates", {"respond": {}})
+        # Yield analyze node completion (empty feedback)
+        yield ("updates", {"analyze": {
+            "grammar_feedback": [],
+            "pronunciation_tips": [],
+        }})
+
+    mock_graph.astream = mock_astream
     return mock_graph
 
 
