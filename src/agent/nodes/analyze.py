@@ -11,7 +11,9 @@ import json
 import logging
 from typing import Any, Literal, cast
 
+import anthropic
 from langchain_core.messages import HumanMessage, SystemMessage
+from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
 from src.agent.state import (
@@ -270,10 +272,10 @@ async def _update_sm2_for_used_words(
                     word["word"],
                     word["quality"],
                 )
-            except Exception as e:
+            except APIError as e:
                 logger.warning("Failed to update SM-2 for word '%s': %s", word["word"], e)
 
-    except Exception as e:
+    except APIError as e:
         logger.warning("Failed to update SM-2 for used words: %s", e)
 
 
@@ -366,7 +368,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         else:
             grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
-    except Exception as e:
+    except (anthropic.APIError, anthropic.APIConnectionError) as e:
         logger.error("Analysis LLM call failed: %s", e)
         grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 

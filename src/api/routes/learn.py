@@ -10,6 +10,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Request
 from fastapi.responses import HTMLResponse
+from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
@@ -127,7 +128,7 @@ async def get_learn_page(
                 vocab_data=vocab_data,
                 review_due_count=review_due_count,
             )
-        except Exception:
+        except APIError:
             logger.exception("Failed to load learning data for user %s", effective_id)
 
     # Fall back to empty progress when no user or on error
@@ -201,7 +202,7 @@ async def get_recommendation(
                 vocab_data=vocab_data,
                 review_due_count=review_due_count,
             )
-        except Exception:
+        except APIError:
             logger.exception("Failed to load recommendation for user %s", effective_id)
 
     return templates.TemplateResponse(

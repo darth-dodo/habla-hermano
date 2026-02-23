@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
+from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import LessonServiceDep, TemplatesDep
@@ -82,7 +83,7 @@ def _initialize_lesson_vocabulary_for_review(
             # Schedule for review if not already scheduled
             if vocab.id and vocab.next_review_at is None:
                 review_service.initialize_word_for_review(vocab.id)
-        except Exception:
+        except APIError:
             # Log but continue with other words
             logger.exception(
                 "Failed to initialize word '%s' for review",
@@ -717,7 +718,7 @@ async def complete_lesson(
                 language=lesson.metadata.language,
                 client=client,
             )
-        except Exception:
+        except APIError:
             logger.exception("Failed to persist lesson completion for user %s", effective_id)
 
     # Phase 14: Compute next lesson in the learning path
@@ -731,7 +732,7 @@ async def complete_lesson(
             next_path_lesson = path_service.get_next_path_lesson(
                 lesson.metadata.language, all_progress
             )
-        except Exception:
+        except (APIError, KeyError, ValueError):
             logger.exception("Failed to get next path lesson for user %s", effective_id)
 
     response = templates.TemplateResponse(

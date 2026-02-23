@@ -11,6 +11,7 @@ import random
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
 from src.agent.prompts import LANGUAGE_ADAPTER
@@ -432,7 +433,7 @@ async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
             client = state.get("supabase_client")
             service = ReviewService(user_id, client=client)
             service.update_sm2(vocab_id=word_id, quality=quality_score)
-        except Exception as e:
+        except APIError as e:
             # Log but don't fail the session
             import logging
 

@@ -14,6 +14,7 @@ import time
 from dataclasses import dataclass
 from typing import Annotated
 
+import httpx
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 
@@ -84,7 +85,7 @@ def _verify_token_via_supabase(token: str) -> AuthenticatedUser:
         response = client.auth.get_user(token)
     except ValueError:
         raise
-    except Exception as e:
+    except httpx.HTTPError as e:
         logger.warning("Supabase token verification failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

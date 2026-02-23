@@ -13,6 +13,8 @@ from dataclasses import asdict, dataclass
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
+from postgrest.exceptions import APIError
+
 from src.db.repository import (
     LearningSessionRepository,
     LessonProgressRepository,
@@ -201,7 +203,7 @@ class ProgressService:
                 if vocab.id and vocab.next_review_at is None:
                     try:
                         review_service.initialize_word_for_review(vocab.id)
-                    except Exception:
+                    except APIError:
                         logger.exception(
                             "Failed to initialize word '%s' for review",
                             word_entry.get("word", "unknown"),
@@ -210,7 +212,7 @@ class ProgressService:
             session = self._session_repo.get_active()
             if session is None:
                 self._session_repo.create(language=language, level=level)
-        except Exception:
+        except APIError:
             logger.exception("Failed to record chat activity for user %s", self._user_id)
 
     def _calculate_streak(self, sessions: list) -> int:
