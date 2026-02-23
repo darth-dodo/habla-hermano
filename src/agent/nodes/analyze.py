@@ -22,6 +22,7 @@ from src.agent.state import (
     ReviewWordUsed,
     VocabWord,
 )
+from src.api.validation import get_language_name
 
 # Type alias for severity values
 SeverityLevel = Literal["minor", "moderate", "significant"]
@@ -84,16 +85,6 @@ If there are no errors, return an empty array for grammar_errors.
 If there's no notable vocabulary, return an empty array for new_vocabulary.
 If there are no tricky pronunciations, return an empty array for pronunciation_tips.
 Keep explanations brief and encouraging. Maximum 3 grammar errors, 5 vocabulary words, and 2 pronunciation tips."""
-
-
-def _get_language_name(code: str) -> str:
-    """Convert language code to full name."""
-    names = {
-        "es": "Spanish",
-        "de": "German",
-        "fr": "French",
-    }
-    return names.get(code, "Spanish")
 
 
 def _parse_pronunciation_tips(data: dict[str, Any]) -> list[PronunciationTip]:
@@ -343,7 +334,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
             result["review_words_used"] = used_words
 
     # Build the analysis prompt
-    language_name = _get_language_name(state["language"])
+    language_name = get_language_name(state["language"])
     prompt = ANALYSIS_PROMPT.format(
         language=language_name,
         level=state["level"],

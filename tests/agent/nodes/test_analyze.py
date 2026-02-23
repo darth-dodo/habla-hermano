@@ -992,30 +992,30 @@ class TestGetLlmAnalyze:
 
 
 class TestGetLanguageName:
-    """Tests for _get_language_name helper."""
+    """Tests for get_language_name helper (centralized in validation module)."""
 
     def test_spanish_code(self) -> None:
-        """_get_language_name should convert 'es' to 'Spanish'."""
-        from src.agent.nodes.analyze import _get_language_name
+        """get_language_name should convert 'es' to 'Spanish'."""
+        from src.api.validation import get_language_name
 
-        assert _get_language_name("es") == "Spanish"
+        assert get_language_name("es") == "Spanish"
 
     def test_german_code(self) -> None:
-        """_get_language_name should convert 'de' to 'German'."""
-        from src.agent.nodes.analyze import _get_language_name
+        """get_language_name should convert 'de' to 'German'."""
+        from src.api.validation import get_language_name
 
-        assert _get_language_name("de") == "German"
+        assert get_language_name("de") == "German"
 
     def test_french_code(self) -> None:
-        """_get_language_name should convert 'fr' to 'French'."""
-        from src.agent.nodes.analyze import _get_language_name
+        """get_language_name should convert 'fr' to 'French'."""
+        from src.api.validation import get_language_name
 
-        assert _get_language_name("fr") == "French"
+        assert get_language_name("fr") == "French"
 
     def test_unknown_code_defaults_to_spanish(self) -> None:
-        """_get_language_name should default unknown codes to 'Spanish'."""
-        from src.agent.nodes.analyze import _get_language_name
+        """get_language_name should default unknown codes to 'Spanish'."""
+        from src.api.validation import get_language_name
 
-        assert _get_language_name("unknown") == "Spanish"
-        assert _get_language_name("") == "Spanish"
-        assert _get_language_name("it") == "Spanish"
+        assert get_language_name("unknown") == "Spanish"
+        assert get_language_name("") == "Spanish"
+        assert get_language_name("it") == "Spanish"

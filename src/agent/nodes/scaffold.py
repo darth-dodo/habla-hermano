@@ -13,6 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.agent.llm import get_llm
 from src.agent.state import ConversationState, ScaffoldingConfig
+from src.api.validation import get_language_name
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +39,6 @@ Return ONLY valid JSON:
     "sentence_starter": "Me gusta..." or null
 }}
 """
-
-
-def _get_language_name(code: str) -> str:
-    """Convert language code to full name."""
-    names = {
-        "es": "Spanish",
-        "de": "German",
-        "fr": "French",
-    }
-    return names.get(code, "Spanish")
 
 
 def _parse_scaffold_response(content: str, level: str) -> ScaffoldingConfig:
@@ -161,7 +152,7 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
         }
 
     # Build the scaffold prompt
-    language_name = _get_language_name(state["language"])
+    language_name = get_language_name(state["language"])
     level = state["level"]
     prompt = SCAFFOLD_PROMPT.format(
         level=level,
