@@ -149,9 +149,10 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
         return AuthenticatedUser(id=user_id, email=email)
 
     except jwt.PyJWTError as e:
+        logger.warning("JWT decode failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {e}",
+            detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
 
