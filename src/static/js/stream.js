@@ -229,6 +229,9 @@
 
                 buffer += decoder.decode(value, { stream: true });
 
+                // Normalize \r\n to \n (servers may send either)
+                buffer = buffer.replace(/\r\n/g, '\n');
+
                 // Split on double newlines (SSE event boundary)
                 const parts = buffer.split('\n\n');
                 buffer = parts.pop(); // Keep incomplete event in buffer
