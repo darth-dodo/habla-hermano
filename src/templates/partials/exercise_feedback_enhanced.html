@@ -22,7 +22,7 @@
         <div class="flex items-start gap-3">
             <span class="text-xl flex-shrink-0" aria-hidden="true">&#129305;</span>
             <div class="text-text leading-relaxed prose prose-sm prose-invert max-w-none">
-                {{ feedback | safe }}
+                {{ feedback | sanitize }}
             </div>
         </div>
     </div>

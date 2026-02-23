@@ -1,15 +1,13 @@
-"""HTML sanitization for LLM output rendered with Jinja2's ``| safe`` filter.
+"""HTML sanitization for LLM output before template rendering.
 
-Uses nh3 (Rust-based) for fast, allowlist-based HTML sanitization.
-Only tags appropriate for language-learning content are permitted.
+Uses nh3 to whitelist-sanitize HTML produced by the LLM, preventing
+stored XSS while preserving safe formatting tags.
 """
-
-from __future__ import annotations
 
 import nh3
 
-# Tags commonly produced by the LLM for formatted lesson/chat content.
-ALLOWED_TAGS: frozenset[str] = frozenset(
+# Tags the LLM is allowed to produce for rich formatting
+ALLOWED_TAGS = frozenset(
     {
         "p",
         "br",
@@ -25,43 +23,46 @@ ALLOWED_TAGS: frozenset[str] = frozenset(
         "h2",
         "h3",
         "h4",
-        "span",
-        "div",
+        "h5",
+        "h6",
         "blockquote",
         "code",
         "pre",
+        "span",
+        "div",
+        "a",
         "table",
         "thead",
         "tbody",
         "tr",
         "th",
         "td",
-        "details",
-        "summary",
-        "hr",
     }
 )
 
-# Only safe, presentation-oriented attributes.
+# Attributes allowed on specific tags
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
-    "*": {"class", "id"},
+    "a": {"href", "title"},
+    "span": {"class"},
+    "div": {"class"},
+    "code": {"class"},
+    "pre": {"class"},
     "td": {"colspan", "rowspan"},
     "th": {"colspan", "rowspan"},
 }
 
 
 def sanitize_html(html: str) -> str:
-    """Sanitize HTML using an allowlist of safe tags and attributes.
+    """Sanitize HTML string using nh3, allowing only safe tags and attributes.
 
-    Strips ``<script>``, ``<iframe>``, event handlers, and any other
-    potentially dangerous markup while preserving formatting tags that
-    the LLM legitimately uses for lesson content.
+    Strips script tags, event handlers (onclick, onload, etc.),
+    dangerous attributes, and any tags not in the allowlist.
 
     Args:
-        html: Raw HTML string (typically from LLM output).
+        html: Raw HTML string from LLM output.
 
     Returns:
-        Sanitized HTML string safe for rendering with ``| safe``.
+        Sanitized HTML string safe for rendering.
     """
     return nh3.clean(
         html,
