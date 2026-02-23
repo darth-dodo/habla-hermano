@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import SupabaseClient, get_supabase_admin, get_supabase_for_user
+from src.api.validation import validate_language
 from src.db.models import LessonProgress, Vocabulary
 from src.db.repository import LessonProgressRepository, VocabularyRepository
 from src.services.adaptive import get_adaptive_service
@@ -88,6 +89,7 @@ async def get_learn_page(
     Returns:
         HTMLResponse: Rendered learning path page.
     """
+    language = validate_language(language)
     path_service = get_path_service()
     adaptive_service = get_adaptive_service()
 
@@ -173,6 +175,7 @@ async def get_recommendation(
     Returns:
         HTMLResponse: Rendered recommendation partial.
     """
+    language = validate_language(language)
     adaptive_service = get_adaptive_service()
 
     # Resolve effective identity

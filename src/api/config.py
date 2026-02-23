@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     APP_NAME: str = "Habla Hermano"
     DEBUG: bool = False
 
+    # Security: allow unverified JWT decode when Supabase is not configured.
+    # WARNING: NEVER set to true in production. Only for local development.
+    ALLOW_UNVERIFIED_JWT: bool = False
+
     # LLM settings
     LLM_MODEL: str = "claude-haiku-4-5-20251001"
     LLM_TEMPERATURE: float = 0.7

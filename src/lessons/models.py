@@ -9,7 +9,7 @@ Models follow the pattern from product.md:
 - Progress tracks user completion and scores
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -364,4 +364,4 @@ class UserLessonProgress(BaseModel):
 
     def mark_completed(self) -> None:
         """Mark the lesson as completed."""
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(UTC)

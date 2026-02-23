@@ -365,17 +365,17 @@ exercises: []
 @pytest.fixture
 def mock_user_progress() -> list[UserLessonProgress]:
     """Create mock user progress data."""
-    from datetime import datetime
+    from datetime import UTC, datetime
 
     return [
         UserLessonProgress(
             user_id="user-123",
             lesson_id="greetings-001",
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(UTC),
             current_step=5,
             total_steps=5,
             completed_exercises=["ex-mc-greet-001"],
             total_exercises=1,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(UTC),
         ),
     ]

@@ -36,15 +36,18 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Cookie, Form, Request
 from fastapi.responses import HTMLResponse, Response
 from langchain_core.messages import HumanMessage
+from markupsafe import escape
 from sse_starlette.sse import EventSourceResponse
 
 from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
+from src.api.cookies import set_secure_cookie
 from src.api.dependencies import SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.streaming import StreamResult, stream_chat_events
 from src.api.supabase_client import get_supabase_for_user
+from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
 
@@ -52,15 +55,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
 
-# --- Input validation constants ---
-MAX_MESSAGE_LENGTH = 2000
-VALID_LEVELS = {"A0", "A1", "A2", "B1"}
-VALID_LANGUAGES = {"es", "de", "fr"}
 
 
 def _make_error_html(error_message: str) -> HTMLResponse:
     """Return an HTMX-compatible HTML error fragment."""
-    html = f'<div class="text-red-500 text-sm p-2">{error_message}</div>'
+    html = f'<div class="text-red-500 text-sm p-2">{escape(error_message)}</div>'
     return HTMLResponse(content=html, status_code=422)
 
 
@@ -293,11 +292,10 @@ async def send_message(
 
     # Set session cookie on the actual response being returned (not the injected one)
     if new_session_id:
-        template_response.set_cookie(
+        set_secure_cookie(
+            template_response,
             key="session_id",
             value=new_session_id,
-            httponly=True,
-            samesite="lax",
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -433,11 +431,10 @@ async def stream_message(
 
     # Set session cookie for first-time anonymous users
     if new_session_id:
-        response.set_cookie(
+        set_secure_cookie(
+            response,
             key="session_id",
             value=new_session_id,
-            httponly=True,
-            samesite="lax",
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -479,12 +476,11 @@ async def new_conversation(
     if user:
         # Rotate to a new conversation by setting a version cookie.
         # The thread_id will become "user:{id}:{version}", abandoning old checkpoints.
-        response.set_cookie(
+        set_secure_cookie(
+            response,
             key="conversation_version",
             value=str(uuid.uuid4()),
-            httponly=True,
-            samesite="lax",
-            max_age=60 * 60 * 24 * 365,  # 1 year
+            max_age=60 * 60 * 24 * 30,  # 30 days (A24: reduced from 1 year)
         )
     else:
         # For anonymous users, delete the session cookie to start fresh

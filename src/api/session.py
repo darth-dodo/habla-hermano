@@ -8,6 +8,8 @@ import uuid
 
 from fastapi import Request, Response
 
+from src.api.cookies import delete_secure_cookie, set_secure_cookie
+
 # Cookie configuration
 THREAD_COOKIE_NAME = "habla_thread_id"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days in seconds
@@ -53,11 +55,10 @@ def set_thread_id(response: Response, thread_id: str) -> None:
         thread_id = get_thread_id(request)
         set_thread_id(response, thread_id)
     """
-    response.set_cookie(
+    set_secure_cookie(
+        response,
         key=THREAD_COOKIE_NAME,
         value=thread_id,
-        httponly=True,
-        samesite="lax",
         max_age=COOKIE_MAX_AGE,
     )
 
@@ -77,7 +78,7 @@ def clear_thread_id(response: Response) -> None:
         clear_thread_id(response)
         # Next request will get a fresh thread_id
     """
-    response.delete_cookie(key=THREAD_COOKIE_NAME)
+    delete_secure_cookie(response, key=THREAD_COOKIE_NAME)
 
 
 def is_new_session(request: Request) -> bool:

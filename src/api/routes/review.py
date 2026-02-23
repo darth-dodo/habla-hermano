@@ -20,6 +20,7 @@ from fastapi import APIRouter, Cookie, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from src.api.auth import CurrentUserDep
+from src.api.cookies import delete_secure_cookie, set_secure_cookie
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.db.models import Vocabulary
@@ -279,11 +280,10 @@ async def start_review_session(
     )
 
     # Store session state in cookie
-    html_response.set_cookie(
+    set_secure_cookie(
+        html_response,
         key=_get_review_session_cookie_name(),
         value=json.dumps(session_state),
-        httponly=True,
-        samesite="lax",
         max_age=60 * 60,  # 1 hour
     )
 
@@ -396,7 +396,7 @@ async def submit_review_answer(
         )
 
         # Clear session cookie
-        html_response.delete_cookie(_get_review_session_cookie_name())
+        delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
 
         return html_response
 
@@ -431,11 +431,10 @@ async def submit_review_answer(
     )
 
     # Update session cookie
-    html_response.set_cookie(
+    set_secure_cookie(
+        html_response,
         key=_get_review_session_cookie_name(),
         value=json.dumps(session_state),
-        httponly=True,
-        samesite="lax",
         max_age=60 * 60,  # 1 hour
     )
 
@@ -495,11 +494,10 @@ async def _handle_missing_word(
             )
 
             session_state["current_index"] = current_index
-            html_response.set_cookie(
+            set_secure_cookie(
+                html_response,
                 key=_get_review_session_cookie_name(),
                 value=json.dumps(session_state),
-                httponly=True,
-                samesite="lax",
                 max_age=60 * 60,
             )
 
@@ -524,7 +522,7 @@ async def _handle_missing_word(
         },
     )
 
-    html_response.delete_cookie(_get_review_session_cookie_name())
+    delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
     return html_response
 
 
@@ -584,7 +582,7 @@ async def end_review_session(
     )
 
     # Clear session cookie
-    html_response.delete_cookie(_get_review_session_cookie_name())
+    delete_secure_cookie(html_response, key=_get_review_session_cookie_name())
 
     return html_response
 
@@ -603,11 +601,10 @@ async def dismiss_warmup() -> HTMLResponse:
     html_response = HTMLResponse(content="", status_code=200)
 
     # Set dismissal cookie (expires at end of browser session)
-    html_response.set_cookie(
+    set_secure_cookie(
+        html_response,
         key=_get_warmup_dismissed_cookie_name(),
         value="1",
-        httponly=True,
-        samesite="lax",
         # No max_age = session cookie, expires when browser closes
     )
 

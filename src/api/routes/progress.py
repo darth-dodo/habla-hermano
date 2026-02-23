@@ -16,6 +16,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
+from src.api.validation import validate_days, validate_language
 from src.db.repository import VocabularyRepository
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
@@ -75,7 +76,7 @@ async def get_progress_page(
     review_stats = None
     try:
         review_service = ReviewService(user.id, client=user_client)
-        review_stats = review_service.get_stats(language=language)
+        review_stats = review_service.get_stats(language=validate_language(language))
     except Exception:
         logger.exception("Failed to get review stats for user %s", user.id)
 
@@ -129,7 +130,7 @@ async def get_vocabulary(
     # Use user-authenticated client for RLS to work with auth.uid()
     user_client = get_supabase_for_user(sb_access_token)
     repo = VocabularyRepository(user.id, client=user_client)
-    vocabulary = repo.get_all(language=language)
+    vocabulary = repo.get_all(language=validate_language(language))
 
     return templates.TemplateResponse(
         request=request,
@@ -224,7 +225,7 @@ async def get_chart_data(
     # Use user-authenticated client for RLS to work with auth.uid()
     user_client = get_supabase_for_user(sb_access_token)
     service = ProgressService(user.id, client=user_client)
-    chart = service.get_chart_data(language=language, days=days)
+    chart = service.get_chart_data(language=validate_language(language), days=validate_days(days))
     return JSONResponse(content=chart.to_dict())
 
 

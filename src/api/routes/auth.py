@@ -15,6 +15,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from supabase import AuthApiError, Client, create_client
 
 from src.api.config import get_settings
+from src.api.cookies import delete_secure_cookie, set_secure_cookie
 from src.api.dependencies import SettingsDep, TemplatesDep
 from src.api.rate_limit import AUTH_RATE_LIMIT_CALLS, AUTH_RATE_LIMIT_PERIOD, rate_limited
 
@@ -54,13 +55,11 @@ def set_auth_cookie(response: Response, access_token: str) -> None:
         response: FastAPI response object.
         access_token: JWT access token from Supabase.
     """
-    response.set_cookie(
+    set_secure_cookie(
+        response,
         key=COOKIE_NAME,
         value=access_token,
         max_age=COOKIE_MAX_AGE,
-        httponly=True,
-        secure=True,  # Only send over HTTPS
-        samesite="lax",
     )
 
 
@@ -70,7 +69,7 @@ def clear_auth_cookie(response: Response) -> None:
     Args:
         response: FastAPI response object.
     """
-    response.delete_cookie(key=COOKIE_NAME)
+    delete_secure_cookie(response, key=COOKIE_NAME)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -212,7 +211,7 @@ async def signup(
         set_auth_cookie(response, auth_response.session.access_token)
 
         # Clear any existing guest session cookie
-        response.delete_cookie(key="session_id")
+        delete_secure_cookie(response, key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response
@@ -288,7 +287,7 @@ async def login(
         set_auth_cookie(response, auth_response.session.access_token)
 
         # Clear any existing guest session cookie
-        response.delete_cookie(key="session_id")
+        delete_secure_cookie(response, key="session_id")
 
         response.headers["HX-Redirect"] = "/"
         return response

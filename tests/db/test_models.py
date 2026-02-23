@@ -3,7 +3,7 @@
 Tests for Pydantic models used with Supabase.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -35,7 +35,7 @@ class TestUserProfile:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating UserProfile with all fields."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         profile = UserProfile(
             id="user-123",
             display_name="Test User",
@@ -90,7 +90,7 @@ class TestVocabulary:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating Vocabulary with all fields."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         vocab = Vocabulary(
             id=1,
             user_id="user-123",
@@ -140,7 +140,7 @@ class TestLearningSession:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating LearningSession with all fields."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         session = LearningSession(
             id=1,
             user_id="user-123",
@@ -185,7 +185,7 @@ class TestLessonProgress:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating LessonProgress with all fields."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         progress = LessonProgress(
             user_id="user-123",
             lesson_id="lesson-1",

@@ -11,6 +11,7 @@ Security:
 
 import logging
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -34,6 +35,25 @@ class AuthenticatedUser:
 
     id: str
     email: str
+
+
+def _is_valid_session_id(value: str) -> bool:
+    """Validate that a session_id is a well-formed UUID v4.
+
+    Prevents injection attacks by rejecting arbitrary strings in the
+    session_id cookie. Only accepts lowercase canonical UUID format.
+
+    Args:
+        value: The raw cookie value to validate.
+
+    Returns:
+        True if value is a valid UUID v4 string, False otherwise.
+    """
+    try:
+        parsed = uuid.UUID(value, version=4)
+    except (ValueError, AttributeError):
+        return False
+    return str(parsed) == value
 
 
 def _get_token_from_request(request: Request) -> str | None:
@@ -149,9 +169,10 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
         return AuthenticatedUser(id=user_id, email=email)
 
     except jwt.PyJWTError as e:
+        logger.warning("JWT decode failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {e}",
+            detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
 
@@ -188,10 +209,21 @@ async def get_current_user(request: Request) -> AuthenticatedUser:
         # Production path: verify token server-side via Supabase
         return _verify_token_via_supabase(token)
 
-    # Local dev fallback: unverified JWT decode
+    # Unverified JWT decode — only allowed when explicitly opted in
+    if not settings.ALLOW_UNVERIFIED_JWT:
+        logger.error(
+            "Supabase is not configured and ALLOW_UNVERIFIED_JWT is not enabled. "
+            "Set ALLOW_UNVERIFIED_JWT=true for local dev or configure Supabase."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication service is not configured",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     logger.warning(
-        "JWT signature verification is DISABLED (Supabase not configured). "
-        "Do NOT use this in production."
+        "SECURITY WARNING: JWT signature verification is DISABLED "
+        "(ALLOW_UNVERIFIED_JWT=true). Do NOT use this in production."
     )
     return _decode_token_unverified(token)
 
@@ -259,7 +291,12 @@ async def get_effective_user(
 
     session_id = request.cookies.get("session_id")
     if session_id:
-        return EffectiveUser(id=session_id, is_guest=True)
+        if _is_valid_session_id(session_id):
+            return EffectiveUser(id=session_id, is_guest=True)
+        logger.warning(
+            "Rejected invalid session_id cookie (not UUID v4): %r",
+            session_id[:64],  # Truncate to prevent log injection
+        )
 
     return None
 
