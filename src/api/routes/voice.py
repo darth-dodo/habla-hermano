@@ -1,10 +1,12 @@
 """Voice endpoints for Deepgram STT/TTS integration.
 
-Phase 17: Speech-to-Text via WebSocket proxy and Text-to-Speech via REST proxy.
+Phase 17: Speech-to-Text via WebSocket proxy and Text-to-Speech via WebSocket streaming proxy.
 Voice features are optional -- endpoints return errors when DEEPGRAM_API_KEY is not configured.
 """
 
+import asyncio
 import contextlib
+import json
 import logging
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -13,6 +15,7 @@ import httpx
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
+from starlette.websockets import WebSocketState
 
 from src.api.config import get_settings
 from src.api.validation import VALID_LANGUAGES
@@ -37,11 +40,11 @@ ALLOWED_VOICES: frozenset[str] = frozenset(
     }
 )
 
-# Default voice per language
+# Default voice per language (masculine — matches Hermano "big brother" persona)
 DEFAULT_VOICES: dict[str, str] = {
-    "es": "aura-2-celeste-es",
-    "de": "aura-2-elara-de",
-    "fr": "aura-2-agathe-fr",
+    "es": "aura-2-nestor-es",
+    "de": "aura-2-julius-de",
+    "fr": "aura-2-hector-fr",
 }
 
 # STT language options (includes "multi" for code-switching)
@@ -54,7 +57,7 @@ class SpeakRequest(BaseModel):
     """Request body for TTS endpoint."""
 
     text: str = Field(..., min_length=1, max_length=MAX_TTS_TEXT_LENGTH)
-    voice: str = "aura-2-celeste-es"
+    voice: str = "aura-2-nestor-es"
 
 
 @router.websocket("/ws/transcribe")
@@ -67,6 +70,8 @@ async def transcribe_stream(
     Accepts a WebSocket connection from the browser, forwards raw audio
     bytes to Deepgram's real-time STT WebSocket, and relays transcript
     results back to the browser as JSON messages.
+
+    Uses Deepgram Python SDK v6 async WebSocket API.
 
     Args:
         websocket: WebSocket connection from the browser client.
@@ -85,60 +90,75 @@ async def transcribe_stream(
     await websocket.accept()
 
     try:
-        from deepgram import DeepgramClient, DeepgramClientOptions, LiveTranscriptionEvents
+        from deepgram import AsyncDeepgramClient
+        from deepgram.core.events import EventType
 
-        config = DeepgramClientOptions(api_key=api_key)
-        deepgram = DeepgramClient("", config)
+        deepgram = AsyncDeepgramClient(api_key=api_key)
 
-        dg_connection = deepgram.listen.asyncwebsocket.v("1")
+        # Hold references to background tasks to prevent GC
+        _bg_tasks: set[asyncio.Task[None]] = set()
 
-        options: dict[str, Any] = {
-            "model": "nova-3",
-            "language": language,
-            "smart_format": True,
-            "punctuate": True,
-            "interim_results": True,
-            "endpointing": 300,
-            "utterance_end_ms": 1000,
-            "vad_events": True,
-            "encoding": "linear16",
-            "sample_rate": 16000,
-        }
+        async with deepgram.listen.v1.connect(
+            model="nova-3",
+            language=language,
+            smart_format="true",
+            punctuate="true",
+            interim_results="true",
+            endpointing="300",
+            utterance_end_ms="1000",
+            vad_events="true",
+            encoding="linear16",
+            sample_rate="16000",
+        ) as dg_ws:
+            # Forward transcripts from Deepgram to browser
+            # v6 SDK passes typed Pydantic models, not raw JSON dicts
+            def on_message(data: Any) -> None:
+                try:
+                    from deepgram.listen.v1 import ListenV1Results
 
-        # Set up transcript handler before starting
-        async def on_transcript(_self: Any, result: Any, **_kwargs: Any) -> None:
+                    if not isinstance(data, ListenV1Results):
+                        return
+
+                    alternatives = data.channel.alternatives if data.channel else []
+                    transcript = alternatives[0].transcript if alternatives else ""
+                    is_final = data.is_final or False
+                    speech_final = data.speech_final or False
+
+                    if transcript:
+                        task = asyncio.create_task(
+                            websocket.send_json(
+                                {
+                                    "transcript": transcript,
+                                    "is_final": is_final,
+                                    "speech_final": speech_final,
+                                }
+                            )
+                        )
+                        _bg_tasks.add(task)
+                        task.add_done_callback(_bg_tasks.discard)
+                except Exception:
+                    logger.exception("Error forwarding transcript")
+
+            dg_ws.on(EventType.MESSAGE, on_message)
+
+            # start_listening() is an infinite loop that reads from Deepgram WS
+            # and emits events — run it as a background task so the audio
+            # forwarding loop below can execute concurrently.
+            listen_task = asyncio.create_task(dg_ws.start_listening())
+
+            # Forward audio from browser to Deepgram
             try:
-                transcript: str = result.channel.alternatives[0].transcript
-                is_final: bool = result.is_final
-                speech_final: bool = getattr(result, "speech_final", False)
-
-                if transcript:
-                    await websocket.send_json(
-                        {
-                            "transcript": transcript,
-                            "is_final": is_final,
-                            "speech_final": speech_final,
-                        }
-                    )
-            except Exception:
-                logger.exception("Error forwarding transcript")
-
-        dg_connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
-
-        started: bool = await dg_connection.start(options)
-        if not started:
-            await websocket.close(code=1011, reason="Failed to connect to Deepgram")
-            return
-
-        # Forward audio from browser to Deepgram
-        try:
-            while True:
-                audio_data = await websocket.receive_bytes()
-                await dg_connection.send(audio_data)
-        except WebSocketDisconnect:
-            logger.debug("Browser WebSocket disconnected")
-        finally:
-            await dg_connection.finish()
+                while True:
+                    audio_data = await websocket.receive_bytes()
+                    await dg_ws.send_media(audio_data)
+            except WebSocketDisconnect:
+                logger.debug("Browser WebSocket disconnected")
+            finally:
+                listen_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await listen_task
+                with contextlib.suppress(Exception):
+                    await dg_ws.send_finalize()
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during setup")
@@ -201,3 +221,96 @@ async def speak(request: SpeakRequest) -> StreamingResponse | JSONResponse:
             "Content-Disposition": "inline",
         },
     )
+
+
+async def _forward_deepgram_to_browser(dg_ws: Any, websocket: WebSocket) -> None:
+    """Forward audio chunks and metadata from Deepgram WS to browser WS."""
+    import websockets as ws_lib
+
+    try:
+        async for message in dg_ws:
+            if websocket.client_state != WebSocketState.CONNECTED:
+                break
+            if isinstance(message, bytes):
+                await websocket.send_bytes(message)
+            else:
+                await websocket.send_text(message)
+    except ws_lib.ConnectionClosed:
+        pass
+    except Exception:
+        logger.exception("Error forwarding Deepgram TTS audio")
+
+
+async def _handle_browser_tts_messages(websocket: WebSocket, dg_ws: Any) -> None:
+    """Receive text from browser and forward Speak+Flush commands to Deepgram."""
+    try:
+        while True:
+            data = await websocket.receive_text()
+            msg = json.loads(data)
+
+            if msg.get("type") == "close":
+                await dg_ws.send(json.dumps({"type": "Close"}))
+                break
+
+            text = msg.get("text", "").strip()
+            if not text or len(text) > MAX_TTS_TEXT_LENGTH:
+                continue
+
+            await dg_ws.send(json.dumps({"type": "Speak", "text": text}))
+            await dg_ws.send(json.dumps({"type": "Flush"}))
+    except WebSocketDisconnect:
+        logger.debug("Browser WebSocket disconnected from TTS")
+
+
+@router.websocket("/ws/speak")
+async def speak_stream(
+    websocket: WebSocket,
+    voice: str = Query(default="aura-2-nestor-es"),
+) -> None:
+    """Stream TTS audio via WebSocket for low-latency playback.
+
+    Browser sends JSON with text, server proxies to Deepgram's WebSocket TTS
+    and forwards binary audio chunks back as they're generated.
+
+    Protocol:
+        Client -> {"text": "Hola amigo"} (JSON text message)
+        Server -> binary audio chunks (linear16 PCM, 24kHz, mono)
+        Server -> {"type": "metadata", ...} (JSON when audio is complete)
+        Client -> {"type": "close"} or disconnect to end
+    """
+    if voice not in ALLOWED_VOICES:
+        await websocket.close(code=1008, reason=f"Invalid voice: {voice}")
+        return
+
+    api_key = get_settings().DEEPGRAM_API_KEY
+    if not api_key:
+        await websocket.close(code=1011, reason="Voice features not configured")
+        return
+
+    await websocket.accept()
+
+    try:
+        import websockets
+
+        dg_url = (
+            f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&sample_rate=24000"
+        )
+        dg_headers = {"Authorization": f"Token {api_key}"}
+
+        async with websockets.connect(dg_url, additional_headers=dg_headers) as dg_ws:
+            forward_task = asyncio.create_task(_forward_deepgram_to_browser(dg_ws, websocket))
+            try:
+                await _handle_browser_tts_messages(websocket, dg_ws)
+            finally:
+                forward_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await forward_task
+                with contextlib.suppress(Exception):
+                    await dg_ws.close()
+
+    except WebSocketDisconnect:
+        logger.debug("WebSocket disconnected during TTS setup")
+    except Exception:
+        logger.exception("Error in TTS WebSocket")
+        with contextlib.suppress(Exception):
+            await websocket.close(code=1011, reason="Internal error")

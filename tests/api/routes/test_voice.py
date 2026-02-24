@@ -173,41 +173,61 @@ def mock_httpx_stream() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_deepgram_sdk() -> Generator[dict[str, MagicMock], None, None]:
-    """Mock the Deepgram SDK that is lazily imported inside transcribe_stream.
+    """Mock the Deepgram SDK v6 that is lazily imported inside transcribe_stream.
+
+    The v6 SDK uses ``AsyncDeepgramClient(api_key=...)`` and
+    ``dg.listen.v1.connect(model=..., ...)`` as an async context manager
+    yielding an ``AsyncV1SocketClient`` with methods: ``start_listening()``,
+    ``send_media()``, ``send_finalize()``, ``on()``.
 
     Returns a dict with keys for each mock component so tests can make
     assertions on the mock objects.
     """
-    mock_dg_connection = AsyncMock()
-    mock_dg_connection.start = AsyncMock(return_value=True)
-    mock_dg_connection.send = AsyncMock()
-    mock_dg_connection.finish = AsyncMock()
-    mock_dg_connection.on = MagicMock()
+    mock_dg_ws = AsyncMock()
+    mock_dg_ws.start_listening = AsyncMock()
+    mock_dg_ws.send_media = AsyncMock()
+    mock_dg_ws.send_finalize = AsyncMock()
+    mock_dg_ws.on = MagicMock()
+
+    # v1.connect() returns an async context manager yielding mock_dg_ws
+    mock_connect_cm = AsyncMock()
+    mock_connect_cm.__aenter__ = AsyncMock(return_value=mock_dg_ws)
+    mock_connect_cm.__aexit__ = AsyncMock(return_value=False)
+
+    mock_v1 = MagicMock()
+    mock_v1.connect = MagicMock(return_value=mock_connect_cm)
 
     mock_listen = MagicMock()
-    mock_listen.asyncwebsocket.v.return_value = mock_dg_connection
+    mock_listen.v1 = mock_v1
 
     mock_deepgram_instance = MagicMock()
     mock_deepgram_instance.listen = mock_listen
 
-    mock_deepgram_client_cls = MagicMock(return_value=mock_deepgram_instance)
-    mock_client_options_cls = MagicMock()
-    mock_events = MagicMock()
+    mock_async_client_cls = MagicMock(return_value=mock_deepgram_instance)
+    mock_event_type = MagicMock()
 
-    # Create a fake deepgram module to inject via sys.modules
+    # Create fake modules to inject via sys.modules
     mock_deepgram_module = MagicMock()
-    mock_deepgram_module.DeepgramClient = mock_deepgram_client_cls
-    mock_deepgram_module.DeepgramClientOptions = mock_client_options_cls
-    mock_deepgram_module.LiveTranscriptionEvents = mock_events
+    mock_deepgram_module.AsyncDeepgramClient = mock_async_client_cls
+
+    mock_events_module = MagicMock()
+    mock_events_module.EventType = mock_event_type
 
     import sys
 
-    with patch.dict(sys.modules, {"deepgram": mock_deepgram_module}):
+    with patch.dict(
+        sys.modules,
+        {
+            "deepgram": mock_deepgram_module,
+            "deepgram.core": MagicMock(),
+            "deepgram.core.events": mock_events_module,
+        },
+    ):
         yield {
-            "connection": mock_dg_connection,
-            "client_cls": mock_deepgram_client_cls,
-            "client_options_cls": mock_client_options_cls,
-            "events": mock_events,
+            "connection": mock_dg_ws,
+            "connect": mock_v1.connect,
+            "client_cls": mock_async_client_cls,
+            "event_type": mock_event_type,
             "instance": mock_deepgram_instance,
         }
 
@@ -222,14 +242,14 @@ class TestSpeakRequestModel:
 
     def test_valid_request(self) -> None:
         """SpeakRequest accepts valid text and voice."""
-        req = SpeakRequest(text="Hola, como estas?", voice="aura-2-celeste-es")
+        req = SpeakRequest(text="Hola, como estas?", voice="aura-2-nestor-es")
         assert req.text == "Hola, como estas?"
-        assert req.voice == "aura-2-celeste-es"
+        assert req.voice == "aura-2-nestor-es"
 
     def test_default_voice(self) -> None:
-        """SpeakRequest defaults to aura-2-celeste-es voice."""
+        """SpeakRequest defaults to aura-2-nestor-es voice."""
         req = SpeakRequest(text="Hola")
-        assert req.voice == "aura-2-celeste-es"
+        assert req.voice == "aura-2-nestor-es"
 
     def test_empty_text_rejected(self) -> None:
         """SpeakRequest rejects empty text via min_length=1."""
@@ -381,7 +401,7 @@ class TestSpeakEndpoint:
         """Valid request returns audio/mpeg streaming response."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola, como estas?", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola, como estas?", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "audio/mpeg"
@@ -396,7 +416,7 @@ class TestSpeakEndpoint:
         """Response includes Cache-Control: no-cache header."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
         assert response.headers.get("cache-control") == "no-cache"
@@ -407,7 +427,7 @@ class TestSpeakEndpoint:
         mock_settings_with_deepgram: MagicMock,
         mock_httpx_stream: MagicMock,
     ) -> None:
-        """Default voice is aura-2-celeste-es when not specified in request."""
+        """Default voice is aura-2-nestor-es when not specified in request."""
         response = await async_client.post(
             "/api/speak",
             json={"text": "Buenos dias"},
@@ -420,7 +440,7 @@ class TestSpeakEndpoint:
         mock_client_instance.stream.assert_called_once()
         call_args = mock_client_instance.stream.call_args
         url = call_args[0][1] if len(call_args[0]) > 1 else call_args[1].get("url", "")
-        assert "aura-2-celeste-es" in url
+        assert "aura-2-nestor-es" in url
 
     async def test_speak_sends_text_to_deepgram(
         self,
@@ -432,7 +452,7 @@ class TestSpeakEndpoint:
         test_text = "Me llamo Carlos"
         response = await async_client.post(
             "/api/speak",
-            json={"text": test_text, "voice": "aura-2-celeste-es"},
+            json={"text": test_text, "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
 
@@ -452,7 +472,7 @@ class TestSpeakEndpoint:
         """Deepgram API call includes the authorization token header."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
 
@@ -470,7 +490,7 @@ class TestSpeakEndpoint:
         """Empty text returns 422 validation error (Pydantic min_length=1)."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "", "voice": "aura-2-celeste-es"},
+            json={"text": "", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 422
 
@@ -482,7 +502,7 @@ class TestSpeakEndpoint:
         """Missing text field returns 422 validation error."""
         response = await async_client.post(
             "/api/speak",
-            json={"voice": "aura-2-celeste-es"},
+            json={"voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 422
 
@@ -495,7 +515,7 @@ class TestSpeakEndpoint:
         long_text = "a" * (MAX_TTS_TEXT_LENGTH + 1)
         response = await async_client.post(
             "/api/speak",
-            json={"text": long_text, "voice": "aura-2-celeste-es"},
+            json={"text": long_text, "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 422
 
@@ -509,7 +529,7 @@ class TestSpeakEndpoint:
         text = "a" * MAX_TTS_TEXT_LENGTH
         response = await async_client.post(
             "/api/speak",
-            json={"text": text, "voice": "aura-2-celeste-es"},
+            json={"text": text, "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
 
@@ -536,7 +556,7 @@ class TestSpeakEndpoint:
         """Returns 503 when DEEPGRAM_API_KEY is not configured."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 503
         body = response.json()
@@ -580,7 +600,7 @@ class TestSpeakEndpoint:
         """Response includes Content-Disposition: inline header."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
         assert response.headers.get("content-disposition") == "inline"
@@ -679,14 +699,12 @@ class TestTranscribeWebSocket:
     ) -> None:
         """When no language param is provided, default is 'multi'."""
         with test_client.websocket_connect("/ws/transcribe") as ws:
-            # Connection accepted -- default 'multi' is valid.
             ws.close()
 
-        # Verify 'multi' was passed through to the Deepgram options
-        mock_connection = mock_deepgram_sdk["connection"]
-        mock_connection.start.assert_awaited_once()
-        start_options = mock_connection.start.call_args[0][0]
-        assert start_options["language"] == "multi"
+        # Verify 'multi' was passed through to v1.connect() kwargs
+        mock_deepgram_sdk["connect"].assert_called_once()
+        connect_kwargs = mock_deepgram_sdk["connect"].call_args[1]
+        assert connect_kwargs["language"] == "multi"
 
     def test_websocket_accepts_binary_audio(
         self,
@@ -696,19 +714,17 @@ class TestTranscribeWebSocket:
     ) -> None:
         """WebSocket accepts binary audio data after connection.
 
-        Mocks the full Deepgram SDK chain to verify audio bytes
-        flow from client through to dg_connection.send().
+        Mocks the full Deepgram SDK v6 chain to verify audio bytes
+        flow from client through to dg_ws.send_media().
         """
         with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
-            # Send binary audio data
             ws.send_bytes(b"\x00\x01\x02\x03")
             ws.close()
 
         mock_connection = mock_deepgram_sdk["connection"]
-        # Verify Deepgram connection was started and audio was forwarded
-        mock_connection.start.assert_awaited_once()
-        mock_connection.send.assert_awaited()
-        mock_connection.finish.assert_awaited()
+        mock_connection.start_listening.assert_awaited_once()
+        mock_connection.send_media.assert_awaited()
+        mock_connection.send_finalize.assert_awaited()
 
     def test_websocket_forwards_language_to_deepgram(
         self,
@@ -716,13 +732,12 @@ class TestTranscribeWebSocket:
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """Selected language is passed through to the Deepgram STT options."""
+        """Selected language is passed through to the Deepgram v1.connect() kwargs."""
         with test_client.websocket_connect("/ws/transcribe?language=de") as ws:
             ws.close()
 
-        mock_connection = mock_deepgram_sdk["connection"]
-        start_options = mock_connection.start.call_args[0][0]
-        assert start_options["language"] == "de"
+        connect_kwargs = mock_deepgram_sdk["connect"].call_args[1]
+        assert connect_kwargs["language"] == "de"
 
     def test_websocket_registers_transcript_handler(
         self,
@@ -730,31 +745,31 @@ class TestTranscribeWebSocket:
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """Endpoint registers a transcript event handler on the Deepgram connection."""
+        """Endpoint registers a MESSAGE event handler on the Deepgram connection."""
         with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
             ws.close()
 
         mock_connection = mock_deepgram_sdk["connection"]
-        # Verify .on() was called to register a transcript handler
+        # Verify .on(EventType.MESSAGE, callback) was called
         mock_connection.on.assert_called_once()
 
-    def test_websocket_deepgram_start_failure_closes(
+    def test_websocket_deepgram_connect_failure_closes(
         self,
         test_client: TestClient,
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """When Deepgram connection.start() returns False, server closes with 1011.
+        """When Deepgram connection fails, server closes with 1011.
 
-        The WebSocket was already accepted before start() is called, so the
-        close frame arrives during the session. We attempt a receive to observe it.
+        In v6, a connection failure raises an exception from the context manager.
+        The WebSocket was already accepted, so the close frame arrives during session.
         """
-        mock_deepgram_sdk["connection"].start = AsyncMock(return_value=False)
+        mock_deepgram_sdk["connect"].return_value.__aenter__ = AsyncMock(
+            side_effect=ConnectionError("Deepgram connection failed")
+        )
 
         with pytest.raises(WebSocketDisconnect) as exc_info:
             with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
-                # Server closes the connection after start() fails.
-                # Attempting to receive triggers the disconnect exception.
                 ws.receive_json()
         assert exc_info.value.code == 1011
 
@@ -780,7 +795,7 @@ class TestVoiceEdgeCases:
         """
         response = await async_client.post(
             "/api/speak",
-            json={"text": " ", "voice": "aura-2-celeste-es"},
+            json={"text": " ", "voice": "aura-2-nestor-es"},
         )
         # Single space passes min_length=1
         assert response.status_code == 200
@@ -794,7 +809,7 @@ class TestVoiceEdgeCases:
         """Unicode text (accented characters) is accepted for TTS."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Buenos dias! Como estas tu?", "voice": "aura-2-celeste-es"},
+            json={"text": "Buenos dias! Como estas tu?", "voice": "aura-2-nestor-es"},
         )
         assert response.status_code == 200
 
