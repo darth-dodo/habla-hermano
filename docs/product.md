@@ -73,6 +73,7 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Guest Access** | ✅ Complete | Chat works without authentication; grammar feedback, pronunciation tips, and scaffolding included |
 | **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats (authenticated users only) |
 | **Learning Paths** | ✅ Complete | Structured progression from A0 to B1 with adaptive daily recommendations |
+| **Voice Input/Output** | 🔜 Planned | Speak to Hermano and hear him reply using Deepgram STT/TTS |
 
 ### Guest vs. Authenticated Experience
 
@@ -314,6 +315,69 @@ After completing a lesson, the completion screen shows your score and a "Continu
 
 ---
 
+## Voice Conversation
+
+> **Phase 17**: Speak to Hermano and hear him reply — transforming a text chat into a spoken conversation.
+
+Language learning demands speaking and listening. Text-based pronunciation tips can only go so far — learners need to *hear* correct pronunciation and *practice* producing sounds themselves. Voice conversation adds the missing sensory channel.
+
+### How It Works (Learner Perspective)
+
+1. **Tap the microphone button** next to the chat input
+2. **Speak your message** — your words appear as live transcription in the input field
+3. **Hermano replies in text** (streamed via SSE as before)
+4. **Tap the speaker icon** on Hermano's response to hear it spoken aloud
+5. **Repeat** — or type instead whenever you prefer
+
+Voice is always optional. The text chat remains fully functional. Voice adds a layer on top, it doesn't replace anything.
+
+### Voice at Each Level
+
+| Level | STT Behavior | TTS Behavior |
+|-------|-------------|--------------|
+| **A0** | Multilingual mode — accepts mixed English/target language | Slower, clearer voice with target-language accent |
+| **A1** | Multilingual mode — expects more target language | Natural pace, clear articulation |
+| **A2** | Target language preferred — English still accepted | Natural conversational pace |
+| **B1** | Target language expected | Full natural speed, native-like delivery |
+
+### Voice + Existing Features
+
+| Feature | How Voice Integrates |
+|---------|---------------------|
+| **Scaffolding** | Word bank still appears visually; TTS reads Hermano's spoken response only |
+| **Grammar feedback** | Still text-based — corrections are better read than heard |
+| **Pronunciation tips** | Now validated by real practice — "try saying it" becomes actionable |
+| **Spaced repetition** | Review sessions can use voice — "How do you say 'market' in Spanish?" spoken aloud |
+| **SSE streaming** | TTS triggers after SSE stream completes — Hermano's full response is synthesized as one utterance |
+
+### Example Voice Interaction
+
+```
+You: [tap mic] "Hola, como estás?"
+     → Live transcription: "Hola, ¿cómo estás?"
+
+Hermano: "¡Muy bien! Me alegra oírte. ¿Qué hiciste hoy?"
+         [🔊 Play] ← Tap to hear Hermano say it
+
+You: [tap mic] "Yo... fui al mercado"
+     → Live transcription: "Yo fui al mercado"
+
+Hermano: "¡Genial! ¿Qué compraste en el mercado?"
+         [🔊 Play]
+```
+
+### Guest vs. Authenticated Voice Access
+
+| Capability | Guest | Authenticated |
+|------------|:-----:|:-------------:|
+| STT (speak to Hermano) | Yes | Yes |
+| TTS (hear Hermano reply) | Yes | Yes |
+| Voice in review sessions | -- | Yes |
+
+Voice is available to guests — it's a core part of the conversation experience, not a premium feature. This matches the existing pattern where chat, grammar feedback, and scaffolding are all available without an account.
+
+---
+
 ## The A0 → B1 Journey
 
 ### Language Mix by Level
@@ -433,9 +497,14 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 14** | Learning Paths | Structured A0→B1 progression with adaptive daily recommendations | ✅ Complete |
 | **Phase 15** | SSE Streaming | Real-time token streaming via Server-Sent Events; POST /chat/stream endpoint, frontend ReadableStream with blinking cursor, feedback sections arrive as server-rendered HTML after response completes; existing POST /chat preserved as fallback | ✅ Complete |
 
+### Next Up
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| **Phase 17** | Voice Conversation | 🔜 Planned | Speak to Hermano and hear him reply — Deepgram Nova-3 STT + Aura-2 TTS, WebSocket streaming, browser microphone capture |
+
 ### Future Ideas
 
-- Voice input/output
 - Scenario roleplay (ordering food, booking hotel)
 - Multiple AI personas
 - Offline mode
@@ -477,12 +546,13 @@ See [Architecture Documentation](architecture.md) for details.
 - Time to first review prompt (automatic after first chat session)
 - Review-to-chat conversion (users who start a regular chat after completing a review)
 
-### Phase 12: Spaced Repetition Metrics
-- Review session completion rate (target: >70%)
-- Words retained after 30 days (target: >80%)
-- Chat weaving engagement (target: >50% of offered words used correctly)
-- Time to first review prompt (automatic after first chat session)
-- Review-to-chat conversion (users who start a regular chat after completing a review)
+### Phase 17: Voice Conversation Metrics
+- Voice adoption rate (target: >30% of sessions use mic at least once)
+- TTS playback rate (target: >50% of Hermano responses played aloud)
+- STT transcription accuracy (target: >90% for target language at user's level)
+- Time to first spoken interaction (target: within first 3 messages)
+- Voice session length vs. text-only session length (expect longer sessions)
+- Pronunciation improvement signal (words pronounced correctly on subsequent attempts)
 
 ---
 
@@ -492,7 +562,7 @@ See [Architecture Documentation](architecture.md) for details.
 - **Flashcard app**: Vocabulary learned in conversation context
 - **Gamified experience**: No streaks, XP, leaderboards, or guilt
 - **Translation tool**: Goal is to think in the language, not translate
-- **Perfect pronunciation trainer**: Text-based for now
+- **Perfect pronunciation trainer**: Voice input helps practice, but we're not building clinical phoneme-level analysis
 
 ---
 
@@ -506,3 +576,4 @@ See [Architecture Documentation](architecture.md) for details.
 - [Phase 6 Design](design/phase6-micro-lessons.md) — Micro-lessons design document
 - [Phase 12 Design](design/phase12-spaced-repetition.md) — Spaced repetition design document
 - [Phase 13 Design](design/phase13-mobile-responsive.md) — Mobile responsive design document
+- [Phase 17 Design](design/phase17-voice-conversation.md) — Voice STT/TTS with Deepgram
