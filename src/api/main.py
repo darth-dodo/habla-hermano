@@ -14,7 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from src.api.config import get_settings
 from src.api.middleware import SecurityHeadersMiddleware
-from src.api.routes import auth, chat, learn, lessons, progress, review
+from src.api.routes import auth, chat, learn, lessons, progress, review, voice
 
 # Configure logging
 settings = get_settings()
@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(review.router)
     app.include_router(learn.router, prefix="/learn", tags=["learn"])
+    app.include_router(voice.router)
     return app
 
 

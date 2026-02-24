@@ -398,6 +398,22 @@ wheels = [
 ]
 
 [[package]]
+name = "deepgram-sdk"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a1/7e/1673b5e975fa7c888d30e54f906b45772270185dea3e58fdcdaab87c8ff3/deepgram_sdk-6.0.0.tar.gz", hash = "sha256:297d00dced558f15b4bdd50d6f6f114ccf2693f200eefd5a5ae97856c958f470", size = 173397, upload-time = "2026-02-23T09:04:00.8Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/3b/d565437cafd62c70db58e1a72c3be16586cf035c2c6b0875bb378e37c3aa/deepgram_sdk-6.0.0-py3-none-any.whl", hash = "sha256:5810d0e2a7b4f790b413cbfe5f82f9c37d3fdf6a80998290bc32bbe8b99534aa", size = 484365, upload-time = "2026-02-23T09:03:59.309Z" },
+]
+
+[[package]]
 name = "deprecation"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -496,7 +512,9 @@ name = "habla-hermano"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "deepgram-sdk" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "itsdangerous" },
     { name = "jinja2" },
     { name = "langchain" },
@@ -530,7 +548,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "deepgram-sdk", specifier = ">=3.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "httpx", specifier = ">=0.25.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
     { name = "itsdangerous", specifier = ">=2.1.0" },
     { name = "jinja2", specifier = ">=3.1.0" },

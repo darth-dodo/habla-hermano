@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     # Secret key for signing cookies (review sessions, etc.)
     SECRET_KEY: str = "habla-hermano-change-me-in-production"
 
+    # Voice features (Phase 17) - Deepgram STT/TTS
+    DEEPGRAM_API_KEY: str = ""
+
     # LLM settings
     LLM_MODEL: str = "claude-haiku-4-5-20251001"
     LLM_TEMPERATURE: float = 0.7
@@ -90,6 +93,11 @@ class Settings(BaseSettings):
             Note: DB_URL is optional - only needed for Postgres checkpointing.
         """
         return bool(self.SUPABASE_URL and self.SUPABASE_ANON_KEY)
+
+    @property
+    def voice_enabled(self) -> bool:
+        """Check if voice features are configured."""
+        return bool(self.DEEPGRAM_API_KEY)
 
 
 @lru_cache

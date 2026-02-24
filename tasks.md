@@ -13,9 +13,9 @@
 
 ## Current State
 
-**Branch**: `fix/codebase-improvements-2` (pending merge to `main`)
-**Phase**: Phase 15 Complete + Security Audit Remediation
-**Test Coverage**: 1893 tests passing, 5 skipped, 97% coverage (54 warnings)
+**Branch**: `docs/phase17-voice-deepgram` (active development)
+**Phase**: Phase 17 — Voice Conversation (Deepgram STT/TTS)
+**Test Coverage**: 1952 tests passing, 5 skipped, 97% coverage (52 warnings)
 **Last Audit**: 2026-02-22 (multi-dimensional: security, architecture, dependencies, deployment)
 **Audit Remediation**: 2026-02-23 — 23 of 24 items complete (A1-A24, excluding A10)
 
@@ -39,6 +39,7 @@
 | Learning Paths | 14 | Static paths + adaptive daily recommendations |
 | SSE Streaming | 15 | Real-time chat via Server-Sent Events |
 | Security Hardening | Audit | Headers, signed cookies, XSS sanitization, JWT refresh |
+| Voice Conversation | 17 | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, graceful degradation |
 
 ### LangGraph Flow
 
@@ -61,6 +62,25 @@ Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
 ---
 
 ## Up Next
+
+### Phase 17: Voice Conversation (Deepgram STT/TTS) — ✅ Complete
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| V1 | Add `DEEPGRAM_API_KEY` to config + `voice_enabled` property | ✅ | `src/api/config.py`, `src/api/dependencies.py` |
+| V2 | Create `src/api/routes/voice.py` (WebSocket STT proxy + REST TTS endpoint) | ✅ | `/ws/transcribe`, `POST /api/speak` |
+| V3 | Register voice router in `src/api/main.py` | ✅ | `app.include_router(voice.router)` |
+| V4 | Create `src/static/js/voice.js` (VoiceManager class) | ✅ | Mic capture, WebSocket STT, TTS playback |
+| V5 | Update `chat.html` — mic button + load voice.js | ✅ | Conditional on `voice_enabled` |
+| V6 | Update `message_pair.html` — speaker icon on AI responses | ✅ | TTS playback trigger |
+| V7 | Add `deepgram-sdk` + `httpx` to `pyproject.toml` | ✅ | `deepgram-sdk>=3.0.0`, `httpx>=0.25.0` |
+| V8 | Create `tests/api/routes/test_voice.py` (59 tests) | ✅ | WebSocket + TTS + validation + edge cases |
+| V9 | Add voice CSS styles (mic button states, speaker icon) | ✅ | Pulse animation, loading/playing states |
+
+**Design doc**: `docs/design/phase17-voice-conversation.md`
+**ADR**: `docs/adr/ADR-010-deepgram-voice-stt-tts.md`
+
+---
 
 ### Codebase Audit Findings (2026-02-22) — ✅ 23/24 Complete
 
@@ -156,7 +176,7 @@ Remediated on 2026-02-23 via `fix/codebase-improvements-2` branch using 10 paral
 
 | Task | Notes |
 |------|-------|
-| Voice input/output | Speech-based practice |
+| ~~Voice input/output~~ | ~~Speech-based practice~~ → **Phase 17 in progress** |
 | Scenario roleplay | Ordering food, booking hotel |
 | Multiple AI personas | Beyond Hermano |
 | Offline mode | PWA with service worker |
