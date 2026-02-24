@@ -41,6 +41,12 @@ dependencies = [
 
     # Cookie signing
     "itsdangerous>=2.1.0",
+
+    # Speech-to-text (Deepgram)
+    "deepgram-sdk>=3.0.0",
+
+    # HTTP client (used directly in TTS proxy)
+    "httpx>=0.25.0",
 ]
 
 [project.optional-dependencies]
@@ -109,6 +115,7 @@ known-first-party = ["src"]
 "src/api/routes/lessons.py" = ["PLC0415"]  # Lazy imports for lesson subgraphs to avoid circular dependency
 "src/services/paths.py" = ["PLC0415"]  # Lazy import in factory to avoid circular dependency
 "src/services/adaptive.py" = ["PLC0415"]  # Lazy imports in factory to avoid circular dependency
+"src/api/routes/voice.py" = ["PLC0415"]  # Lazy imports for optional deepgram-sdk
 
 # =============================================================================
 # MyPy Configuration
@@ -144,6 +151,7 @@ module = [
     "ratelimit.*",
     "sse_starlette.*",
     "itsdangerous.*",
+    "deepgram.*",
 ]
 ignore_missing_imports = true
 

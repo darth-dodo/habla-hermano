@@ -110,6 +110,7 @@ async def chat_page(
         "show_warmup": False,
         "review_stats": None,
         "current_language": language,
+        "voice_enabled": settings.voice_enabled,
     }
 
     # Review features only for authenticated users
@@ -174,6 +175,7 @@ def _resolve_chat_identity(
 async def send_message(
     request: Request,
     templates: TemplatesDep,
+    settings: SettingsDep,
     user: OptionalUserDep,
     message: Annotated[str, Form()],
     level: Annotated[str, Form()] = "A1",
@@ -291,6 +293,8 @@ async def send_message(
             "pronunciation_tips": pronunciation_tips,
             "scaffolding": scaffolding,
             "level": level,
+            "language": language,
+            "voice_enabled": settings.voice_enabled,
         },
     )
 

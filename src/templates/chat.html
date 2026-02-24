@@ -307,6 +307,23 @@
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
 
+                <!-- Voice Mic Button (Phase 17) -->
+                {% if voice_enabled %}
+                <button
+                    type="button"
+                    id="mic-btn"
+                    class="flex-shrink-0 p-3 bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-accent rounded-xl transition-all duration-150"
+                    aria-label="Record voice message"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                </button>
+                {% endif %}
+
                 <!-- Message Input - Minimal -->
                 <div class="flex-1 relative">
                     <input
@@ -339,4 +356,10 @@
         </div>
     </footer>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if voice_enabled %}
+<script src="{{ url_for('static', path='js/voice.js') }}"></script>
+{% endif %}
 {% endblock %}

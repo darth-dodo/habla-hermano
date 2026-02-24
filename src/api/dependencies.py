@@ -93,8 +93,24 @@ def get_thread_id_dep(request: Request) -> str:
     return _get_thread_id(request)
 
 
+def get_deepgram_api_key() -> str:
+    """Get the Deepgram API key from settings.
+
+    Raises:
+        RuntimeError: If DEEPGRAM_API_KEY is not configured.
+
+    Returns:
+        str: The configured Deepgram API key.
+    """
+    api_key = get_settings().DEEPGRAM_API_KEY
+    if not api_key:
+        raise RuntimeError("DEEPGRAM_API_KEY not configured")
+    return api_key
+
+
 # Type aliases for dependency injection
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 TemplatesDep = Annotated[Jinja2Templates, Depends(get_cached_templates)]
 ThreadIdDep = Annotated[str, Depends(get_thread_id_dep)]
 LessonServiceDep = Annotated[LessonService, Depends(get_lesson_service)]
+DeepgramKeyDep = Annotated[str, Depends(get_deepgram_api_key)]
