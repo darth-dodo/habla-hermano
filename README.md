@@ -5,7 +5,9 @@
 Meet Hermano — your friendly, laid-back language buddy who takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-ocean-home.png" alt="Habla Hermano" width="300"/>
+  <img src="docs/screenshots/mobile-chat-home-voice.png" alt="Chat with voice controls" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-conversation-voice.png" alt="Conversation with AI feedback" width="270"/>
 </p>
 
 ---
@@ -20,15 +22,29 @@ Most language apps drill vocabulary in isolation. You memorize words, ace flashc
 - **Your supportive big brother** — Patient, encouraging, like chatting with a friend
 - **Scaffolding that fades** — Word banks and hints for beginners, natural flow for intermediates
 - **Gentle corrections** — Grammar and pronunciation feedback that doesn't interrupt your flow
+- **Voice conversations** — Speak with your voice, hear responses read aloud
 - **No gamification guilt** — No streaks, XP, or leaderboards. Just learning.
 
 ---
 
-## Conversations That Adapt to You
+## Talk, Type, or Both
 
 <p align="center">
-  <img src="docs/screenshots/mobile-beach-conversation.png" alt="Beach conversation with Hermano" width="300"/>
+  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input with speed controls" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Light theme with voice" width="270"/>
 </p>
+
+Type your messages or tap the microphone to speak. Hermano understands both.
+
+- **Speech-to-text** — Deepgram Nova-3 with code-switching support (mix English and your target language naturally)
+- **Text-to-speech** — Tap the speaker icon on any AI response to hear it read aloud with native pronunciation
+- **Speed control** — 0.75x, 1x, or 1.25x playback speed for comprehension practice
+- **Works everywhere** — Voice UI only appears when configured; text chat always works
+
+---
+
+## Conversations That Adapt to You
 
 Hermano adapts his language mix based on your level:
 
@@ -44,26 +60,18 @@ Hermano adapts his language mix based on your level:
 ## Scaffolding That Helps You Respond
 
 <p align="center">
-  <img src="docs/screenshots/mobile-beach-scaffold.png" alt="Word bank, hints, and pronunciation tips" width="300"/>
+  <img src="docs/screenshots/mobile-scaffolding-expanded.png" alt="Word bank, hints, and pronunciation tips" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-grammar-feedback.png" alt="Grammar correction feedback" width="270"/>
 </p>
 
 Stuck on what to say? Beginners get contextual help:
 
-- **Word Bank** — Clickable vocabulary relevant to the conversation
 - **Hints** — Simple guidance in English on how to respond
+- **Word Bank** — Clickable vocabulary relevant to the conversation (tap to insert)
 - **Sentence Starters** — Partial sentences to get you going
 
-For A0 learners, scaffolding appears automatically. A1 learners can expand it when needed. By A2, you won't need it anymore.
-
----
-
-## Grammar and Pronunciation Feedback
-
-<p align="center">
-  <img src="docs/screenshots/mobile-beach-response.png" alt="Conversation with grammar correction" width="300"/>
-</p>
-
-Made a mistake? Hermano models the correct form naturally in his response, then offers expandable tips for deeper learning:
+Made a mistake? Hermano models the correct form naturally in his response, then offers expandable grammar and pronunciation tips:
 
 ```
 You:     "Yo soy cansado"
@@ -73,7 +81,7 @@ Hermano: "¿Estás cansado? Yo también después del trabajo."
          Pronunciation: /ehs-TAHS/ — stress the second syllable
 ```
 
-Each level gets appropriate coaching — from basic sounds and tricky letters at A0 to subtle distinctions that mark fluency at B1.
+For A0 learners, scaffolding appears automatically. A1 learners can expand it when needed. By A2, you won't need it anymore.
 
 ---
 
@@ -82,9 +90,9 @@ Each level gets appropriate coaching — from basic sounds and tricky letters at
 Beyond freeform conversation, Hermano offers bite-sized lessons that teach vocabulary and grammar through interactive exercises.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-lessons-list.png" alt="Lesson listing" width="250"/>
+  <img src="docs/screenshots/mobile-lessons-browse.png" alt="Browse 60 lessons" width="270"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-player.png" alt="Lesson vocabulary step" width="250"/>
+  <img src="docs/screenshots/mobile-lesson-vocabulary.png" alt="Vocabulary step with translations" width="270"/>
 </p>
 
 Each lesson includes:
@@ -104,9 +112,9 @@ Each lesson includes:
 ## Learning Paths
 
 <p align="center">
-  <img src="docs/screenshots/mobile-learning-path.png" alt="Spanish learning path" width="250"/>
+  <img src="docs/screenshots/mobile-learning-path.png" alt="Spanish learning path" width="270"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete screen" width="250"/>
+  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete screen" width="270"/>
 </p>
 
 Don't know where to start? Each language has a structured path that guides you from absolute beginner to intermediate — 4 levels, 5 lessons each, 20 lessons total.
@@ -124,23 +132,14 @@ Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced 
 
 ---
 
-## Voice Conversation
-
-Talk to Hermano using your voice. Speech-to-text captures what you say, text-to-speech reads responses aloud with adjustable playback speed.
-
-- **Speech-to-text** — Deepgram Nova-3 with code-switching support (mix English and your target language)
-- **Text-to-speech** — Deepgram Aura-2 voices matched to each language
-- **Speed control** — 0.75x, 1x, or 1.25x playback for comprehension practice
-- **Graceful degradation** — Voice UI only appears when configured; text chat always works
-
----
-
 ## Three Beautiful Themes
 
 <p align="center">
-  <img src="docs/screenshots/mobile-ocean-home.png" alt="Ocean theme" width="200"/>
+  <img src="docs/screenshots/mobile-chat-home-voice.png" alt="Dark theme" width="200"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-light-home.png" alt="Light theme" width="200"/>
+  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Light theme" width="200"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Ocean theme" width="200"/>
 </p>
 
 **Dark**, **Light**, and **Ocean** — all with a clean Nordic Minimal aesthetic. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
@@ -148,6 +147,10 @@ Talk to Hermano using your voice. Speech-to-text captures what you say, text-to-
 ---
 
 ## Guest Access
+
+<p align="center">
+  <img src="docs/screenshots/mobile-login.png" alt="Login screen with guest access" width="270"/>
+</p>
 
 No sign-up required to start chatting. Try Hermano immediately as a guest — create a free account when you're ready to track lessons, progress, and spaced repetition.
 
@@ -178,19 +181,20 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | Layer | Technology |
 |-------|-----------|
 | **Backend** | FastAPI, LangGraph, Claude API (Anthropic) |
-| **Frontend** | HTMX, Alpine.js, Tailwind CSS |
+| **Frontend** | HTMX, Alpine.js, Tailwind CSS, ES Modules |
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
-| **Testing** | pytest + Vitest (2140+ tests, 97% coverage), Playwright E2E |
 | **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
+| **Testing** | pytest + Vitest (2140+ tests, 97% coverage) |
 
 ### Architecture Highlights
 
 - **LangGraph conversation engine** — Stateful graph with conditional routing for scaffolding, grammar feedback, pronunciation tips, and spaced repetition weaving
 - **Server-rendered with HTMX** — No SPA complexity. Jinja2 templates with HTMX for dynamic updates and Alpine.js for client-side interactivity
+- **Real-time streaming** — SSE-based token streaming for instant AI responses
 - **AI-enhanced lessons** — LangGraph subgraphs generate contextual exercises and vocabulary steps
 - **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
-- **Voice conversation** — Deepgram STT/TTS via WebSocket proxy for speech-based practice with floating stop controls
+- **Voice conversation** — Deepgram STT/TTS via WebSocket proxy with floating stop controls and speed adjustment
 - **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (186 tests, ~90% coverage)
 
 ---
