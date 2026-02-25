@@ -122,11 +122,11 @@ function addSpeakerButton(bubbleId, text) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'voice-speak-btn mt-2 p-1.5 text-text-subtle hover:text-accent transition-colors duration-150 rounded-lg hover:bg-surface-overlay';
+    btn.className = 'voice-speak-btn mt-2 p-2 text-text-subtle hover:text-accent transition-colors duration-150 rounded-lg hover:bg-surface-overlay';
     btn.setAttribute('data-text', text);
     btn.setAttribute('data-language', language);
     btn.setAttribute('aria-label', 'Listen to response');
-    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
+    btn.innerHTML = '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
         + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
         + '<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />'
         + '<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />'
