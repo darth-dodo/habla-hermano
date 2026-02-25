@@ -384,6 +384,6 @@
 
 {% block scripts %}
 {% if voice_enabled %}
-<script src="{{ url_for('static', path='js/voice.js') }}"></script>
+<script type="module" src="{{ url_for('static', path='js/modules/voice.js') }}"></script>
 {% endif %}
 {% endblock %}
