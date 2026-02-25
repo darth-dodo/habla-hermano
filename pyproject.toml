@@ -42,7 +42,7 @@ dependencies = [
     # Cookie signing
     "itsdangerous>=2.1.0",
 
-    # Speech-to-text (Deepgram)
+    # Speech-to-text/text-to-speech (Deepgram)
     "deepgram-sdk>=6.0.0",
 
     # HTTP client (used in REST TTS proxy fallback)
@@ -155,6 +155,7 @@ module = [
     "sse_starlette.*",
     "itsdangerous.*",
     "deepgram.*",
+    "websockets.*",
 ]
 ignore_missing_imports = true
 

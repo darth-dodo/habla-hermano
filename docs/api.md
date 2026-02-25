@@ -10,9 +10,9 @@ Habla Hermano provides an HTMX-driven API that returns HTML partials for seamles
 
 **Base URL**: `http://localhost:8000`
 
-**Content Type**: All POST requests use `application/x-www-form-urlencoded` (form data).
+**Content Type**: All POST requests use `application/x-www-form-urlencoded` (form data), except `/api/speak` which accepts `application/json`. Voice endpoints (`/ws/transcribe`, `/ws/speak`) use WebSocket protocol with binary audio frames.
 
-**Response Format**: HTML partials designed for HTMX integration.
+**Response Format**: HTML partials designed for HTMX integration. Voice endpoints return audio streams or JSON transcript data.
 
 ---
 
@@ -31,6 +31,7 @@ The API uses two cookie-based identity mechanisms:
 | Progress (`/progress/*`) | Required for data (`OptionalUserDep`) | Returns empty/zero stats with `is_guest: True` |
 | Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Lessons (`/lessons/*`) | Optional | Full access to browse and play lessons |
+| Voice (`/ws/transcribe`, `/ws/speak`, `/api/speak`) | None (API key on server) | Full access when voice configured |
 | Auth (`/auth/*`) | None | Public endpoints |
 
 ### GET /auth/login
@@ -528,6 +529,86 @@ curl -X POST http://localhost:8000/chat \
 - AI response: "Que pelicula vieron? Me encanta ir al cine..."
 - Scaffolding: `{ "enabled": false, ... }`
 - Grammar feedback (if applicable)
+
+---
+
+## Voice Endpoints
+
+Voice features require `DEEPGRAM_API_KEY` to be configured. When not configured, the voice UI is hidden and endpoints return errors.
+
+### WebSocket /ws/transcribe
+
+Real-time speech-to-text via Deepgram Nova-3 proxy. Browser sends raw audio chunks, server forwards to Deepgram and relays transcripts back.
+
+**Protocol**: WebSocket
+
+| Query Parameter | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `language` | string | `multi` | STT language: `es`, `de`, `fr`, or `multi` (code-switching) |
+
+**Client → Server**: Binary audio chunks (linear16 PCM, 16kHz, mono)
+
+**Server → Client**: JSON transcript messages:
+
+```json
+{
+  "transcript": "Hola, me llamo Ana",
+  "is_final": true,
+  "speech_final": true
+}
+```
+
+**Close Codes**:
+- `1000`: Normal close
+- `1008`: Invalid language parameter
+- `1011`: Voice features not configured or internal error
+
+---
+
+### POST /api/speak
+
+Synthesize speech from text using Deepgram Aura-2 TTS (REST fallback).
+
+**Content-Type**: `application/json`
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `text` | string | Yes | - | Text to synthesize (1-2000 chars) |
+| `voice` | string | No | `aura-2-nestor-es` | Deepgram voice model ID |
+
+**Allowed Voices**: `aura-2-celeste-es`, `aura-2-estrella-es`, `aura-2-nestor-es`, `aura-2-elara-de`, `aura-2-julius-de`, `aura-2-agathe-fr`, `aura-2-hector-fr`
+
+**Response**: `audio/mpeg` streaming response
+
+**Error Responses**:
+- `400`: Invalid voice ID
+- `503`: Voice features not configured
+
+---
+
+### WebSocket /ws/speak
+
+Stream TTS audio via WebSocket for low-latency playback (~300ms to first audio).
+
+**Protocol**: WebSocket
+
+| Query Parameter | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `voice` | string | `aura-2-nestor-es` | Deepgram voice model ID |
+
+**Client → Server**: JSON messages:
+```json
+{"text": "Hola amigo"}
+{"type": "close"}
+```
+
+**Server → Client**:
+- Binary audio chunks (linear16 PCM, 24kHz, mono)
+- JSON metadata: `{"type": "Flushed"}` when audio generation is complete
+
+**Close Codes**:
+- `1008`: Invalid voice parameter
+- `1011`: Voice features not configured or internal error
 
 ---
 

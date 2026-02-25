@@ -13,9 +13,9 @@
 
 ## Current State
 
-**Branch**: `docs/phase17-voice-deepgram` (active development)
-**Phase**: Phase 17 — Voice Conversation (Deepgram STT/TTS)
-**Test Coverage**: 1952 tests passing, 5 skipped, 97% coverage (52 warnings)
+**Branch**: `feat/phase16-esm-migration` (active development)
+**Phase**: Phase 16 — ES Module Migration + Voice Improvements
+**Test Coverage**: 2140+ tests passing (1954 Python + 186 JS), 97% coverage
 **Last Audit**: 2026-02-22 (multi-dimensional: security, architecture, dependencies, deployment)
 **Audit Remediation**: 2026-02-23 — 23 of 24 items complete (A1-A24, excluding A10)
 
@@ -40,6 +40,8 @@
 | SSE Streaming | 15 | Real-time chat via Server-Sent Events |
 | Security Hardening | Audit | Headers, signed cookies, XSS sanitization, JWT refresh |
 | Voice Conversation | 17 | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, graceful degradation |
+| ES Module Architecture | 16 | 6 JS modules, 186 Vitest tests, CI/CD integration |
+| Voice Improvements | 16 | Floating TTS stop bar, concurrent TTS fix, mobile click reliability |
 
 ### LangGraph Flow
 
@@ -62,6 +64,20 @@ Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
 ---
 
 ## Up Next
+
+### Phase 16: ES Module Migration + Voice UX — ✅ Complete
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| E1 | Refactor app.js into ES modules (dom, htmx-handlers, shortcuts, scaffold) | ✅ | 6 modules under `src/static/js/modules/` |
+| E2 | Refactor stream.js into ES module | ✅ | `src/static/js/modules/stream.js` |
+| E3 | Migrate voice.js to ES module loading | ✅ | `src/static/js/modules/voice.js` (loaded as type="module") |
+| E4 | Create AudioWorklet PCM processor | ✅ | `src/static/js/pcm-processor.js` (mobile-safe STT capture) |
+| E5 | Mobile-first JS improvements (11 fixes) | ✅ | Touch focus, scroll throttle, keyboard handling, escapeHtml quotes |
+| E6 | JavaScript test suite (186 tests) | ✅ | Vitest + jsdom, ~90% coverage on tested modules |
+| E7 | Add JS tests to CI/CD pipeline | ✅ | Parallel `test-js` job in GitHub Actions |
+| E8 | Floating TTS stop button | ✅ | Always-visible stop control during playback |
+| E9 | TTS mutual exclusion | ✅ | Only one TTS session at a time, orphaned WS cleanup |
 
 ### Phase 17: Voice Conversation (Deepgram STT/TTS) — ✅ Complete
 
@@ -172,43 +188,42 @@ Remediated on 2026-02-23 via `fix/codebase-improvements-2` branch using 10 paral
 
 ---
 
-### JavaScript Quality Improvements (2026-02-25 audit)
+### JavaScript Quality Improvements (2026-02-25 audit) — ✅ All Done
 
 Identified during code review of `src/static/js/` (app.js, stream.js, voice.js — 1549 lines total).
+All items resolved as part of Phase 16 ES Module Migration.
 
-#### Priority: Medium
+#### Priority: Medium — ✅ All Done
 
-| # | Task | File | Notes |
-|---|------|------|-------|
-| J1 | Remove dead HTMX event handlers | `app.js:144-156` | `onBeforeRequest` and `onAfterRequest` are no-ops — registered in `init()` but only return early. Safe to delete. |
-| J2 | Cache DOM elements at init | `app.js` | `getElements()` fires up to 5 `getElementById` calls on every utility call. Cache into a module-level object in `init()` instead. |
-| J3 | Fix scroll throttle using `Math.random()` | `stream.js:196` | `if (Math.random() < 0.3) scrollToBottom()` is non-deterministic. Replace with timestamp-based throttle or `requestAnimationFrame`. |
-| J4 | Cache send button reference in `stream.js` | `stream.js:237,319` | `querySelector('#chat-form button[type="submit"]')` called in both `streamChat()` and `finishStreaming()`. Cache once at init like `voice.js` does. |
+| # | Task | File | Status | Notes |
+|---|------|------|--------|-------|
+| J1 | Remove dead HTMX event handlers | `app.js` | ✅ Done | Dead handlers removed in ESM refactor |
+| J2 | Cache DOM elements at init | `app.js` | ✅ Done | `dom.js` caches elements |
+| J3 | Fix scroll throttle using `Math.random()` | `stream.js` | ✅ Done | `tokenCounter % 3` deterministic throttle |
+| J4 | Cache send button reference in `stream.js` | `stream.js` | ✅ Done | `stream.js` caches send button |
 
-#### Priority: Low / Cleanup
+#### Priority: Low / Cleanup — ✅ All Done
 
-| # | Task | File | Notes |
-|---|------|------|-------|
-| J5 | Remove `console.log` in production | `app.js:274` | `console.log('Habla Hermano initialized')` fires on every page load. Remove or guard behind `DEBUG` flag. |
-| J6 | Remove unused `welcomeMessage` variable | `app.js:344` | Assigned from `querySelector` but never read. |
-| J7 | Standardize `var` → `const`/`let` in `voice.js` | `voice.js` | `voice.js` is ES5 (`var`, prototype chains) while `app.js`/`stream.js` use `const`/`let`. Either modernize or document the intentional ES5 choice. See ADR-009. |
-| J8 | Sanitize HTMX error detail before console logging | `app.js:181` | `console.error('HTMX request failed:', event.detail)` may log internal server details. Log a sanitized summary instead. |
+| # | Task | File | Status | Notes |
+|---|------|------|--------|-------|
+| J5 | Remove `console.log` in production | `app.js` | ✅ Done | `console.log` removed in ESM refactor |
+| J6 | Remove unused `welcomeMessage` variable | `app.js` | ✅ Done | Dead variable removed in ESM refactor |
+| J7 | Standardize `var` → `const`/`let` in `voice.js` | `voice.js` | ✅ N/A | Intentionally ES5 per ADR-009 (loaded as type="module" but uses var/prototype) |
+| J8 | Sanitize HTMX error detail before console logging | `app.js` | ✅ Done | `htmx-handlers.js` logs sanitized |
 
-#### Priority: High Effort (Future)
+#### Priority: High Effort (Future) — ✅ Done
 
-| # | Task | Notes |
-|---|------|-------|
-| J9 | Add JS unit tests | SSE parsing (`parseSSEEvent`) and voice state machine (`VoiceManager`) are complex enough to warrant Vitest/Jest tests. No JS tests currently exist. See ADR-009 for ESM migration which would enable this. |
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| J9 | Add JS unit tests | ✅ Done | 186 Vitest tests across all modules |
 
 ### Future Ideas
 
 | Task | Notes |
 |------|-------|
-| ~~Voice input/output~~ | ~~Speech-based practice~~ → **Phase 17 in progress** |
 | Scenario roleplay | Ordering food, booking hotel |
 | Multiple AI personas | Beyond Hermano |
 | Offline mode | PWA with service worker |
-| ES Module migration | See ADR-009 and `docs/design/phase16-esm.md` |
 
 ---
 
@@ -232,12 +247,26 @@ Identified during code review of `src/static/js/` (app.js, stream.js, voice.js �
 | 13 | Mobile Responsive | Safe areas, dynamic viewport, touch-optimized |
 | 14 | Learning Paths | PathService, AdaptiveService, learn routes (99 tests) |
 | 15 | SSE Streaming | Real-time chat via Server-Sent Events |
+| 16 | ES Module Migration | 6 JS modules, 186 Vitest tests, mobile hardening, TTS UX |
+| 17 | Voice Conversation | Deepgram STT/TTS, WebSocket proxy, graceful degradation |
 
 Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 
 ---
 
 ## Session Logs
+
+### 2026-02-25: Phase 16 — ES Module Migration + Voice UX
+- **Branch**: `feat/phase16-esm-migration`
+- **Scope**: Monolithic JS refactor to 6 ES modules, 186 JS tests, CI integration, mobile-first fixes, TTS UX improvements
+- **Key changes**:
+  - `app.js` (380 lines) + `stream.js` (388 lines) → 6 modules: main.js, dom.js, stream.js, htmx-handlers.js, shortcuts.js, scaffold.js
+  - `voice.js` migrated to module loading with AudioWorklet PCM processor
+  - 11 mobile-first JS fixes: touch focus, scroll throttle, keyboard handling, escapeHtml quotes
+  - 186 Vitest tests (dom: 37, stream: 24, voice: 87, scaffold: 15, shortcuts: 12, htmx-handlers: 11)
+  - CI parallel `test-js` job with Node.js 22
+  - Floating TTS stop bar, concurrent TTS fix, mobile click reliability
+- **Results**: 2140+ total tests (1954 Python + 186 JS), all passing
 
 ### 2026-02-23: Security Audit Remediation — Full Sweep
 - **Branch**: `fix/codebase-improvements-2`

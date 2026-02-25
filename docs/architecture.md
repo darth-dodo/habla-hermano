@@ -23,8 +23,10 @@
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 | **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
 | **Phase 15** | SSE Streaming - Real-time token streaming via POST /chat/stream and stream.js | ✅ Completed |
+| **Phase 16** | ES Module Migration - JavaScript restructured into 6 ES modules with Vitest testing | ✅ Completed |
+| **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
 
-**Test Coverage**: 1809 tests (97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2140+ tests (1954 Python + 186 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -150,6 +152,8 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
 | **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean), mobile-responsive |
+| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time speech-to-text and text-to-speech via WebSocket proxy |
+| **JS Testing** | Vitest + jsdom | 186 tests with ~90% coverage on ES modules |
 
 ---
 
@@ -169,6 +173,9 @@ habla-hermano/
 │   │   ├── session.py           # [Implemented] Thread ID management
 │   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + user-authenticated)
 │   │   ├── streaming.py         # [Implemented] SSE streaming: StreamResult dataclass, stream_chat_events() async generator
+│   │   ├── cookies.py          # [Implemented] Centralized cookie utility (signing, secure flag)
+│   │   ├── middleware.py       # [Implemented] Security headers middleware (CSP, HSTS)
+│   │   ├── validation.py       # [Implemented] Shared input validation (language, level, days)
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] POST /chat, POST /chat/stream (SSE streaming)
@@ -176,7 +183,8 @@ habla-hermano/
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
 │   │       ├── review.py        # [Implemented] Spaced repetition review endpoints
-│   │       └── learn.py         # [Implemented] Learning path and recommendation endpoints
+│   │       ├── learn.py         # [Implemented] Learning path and recommendation endpoints
+│   │       └── voice.py         # [Implemented] WebSocket STT proxy + REST/WS TTS endpoints
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
@@ -254,8 +262,15 @@ habla-hermano/
 │   └── static/
 │       ├── css/
 │       └── js/
-│           ├── app.js           # [Implemented] HTMX handlers, optimistic UI, keyboard shortcuts
-│           └── stream.js        # [Implemented] SSE streaming client (fetch + ReadableStream for /chat/stream)
+│           ├── main.js            # [Implemented] App entry point, module orchestration
+│           ├── pcm-processor.js   # [Implemented] AudioWorklet PCM processor for mobile STT
+│           └── modules/
+│               ├── dom.js         # [Implemented] DOM utilities, scroll, focus, escapeHtml
+│               ├── htmx-handlers.js # [Implemented] HTMX event handlers (afterSwap, scroll, errors)
+│               ├── scaffold.js    # [Implemented] Click-to-insert word bank handler
+│               ├── shortcuts.js   # [Implemented] Keyboard shortcuts (/, Shift+Enter)
+│               ├── stream.js      # [Implemented] SSE streaming client with TTS speaker buttons
+│               └── voice.js       # [Implemented] Deepgram STT/TTS: mic capture, WebSocket proxy, playback
 │
 ├── tests/
 ├── data/

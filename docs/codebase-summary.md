@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.6 | **Tests**: 1810 | **Coverage**: 97% | **Date**: February 2026
+**Version**: 1.8 | **Tests**: 2140+ | **Coverage**: 97% | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -20,13 +20,15 @@ block-beta
         A["Frontend"] B["HTMX + Jinja2 + Tailwind (3 themes)"]
         C["Backend"] D["FastAPI with dependency injection"]
         E["AI System"] F["LangGraph with 3 nodes, conditional routing"]
-        G["LLM"] H["Claude Sonnet 4 (conversational + analysis)"]
+        G["LLM"] H["Claude Haiku 4.5 (conversational + analysis)"]
         I["Auth"] J["Supabase Auth with JWT validation"]
         K["Persistence"] L["PostgreSQL checkpointing (LangGraph)"]
         M["Config"] N["Environment-based Pydantic Settings"]
         O["Deployment"] P["Docker + Render.com"]
         Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
         S["UI"] T["Hamburger menu, lesson player, step navigation"]
+        U["Voice"] V["Deepgram STT (Nova-3) + TTS (Aura-2)"]
+        W["JS Testing"] X["Vitest + jsdom (186 tests, ~90% coverage)"]
     end
 ```
 
@@ -40,7 +42,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 1810 tests with 97% coverage, strict typing
+- ✅ 2140+ tests (Python + JS) with 97% coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -53,6 +55,10 @@ block-beta
 - ✅ Learning paths with structured progression: PathService, AdaptiveService (Phase 14)
 - ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
 - ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
+- ✅ Voice conversation: Deepgram STT/TTS via WebSocket proxy with graceful degradation
+- ✅ ES Module architecture: 6 JavaScript modules with Vitest test suite (186 tests)
+- ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
+- ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
 
 ---
 
@@ -83,7 +89,7 @@ block-beta
 ```mermaid
 flowchart TB
     subgraph Client
-        Browser["Browser<br/>(HTMX + stream.js + Tailwind)"]
+        Browser["Browser<br/>(HTMX + ES Modules + Tailwind)"]
     end
 
     subgraph Server["FastAPI Backend"]
@@ -96,7 +102,7 @@ flowchart TB
         Respond[respond_node]
         Scaffold[scaffold_node]
         Analyze[analyze_node]
-        Claude["Claude Sonnet 4"]
+        Claude["Claude Haiku 4.5"]
     end
 
     subgraph Storage["Persistence"]
@@ -120,8 +126,8 @@ flowchart TB
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Pipeline Framework | LangGraph | StateGraph with conditional routing for level-based behavior |
-| LLM | Claude Sonnet 4 | Superior language understanding for multiple languages |
-| Frontend | HTMX + Jinja2 + stream.js | Server-driven UI; chat uses SSE streaming via stream.js, other pages use HTMX |
+| LLM | Claude Haiku 4.5 | Superior language understanding for multiple languages |
+| Frontend | HTMX + Jinja2 + ES Modules | Server-driven UI; chat uses SSE streaming via modules/stream.js, other pages use HTMX |
 | Auth | Supabase Auth | Managed auth with JWT, easy integration |
 | Persistence | PostgreSQL + LangGraph | Conversation checkpointing with AsyncPostgresSaver |
 | Config | Pydantic Settings | Type-safe, environment-based configuration |
@@ -151,6 +157,20 @@ flowchart TB
 | Tailwind CSS | Utility-first styling |
 | CSS Variables | Theme system |
 | Alpine.js | Lightweight reactivity |
+
+### Voice
+
+| Technology | Purpose |
+|------------|---------|
+| Deepgram Nova-3 | Speech-to-text (STT) via WebSocket proxy |
+| Deepgram Aura-2 | Text-to-speech (TTS) via REST proxy |
+
+### JS Testing
+
+| Technology | Purpose |
+|------------|---------|
+| Vitest | JavaScript unit test runner |
+| jsdom | Browser environment simulation |
 
 ### DevOps
 
@@ -183,7 +203,8 @@ habla-hermano/
 │   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │       ├── review.py             # Spaced repetition review sessions (auth-only)
-│   │       └── learn.py              # Learning paths & adaptive recommendations
+│   │       ├── learn.py              # Learning paths & adaptive recommendations
+│   │       └── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -241,10 +262,17 @@ habla-hermano/
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/
-│           ├── app.js                # HTMX handlers, virtual keyboard handling
-│           └── stream.js             # SSE streaming client (fetch + ReadableStream for /chat/stream)
+│           ├── main.js               # Entry point, imports all modules
+│           ├── pcm-processor.js      # AudioWorklet for mobile STT
+│           └── modules/
+│               ├── dom.js            # DOM utilities, scroll, focus
+│               ├── htmx-handlers.js  # HTMX event handlers
+│               ├── scaffold.js       # Click-to-insert word bank
+│               ├── shortcuts.js      # Keyboard shortcuts
+│               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
+│               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 1810 tests, 97% coverage
+├── tests/                            # 2140+ tests (Python + JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -274,6 +302,7 @@ habla-hermano/
 │   │       ├── test_progress.py      # Progress route tests
 │   │       ├── test_review.py        # Review route tests
 │   │       ├── test_validation.py    # Validation tests
+│   │       ├── test_voice.py         # Voice STT/TTS route tests
 │   │       └── test_e2e.py           # End-to-end route tests
 │   ├── db/
 │   │   ├── test_models.py            # Database model tests
@@ -558,7 +587,7 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 |--------|----------|---------|
 | GET | `/` | Render chat page |
 | POST | `/chat` | Send message, get AI response (non-streaming fallback) |
-| POST | `/chat/stream` | Send message, get SSE streaming response (used by stream.js) |
+| POST | `/chat/stream` | Send message, get SSE streaming response (used by modules/stream.js) |
 | POST | `/new` | Start new conversation |
 | POST | `/auth/signup` | Register user |
 | POST | `/auth/login` | Authenticate |
@@ -677,9 +706,24 @@ score: INT
 }
 ```
 
+### JavaScript ES Module Architecture
+
+The frontend JavaScript is organized as ES Modules loaded via `main.js`:
+
+| Module | Path | Purpose |
+|--------|------|---------|
+| `main.js` | `src/static/js/main.js` | Entry point, imports and initializes all modules |
+| `dom.js` | `src/static/js/modules/dom.js` | DOM utilities, scroll throttle, touch focus |
+| `htmx-handlers.js` | `src/static/js/modules/htmx-handlers.js` | HTMX event handlers (afterSwap, etc.) |
+| `scaffold.js` | `src/static/js/modules/scaffold.js` | Click-to-insert word bank interactions |
+| `shortcuts.js` | `src/static/js/modules/shortcuts.js` | Keyboard shortcuts (Ctrl+Enter, etc.) |
+| `stream.js` | `src/static/js/modules/stream.js` | SSE streaming client (fetch + ReadableStream) |
+| `voice.js` | `src/static/js/modules/voice.js` | Deepgram STT/TTS (mic capture, playback, floating stop control) |
+| `pcm-processor.js` | `src/static/js/pcm-processor.js` | AudioWorklet for mobile STT PCM encoding |
+
 ### Chat Form Submission
 
-The chat form uses **stream.js** (fetch + ReadableStream) to POST to `/chat/stream` and parse SSE events for real-time token streaming. The form submit is intercepted by JavaScript; HTMX is **not** used for chat submission. Other parts of the UI (lessons, progress, review, learn) continue to use HTMX for partial updates.
+The chat form uses **modules/stream.js** (fetch + ReadableStream) to POST to `/chat/stream` and parse SSE events for real-time token streaming. The form submit is intercepted by JavaScript; HTMX is **not** used for chat submission. Other parts of the UI (lessons, progress, review, learn) continue to use HTMX for partial updates.
 
 ### HTMX Pattern (non-chat pages)
 
@@ -740,7 +784,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (1810 tests)
+### Coverage: 97% (2140+ tests: Python + JS)
 
 ### Test Categories
 
@@ -858,7 +902,10 @@ src/api/main.py              # FastAPI app entry
 src/api/config.py            # Settings
 src/api/routes/chat.py       # Chat endpoints (POST /chat, POST /chat/stream)
 src/api/streaming.py         # SSE streaming logic
-src/static/js/stream.js      # SSE client (fetch + ReadableStream)
+src/static/js/main.js        # JS entry point (imports all modules)
+src/static/js/modules/stream.js  # SSE client (fetch + ReadableStream)
+src/static/js/modules/voice.js   # Deepgram STT/TTS client
+src/api/routes/voice.py      # WebSocket STT proxy + REST TTS endpoint
 src/api/routes/progress.py   # Progress dashboard endpoints
 src/agent/graph.py           # LangGraph pipeline
 src/agent/nodes/*.py         # Pipeline nodes
@@ -892,4 +939,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.6 — Habla Hermano (1810 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations)*
+*Crash Course v1.8 — Habla Hermano (2140+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture)*
