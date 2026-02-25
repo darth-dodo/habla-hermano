@@ -116,19 +116,15 @@
         const bubble = wrapper.querySelector('.bg-ai');
         if (!bubble) return;
 
-        // Get the current language and level from the hidden form inputs
+        // Get the current language from the hidden form inputs
         const languageInput = document.querySelector('input[name="language"]');
         const language = languageInput ? languageInput.value : 'es';
-        const levelInput = document.querySelector('input[name="level"]');
-        const level = levelInput ? levelInput.value : 'A1';
-        const speedMap = { 'A0': '0.75', 'A1': '0.85', 'A2': '1.0', 'B1': '1.0' };
 
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'voice-speak-btn mt-2 p-1.5 text-text-subtle hover:text-accent transition-colors duration-150 rounded-lg hover:bg-surface-overlay';
         btn.setAttribute('data-text', text);
         btn.setAttribute('data-language', language);
-        btn.setAttribute('data-speed', speedMap[level] || '1.0');
         btn.setAttribute('aria-label', 'Listen to response');
         btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
             + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
@@ -196,11 +192,17 @@
                 if (Math.random() < 0.3) window.scrollToBottom();
                 break;
 
-            case 'response_complete':
+            case 'response_complete': {
                 finalizeBubble(bubbleId);
-                addSpeakerButton(bubbleId, data.content || '');
+                // Prefer server-sent content; fall back to what was streamed into the bubble
+                const ttsText = data.content || (function() {
+                    const el = document.getElementById(bubbleId + '-text');
+                    return el ? el.textContent.trim() : '';
+                }());
+                addSpeakerButton(bubbleId, ttsText);
                 window.scrollToBottom();
                 break;
+            }
 
             case 'scaffolding':
             case 'grammar':

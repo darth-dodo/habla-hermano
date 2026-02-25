@@ -484,15 +484,17 @@
     VoiceManager.prototype.handleSpeakClick = function(btn) {
         var text = btn.dataset.text;
         var language = btn.dataset.language || 'es';
-        var speed = parseFloat(btn.dataset.speed) || DEFAULT_TTS_SPEED;
+        // Read live speed from picker; fall back to button's data-speed, then default
+        var picker = document.getElementById('tts-speed-picker');
+        var speed = parseFloat((picker && picker.dataset.ttsSpeed) || btn.dataset.speed) || DEFAULT_TTS_SPEED;
 
         // Clamp speed to safe range (0.25x to 2.0x)
         speed = Math.max(0.25, Math.min(2.0, speed));
 
         if (!text) return;
 
-        // If already playing, stop
-        if (btn.classList.contains('voice-playing')) {
+        // If already playing or loading, stop
+        if (btn.classList.contains('voice-playing') || btn.classList.contains('voice-loading')) {
             this._stopTTS(btn);
             return;
         }
@@ -545,15 +547,9 @@
      */
     VoiceManager.prototype._stopAllTTS = function() {
         var self = this;
-        var playingBtns = document.querySelectorAll('.voice-speak-btn.voice-playing');
-        playingBtns.forEach(function(b) { self._stopTTS(b); });
-
-        // Also clean up any orphaned state
-        this._ttsPlaying = false;
-        if (this._ttsWs) {
-            try { this._ttsWs.close(); } catch (_) {}
-            this._ttsWs = null;
-        }
+        // Stop buttons in loading or playing state
+        var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
+        activeBtns.forEach(function(b) { self._stopTTS(b); });
     };
 
     /**
@@ -573,6 +569,7 @@
         var started = false;
         var totalScheduled = 0;
         var lastScheduledBuffer = null;
+        var wsDone = false; // true once WS closes normally (all audio sent)
 
         var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         var ws = new WebSocket(
@@ -583,13 +580,14 @@
 
         function cleanup() {
             self._ttsPlaying = false;
-            self._ttsWs = null;
+            if (self._ttsWs === ws) self._ttsWs = null;
             btn.classList.remove('voice-playing', 'voice-loading');
             btn.innerHTML = SPEAKER_ICON;
             if (audioCtx.state !== 'closed') {
                 audioCtx.close().catch(function() {});
             }
-            self._audioCtx = null;
+            // Only clear instance ref if it still points to this session's context
+            if (self._audioCtx === audioCtx) self._audioCtx = null;
         }
 
         ws.onopen = function() {
@@ -635,7 +633,7 @@
                 // Detect end of playback on the last scheduled buffer
                 source.onended = function() {
                     totalScheduled--;
-                    if (totalScheduled <= 0 && ws.readyState !== WebSocket.OPEN) {
+                    if (totalScheduled <= 0 && wsDone) {
                         cleanup();
                     }
                 };
@@ -667,8 +665,11 @@
                 } else {
                     self._showTooltipError(btn, 'Could not play audio');
                 }
-            } else if (totalScheduled <= 0) {
-                // Normal close after all audio played
+                return;
+            }
+            // Mark WS as done; if all buffers already finished, clean up now
+            wsDone = true;
+            if (totalScheduled <= 0) {
                 cleanup();
             }
             // Otherwise, the last source.onended will trigger cleanup
