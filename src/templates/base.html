@@ -705,9 +705,8 @@
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', path='js/app.js') }}"></script>
-    <script src="{{ url_for('static', path='js/stream.js') }}"></script>
+    <!-- Custom JavaScript (ES Modules) -->
+    <script type="module" src="{{ url_for('static', path='js/main.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

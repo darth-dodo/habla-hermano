@@ -1,0 +1,114 @@
+/**
+ * Habla Hermano - DOM Utilities Module
+ * Phase 16: Shared DOM accessors and UI helpers.
+ */
+
+const CONFIG = {
+    scrollBehavior: 'smooth',
+    inputFocusDelay: 100,
+    scrollDelay: 50,
+};
+
+// ============================================
+// Element Accessors
+// Functions not cached refs — elements may not exist on all pages
+// ============================================
+
+export function getChatContainer() { return document.getElementById('chat-container'); }
+export function getChatMessages() { return document.getElementById('chat-messages'); }
+export function getMessageInput() { return document.getElementById('message-input'); }
+export function getChatForm() { return document.getElementById('chat-form'); }
+export function getLoadingIndicator() { return document.getElementById('loading-indicator'); }
+
+// ============================================
+// Utility Functions
+// ============================================
+
+/**
+ * Scroll chat container to bottom
+ * @param {boolean} smooth - Use smooth scrolling
+ */
+export function scrollToBottom(smooth = true) {
+    const chatContainer = getChatContainer();
+    if (!chatContainer) return;
+
+    setTimeout(() => {
+        chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: smooth ? CONFIG.scrollBehavior : 'auto'
+        });
+    }, CONFIG.scrollDelay);
+}
+
+/**
+ * Focus the message input field
+ */
+export function focusInput() {
+    const messageInput = getMessageInput();
+    if (!messageInput) return;
+
+    setTimeout(() => {
+        messageInput.focus();
+    }, CONFIG.inputFocusDelay);
+}
+
+/**
+ * Clear the message input field
+ */
+export function clearInput() {
+    const messageInput = getMessageInput();
+    if (!messageInput) return;
+
+    messageInput.value = '';
+}
+
+/**
+ * Show loading indicator
+ */
+export function showLoading() {
+    const loadingIndicator = getLoadingIndicator();
+    if (!loadingIndicator) return;
+
+    loadingIndicator.classList.remove('hidden');
+    scrollToBottom();
+}
+
+/**
+ * Hide loading indicator
+ */
+export function hideLoading() {
+    const loadingIndicator = getLoadingIndicator();
+    if (!loadingIndicator) return;
+
+    loadingIndicator.classList.add('hidden');
+}
+
+/**
+ * Add user message bubble immediately (optimistic UI)
+ * @param {string} message - The user's message
+ */
+export function addUserMessage(message) {
+    const chatMessages = getChatMessages();
+    if (!chatMessages || !message.trim()) return;
+
+    const userBubbleHtml = `
+        <div class="message-enter flex justify-end mb-6" data-user-message>
+            <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm">
+                <p class="text-user-text leading-relaxed">${escapeHtml(message)}</p>
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', userBubbleHtml);
+    scrollToBottom();
+}
+
+/**
+ * Escape HTML to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+export function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
