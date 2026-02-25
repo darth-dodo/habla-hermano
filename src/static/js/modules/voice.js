@@ -545,13 +545,13 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
 
     if (!text) return;
 
-    // If already playing or loading, stop
+    // If this button is already playing or loading, stop it (toggle off)
     if (btn.classList.contains('voice-playing') || btn.classList.contains('voice-loading')) {
         this._stopTTS(btn);
         return;
     }
 
-    // Stop any other playing audio
+    // Stop any currently active TTS before starting a new one
     this._stopAllTTS();
 
     var voice = VOICES[language] || VOICES.es;
@@ -608,13 +608,36 @@ VoiceManager.prototype._stopTTS = function(btn) {
 };
 
 /**
- * Stop all currently playing TTS buttons.
+ * Stop all currently playing TTS — both DOM buttons and orphaned WebSocket.
  */
 VoiceManager.prototype._stopAllTTS = function() {
     var self = this;
     // Stop buttons in loading or playing state
     var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
     activeBtns.forEach(function(b) { self._stopTTS(b); });
+
+    // Also kill any orphaned WebSocket (e.g. WS connecting before button got class)
+    if (this._ttsWs) {
+        this._ttsPlaying = false;
+        if (this._ttsWs.readyState === WebSocket.OPEN || this._ttsWs.readyState === WebSocket.CONNECTING) {
+            try { this._ttsWs.close(); } catch (_) {}
+        }
+        this._ttsWs = null;
+    }
+
+    // Stop any REST fallback audio
+    if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio.onended = null;
+        this.currentAudio.onerror = null;
+        this.currentAudio = null;
+    }
+    if (this.currentBlobUrl) {
+        URL.revokeObjectURL(this.currentBlobUrl);
+        this.currentBlobUrl = null;
+    }
+
+    this._hideStopBar();
 };
 
 // ============================================
