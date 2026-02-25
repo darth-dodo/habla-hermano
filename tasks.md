@@ -172,6 +172,34 @@ Remediated on 2026-02-23 via `fix/codebase-improvements-2` branch using 10 paral
 
 ---
 
+### JavaScript Quality Improvements (2026-02-25 audit)
+
+Identified during code review of `src/static/js/` (app.js, stream.js, voice.js — 1549 lines total).
+
+#### Priority: Medium
+
+| # | Task | File | Notes |
+|---|------|------|-------|
+| J1 | Remove dead HTMX event handlers | `app.js:144-156` | `onBeforeRequest` and `onAfterRequest` are no-ops — registered in `init()` but only return early. Safe to delete. |
+| J2 | Cache DOM elements at init | `app.js` | `getElements()` fires up to 5 `getElementById` calls on every utility call. Cache into a module-level object in `init()` instead. |
+| J3 | Fix scroll throttle using `Math.random()` | `stream.js:196` | `if (Math.random() < 0.3) scrollToBottom()` is non-deterministic. Replace with timestamp-based throttle or `requestAnimationFrame`. |
+| J4 | Cache send button reference in `stream.js` | `stream.js:237,319` | `querySelector('#chat-form button[type="submit"]')` called in both `streamChat()` and `finishStreaming()`. Cache once at init like `voice.js` does. |
+
+#### Priority: Low / Cleanup
+
+| # | Task | File | Notes |
+|---|------|------|-------|
+| J5 | Remove `console.log` in production | `app.js:274` | `console.log('Habla Hermano initialized')` fires on every page load. Remove or guard behind `DEBUG` flag. |
+| J6 | Remove unused `welcomeMessage` variable | `app.js:344` | Assigned from `querySelector` but never read. |
+| J7 | Standardize `var` → `const`/`let` in `voice.js` | `voice.js` | `voice.js` is ES5 (`var`, prototype chains) while `app.js`/`stream.js` use `const`/`let`. Either modernize or document the intentional ES5 choice. See ADR-009. |
+| J8 | Sanitize HTMX error detail before console logging | `app.js:181` | `console.error('HTMX request failed:', event.detail)` may log internal server details. Log a sanitized summary instead. |
+
+#### Priority: High Effort (Future)
+
+| # | Task | Notes |
+|---|------|-------|
+| J9 | Add JS unit tests | SSE parsing (`parseSSEEvent`) and voice state machine (`VoiceManager`) are complex enough to warrant Vitest/Jest tests. No JS tests currently exist. See ADR-009 for ESM migration which would enable this. |
+
 ### Future Ideas
 
 | Task | Notes |

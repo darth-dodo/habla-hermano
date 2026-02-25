@@ -66,6 +66,19 @@
         if (!messageInput) return;
 
         messageInput.value = '';
+        // Reset textarea height to single row
+        messageInput.style.height = 'auto';
+    }
+
+    /**
+     * Auto-resize textarea to fit content (max 5 rows)
+     */
+    function autoResizeInput() {
+        const { messageInput } = getElements();
+        if (!messageInput) return;
+
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
     }
 
     /**
@@ -239,6 +252,19 @@
         // Keyboard shortcuts
         document.addEventListener('keydown', handleKeyboardShortcuts);
 
+        // Textarea auto-resize and Enter-to-submit
+        const { messageInput } = getElements();
+        if (messageInput && messageInput.tagName === 'TEXTAREA') {
+            messageInput.addEventListener('input', autoResizeInput);
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const form = document.getElementById('chat-form');
+                    if (form) form.requestSubmit();
+                }
+            });
+        }
+
         // Initial scroll to bottom (in case of pre-loaded messages)
         scrollToBottom(false);
 
@@ -280,6 +306,7 @@
         messageInput.focus();
         const newPos = start + insertText.length;
         messageInput.selectionStart = messageInput.selectionEnd = newPos;
+        autoResizeInput();
     }
 
     /**
@@ -296,6 +323,7 @@
         // Focus and place cursor at end
         messageInput.focus();
         messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
+        autoResizeInput();
     }
 
     // ============================================
@@ -328,6 +356,7 @@
         // Clear input
         if (messageInput) {
             messageInput.value = '';
+            messageInput.style.height = 'auto';
         }
     }
 
@@ -348,6 +377,7 @@
     window.showLoading = showLoading;
     window.hideLoading = hideLoading;
     window.clearInput = clearInput;
+    window.autoResizeInput = autoResizeInput;
     window.scrollToBottom = scrollToBottom;
     window.focusInput = focusInput;
     window.insertWord = insertWord;

@@ -116,7 +116,7 @@
         const bubble = wrapper.querySelector('.bg-ai');
         if (!bubble) return;
 
-        // Get the current language from the hidden form input
+        // Get the current language from the hidden form inputs
         const languageInput = document.querySelector('input[name="language"]');
         const language = languageInput ? languageInput.value : 'es';
 
@@ -192,11 +192,17 @@
                 if (Math.random() < 0.3) window.scrollToBottom();
                 break;
 
-            case 'response_complete':
+            case 'response_complete': {
                 finalizeBubble(bubbleId);
-                addSpeakerButton(bubbleId, data.content || '');
+                // Prefer server-sent content; fall back to what was streamed into the bubble
+                const ttsText = data.content || (function() {
+                    const el = document.getElementById(bubbleId + '-text');
+                    return el ? el.textContent.trim() : '';
+                }());
+                addSpeakerButton(bubbleId, ttsText);
                 window.scrollToBottom();
                 break;
+            }
 
             case 'scaffolding':
             case 'grammar':
