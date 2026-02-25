@@ -83,6 +83,7 @@ function VoiceManager() {
     this._micWrapper = null;
     this._processingTimeout = null;
     this._processingIndicator = null;
+    this._stopBar = null;
 }
 
 VoiceManager.prototype.init = function() {
@@ -603,6 +604,7 @@ VoiceManager.prototype._stopTTS = function(btn) {
 
     btn.classList.remove('voice-playing', 'voice-loading');
     btn.innerHTML = SPEAKER_ICON;
+    this._hideStopBar();
 };
 
 /**
@@ -613,6 +615,50 @@ VoiceManager.prototype._stopAllTTS = function() {
     // Stop buttons in loading or playing state
     var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
     activeBtns.forEach(function(b) { self._stopTTS(b); });
+};
+
+// ============================================
+// TTS — Floating Stop Bar
+// ============================================
+
+/**
+ * Show a floating stop bar above the input area during TTS playback.
+ */
+VoiceManager.prototype._showStopBar = function() {
+    if (this._stopBar) return; // Already visible
+
+    var self = this;
+    var bar = document.createElement('div');
+    bar.className = 'voice-stop-bar';
+    bar.innerHTML = '<button type="button" class="voice-stop-btn" aria-label="Stop audio playback">'
+        + '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
+        + '<rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" />'
+        + '</svg>'
+        + '<span>Stop</span>'
+        + '</button>';
+
+    bar.querySelector('.voice-stop-btn').addEventListener('click', function() {
+        self._stopAllTTS();
+    });
+
+    // Insert before the footer
+    var footer = document.querySelector('footer');
+    if (footer && footer.parentNode) {
+        footer.parentNode.insertBefore(bar, footer);
+    } else {
+        document.body.appendChild(bar);
+    }
+    this._stopBar = bar;
+};
+
+/**
+ * Hide the floating stop bar.
+ */
+VoiceManager.prototype._hideStopBar = function() {
+    if (this._stopBar) {
+        this._stopBar.remove();
+        this._stopBar = null;
+    }
 };
 
 /**
@@ -646,6 +692,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
         btn.innerHTML = SPEAKER_ICON;
         // Don't close shared AudioContext — it's reused across TTS sessions
         if (self._audioCtx === audioCtx) self._audioCtx = null;
+        self._hideStopBar();
     }
 
     ws.onopen = function() {
@@ -694,6 +741,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
                 btn.classList.remove('voice-loading');
                 btn.classList.add('voice-playing');
                 btn.innerHTML = SPEAKER_PLAYING_ICON;
+                self._showStopBar();
             }
 
             // Detect end of playback on the last scheduled buffer
@@ -767,6 +815,7 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
         btn.classList.remove('voice-loading');
         btn.classList.add('voice-playing');
         btn.innerHTML = SPEAKER_PLAYING_ICON;
+        self._showStopBar();
 
         function done() {
             URL.revokeObjectURL(audioUrl);
@@ -774,6 +823,7 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
             btn.classList.remove('voice-playing');
             btn.innerHTML = SPEAKER_ICON;
             self.currentAudio = null;
+            self._hideStopBar();
         }
 
         audio.onended = done;
