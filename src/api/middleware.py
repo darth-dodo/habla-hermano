@@ -20,7 +20,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - X-Content-Type-Options: nosniff
     - X-XSS-Protection: 1; mode=block
     - Referrer-Policy: strict-origin-when-cross-origin
-    - Permissions-Policy: camera=(), microphone=(), geolocation=()
+    - Permissions-Policy: camera=(), microphone=(self), geolocation=()
     - Content-Security-Policy: (allows HTMX, Alpine.js, Tailwind CDN)
     - Strict-Transport-Security: (production only)
     """
@@ -39,15 +39,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
 
         # CSP: Allow inline scripts/styles for HTMX and Alpine.js,
-        # CDN resources for Tailwind and HTMX, WebSocket for voice STT
+        # CDN resources for Tailwind and HTMX, WebSocket for voice STT/TTS
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
-            "connect-src 'self' ws://localhost:* wss://localhost:*; "
-            "media-src 'self' blob:"
+            "media-src 'self' blob:; "
+            "connect-src 'self' ws: wss:"
         )
 
         # HSTS only in production (HTTPS)
