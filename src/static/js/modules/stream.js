@@ -16,6 +16,7 @@ import { getChatMessages, scrollToBottom, focusInput, clearInput, addUserMessage
 let isStreaming = false;
 let currentController = null;
 let bubbleCounter = 0;
+let tokenCounter = 0;
 
 // ============================================
 // SSE Event Parsing
@@ -187,8 +188,8 @@ function handleStreamEvent(event, dataStr, bubbleId) {
     switch (event) {
         case 'token':
             appendToken(bubbleId, data.content || '');
-            // Throttled scroll — only scroll every few tokens
-            if (Math.random() < 0.3) scrollToBottom();
+            // Throttled scroll — scroll every ~3 tokens to reduce layout thrash
+            if (++tokenCounter % 3 === 0) scrollToBottom();
             break;
 
         case 'response_complete':
@@ -228,6 +229,7 @@ function handleStreamEvent(event, dataStr, bubbleId) {
 async function streamChat(formData) {
     if (isStreaming) return;
     isStreaming = true;
+    tokenCounter = 0;
 
     const sendBtn = document.querySelector('#chat-form button[type="submit"]');
     if (sendBtn) sendBtn.disabled = true;
@@ -296,6 +298,8 @@ async function streamChat(formData) {
         finalizeBubble(bubbleId);
         if (err.name === 'AbortError') {
             showStreamError('Response timed out. Please try again.');
+        } else if (!navigator.onLine) {
+            showStreamError('You appear to be offline. Check your connection.');
         } else {
             showStreamError('Connection lost. Please try again.');
         }

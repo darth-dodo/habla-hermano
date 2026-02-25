@@ -21,6 +21,8 @@ var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
 var TTS_SAMPLE_RATE = 24000; // Deepgram TTS output sample rate
 var DEFAULT_TTS_SPEED = 1.0; // 0.5 = half speed, 1.0 = normal, 2.0 = double
 
+var _sharedTtsCtx = null; // Reuse AudioContext for TTS (Safari limits to 4 instances)
+
 var MIC_ICON = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
     + '<path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />'
     + '<path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2" />'
@@ -70,6 +72,7 @@ function VoiceManager() {
     // STT audio capture state
     this._stream = null;
     this._scriptProcessor = null;
+    this._workletNode = null;
     this._sttAudioCtx = null;
     this._finalTranscript = ''; // Accumulated final transcripts
     this._analyser = null;
@@ -107,6 +110,16 @@ VoiceManager.prototype.init = function() {
     document.addEventListener('click', function(e) {
         var btn = e.target.closest('.voice-speak-btn');
         if (btn) self.handleSpeakClick(btn);
+    });
+
+    // Handle page visibility changes (background/foreground)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            // iOS kills MediaStream tracks when backgrounded — stop cleanly
+            if (self.isRecording) {
+                self.stopRecording();
+            }
+        }
     });
 };
 
@@ -170,6 +183,17 @@ VoiceManager.prototype.startRecording = function() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
         self._stream = stream;
 
+        // Monitor track state for phone calls, screen lock, permission revocation
+        var audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.addEventListener('ended', function() {
+                if (self.isRecording) {
+                    self.stopRecording();
+                    self.showMicError('Recording interrupted — tap mic to restart');
+                }
+            });
+        }
+
         // Create AudioContext for both PCM capture and level bars
         self._sttAudioCtx = new Ctx();
         var source = self._sttAudioCtx.createMediaStreamSource(stream);
@@ -180,25 +204,35 @@ VoiceManager.prototype.startRecording = function() {
         self._analyser.smoothingTimeConstant = 0.7;
         source.connect(self._analyser);
 
-        // ScriptProcessor captures raw PCM samples for Deepgram
-        // 4096 buffer size balances latency (~93ms at 44.1kHz) vs efficiency
-        var processor = self._sttAudioCtx.createScriptProcessor(4096, 1, 1);
-        self._scriptProcessor = processor;
-
-        // Set up PCM capture callback immediately (before WS connects).
-        // ScriptProcessor may not fire onaudioprocess if set after processing starts.
-        // Gate actual sending on WS readiness.
-        processor.onaudioprocess = function(e) {
+        // Audio capture: prefer AudioWorklet (mobile-safe), fall back to ScriptProcessor
+        function sendPCM(float32) {
             if (!self.isRecording || !self.ws || self.ws.readyState !== WebSocket.OPEN) return;
-            var inputData = e.inputBuffer.getChannelData(0);
-            var downsampled = downsample(inputData, self._sttAudioCtx.sampleRate, STT_SAMPLE_RATE);
-            var pcmBuffer = floatTo16BitPCM(downsampled);
-            self.ws.send(pcmBuffer);
-        };
+            var downsampled = downsample(float32, self._sttAudioCtx.sampleRate, STT_SAMPLE_RATE);
+            self.ws.send(floatTo16BitPCM(downsampled));
+        }
 
-        source.connect(processor);
-        // Connect to destination to keep the processor alive (output is silent PCM)
-        processor.connect(self._sttAudioCtx.destination);
+        function setupScriptProcessor() {
+            var processor = self._sttAudioCtx.createScriptProcessor(4096, 1, 1);
+            self._scriptProcessor = processor;
+            processor.onaudioprocess = function(e) {
+                sendPCM(e.inputBuffer.getChannelData(0));
+            };
+            source.connect(processor);
+            processor.connect(self._sttAudioCtx.destination);
+        }
+
+        if (self._sttAudioCtx.audioWorklet) {
+            self._sttAudioCtx.audioWorklet.addModule('/static/js/pcm-processor.js').then(function() {
+                var workletNode = new AudioWorkletNode(self._sttAudioCtx, 'pcm-processor');
+                self._workletNode = workletNode;
+                workletNode.port.onmessage = function(e) { sendPCM(e.data); };
+                source.connect(workletNode);
+            }).catch(function() {
+                setupScriptProcessor(); // Fallback for module load failure
+            });
+        } else {
+            setupScriptProcessor(); // Fallback for browsers without AudioWorklet
+        }
 
         var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         self.ws = new WebSocket(
@@ -259,6 +293,8 @@ VoiceManager.prototype.startRecording = function() {
     }).catch(function(err) {
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
             self.showMicError('Microphone access needed for voice input');
+        } else if (err.name === 'NotReadableError') {
+            self.showMicError('Microphone is in use by another app');
         } else {
             self.showMicError('Could not access microphone');
         }
@@ -277,14 +313,27 @@ VoiceManager.prototype.stopRecording = function() {
         this._scriptProcessor = null;
     }
 
+    // Disconnect AudioWorklet node
+    if (this._workletNode) {
+        this._workletNode.port.postMessage('stop');
+        try { this._workletNode.disconnect(); } catch (_) {}
+        this._workletNode = null;
+    }
+
     // Stop microphone stream tracks
     if (this._stream) {
         this._stream.getTracks().forEach(function(t) { t.stop(); });
         this._stream = null;
     }
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.close();
+    if (this.ws) {
+        if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+            this.ws.close(1000, 'Recording stopped');
+        }
+        this.ws.onmessage = null;
+        this.ws.onerror = null;
+        this.ws.onclose = null;
+        this.ws = null;
     }
     if (this.chatInput) this.chatInput.classList.remove('voice-interim');
     this._showProcessing();
@@ -508,8 +557,22 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
     btn.classList.add('voice-loading');
 
     // Use WebSocket streaming TTS (low latency) with AudioContext fallback check
-    if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
-        this._streamTTS(btn, text, voice, speed);
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+        // Reuse shared TTS AudioContext (Safari limits to 4 instances per page)
+        if (!_sharedTtsCtx || _sharedTtsCtx.state === 'closed') {
+            _sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
+        }
+        // Resume MUST happen here, in the click handler, for mobile autoplay policy
+        var ctx = _sharedTtsCtx;
+        if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
+            var self = this;
+            ctx.resume().then(function() {
+                self._streamTTS(btn, text, voice, speed, ctx);
+            });
+        } else {
+            this._streamTTS(btn, text, voice, speed, ctx);
+        }
     } else {
         this._restTTS(btn, text, voice, speed);
     }
@@ -535,10 +598,8 @@ VoiceManager.prototype._stopTTS = function(btn) {
         URL.revokeObjectURL(this.currentBlobUrl);
         this.currentBlobUrl = null;
     }
-    if (this._audioCtx && this._audioCtx.state !== 'closed') {
-        this._audioCtx.close().catch(function() {});
-        this._audioCtx = null;
-    }
+    // Don't close shared AudioContext — it's reused across TTS sessions
+    this._audioCtx = null;
 
     btn.classList.remove('voice-playing', 'voice-loading');
     btn.innerHTML = SPEAKER_ICON;
@@ -559,10 +620,8 @@ VoiceManager.prototype._stopAllTTS = function() {
  * chunks, and plays them via AudioContext for near-instant playback.
  * @param {number} speed - Playback rate (0.25 to 2.0, default 1.0)
  */
-VoiceManager.prototype._streamTTS = function(btn, text, voice, speed) {
+VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) {
     var self = this;
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    var audioCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
     this._audioCtx = audioCtx;
     this._ttsPlaying = true;
 
@@ -585,10 +644,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed) {
         if (self._ttsWs === ws) self._ttsWs = null;
         btn.classList.remove('voice-playing', 'voice-loading');
         btn.innerHTML = SPEAKER_ICON;
-        if (audioCtx.state !== 'closed') {
-            audioCtx.close().catch(function() {});
-        }
-        // Only clear instance ref if it still points to this session's context
+        // Don't close shared AudioContext — it's reused across TTS sessions
         if (self._audioCtx === audioCtx) self._audioCtx = null;
     }
 
@@ -599,6 +655,14 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed) {
 
     ws.onmessage = function(event) {
         if (!self._ttsPlaying) return;
+
+        // Safari may deliver ArrayBuffer as Blob despite binaryType='arraybuffer'
+        if (event.data instanceof Blob) {
+            event.data.arrayBuffer().then(function(ab) {
+                ws.onmessage({ data: ab });
+            });
+            return;
+        }
 
         if (event.data instanceof ArrayBuffer) {
             // Binary audio chunk — linear16 PCM, 24kHz, mono
@@ -736,6 +800,8 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
 // Initialization
 // ============================================
 function init() {
+    // Prevent double-init if script is re-executed (e.g. HTMX swap)
+    if (window.voiceManager) return;
     var manager = new VoiceManager();
     manager.init();
     window.voiceManager = manager;

@@ -42,10 +42,16 @@ if (document.readyState === 'loading') {
 // Virtual Keyboard Handling (mobile)
 // ============================================
 if ('visualViewport' in window) {
+    let vkPending = false;
     window.visualViewport.addEventListener('resize', () => {
-        const chatContainer = document.getElementById('chat-container');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+        if (vkPending) return;
+        vkPending = true;
+        requestAnimationFrame(() => {
+            vkPending = false;
+            const chatContainer = document.getElementById('chat-container');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
     });
 }

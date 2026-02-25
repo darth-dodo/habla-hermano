@@ -41,15 +41,29 @@ export function scrollToBottom(smooth = true) {
 }
 
 /**
- * Focus the message input field
+ * Focus the message input field.
+ * On touch devices, skip auto-focus to avoid popping up the virtual keyboard
+ * unexpectedly (e.g. after page load or message send).
  */
 export function focusInput() {
+    if ('ontouchstart' in window && !focusInput._explicit) return;
+    focusInput._explicit = false;
+
     const messageInput = getMessageInput();
     if (!messageInput) return;
 
     setTimeout(() => {
         messageInput.focus();
     }, CONFIG.inputFocusDelay);
+}
+
+/**
+ * Focus the message input field even on mobile.
+ * Use this when the user has explicitly requested focus (e.g. pressing '/' shortcut).
+ */
+export function focusInputExplicit() {
+    focusInput._explicit = true;
+    focusInput();
 }
 
 /**
@@ -103,12 +117,14 @@ export function addUserMessage(message) {
 }
 
 /**
- * Escape HTML to prevent XSS
+ * Escape HTML to prevent XSS.
+ * Escapes &, <, >, " and ' so the result is safe in both
+ * element content and attribute values.
  * @param {string} text - Text to escape
  * @returns {string} Escaped text
  */
 export function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

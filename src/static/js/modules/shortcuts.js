@@ -3,7 +3,7 @@
  * Phase 16: Keyboard shortcut handling.
  */
 
-import { getMessageInput, getChatForm, focusInput } from './dom.js';
+import { getMessageInput, getChatForm, focusInputExplicit } from './dom.js';
 
 // ============================================
 // Keyboard Shortcuts
@@ -41,10 +41,11 @@ function handleKeyboardShortcuts(event) {
         }
     }
 
-    // '/' to focus input (when not already focused)
-    if (event.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    // '/' to focus input (when not already in a text field)
+    if (event.key === '/' && document.activeElement.tagName !== 'INPUT'
+        && document.activeElement.tagName !== 'TEXTAREA') {
         event.preventDefault();
-        focusInput();
+        focusInputExplicit();
     }
 }
 

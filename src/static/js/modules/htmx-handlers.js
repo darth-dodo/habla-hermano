@@ -16,10 +16,6 @@ import { getChatMessages, getMessageInput, scrollToBottom, hideLoading, escapeHt
  * After HTMX swaps content into DOM
  */
 function onAfterSwap(event) {
-    // Remove any user message we added optimistically (server response includes it)
-    // Actually, we need to handle this differently - server only returns AI response now
-
-    // Scroll to bottom after new message is added
     scrollToBottom();
 
     // Add animation class to new messages
