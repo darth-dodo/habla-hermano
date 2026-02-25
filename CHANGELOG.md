@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-02-25
+
+### Added - Phase 16: ES Module JavaScript Refactor & Phase 17 Voice Improvements
+- **ES Module architecture**: Refactored monolithic `app.js` (380 lines) and `stream.js` (388 lines) into 6 focused ES modules: `main.js`, `dom.js`, `stream.js`, `htmx-handlers.js`, `shortcuts.js`, `scaffold.js`
+- **AudioWorklet PCM processor** (`src/static/js/pcm-processor.js`): Mobile-safe audio capture for STT with ScriptProcessor fallback
+- **JavaScript test suite**: 186 Vitest tests across 6 test files with ~90% coverage on tested modules
+- **CI/CD JavaScript tests**: Parallel `test-js` job in GitHub Actions with Node.js 22 and Vitest
+- **Floating TTS stop button**: Always-visible stop control during text-to-speech playback
+- **TTS mutual exclusion**: Only one TTS session can play at a time; new requests stop the previous
+
+### Changed
+- **Voice module mobile hardening**: AudioWorklet with ScriptProcessor fallback, track interruption recovery, visibility change handling, double-init guard
+- **Streaming module improvements**: Deterministic scroll throttle (`tokenCounter % 3`), offline detection, speaker button with `pointer-events-none` SVGs
+- **DOM utilities**: Touch-aware `focusInput()` skips keyboard on mobile, added `focusInputExplicit()` for explicit user actions, `escapeHtml()` now escapes quotes
+- **Keyboard shortcuts**: Skip `/` shortcut in textarea elements, use explicit focus
+- **Virtual keyboard handling**: `requestAnimationFrame`-throttled `visualViewport.resize` handler
+
+### Fixed
+- **TTS click reliability on mobile**: Added `pointer-events-none` to SVG icons inside speaker buttons, increased touch target, removed `pointer-events: none` from loading state CSS
+- **Concurrent TTS race condition**: `_stopAllTTS()` now kills orphaned WebSockets in CONNECTING state and stops REST fallback audio
+
+## [0.15.0] - 2026-02-24
+
+### Added - Phase 17: Voice Conversation (Deepgram STT/TTS)
+- **Speech-to-text** via WebSocket proxy (`/ws/transcribe`): Browser MediaRecorder captures audio, FastAPI proxies to Deepgram Nova-3 with code-switching support
+- **Text-to-speech** via REST proxy (`POST /api/speak`): Streams audio from Deepgram Aura-2 as audio/mpeg
+- **WebSocket TTS streaming** (`/ws/speak`): Low-latency PCM audio streaming with AudioContext playback
+- **VoiceManager** (`src/static/js/voice.js`): Mic capture, STT WebSocket, TTS playback with speed control (0.75x-1.25x)
+- **Language-matched voices**: Spanish (celeste), German (elara/julius), French (agathe/hector)
+- **TTS speed picker**: 3-button speed selector (0.75x, 1x, 1.25x) in chat footer
+- **Recording UI**: Audio level bars, recording timer, processing spinner
+- **Graceful degradation**: Voice UI hidden when `DEEPGRAM_API_KEY` not configured
+- **61 voice tests**: WebSocket STT proxy, REST TTS, WebSocket TTS, validation, edge cases
+- **ADR-010**: Deepgram voice STT/TTS architectural decision record
+- **CSP updates**: `media-src blob:`, `connect-src ws: wss:` for voice WebSocket and audio playback
+
+### Changed
+- **Security headers**: `Permissions-Policy: microphone=(self)` for voice STT
+- **Dependencies**: Added `deepgram-sdk>=6.0.0`, `httpx>=0.25.0`, `websockets>=13.0`
+
 ## [0.14.0] - 2026-02-22
 
 ### Added

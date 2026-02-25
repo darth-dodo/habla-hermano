@@ -124,6 +124,17 @@ Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced 
 
 ---
 
+## Voice Conversation
+
+Talk to Hermano using your voice. Speech-to-text captures what you say, text-to-speech reads responses aloud with adjustable playback speed.
+
+- **Speech-to-text** — Deepgram Nova-3 with code-switching support (mix English and your target language)
+- **Text-to-speech** — Deepgram Aura-2 voices matched to each language
+- **Speed control** — 0.75x, 1x, or 1.25x playback for comprehension practice
+- **Graceful degradation** — Voice UI only appears when configured; text chat always works
+
+---
+
 ## Three Beautiful Themes
 
 <p align="center">
@@ -151,6 +162,7 @@ make install
 
 cp .env.example .env
 # Add your ANTHROPIC_API_KEY to .env
+# Optional: Add DEEPGRAM_API_KEY for voice features
 
 make dev
 ```
@@ -169,7 +181,8 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Frontend** | HTMX, Alpine.js, Tailwind CSS |
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
-| **Testing** | pytest (1810 tests, 97% coverage), Playwright E2E |
+| **Testing** | pytest + Vitest (2140+ tests, 97% coverage), Playwright E2E |
+| **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
 
 ### Architecture Highlights
 
@@ -177,6 +190,8 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - **Server-rendered with HTMX** — No SPA complexity. Jinja2 templates with HTMX for dynamic updates and Alpine.js for client-side interactivity
 - **AI-enhanced lessons** — LangGraph subgraphs generate contextual exercises and vocabulary steps
 - **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
+- **Voice conversation** — Deepgram STT/TTS via WebSocket proxy for speech-based practice with floating stop controls
+- **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (186 tests, ~90% coverage)
 
 ---
 
@@ -197,6 +212,9 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - [Phase 12: Spaced Repetition](docs/design/phase12-spaced-repetition.md)
 - [Phase 13: Mobile Responsive](docs/design/phase13-mobile-responsive.md)
 - [Phase 14: Learning Paths](docs/design/phase14-learning-paths.md)
+- [Phase 15: SSE Streaming](docs/design/phase15-sse-streaming.md)
+- [Phase 16: ES Module Refactor](docs/design/phase16-esm-refactor.md)
+- [Phase 17: Voice Conversation](docs/design/phase17-voice-deepgram.md)
 
 ---
 

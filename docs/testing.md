@@ -44,8 +44,14 @@
 | Path Service | `services/test_paths.py` | 27 | Phase 14 path building, progress tracking, next lesson detection |
 | Adaptive Service | `services/test_adaptive.py` | 49 | Phase 14 daily recommendations, category strengths, level readiness |
 | Coverage Services | `services/test_coverage.py` | 20+ | Service module coverage validation |
+| JS DOM | `tests/js/dom.test.js` | 37 | DOM utilities, scroll behavior, focus management, escapeHtml |
+| JS Stream | `tests/js/stream.test.js` | 24 | SSE parsing, streaming bubble, token append, TTS speaker buttons |
+| JS Voice | `tests/js/voice.test.js` | 87 | VoiceManager lifecycle, STT recording, TTS playback, error handling |
+| JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
+| JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
+| JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
 
-**Total**: 1810 tests with 97% code coverage
+**Total**: 2140+ tests (1954 Python + 186 JavaScript) with 97% code coverage
 
 ---
 
@@ -800,6 +806,44 @@ Phase 14 introduced learning paths and adaptive recommendations. 99 new tests we
 
 ---
 
+## JavaScript Test Suite
+
+**Framework**: Vitest 3.x + jsdom environment
+**Location**: `tests/js/`
+**Total**: 186 tests across 6 test files
+**Coverage**: ~90% on tested modules (dom, stream, voice, scaffold)
+
+### Running JavaScript Tests
+
+```bash
+# Run all JS tests
+npx vitest run
+
+# Run with coverage
+npx vitest run --coverage
+
+# Run in watch mode
+npx vitest
+```
+
+### Test Architecture
+
+The JavaScript test suite uses jsdom to simulate a browser DOM environment. Key patterns:
+
+- **DOM mocking**: Tests create minimal HTML structures matching the chat page layout
+- **WebSocket mocking**: Custom WebSocket mock class for STT/TTS WebSocket testing
+- **AudioContext mocking**: Stubs for AudioContext, MediaRecorder, getUserMedia
+- **Module isolation**: Each test file imports only the module under test
+
+### CI Integration
+
+JavaScript tests run in a parallel CI job (`test-js`) alongside Python tests:
+- Node.js 22
+- `npm ci` for reproducible installs
+- `npx vitest run` for test execution
+
+---
+
 ## E2E Tests (Playwright)
 
 End-to-end tests are documented in [docs/playwright-e2e.md](./playwright-e2e.md).
@@ -1036,7 +1080,8 @@ def base_state(self) -> ConversationState:
 | `src/db/` | 97%+ | 90%+ |
 | `src/services/` | 97%+ | 90%+ |
 | `src/lessons/` | 97%+ | 90%+ |
-| **Overall** | **97%** | **90%+** |
+| `src/static/js/` | ~90% | 80%+ |
+| **Overall** | **97% (Python), ~90% (JS)** | **90%+** |
 
 ### Coverage Commands
 
@@ -1102,19 +1147,27 @@ tests/
 │   ├── __init__.py
 │   ├── test_models.py             # Lesson data model validation
 │   └── test_service.py            # Lesson service functionality
-└── services/                      # Service tests (mirrors src/services/)
-    ├── __init__.py
-    ├── test_adaptive.py           # Adaptive recommendations
-    ├── test_coverage.py           # Service coverage validation
-    ├── test_progress.py           # Progress dashboard service
-    ├── test_review.py             # Spaced repetition review service
-    ├── test_paths.py              # Learning path service
-    ├── test_levels.py             # CEFR level detection
-    └── test_vocabulary.py         # Vocabulary tracking
+├── services/                      # Service tests (mirrors src/services/)
+│   ├── __init__.py
+│   ├── test_adaptive.py           # Adaptive recommendations
+│   ├── test_coverage.py           # Service coverage validation
+│   ├── test_progress.py           # Progress dashboard service
+│   ├── test_review.py             # Spaced repetition review service
+│   ├── test_paths.py              # Learning path service
+│   ├── test_levels.py             # CEFR level detection
+│   └── test_vocabulary.py         # Vocabulary tracking
+└── js/                            # JavaScript tests (Vitest + jsdom)
+    ├── dom.test.js                # DOM utilities, scroll, focus, escapeHtml
+    ├── stream.test.js             # SSE parsing, streaming bubble, TTS buttons
+    ├── voice.test.js              # VoiceManager lifecycle, STT, TTS playback
+    ├── scaffold.test.js           # Click-to-insert word bank
+    ├── shortcuts.test.js          # Keyboard shortcuts (/, Shift+Enter, Escape)
+    └── htmx-handlers.test.js      # HTMX event handlers (afterSwap, scroll)
 ```
 
 ### Test Naming Conventions
 
+**Python**:
 - Test files: `test_<module>.py`
 - Test classes: `Test<FeatureName>`
 - Test methods: `test_<behavior_description>`
@@ -1127,12 +1180,27 @@ class TestScaffoldNodeLevelBehavior:
         ...
 ```
 
+**JavaScript**:
+- Test files: `<module>.test.js`
+- Test suites: `describe('<ModuleName>', ...)`
+- Test cases: `it('should <behavior_description>', ...)`
+
+Example:
+```javascript
+describe('VoiceManager', () => {
+  it('should initialize with microphone access', () => {
+    // ...
+  });
+});
+```
+
 ### Test Categories
 
 1. **Unit Tests**: Test individual functions in isolation
 2. **Integration Tests**: Test node interactions and graph execution
 3. **API Tests**: Test HTTP endpoints with mocked dependencies
-4. **E2E Tests**: Test full user flows via Playwright MCP
+4. **JavaScript Tests**: Test client-side DOM, streaming, voice, and UI behavior (Vitest + jsdom)
+5. **E2E Tests**: Test full user flows via Playwright MCP
 
 ---
 
@@ -1155,6 +1223,16 @@ jobs:
           python-version: '3.11'
       - run: pip install -e ".[dev]"
       - run: pytest tests/ --cov=src --cov-fail-under=97
+
+  test-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx vitest run
 ```
 
 ---
