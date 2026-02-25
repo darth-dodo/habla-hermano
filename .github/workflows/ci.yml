@@ -12,6 +12,8 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - 'package.json'
+      - 'vitest.config.js'
       - 'Dockerfile'
       - 'render.yaml'
       - '.github/workflows/ci.yml'
@@ -22,12 +24,15 @@ on:
       - 'tests/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - 'package.json'
+      - 'vitest.config.js'
       - 'Dockerfile'
       - 'render.yaml'
       - '.github/workflows/ci.yml'
 
 env:
   PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
   UV_CACHE_DIR: /tmp/.uv-cache
 
 jobs:
@@ -126,6 +131,28 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # ===========================================================================
+  # JavaScript Tests
+  # ===========================================================================
+  test-js:
+    name: JS Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npx vitest run
+
+  # ===========================================================================
   # Security Scan
   # ===========================================================================
   security:
@@ -159,7 +186,7 @@ jobs:
   build:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, test-js]
 
     steps:
       - uses: actions/checkout@v4
@@ -182,7 +209,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, security, build]
+    needs: [lint, typecheck, test, test-js, security, build]
     if: always()
 
     steps:
@@ -191,6 +218,7 @@ jobs:
           if [[ "${{ needs.lint.result }}" != "success" ]] || \
              [[ "${{ needs.typecheck.result }}" != "success" ]] || \
              [[ "${{ needs.test.result }}" != "success" ]] || \
+             [[ "${{ needs.test-js.result }}" != "success" ]] || \
              [[ "${{ needs.security.result }}" != "success" ]] || \
              [[ "${{ needs.build.result }}" != "success" ]]; then
             echo "One or more jobs failed"
