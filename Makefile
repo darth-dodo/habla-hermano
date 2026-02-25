@@ -1,7 +1,7 @@
 # Habla Hermano Makefile
 # Usage: make [target]
 
-.PHONY: install dev test lint format typecheck clean help
+.PHONY: install dev test test-js lint format typecheck clean help
 .DEFAULT_GOAL := help
 
 # =============================================================================
@@ -29,8 +29,15 @@ dev-css: ## Watch and compile Tailwind CSS
 # Testing
 # =============================================================================
 
-test: ## Run all tests
+test: ## Run all tests (Python + JS)
 	uv run pytest
+	npx vitest run
+
+test-js: ## Run JavaScript tests with Vitest
+	npx vitest run
+
+test-js-watch: ## Run JavaScript tests in watch mode
+	npx vitest
 
 test-cov: ## Run tests with coverage report
 	uv run pytest --cov=src --cov-report=html --cov-report=term-missing

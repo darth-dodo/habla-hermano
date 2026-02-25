@@ -528,6 +528,20 @@
                 animation: none !important;
                 box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5) !important;
             }
+            .voice-bar {
+                transition: none !important;
+                height: 10px !important;
+            }
+            .voice-timer,
+            .voice-processing-indicator {
+                animation: none !important;
+            }
+            .voice-timer::before {
+                animation: none !important;
+            }
+            .voice-spinner {
+                animation-duration: 0.01ms !important;
+            }
         }
 
         /* Interim transcript styling */
@@ -540,7 +554,6 @@
         .voice-speak-btn.voice-loading {
             opacity: 0.5;
             cursor: wait;
-            pointer-events: none;
         }
 
         .voice-speak-btn.voice-playing {
@@ -554,15 +567,116 @@
             left: 50%;
             transform: translateX(-50%);
             background-color: var(--surface-elevated);
-            color: var(--text);
-            border: 1px solid var(--error);
+            color: var(--error, #ef4444);
+            border: 1px solid var(--error, #ef4444);
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.75rem;
+            line-height: 1rem;
             white-space: nowrap;
             z-index: 50;
+            pointer-events: none;
             box-shadow: 0 4px 12px var(--shadow-color);
-            animation: fadeIn 0.2s ease-out;
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        .voice-error-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: var(--error, #ef4444);
+        }
+
+        @keyframes tooltipFadeIn {
+            0% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+            100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* Audio level bars (replaces stop icon during recording) */
+        .voice-level-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .voice-bar {
+            width: 3px;
+            min-height: 3px;
+            height: 3px;
+            border-radius: 9999px;
+            background-color: currentColor;
+            transition: height 0.1s ease-out;
+        }
+
+        /* Recording timer pill */
+        .voice-timer {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--error, #ef4444);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.675rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+            line-height: 1.2;
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        .voice-timer::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: white;
+            margin-right: 4px;
+            vertical-align: middle;
+            animation: voicePulse 1.5s ease-in-out infinite;
+        }
+
+        /* Processing spinner (replaces icon after recording stops) */
+        .voice-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-subtle, #9ca3af);
+            border-top-color: var(--accent, #60a5fa);
+            border-radius: 50%;
+            animation: voiceSpin 0.6s linear infinite;
+        }
+
+        @keyframes voiceSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Processing text indicator */
+        .voice-processing-indicator {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--surface-elevated, #374151);
+            color: var(--text-muted, #9ca3af);
+            border: 1px solid var(--border, #4b5563);
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 0.675rem;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+            animation: tooltipFadeIn 0.2s ease-out;
         }
 
         /* High contrast mode support */
@@ -590,9 +704,8 @@
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', path='js/app.js') }}"></script>
-    <script src="{{ url_for('static', path='js/stream.js') }}"></script>
+    <!-- Custom JavaScript (ES Modules) -->
+    <script type="module" src="{{ url_for('static', path='js/main.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

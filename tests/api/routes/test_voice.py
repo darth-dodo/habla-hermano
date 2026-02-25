@@ -3,6 +3,8 @@
 Phase 17: WebSocket STT proxy via Deepgram and REST TTS proxy endpoint.
 """
 
+import asyncio
+import contextlib
 from collections.abc import AsyncIterator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -173,42 +175,97 @@ def mock_httpx_stream() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_deepgram_sdk() -> Generator[dict[str, MagicMock], None, None]:
-    """Mock the Deepgram SDK that is lazily imported inside transcribe_stream.
+    """Mock the Deepgram SDK v6 that is lazily imported inside transcribe_stream.
+
+    The v6 SDK uses an async context manager pattern:
+        async with deepgram.listen.v1.connect(**options) as dg_ws:
+            dg_ws.on(EventType.MESSAGE, callback)
+            listen_task = asyncio.create_task(dg_ws.start_listening())
+            await dg_ws.send_media(audio_data)
+            await dg_ws.send_finalize()
 
     Returns a dict with keys for each mock component so tests can make
-    assertions on the mock objects.
+    assertions on the mock objects. The 'connect_kwargs' key stores the
+    keyword arguments passed to connect() for assertion in tests.
     """
-    mock_dg_connection = AsyncMock()
-    mock_dg_connection.start = AsyncMock(return_value=True)
-    mock_dg_connection.send = AsyncMock()
-    mock_dg_connection.finish = AsyncMock()
-    mock_dg_connection.on = MagicMock()
+    # Track connect() kwargs for test assertions
+    connect_kwargs: dict[str, object] = {}
+
+    # The dg_ws object returned by the async context manager
+    mock_dg_ws = AsyncMock()
+    mock_dg_ws.on = MagicMock()
+    mock_dg_ws.send_media = AsyncMock()
+    mock_dg_ws.send_finalize = AsyncMock()
+
+    # start_listening() returns a coroutine that we wrap in create_task;
+    # make it a future that never completes (simulates infinite listen loop)
+    async def _noop_listen() -> None:
+        # Block forever until cancelled, simulating the real listen loop
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.sleep(3600)
+
+    mock_dg_ws.start_listening = _noop_listen
+
+    # listen.v1.connect(**options) is an async context manager
+    mock_connect_ctx = MagicMock()
+
+    async def _connect_aenter(self: object) -> AsyncMock:
+        return mock_dg_ws
+
+    async def _connect_aexit(
+        self: object, exc_type: object, exc_val: object, exc_tb: object
+    ) -> None:
+        return None
+
+    mock_connect_ctx.__aenter__ = _connect_aenter
+    mock_connect_ctx.__aexit__ = _connect_aexit
+
+    mock_v1 = MagicMock()
+
+    def _connect(**kwargs: object) -> MagicMock:
+        connect_kwargs.update(kwargs)
+        return mock_connect_ctx
+
+    mock_v1.connect = _connect
 
     mock_listen = MagicMock()
-    mock_listen.asyncwebsocket.v.return_value = mock_dg_connection
+    mock_listen.v1 = mock_v1
 
     mock_deepgram_instance = MagicMock()
     mock_deepgram_instance.listen = mock_listen
 
-    mock_deepgram_client_cls = MagicMock(return_value=mock_deepgram_instance)
-    mock_client_options_cls = MagicMock()
-    mock_events = MagicMock()
+    mock_async_client_cls = MagicMock(return_value=mock_deepgram_instance)
 
-    # Create a fake deepgram module to inject via sys.modules
+    # Mock EventType from deepgram.core.events
+    mock_event_type = MagicMock()
+    mock_event_type.MESSAGE = "message"
+
+    # Create fake modules to inject via sys.modules
     mock_deepgram_module = MagicMock()
-    mock_deepgram_module.DeepgramClient = mock_deepgram_client_cls
-    mock_deepgram_module.DeepgramClientOptions = mock_client_options_cls
-    mock_deepgram_module.LiveTranscriptionEvents = mock_events
+    mock_deepgram_module.AsyncDeepgramClient = mock_async_client_cls
+
+    mock_events_module = MagicMock()
+    mock_events_module.EventType = mock_event_type
+
+    mock_core_module = MagicMock()
+    mock_core_module.events = mock_events_module
 
     import sys
 
-    with patch.dict(sys.modules, {"deepgram": mock_deepgram_module}):
+    with patch.dict(
+        sys.modules,
+        {
+            "deepgram": mock_deepgram_module,
+            "deepgram.core": mock_core_module,
+            "deepgram.core.events": mock_events_module,
+        },
+    ):
         yield {
-            "connection": mock_dg_connection,
-            "client_cls": mock_deepgram_client_cls,
-            "client_options_cls": mock_client_options_cls,
-            "events": mock_events,
+            "dg_ws": mock_dg_ws,
+            "client_cls": mock_async_client_cls,
+            "event_type": mock_event_type,
             "instance": mock_deepgram_instance,
+            "connect_kwargs": connect_kwargs,
         }
 
 
@@ -227,9 +284,9 @@ class TestSpeakRequestModel:
         assert req.voice == "aura-2-celeste-es"
 
     def test_default_voice(self) -> None:
-        """SpeakRequest defaults to aura-2-celeste-es voice."""
+        """SpeakRequest defaults to aura-2-nestor-es voice (masculine Hermano persona)."""
         req = SpeakRequest(text="Hola")
-        assert req.voice == "aura-2-celeste-es"
+        assert req.voice == "aura-2-nestor-es"
 
     def test_empty_text_rejected(self) -> None:
         """SpeakRequest rejects empty text via min_length=1."""
@@ -407,7 +464,7 @@ class TestSpeakEndpoint:
         mock_settings_with_deepgram: MagicMock,
         mock_httpx_stream: MagicMock,
     ) -> None:
-        """Default voice is aura-2-celeste-es when not specified in request."""
+        """Default voice is aura-2-nestor-es when not specified in request."""
         response = await async_client.post(
             "/api/speak",
             json={"text": "Buenos dias"},
@@ -420,7 +477,7 @@ class TestSpeakEndpoint:
         mock_client_instance.stream.assert_called_once()
         call_args = mock_client_instance.stream.call_args
         url = call_args[0][1] if len(call_args[0]) > 1 else call_args[1].get("url", "")
-        assert "aura-2-celeste-es" in url
+        assert "aura-2-nestor-es" in url
 
     async def test_speak_sends_text_to_deepgram(
         self,
@@ -598,6 +655,13 @@ class TestTranscribeWebSocket:
     the websocket_connect() context manager. Starlette raises
     WebSocketDisconnect with a .code attribute when the server
     closes the connection before or after accept.
+
+    The Deepgram v6 SDK uses an async context manager pattern:
+        async with deepgram.listen.v1.connect(**options) as dg_ws:
+            dg_ws.on(EventType.MESSAGE, on_message)
+            listen_task = asyncio.create_task(dg_ws.start_listening())
+            await dg_ws.send_media(audio_data)
+            await dg_ws.send_finalize()
     """
 
     def test_invalid_language_closes_connection(
@@ -664,7 +728,8 @@ class TestTranscribeWebSocket:
 
         The connection should be accepted (not closed with 1008 or 1011).
         With the Deepgram SDK mocked, the WebSocket completes the handshake
-        and the Deepgram connection is started. We close from the client side.
+        and the Deepgram connection is established via async context manager.
+        We close from the client side.
         """
         with test_client.websocket_connect(f"/ws/transcribe?language={language}") as ws:
             # Connection was accepted -- language and API key are valid.
@@ -682,11 +747,9 @@ class TestTranscribeWebSocket:
             # Connection accepted -- default 'multi' is valid.
             ws.close()
 
-        # Verify 'multi' was passed through to the Deepgram options
-        mock_connection = mock_deepgram_sdk["connection"]
-        mock_connection.start.assert_awaited_once()
-        start_options = mock_connection.start.call_args[0][0]
-        assert start_options["language"] == "multi"
+        # Verify 'multi' was passed through to the connect() kwargs
+        connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
+        assert connect_kwargs["language"] == "multi"
 
     def test_websocket_accepts_binary_audio(
         self,
@@ -696,19 +759,19 @@ class TestTranscribeWebSocket:
     ) -> None:
         """WebSocket accepts binary audio data after connection.
 
-        Mocks the full Deepgram SDK chain to verify audio bytes
-        flow from client through to dg_connection.send().
+        Mocks the full Deepgram SDK v6 chain to verify audio bytes
+        flow from client through to dg_ws.send_media().
         """
         with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
             # Send binary audio data
             ws.send_bytes(b"\x00\x01\x02\x03")
             ws.close()
 
-        mock_connection = mock_deepgram_sdk["connection"]
-        # Verify Deepgram connection was started and audio was forwarded
-        mock_connection.start.assert_awaited_once()
-        mock_connection.send.assert_awaited()
-        mock_connection.finish.assert_awaited()
+        mock_dg_ws = mock_deepgram_sdk["dg_ws"]
+        # Verify audio was forwarded via send_media()
+        mock_dg_ws.send_media.assert_awaited()
+        # Verify finalize was called during cleanup
+        mock_dg_ws.send_finalize.assert_awaited()
 
     def test_websocket_forwards_language_to_deepgram(
         self,
@@ -716,13 +779,12 @@ class TestTranscribeWebSocket:
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """Selected language is passed through to the Deepgram STT options."""
+        """Selected language is passed through to the Deepgram connect() kwargs."""
         with test_client.websocket_connect("/ws/transcribe?language=de") as ws:
             ws.close()
 
-        mock_connection = mock_deepgram_sdk["connection"]
-        start_options = mock_connection.start.call_args[0][0]
-        assert start_options["language"] == "de"
+        connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
+        assert connect_kwargs["language"] == "de"
 
     def test_websocket_registers_transcript_handler(
         self,
@@ -734,29 +796,76 @@ class TestTranscribeWebSocket:
         with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
             ws.close()
 
-        mock_connection = mock_deepgram_sdk["connection"]
+        mock_dg_ws = mock_deepgram_sdk["dg_ws"]
         # Verify .on() was called to register a transcript handler
-        mock_connection.on.assert_called_once()
+        mock_dg_ws.on.assert_called_once()
+        # Verify the event type is EventType.MESSAGE
+        call_args = mock_dg_ws.on.call_args
+        assert call_args[0][0] == mock_deepgram_sdk["event_type"].MESSAGE
 
-    def test_websocket_deepgram_start_failure_closes(
+    def test_websocket_connect_exception_closes_with_1011(
         self,
         test_client: TestClient,
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """When Deepgram connection.start() returns False, server closes with 1011.
+        """When Deepgram connect() raises an exception, server closes with 1011.
 
-        The WebSocket was already accepted before start() is called, so the
-        close frame arrives during the session. We attempt a receive to observe it.
+        In the v6 SDK, connection failures surface as exceptions from the
+        async context manager rather than a boolean return from start().
         """
-        mock_deepgram_sdk["connection"].start = AsyncMock(return_value=False)
+        # Make the context manager __aenter__ raise an exception
+        mock_deepgram_sdk["dg_ws"]  # unused but fixture needed for sys.modules patching
+
+        # Patch the connect function to return a context manager that raises
+        mock_failing_ctx = MagicMock()
+
+        async def _failing_aenter(self: object) -> None:
+            raise ConnectionError("Deepgram connection failed")
+
+        async def _failing_aexit(
+            self: object, exc_type: object, exc_val: object, exc_tb: object
+        ) -> None:
+            return None
+
+        mock_failing_ctx.__aenter__ = _failing_aenter
+        mock_failing_ctx.__aexit__ = _failing_aexit
+
+        mock_deepgram_sdk["instance"].listen.v1.connect = MagicMock(return_value=mock_failing_ctx)
 
         with pytest.raises(WebSocketDisconnect) as exc_info:
             with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
-                # Server closes the connection after start() fails.
+                # Server closes the connection after connect() fails.
                 # Attempting to receive triggers the disconnect exception.
                 ws.receive_json()
         assert exc_info.value.code == 1011
+
+    def test_websocket_passes_model_to_connect(
+        self,
+        test_client: TestClient,
+        mock_settings_with_deepgram: MagicMock,
+        mock_deepgram_sdk: dict[str, MagicMock],
+    ) -> None:
+        """Deepgram connect() is called with model='nova-3'."""
+        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
+            ws.close()
+
+        connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
+        assert connect_kwargs["model"] == "nova-3"
+
+    def test_websocket_passes_encoding_to_connect(
+        self,
+        test_client: TestClient,
+        mock_settings_with_deepgram: MagicMock,
+        mock_deepgram_sdk: dict[str, MagicMock],
+    ) -> None:
+        """Deepgram connect() is called with encoding='linear16' and sample_rate='16000'."""
+        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
+            ws.close()
+
+        connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
+        assert connect_kwargs["encoding"] == "linear16"
+        assert connect_kwargs["sample_rate"] == "16000"
 
 
 # =============================================================================
