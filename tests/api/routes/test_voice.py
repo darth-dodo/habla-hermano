@@ -704,9 +704,7 @@ class TestTranscribeWebSocket:
     ) -> None:
         """Invalid language param closes WebSocket with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=xx", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=xx", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
@@ -717,9 +715,7 @@ class TestTranscribeWebSocket:
     ) -> None:
         """Japanese (ja) is not a supported STT language and should close with 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=ja", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=ja", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
@@ -730,9 +726,7 @@ class TestTranscribeWebSocket:
     ) -> None:
         """Empty string language param closes WebSocket with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
@@ -744,9 +738,7 @@ class TestTranscribeWebSocket:
     ) -> None:
         """Missing DEEPGRAM_API_KEY closes WebSocket with code 1011."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=es", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1011
 
@@ -799,9 +791,7 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """WebSocket accepts binary audio data after connection."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01\x02\x03")
             ws.close()
 
@@ -817,9 +807,7 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Selected language is passed through to the Deepgram connect() kwargs."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=de", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=de", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
@@ -833,9 +821,7 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Endpoint registers a transcript event handler on the Deepgram connection."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         mock_dg_ws = mock_deepgram_sdk["dg_ws"]
@@ -883,9 +869,7 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Deepgram connect() is called with model='nova-3'."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
@@ -899,9 +883,7 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Deepgram connect() is called with encoding='linear16' and sample_rate='16000'."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]

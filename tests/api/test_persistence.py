@@ -616,10 +616,10 @@ class TestAsyncClientPersistence:
             app = create_app_with_auth_mocked()
             transport = ASGITransport(app=app)
             async with AsyncClient(
-                    transport=transport,
-                    base_url="http://test",
-                    headers=CSRF_HEADERS,
-                ) as client:
+                transport=transport,
+                base_url="http://test",
+                headers=CSRF_HEADERS,
+            ) as client:
                 response = await client.post(
                     "/chat",
                     data={"message": "Hello", "level": "A1"},
@@ -640,10 +640,10 @@ class TestAsyncClientPersistence:
             app = create_app_with_auth_mocked()
             transport = ASGITransport(app=app)
             async with AsyncClient(
-                    transport=transport,
-                    base_url="http://test",
-                    headers=CSRF_HEADERS,
-                ) as client:
+                transport=transport,
+                base_url="http://test",
+                headers=CSRF_HEADERS,
+            ) as client:
                 response = await client.post(
                     "/new",
                     follow_redirects=False,

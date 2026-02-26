@@ -514,7 +514,9 @@ class TestLessonCompletionPersistenceGuest:
         with (
             patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo,
             patch("src.services.lesson_completion.VocabularyRepository"),
-            patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_admin_client),
+            patch(
+                "src.services.lesson_completion.get_supabase_admin", return_value=mock_admin_client
+            ),
             patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_instance = MagicMock()

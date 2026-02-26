@@ -70,6 +70,7 @@ async def _authenticate_websocket(websocket: WebSocket) -> str | None:
 
     return None
 
+
 # Allowed Deepgram TTS voice IDs
 ALLOWED_VOICES: frozenset[str] = frozenset(
     {
@@ -221,9 +222,7 @@ async def transcribe_stream(  # noqa: PLR0915
 
 
 @router.post("/api/speak", response_model=None)
-async def speak(
-    request: SpeakRequest, _user: EffectiveUserDep
-) -> StreamingResponse | JSONResponse:
+async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResponse | JSONResponse:
     """Synthesize speech from text using Deepgram TTS.
 
     Proxies the request to Deepgram's REST TTS API and streams back
