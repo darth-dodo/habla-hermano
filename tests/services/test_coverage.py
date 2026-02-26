@@ -348,7 +348,7 @@ class TestGetSupabaseForUser:
     """Tests for get_supabase_for_user function."""
 
     def test_raises_when_not_configured(self) -> None:
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = False
             from src.api.supabase_client import get_supabase_for_user
 
@@ -358,8 +358,8 @@ class TestGetSupabaseForUser:
     def test_returns_client_with_user_auth(self) -> None:
         mock_client = MagicMock()
         with (
-            patch("src.api.supabase_client.get_settings") as mock_settings,
-            patch("src.api.supabase_client.create_client", return_value=mock_client),
+            patch("src.db.client.get_settings") as mock_settings,
+            patch("src.db.client.create_client", return_value=mock_client),
         ):
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
@@ -375,8 +375,8 @@ class TestGetSupabaseForUser:
     def test_creates_client_with_correct_credentials(self) -> None:
         mock_client = MagicMock()
         with (
-            patch("src.api.supabase_client.get_settings") as mock_settings,
-            patch("src.api.supabase_client.create_client", return_value=mock_client) as mock_create,
+            patch("src.db.client.get_settings") as mock_settings,
+            patch("src.db.client.create_client", return_value=mock_client) as mock_create,
         ):
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://myproject.supabase.co"

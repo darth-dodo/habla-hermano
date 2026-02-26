@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from src.api.config import get_settings
-from src.api.middleware import SecurityHeadersMiddleware
+from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
 from src.api.routes import auth, chat, learn, lessons, progress, review, voice
 
 # Configure logging
@@ -62,7 +62,11 @@ def create_app() -> FastAPI:
     )
 
     # Security middleware (applied in reverse order — last added runs first)
+    # 1. SecurityHeaders runs last (outermost): adds security headers to responses
+    # 2. CSRF runs before route handlers: rejects forged state-changing requests
+    # 3. CORS runs first (innermost): handles preflight OPTIONS and origin checks
     app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(CSRFMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"] if settings.DEBUG else [f"http://{settings.HOST}:{settings.PORT}"],

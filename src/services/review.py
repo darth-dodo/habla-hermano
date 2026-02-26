@@ -10,14 +10,14 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from src.api.supabase_client import get_supabase
-from src.db.models import Vocabulary
 from src.db.repository import VocabularyRepository
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
+
+    from src.db.models import Vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,6 @@ class ReviewService:
         """
         self._user_id = user_id
         self._vocab_repo = VocabularyRepository(user_id, client=client)
-        self._client = client
 
     def get_stats(self, language: str = "es") -> ReviewStats:
         """Get review statistics for UI display.
@@ -189,9 +188,8 @@ class ReviewService:
         if not 0 <= quality <= 5:
             raise ValueError(f"Quality must be 0-5, got {quality}")
 
-        # Fetch current vocabulary
-        vocab_list = self._vocab_repo.get_all()
-        vocab = next((v for v in vocab_list if v.id == vocab_id), None)
+        # Fetch current vocabulary by ID (B3: eliminates full-table scan)
+        vocab = self._vocab_repo.get_by_id(vocab_id)
 
         if vocab is None:
             raise ValueError(f"Vocabulary with id {vocab_id} not found")
@@ -259,9 +257,8 @@ class ReviewService:
         Raises:
             ValueError: If vocabulary not found.
         """
-        # Fetch current vocabulary
-        vocab_list = self._vocab_repo.get_all()
-        vocab = next((v for v in vocab_list if v.id == vocab_id), None)
+        # Fetch current vocabulary by ID (B3: eliminates full-table scan)
+        vocab = self._vocab_repo.get_by_id(vocab_id)
 
         if vocab is None:
             raise ValueError(f"Vocabulary with id {vocab_id} not found")
@@ -292,7 +289,7 @@ class ReviewService:
         times_seen: int,
         times_correct: int,
     ) -> Vocabulary:
-        """Persist SM-2 updates to the database.
+        """Persist SM-2 updates via the repository layer (B6).
 
         Args:
             vocab_id: The vocabulary entry ID.
@@ -307,32 +304,24 @@ class ReviewService:
         Returns:
             Updated Vocabulary entry.
         """
-        client = self._client or get_supabase()
-
-        update_data: dict[str, Any] = {
+        updates = {
             "easiness_factor": easiness_factor,
             "interval_days": interval_days,
             "repetition_count": repetition_count,
-            "next_review_at": next_review_at.isoformat(),
+            "next_review_at": next_review_at,
             "times_seen": times_seen,
             "times_correct": times_correct,
         }
 
         if last_reviewed_at is not None:
-            update_data["last_reviewed_at"] = last_reviewed_at.isoformat()
+            updates["last_reviewed_at"] = last_reviewed_at
 
-        response = (
-            client.table("vocabulary")
-            .update(update_data)
-            .eq("id", vocab_id)
-            .eq("user_id", self._user_id)
-            .execute()
-        )
+        result = self._vocab_repo.update_review_schedule(vocab_id, updates)
 
-        if not response.data:
+        if result is None:
             raise ValueError(f"Failed to update vocabulary {vocab_id}")
 
-        return Vocabulary(**response.data[0])  # type: ignore[arg-type]  # Supabase JSON → dict
+        return result
 
     def _calculate_next_review_in(
         self,

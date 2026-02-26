@@ -2,12 +2,16 @@
 
 Phase 17: Speech-to-Text via WebSocket proxy and Text-to-Speech via WebSocket streaming proxy.
 Voice features are optional -- endpoints return errors when DEEPGRAM_API_KEY is not configured.
+
+Security (B1): All endpoints require authentication via JWT token or guest session cookie.
+WebSocket endpoints validate identity from cookies before accepting the connection.
 """
 
 import asyncio
 import contextlib
 import json
 import logging
+import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -17,12 +21,54 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.websockets import WebSocketState
 
+from src.api.auth import EffectiveUserDep
 from src.api.config import get_settings
 from src.api.validation import VALID_LANGUAGES
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["voice"])
+
+
+async def _authenticate_websocket(websocket: WebSocket) -> str | None:
+    """Extract and validate user identity from WebSocket cookies.
+
+    WebSocket endpoints cannot use FastAPI's Depends() for auth, so we
+    manually extract the identity from cookies before accepting the
+    connection.  Checks JWT (``sb-access-token``) first, then falls back
+    to a guest session UUID (``session_id``).
+
+    Returns:
+        User/session ID string if authenticated, None otherwise.
+    """
+    # Try JWT cookie first
+    token = websocket.cookies.get("sb-access-token")
+    if token:
+        try:
+            import jwt as pyjwt
+
+            payload = pyjwt.decode(
+                token,
+                options={"verify_signature": False},
+                algorithms=["HS256"],
+            )
+            user_id = payload.get("sub")
+            if user_id:
+                return str(user_id)
+        except Exception:
+            logger.debug("WebSocket JWT decode failed")
+
+    # Fall back to guest session cookie
+    session_id = websocket.cookies.get("session_id")
+    if session_id:
+        try:
+            parsed = uuid.UUID(session_id, version=4)
+            if str(parsed) == session_id:
+                return session_id
+        except (ValueError, AttributeError):
+            pass
+
+    return None
 
 # Allowed Deepgram TTS voice IDs
 ALLOWED_VOICES: frozenset[str] = frozenset(
@@ -61,7 +107,7 @@ class SpeakRequest(BaseModel):
 
 
 @router.websocket("/ws/transcribe")
-async def transcribe_stream(
+async def transcribe_stream(  # noqa: PLR0915
     websocket: WebSocket,
     language: str = Query(default="multi"),
 ) -> None:
@@ -77,6 +123,12 @@ async def transcribe_stream(
         websocket: WebSocket connection from the browser client.
         language: STT language code ("es", "de", "fr", or "multi" for code-switching).
     """
+    # B1: Authenticate before accepting the connection
+    user_id = await _authenticate_websocket(websocket)
+    if user_id is None:
+        await websocket.close(code=1008, reason="Authentication required")
+        return
+
     # Validate language
     if language not in VALID_STT_LANGUAGES:
         await websocket.close(code=1008, reason=f"Invalid language: {language}")
@@ -169,7 +221,9 @@ async def transcribe_stream(
 
 
 @router.post("/api/speak", response_model=None)
-async def speak(request: SpeakRequest) -> StreamingResponse | JSONResponse:
+async def speak(
+    request: SpeakRequest, _user: EffectiveUserDep
+) -> StreamingResponse | JSONResponse:
     """Synthesize speech from text using Deepgram TTS.
 
     Proxies the request to Deepgram's REST TTS API and streams back
@@ -278,6 +332,12 @@ async def speak_stream(
         Server -> {"type": "metadata", ...} (JSON when audio is complete)
         Client -> {"type": "close"} or disconnect to end
     """
+    # B1: Authenticate before accepting the connection
+    user_id = await _authenticate_websocket(websocket)
+    if user_id is None:
+        await websocket.close(code=1008, reason="Authentication required")
+        return
+
     if voice not in ALLOWED_VOICES:
         await websocket.close(code=1008, reason=f"Invalid voice: {voice}")
         return

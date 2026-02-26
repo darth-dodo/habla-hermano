@@ -7,6 +7,7 @@ and level/language parameter validation.
 import pytest
 
 from src.api.routes.chat import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS, _make_error_html
+from tests.conftest import CSRF_HEADERS
 
 
 class TestValidationConstants:
@@ -76,7 +77,7 @@ class TestMessageLengthValidation:
 
             from src.api.main import app
 
-            yield TestClient(app)
+            yield TestClient(app, headers=CSRF_HEADERS)
 
     def test_message_over_limit_rejected(self, test_client) -> None:
         long_message = "a" * (MAX_MESSAGE_LENGTH + 1)

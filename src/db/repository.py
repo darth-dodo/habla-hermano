@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from postgrest.exceptions import APIError
 
-from src.api.supabase_client import get_supabase
+from src.db.client import get_supabase
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
@@ -114,6 +114,26 @@ class VocabularyRepository:
 
         response = query.execute()
         return [Vocabulary(**item) for item in response.data]
+
+    def get_by_id(self, vocab_id: int) -> Vocabulary | None:
+        """Get vocabulary entry by ID.
+
+        Args:
+            vocab_id: The vocabulary entry ID.
+
+        Returns:
+            Vocabulary if found, None otherwise.
+        """
+        response = (
+            self._client.table("vocabulary")
+            .select("*")
+            .eq("id", vocab_id)
+            .eq("user_id", self._user_id)
+            .execute()
+        )
+        if response.data:
+            return Vocabulary(**response.data[0])
+        return None
 
     def get_by_word_and_language(self, word: str, language: str) -> Vocabulary | None:
         """Get vocabulary entry by word and language.
@@ -357,6 +377,8 @@ class VocabularyRepository:
                 - repetition_count (int): New repetition count
                 - next_review_at (datetime|str|None): Next review datetime
                 - last_reviewed_at (datetime|str|None): Last reviewed datetime
+                - times_seen (int): Absolute times_seen value
+                - times_correct (int): Absolute times_correct value
                 - increment_seen (bool): If True, increment times_seen by 1
                 - increment_correct (bool): If True, increment times_correct by 1
 
@@ -396,7 +418,13 @@ class VocabularyRepository:
         update_data: dict[str, Any] = {}
 
         # Direct copy fields
-        direct_fields = ["easiness_factor", "interval_days", "repetition_count"]
+        direct_fields = [
+            "easiness_factor",
+            "interval_days",
+            "repetition_count",
+            "times_seen",
+            "times_correct",
+        ]
         for field in direct_fields:
             if field in updates:
                 update_data[field] = updates[field]

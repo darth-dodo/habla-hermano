@@ -7,6 +7,16 @@ Phase 4: Provides checkpointing for conversation memory.
 
 The checkpointer enables conversation history to be saved and resumed
 across sessions using a thread_id tied to the user.
+
+Dev mode (MemorySaver):
+    The MemorySaver instance is cached at module level (singleton pattern)
+    so it persists across requests within the same server process. Conversation
+    context is maintained between HTTP requests but lost on server restart.
+
+Production mode (AsyncPostgresSaver):
+    Each call opens a connection pool via AsyncPostgresSaver.from_conn_string(),
+    cleaned up when the async context manager exits. Conversation state is
+    fully persisted in Supabase Postgres and survives restarts.
 """
 
 from collections.abc import AsyncGenerator
@@ -17,7 +27,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
-from src.api.config import get_settings
+from src.config import get_settings
 
 # Type alias for checkpointer return type
 CheckpointerType = AsyncPostgresSaver | MemorySaver

@@ -6,7 +6,7 @@ and user_profiles are auto-created via database triggers on auth.users.
 This module provides utilities for initializing user data if needed.
 """
 
-from src.api.supabase_client import get_supabase
+from src.db.client import get_supabase
 from src.db.repository import UserProfileRepository
 
 # Default settings for new users (stored in user_profiles)

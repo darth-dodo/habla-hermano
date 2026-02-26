@@ -18,12 +18,13 @@ from src.api.routes.auth import (
     get_supabase_client,
     set_auth_cookie,
 )
+from tests.conftest import CSRF_HEADERS
 
 
 @pytest.fixture
 def client() -> TestClient:
-    """Create a test client for the app."""
-    return TestClient(app)
+    """Create a test client for the app with CSRF headers."""
+    return TestClient(app, headers=CSRF_HEADERS)
 
 
 # =============================================================================

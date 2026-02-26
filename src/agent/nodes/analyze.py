@@ -25,7 +25,7 @@ from src.agent.state import (
     VocabWord,
 )
 from src.agent.utils import extract_json_from_response
-from src.api.validation import get_language_name
+from src.validation import get_language_name
 
 # Type alias for severity values
 SeverityLevel = Literal["minor", "moderate", "significant"]

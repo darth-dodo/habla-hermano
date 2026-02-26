@@ -823,7 +823,10 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
 
     fetch('/api/speak', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
         body: JSON.stringify({ text: text, voice: voice }),
     }).then(function(response) {
         if (!response.ok) throw new Error('HTTP ' + response.status);

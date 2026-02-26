@@ -346,7 +346,7 @@ class TestRespondNodeReviewWords:
         ]
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
             patch(
                 "src.agent.nodes.respond._get_topical_review_words",
@@ -380,7 +380,7 @@ class TestRespondNodeReviewWords:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
         ):
             state: ConversationState = {
@@ -401,7 +401,7 @@ class TestRespondNodeReviewWords:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.respond.get_llm", return_value=mock_llm),
             patch(
                 "src.agent.nodes.respond._get_topical_review_words",
@@ -1017,7 +1017,7 @@ class TestLessonGetLlm:
     def test_get_llm_creates_instance(self, mock_settings: Settings) -> None:
         """Should create ChatAnthropic with higher temperature for creativity."""
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.llm.ChatAnthropic") as mock_chat,
         ):
             mock_chat.return_value = MagicMock()
@@ -1278,7 +1278,7 @@ class TestEnhanceStepNode:
         )
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import enhance_step_node
@@ -1310,7 +1310,7 @@ class TestEnhanceStepNode:
         )
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import enhance_step_node
@@ -1444,7 +1444,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Great job!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
@@ -1486,7 +1486,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Nice try!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
@@ -1527,7 +1527,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Try again!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
@@ -1567,7 +1567,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Perfect!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
@@ -1609,7 +1609,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Excellent!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node
@@ -1652,7 +1652,7 @@ class TestValidateExerciseNode:
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Almost!"))
 
         with (
-            patch("src.api.config.get_settings", return_value=mock_settings),
+            patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.nodes.lesson.get_llm", return_value=mock_llm),
         ):
             from src.agent.nodes.lesson import validate_exercise_node

@@ -10,6 +10,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
 from src.api.routes.chat import _resolve_chat_identity
+from tests.conftest import CSRF_HEADERS
 
 
 class TestChatPageEndpoint:
@@ -553,7 +554,7 @@ class TestDifferentAgentResponses:
             # Late import inside patch context for proper mocking
             app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
 
@@ -582,7 +583,7 @@ class TestDifferentAgentResponses:
             # Late import inside patch context for proper mocking
             app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
                 assert long_response in response.text
@@ -612,7 +613,7 @@ class TestDifferentAgentResponses:
             # Late import inside patch context for proper mocking
             app = self._create_app_with_auth_mocked(mock_context, mock_graph)
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 response = client.post("/chat", data={"message": "Hola", "level": "A1"})
                 assert response.status_code == 200
 
@@ -723,7 +724,7 @@ class TestNewConversationEndpoint:
 
         app_with_mocked_graph.dependency_overrides[get_current_user_optional] = mock_no_user
 
-        with TestClient(app_with_mocked_graph) as client:
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
             client.cookies.set("session_id", "old-session-id")
             response = client.post("/new", follow_redirects=False)
 
@@ -747,7 +748,7 @@ class TestNewConversationEndpoint:
 
         app_with_mocked_graph.dependency_overrides[get_current_user_optional] = mock_no_user
 
-        with TestClient(app_with_mocked_graph) as client:
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
             response = client.post("/new", follow_redirects=False)
 
             assert "conversation_version" not in response.cookies

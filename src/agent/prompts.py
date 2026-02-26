@@ -14,7 +14,7 @@ Each prompt defines:
 Language adaptation uses a dictionary adapter pattern for clean switching.
 """
 
-from src.api.validation import LANGUAGE_NAMES
+from src.validation import LANGUAGE_NAMES
 
 # Language adapter dictionary for localization
 LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {

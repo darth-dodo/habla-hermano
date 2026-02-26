@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from src.api.validation import LANGUAGE_NAMES
+from src.validation import LANGUAGE_NAMES
 
 if TYPE_CHECKING:
     from src.db.models import LessonProgress

@@ -27,7 +27,7 @@ class TestGetSupabase:
 
     def test_raises_when_not_configured(self) -> None:
         """Test raises ValueError when Supabase not configured."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = False
 
             with pytest.raises(ValueError) as exc_info:
@@ -38,12 +38,12 @@ class TestGetSupabase:
 
     def test_returns_client_when_configured(self) -> None:
         """Test returns Supabase client when configured."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("src.api.supabase_client.create_client") as mock_create:
+            with patch("src.db.client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -54,12 +54,12 @@ class TestGetSupabase:
 
     def test_caches_client_instance(self) -> None:
         """Test client is cached across calls."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("src.api.supabase_client.create_client") as mock_create:
+            with patch("src.db.client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -81,7 +81,7 @@ class TestGetSupabaseAdmin:
 
     def test_raises_when_not_configured(self) -> None:
         """Test raises ValueError when Supabase not configured."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = False
 
             with pytest.raises(ValueError) as exc_info:
@@ -91,7 +91,7 @@ class TestGetSupabaseAdmin:
 
     def test_raises_when_service_key_missing(self) -> None:
         """Test raises ValueError when service key is missing."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_SERVICE_KEY = ""
 
@@ -102,12 +102,12 @@ class TestGetSupabaseAdmin:
 
     def test_returns_admin_client_when_configured(self) -> None:
         """Test returns admin client when fully configured."""
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_SERVICE_KEY = "service-key"
 
-            with patch("src.api.supabase_client.create_client") as mock_create:
+            with patch("src.db.client.create_client") as mock_create:
                 mock_client = MagicMock()
                 mock_create.return_value = mock_client
 
@@ -130,12 +130,12 @@ class TestClearSupabaseCache:
         # Clear any existing cache first
         clear_supabase_cache()
 
-        with patch("src.api.supabase_client.get_settings") as mock_settings:
+        with patch("src.db.client.get_settings") as mock_settings:
             mock_settings.return_value.supabase_configured = True
             mock_settings.return_value.SUPABASE_URL = "https://test.supabase.co"
             mock_settings.return_value.SUPABASE_ANON_KEY = "test-anon-key"
 
-            with patch("src.api.supabase_client.create_client") as mock_create:
+            with patch("src.db.client.create_client") as mock_create:
                 mock_client1 = MagicMock()
                 mock_client2 = MagicMock()
                 mock_create.side_effect = [mock_client1, mock_client2]

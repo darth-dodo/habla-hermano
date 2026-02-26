@@ -104,8 +104,7 @@ def mock_supabase_client():
 @pytest.fixture
 def service(mock_vocab_repo, mock_supabase_client):
     """Create a ReviewService with mocked dependencies."""
-    with patch("src.services.review.get_supabase", return_value=mock_supabase_client):
-        svc = ReviewService(USER_ID, client=mock_supabase_client)
+    svc = ReviewService(USER_ID, client=mock_supabase_client)
     return svc
 
 
@@ -177,7 +176,7 @@ class TestSM2Algorithm:
 
     def test_vocab_not_found_raises(self, service, mock_vocab_repo) -> None:
         """Test ValueError when vocab_id does not exist."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_by_id.return_value = None
 
         with pytest.raises(ValueError, match="Vocabulary with id 999 not found"):
             service.update_sm2(vocab_id=999, quality=5)
@@ -192,21 +191,19 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 0-2 resets repetition_count to 0."""
         vocab = _make_vocab(repetition_count=5, interval_days=30, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
-        # Mock the Supabase update to return vocab with updated values
+        # Mock the repository update to return vocab with updated values
         updated_data = vocab.model_dump()
         updated_data["repetition_count"] = 0
         updated_data["interval_days"] = 1
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
         # Verify the update was called with repetition_count=0
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["repetition_count"] == 0
 
     @pytest.mark.parametrize("quality", [0, 1, 2])
@@ -215,19 +212,17 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 0-2 resets interval_days to 1."""
         vocab = _make_vocab(repetition_count=5, interval_days=30, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
         updated_data["repetition_count"] = 0
         updated_data["interval_days"] = 1
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 1
 
     @pytest.mark.parametrize("quality", [0, 1, 2])
@@ -236,17 +231,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 0-2 does not increment times_correct."""
         vocab = _make_vocab(times_correct=5, times_seen=10)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["times_correct"] == 5  # unchanged
 
     @pytest.mark.parametrize("quality", [0, 1, 2])
@@ -255,17 +248,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 0-2 still increments times_seen."""
         vocab = _make_vocab(times_seen=10)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["times_seen"] == 11
 
     def test_quality_0_complete_blackout(
@@ -278,17 +269,15 @@ class TestSM2Algorithm:
             easiness_factor=2.5,
             times_correct=3,
         )
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=0)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["repetition_count"] == 0
         assert update_data["interval_days"] == 1
         assert update_data["times_correct"] == 3  # not incremented
@@ -301,17 +290,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 1 (incorrect, answer seemed unfamiliar)."""
         vocab = _make_vocab(repetition_count=2, interval_days=6, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=1)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["repetition_count"] == 0
         assert update_data["interval_days"] == 1
         # EF = 2.5 + (0.1 - 4*(0.08+4*0.02)) = 2.5 + (0.1 - 4*0.16) = 2.5 + (0.1 - 0.64) = 2.5 - 0.54 = 1.96
@@ -323,17 +310,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 2 (incorrect, recognized correct answer)."""
         vocab = _make_vocab(repetition_count=2, interval_days=6, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=2)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["repetition_count"] == 0
         assert update_data["interval_days"] == 1
         # EF = 2.5 + (0.1 - 3*(0.08+3*0.02)) = 2.5 + (0.1 - 3*0.14) = 2.5 + (0.1 - 0.42) = 2.5 - 0.32 = 2.18
@@ -349,17 +334,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test first successful review (quality 3): interval becomes 1 day."""
         vocab = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=3)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 1
         assert update_data["repetition_count"] == 1
 
@@ -368,17 +351,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test first successful review (quality 4): interval becomes 1 day."""
         vocab = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=4)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 1
         assert update_data["repetition_count"] == 1
 
@@ -387,17 +368,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test first successful review (quality 5): interval becomes 1 day."""
         vocab = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 1
         assert update_data["repetition_count"] == 1
 
@@ -406,17 +385,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test second successful review: interval becomes 6 days."""
         vocab = _make_vocab(repetition_count=1, interval_days=1, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 6
         assert update_data["repetition_count"] == 2
 
@@ -429,17 +406,15 @@ class TestSM2Algorithm:
             interval_days=6,
             easiness_factor=2.5,
         )
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # interval = round(6 * 2.5) = 15
         assert update_data["interval_days"] == 15
         assert update_data["repetition_count"] == 3
@@ -454,17 +429,15 @@ class TestSM2Algorithm:
             interval_days=15,
             easiness_factor=2.6,
         )
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # interval = round(15 * 2.6) = 39
         assert update_data["interval_days"] == 39
         assert update_data["repetition_count"] == 4
@@ -475,17 +448,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 3-5 increments times_correct."""
         vocab = _make_vocab(times_correct=3, times_seen=10)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["times_correct"] == 4
 
     @pytest.mark.parametrize("quality", [3, 4, 5])
@@ -494,17 +465,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 3-5 increments times_seen."""
         vocab = _make_vocab(times_seen=10)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["times_seen"] == 11
 
     # -------------------------------------------------------------------------
@@ -517,18 +486,16 @@ class TestSM2Algorithm:
         """Test easiness factor is clamped to minimum 1.3 after repeated failures."""
         # Start with EF already near the floor
         vocab = _make_vocab(easiness_factor=1.3, repetition_count=0, interval_days=1)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         # Quality 0 should try to decrease EF significantly
         service.update_sm2(vocab_id=1, quality=0)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["easiness_factor"] >= 1.3
 
     def test_easiness_factor_floor_with_quality_0(
@@ -536,17 +503,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 0 with low EF still stays at 1.3 floor."""
         vocab = _make_vocab(easiness_factor=1.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=0)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # EF = 1.5 + (0.1 - 5*0.18) = 1.5 - 0.8 = 0.7 -> clamped to 1.3
         assert update_data["easiness_factor"] == 1.3
 
@@ -555,17 +520,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 5 (perfect) increases the easiness factor."""
         vocab = _make_vocab(easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # EF = 2.5 + (0.1 - 0*(0.08+0*0.02)) = 2.5 + 0.1 = 2.6
         assert update_data["easiness_factor"] == pytest.approx(2.6, abs=0.001)
 
@@ -574,17 +537,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 3 (correct with difficulty) decreases EF slightly."""
         vocab = _make_vocab(easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=3)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # EF = 2.5 + (0.1 - 2*(0.08+2*0.02)) = 2.5 + (0.1 - 2*0.12) = 2.5 + (0.1-0.24) = 2.5 - 0.14 = 2.36
         expected_ef = 2.5 + (0.1 - (5 - 3) * (0.08 + (5 - 3) * 0.02))
         assert update_data["easiness_factor"] == pytest.approx(expected_ef, abs=0.001)
@@ -594,17 +555,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test quality 4 keeps EF relatively stable."""
         vocab = _make_vocab(easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=4)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # EF = 2.5 + (0.1 - 1*(0.08+1*0.02)) = 2.5 + (0.1 - 0.1) = 2.5
         expected_ef = 2.5 + (0.1 - (5 - 4) * (0.08 + (5 - 4) * 0.02))
         assert update_data["easiness_factor"] == pytest.approx(expected_ef, abs=0.001)
@@ -631,17 +590,15 @@ class TestSM2Algorithm:
     ) -> None:
         """Test the complete easiness factor adjustment formula for all quality scores."""
         vocab = _make_vocab(easiness_factor=initial_ef)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=quality)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["easiness_factor"] == pytest.approx(max(1.3, expected_ef), abs=0.01)
 
     # -------------------------------------------------------------------------
@@ -654,17 +611,15 @@ class TestSM2Algorithm:
         """Test multiple consecutive failures keep interval at 1 and rep at 0."""
         # Even after multiple failures, the state stays reset
         vocab = _make_vocab(repetition_count=0, interval_days=1, easiness_factor=1.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=0)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["repetition_count"] == 0
         assert update_data["interval_days"] == 1
 
@@ -678,17 +633,15 @@ class TestSM2Algorithm:
         """Test that after a failure reset, successful recall starts from interval=1."""
         # Simulates the state AFTER a failure reset: rep=0, interval=1
         vocab = _make_vocab(repetition_count=0, interval_days=1, easiness_factor=2.0)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=4)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["interval_days"] == 1  # first success = 1 day
         assert update_data["repetition_count"] == 1
 
@@ -701,25 +654,23 @@ class TestSM2Algorithm:
     ) -> None:
         """Test next_review_at is set to now + interval_days."""
         vocab = _make_vocab(repetition_count=1, interval_days=1, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         before = datetime.now(UTC)
         service.update_sm2(vocab_id=1, quality=5)
         after = datetime.now(UTC)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
 
         # interval_days should be 6 (second success)
         assert update_data["interval_days"] == 6
 
-        # next_review_at should be approximately now + 6 days
-        next_review = datetime.fromisoformat(update_data["next_review_at"])
+        # next_review_at should be approximately now + 6 days (datetime object)
+        next_review = update_data["next_review_at"]
         expected_earliest = before + timedelta(days=6)
         expected_latest = after + timedelta(days=6)
         assert expected_earliest <= next_review <= expected_latest
@@ -729,20 +680,18 @@ class TestSM2Algorithm:
     ) -> None:
         """Test last_reviewed_at is set to the current time on update."""
         vocab = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         before = datetime.now(UTC)
         service.update_sm2(vocab_id=1, quality=3)
         after = datetime.now(UTC)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
-        last_reviewed = datetime.fromisoformat(update_data["last_reviewed_at"])
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
+        last_reviewed = update_data["last_reviewed_at"]
         assert before <= last_reviewed <= after
 
     # -------------------------------------------------------------------------
@@ -759,9 +708,9 @@ class TestSM2Algorithm:
         safe defaults (EF=2.5, interval=0, rep=0).
         """
         mock_vocab = _make_mock_vocab_with_none_sm2(vocab_id=1, times_seen=1, times_correct=0)
-        mock_vocab_repo.get_all.return_value = [mock_vocab]
+        mock_vocab_repo.get_by_id.return_value = mock_vocab
 
-        # Provide valid return data for the Supabase update call
+        # Provide valid return data for the repository update call
         return_data = {
             "id": 1,
             "user_id": USER_ID,
@@ -773,18 +722,16 @@ class TestSM2Algorithm:
             "easiness_factor": 2.6,
             "interval_days": 1,
             "repetition_count": 1,
-            "next_review_at": datetime.now(UTC).isoformat(),
-            "last_reviewed_at": datetime.now(UTC).isoformat(),
-            "first_seen_at": datetime.now(UTC).isoformat(),
+            "next_review_at": datetime.now(UTC),
+            "last_reviewed_at": datetime.now(UTC),
+            "first_seen_at": datetime.now(UTC),
         }
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[return_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**return_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # With defaults: EF=2.5, interval=0, rep=0 -> first success => interval=1, rep=1
         assert update_data["interval_days"] == 1
         assert update_data["repetition_count"] == 1
@@ -793,32 +740,29 @@ class TestSM2Algorithm:
     # Database persistence
     # -------------------------------------------------------------------------
 
-    def test_update_calls_supabase_with_correct_filters(
+    def test_update_calls_repo_with_correct_vocab_id(
         self, service, mock_vocab_repo, mock_supabase_client
     ) -> None:
-        """Test that update uses correct table, vocab_id, and user_id filters."""
+        """Test that update uses correct vocab_id in repository call."""
         vocab = _make_vocab(vocab_id=42)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=42, quality=4)
 
-        mock_supabase_client.table.assert_called_with("vocabulary")
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        assert call_args[0][0] == 42  # first positional arg is vocab_id
 
     def test_update_raises_on_empty_response(
         self, service, mock_vocab_repo, mock_supabase_client
     ) -> None:
-        """Test ValueError raised when Supabase returns empty data on update."""
+        """Test ValueError raised when repository returns None on update."""
         vocab = _make_vocab()
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = None
 
         with pytest.raises(ValueError, match="Failed to update vocabulary"):
             service.update_sm2(vocab_id=1, quality=4)
@@ -849,34 +793,32 @@ class TestSM2MultiStepScenarios:
         """
         # Step 1
         vocab_step1 = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab_step1]
+        mock_vocab_repo.get_by_id.return_value = vocab_step1
         updated_data = vocab_step1.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
-        call_args_1 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        call_args_1 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert call_args_1["interval_days"] == 1
         assert call_args_1["repetition_count"] == 1
         assert call_args_1["easiness_factor"] == pytest.approx(2.6, abs=0.01)
 
         # Step 2
         vocab_step2 = _make_vocab(repetition_count=1, interval_days=1, easiness_factor=2.6)
-        mock_vocab_repo.get_all.return_value = [vocab_step2]
+        mock_vocab_repo.get_by_id.return_value = vocab_step2
 
         service.update_sm2(vocab_id=1, quality=5)
-        call_args_2 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        call_args_2 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert call_args_2["interval_days"] == 6
         assert call_args_2["repetition_count"] == 2
         assert call_args_2["easiness_factor"] == pytest.approx(2.7, abs=0.01)
 
         # Step 3
         vocab_step3 = _make_vocab(repetition_count=2, interval_days=6, easiness_factor=2.7)
-        mock_vocab_repo.get_all.return_value = [vocab_step3]
+        mock_vocab_repo.get_by_id.return_value = vocab_step3
 
         service.update_sm2(vocab_id=1, quality=5)
-        call_args_3 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        call_args_3 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert call_args_3["interval_days"] == round(6 * 2.7)  # 16
         assert call_args_3["repetition_count"] == 3
         assert call_args_3["easiness_factor"] == pytest.approx(2.8, abs=0.01)
@@ -885,10 +827,10 @@ class TestSM2MultiStepScenarios:
         vocab_step4 = _make_vocab(
             repetition_count=3, interval_days=round(6 * 2.7), easiness_factor=2.8
         )
-        mock_vocab_repo.get_all.return_value = [vocab_step4]
+        mock_vocab_repo.get_by_id.return_value = vocab_step4
 
         service.update_sm2(vocab_id=1, quality=5)
-        call_args_4 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        call_args_4 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert call_args_4["interval_days"] == round(round(6 * 2.7) * 2.8)  # 45
         assert call_args_4["repetition_count"] == 4
 
@@ -904,13 +846,11 @@ class TestSM2MultiStepScenarios:
         """
         # Step 1
         vocab = _make_vocab(repetition_count=0, interval_days=0, easiness_factor=2.5)
-        mock_vocab_repo.get_all.return_value = [vocab]
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[vocab.model_dump()]
-        )
+        mock_vocab_repo.get_by_id.return_value = vocab
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**vocab.model_dump())
 
         service.update_sm2(vocab_id=1, quality=5)
-        data_1 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        data_1 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert data_1["interval_days"] == 1
         assert data_1["repetition_count"] == 1
 
@@ -918,9 +858,9 @@ class TestSM2MultiStepScenarios:
         vocab_s2 = _make_vocab(
             repetition_count=1, interval_days=1, easiness_factor=data_1["easiness_factor"]
         )
-        mock_vocab_repo.get_all.return_value = [vocab_s2]
+        mock_vocab_repo.get_by_id.return_value = vocab_s2
         service.update_sm2(vocab_id=1, quality=5)
-        data_2 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        data_2 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert data_2["interval_days"] == 6
         assert data_2["repetition_count"] == 2
 
@@ -928,9 +868,9 @@ class TestSM2MultiStepScenarios:
         vocab_s3 = _make_vocab(
             repetition_count=2, interval_days=6, easiness_factor=data_2["easiness_factor"]
         )
-        mock_vocab_repo.get_all.return_value = [vocab_s3]
+        mock_vocab_repo.get_by_id.return_value = vocab_s3
         service.update_sm2(vocab_id=1, quality=1)
-        data_3 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        data_3 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert data_3["interval_days"] == 1
         assert data_3["repetition_count"] == 0
 
@@ -938,9 +878,9 @@ class TestSM2MultiStepScenarios:
         vocab_s4 = _make_vocab(
             repetition_count=0, interval_days=1, easiness_factor=data_3["easiness_factor"]
         )
-        mock_vocab_repo.get_all.return_value = [vocab_s4]
+        mock_vocab_repo.get_by_id.return_value = vocab_s4
         service.update_sm2(vocab_id=1, quality=5)
-        data_4 = mock_supabase_client.table.return_value.update.call_args[0][0]
+        data_4 = mock_vocab_repo.update_review_schedule.call_args[0][1]
         assert data_4["interval_days"] == 1
         assert data_4["repetition_count"] == 1
 
@@ -1323,7 +1263,7 @@ class TestInitializeWordForReview:
 
     def test_vocab_not_found_raises(self, service, mock_vocab_repo, mock_supabase_client) -> None:
         """Test ValueError when vocab_id does not exist."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_by_id.return_value = None
 
         with pytest.raises(ValueError, match="Vocabulary with id 999 not found"):
             service.initialize_word_for_review(vocab_id=999)
@@ -1331,17 +1271,15 @@ class TestInitializeWordForReview:
     def test_sets_default_sm2_values(self, service, mock_vocab_repo, mock_supabase_client) -> None:
         """Test initialize sets default SM-2 values (EF=2.5, interval=1, rep=0)."""
         vocab = _make_vocab(vocab_id=1, times_seen=3, times_correct=2)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.initialize_word_for_review(vocab_id=1)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["easiness_factor"] == 2.5
         assert update_data["interval_days"] == 1
         assert update_data["repetition_count"] == 0
@@ -1351,20 +1289,18 @@ class TestInitializeWordForReview:
     ) -> None:
         """Test next_review_at is set to approximately 1 day from now."""
         vocab = _make_vocab(vocab_id=1)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         before = datetime.now(UTC)
         service.initialize_word_for_review(vocab_id=1)
         after = datetime.now(UTC)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
-        next_review = datetime.fromisoformat(update_data["next_review_at"])
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
+        next_review = update_data["next_review_at"]
 
         expected_earliest = before + timedelta(days=1)
         expected_latest = after + timedelta(days=1)
@@ -1375,17 +1311,15 @@ class TestInitializeWordForReview:
     ) -> None:
         """Test initialize does not set last_reviewed_at (it passes None)."""
         vocab = _make_vocab(vocab_id=1)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.initialize_word_for_review(vocab_id=1)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert "last_reviewed_at" not in update_data
 
     def test_preserves_times_seen_and_times_correct(
@@ -1393,17 +1327,15 @@ class TestInitializeWordForReview:
     ) -> None:
         """Test initialize preserves existing times_seen and times_correct."""
         vocab = _make_vocab(vocab_id=1, times_seen=7, times_correct=4)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.initialize_word_for_review(vocab_id=1)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         assert update_data["times_seen"] == 7
         assert update_data["times_correct"] == 4
 
@@ -1621,21 +1553,21 @@ class TestServiceInit:
 
             assert svc._user_id == "user-xyz-456"
 
-    def test_stores_client(self) -> None:
-        """Test service stores the client reference."""
+    def test_passes_client_to_repo(self) -> None:
+        """Test service passes client to VocabularyRepository."""
         mock_client = MagicMock()
 
-        with patch("src.services.review.VocabularyRepository"):
-            svc = ReviewService("user-xyz-456", client=mock_client)
+        with patch("src.services.review.VocabularyRepository") as mock_vocab:
+            ReviewService("user-xyz-456", client=mock_client)
 
-            assert svc._client is mock_client
+            mock_vocab.assert_called_once_with("user-xyz-456", client=mock_client)
 
-    def test_client_defaults_to_none(self) -> None:
+    def test_client_defaults_to_none_in_repo(self) -> None:
         """Test client defaults to None when not provided."""
-        with patch("src.services.review.VocabularyRepository"):
-            svc = ReviewService("user-xyz-456")
+        with patch("src.services.review.VocabularyRepository") as mock_vocab:
+            ReviewService("user-xyz-456")
 
-            assert svc._client is None
+            mock_vocab.assert_called_once_with("user-xyz-456", client=None)
 
 
 # =============================================================================
@@ -1651,17 +1583,15 @@ class TestEdgeCases:
     ) -> None:
         """Test quality=3 is treated as successful recall (threshold boundary)."""
         vocab = _make_vocab(repetition_count=0, interval_days=0)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=3)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # Quality 3 is successful: interval=1 (first), rep=1
         assert update_data["repetition_count"] == 1
         assert update_data["interval_days"] == 1
@@ -1671,17 +1601,15 @@ class TestEdgeCases:
     ) -> None:
         """Test quality=2 is treated as failed recall (threshold boundary)."""
         vocab = _make_vocab(repetition_count=3, interval_days=15)
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=2)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # Quality 2 is failure: reset
         assert update_data["repetition_count"] == 0
         assert update_data["interval_days"] == 1
@@ -1695,17 +1623,15 @@ class TestEdgeCases:
             interval_days=365,
             easiness_factor=2.5,
         )
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=5)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # interval = round(365 * 2.5) = 912
         assert update_data["interval_days"] == round(365 * 2.5)
 
@@ -1718,17 +1644,15 @@ class TestEdgeCases:
             interval_days=6,
             easiness_factor=1.3,
         )
-        mock_vocab_repo.get_all.return_value = [vocab]
+        mock_vocab_repo.get_by_id.return_value = vocab
 
         updated_data = vocab.model_dump()
-        mock_supabase_client.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[updated_data]
-        )
+        mock_vocab_repo.update_review_schedule.return_value = Vocabulary(**updated_data)
 
         service.update_sm2(vocab_id=1, quality=3)
 
-        call_args = mock_supabase_client.table.return_value.update.call_args
-        update_data = call_args[0][0]
+        call_args = mock_vocab_repo.update_review_schedule.call_args
+        update_data = call_args[0][1]
         # interval = round(6 * 1.3) = 8, slightly slower progression
         assert update_data["interval_days"] == round(6 * 1.3)
         assert update_data["repetition_count"] == 3

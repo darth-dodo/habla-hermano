@@ -352,10 +352,10 @@ class TestLessonsUncoveredLines:
         app.include_router(lessons_router, prefix="/lessons")
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as mock_repo_cls,
-            patch("src.api.routes.lessons.get_supabase_admin") as mock_admin,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as mock_repo_cls,
+            patch("src.services.lesson_completion.get_supabase_admin") as mock_admin,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_cls.return_value = MagicMock()
             mock_admin.return_value = MagicMock()
@@ -383,10 +383,10 @@ class TestLessonsUncoveredLines:
         app.include_router(lessons_router, prefix="/lessons")
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as mock_repo_cls,
-            patch("src.api.routes.lessons.get_supabase_admin") as mock_admin,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as mock_repo_cls,
+            patch("src.services.lesson_completion.get_supabase_admin") as mock_admin,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_cls.return_value = MagicMock()
             mock_admin.return_value = MagicMock()

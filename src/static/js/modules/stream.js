@@ -250,6 +250,7 @@ async function streamChat(formData) {
     try {
         const response = await fetch('/chat/stream', {
             method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData,
             signal: currentController.signal,
         });

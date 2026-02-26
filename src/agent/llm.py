@@ -56,7 +56,7 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
     temperature_override, max_tokens = _PROFILES[profile]
 
     # Import here to avoid circular import through src.api.config
-    from src.api.config import get_settings  # noqa: PLC0415
+    from src.config import get_settings  # noqa: PLC0415
 
     settings = get_settings()
 

@@ -30,7 +30,7 @@ class TestGetLlmFunction:
 
     def test_get_llm_returns_chat_anthropic(self, mock_settings: "Settings") -> None:
         """get_llm should return a ChatAnthropic instance."""
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 result = get_llm("conversational")
@@ -39,7 +39,7 @@ class TestGetLlmFunction:
 
     def test_get_llm_uses_settings_api_key(self, mock_settings: "Settings") -> None:
         """get_llm should use API key from settings."""
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
@@ -48,7 +48,7 @@ class TestGetLlmFunction:
 
     def test_get_llm_uses_settings_model(self, mock_settings: "Settings") -> None:
         """get_llm should use model from settings."""
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
@@ -57,7 +57,7 @@ class TestGetLlmFunction:
 
     def test_get_llm_uses_settings_temperature(self, mock_settings: "Settings") -> None:
         """get_llm conversational profile should use temperature from settings."""
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
@@ -83,7 +83,7 @@ class TestRespondNodeBasic:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
@@ -99,7 +99,7 @@ class TestRespondNodeBasic:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
@@ -115,7 +115,7 @@ class TestRespondNodeBasic:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
@@ -131,7 +131,7 @@ class TestRespondNodeBasic:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Hola amigo!"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hola!")],
@@ -155,7 +155,7 @@ class TestRespondNodeLevels:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hello")],
@@ -172,7 +172,7 @@ class TestRespondNodeLevels:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 with patch(
                     "src.agent.nodes.respond.get_prompt_for_level",
@@ -199,7 +199,7 @@ class TestRespondNodeLanguages:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [HumanMessage(content="Hello")],
@@ -215,7 +215,7 @@ class TestRespondNodeLanguages:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 with patch(
                     "src.agent.nodes.respond.get_prompt_for_level",
@@ -241,7 +241,7 @@ class TestRespondNodeConversationHistory:
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="Response"))
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [
@@ -270,7 +270,7 @@ class TestRespondNodeConversationHistory:
         msg2 = AIMessage(content="Second")
         msg3 = HumanMessage(content="Third")
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.nodes.respond.get_llm", return_value=mock_llm):
                 state: ConversationState = {
                     "messages": [msg1, msg2, msg3],
