@@ -92,9 +92,7 @@ class TestChatPageEndpoint:
         assert response.status_code == 200
         assert "Habla Hermano" in response.text
 
-    def test_chat_page_sets_session_cookie_for_guests(
-        self, test_client: TestClient
-    ) -> None:
+    def test_chat_page_sets_session_cookie_for_guests(self, test_client: TestClient) -> None:
         """GET / should set session_id cookie for guest users so voice WebSocket auth works."""
         from src.api.auth import get_current_user_optional
 
