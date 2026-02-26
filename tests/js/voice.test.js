@@ -1256,6 +1256,24 @@ describe('voice.js — VoiceManager', () => {
             expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
             expect(vm.currentBlobUrl).toBeNull();
         });
+
+        it('stops all scheduled AudioBufferSourceNodes', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+
+            const source1 = { stop: vi.fn() };
+            const source2 = { stop: vi.fn() };
+            vm._ttsSources = [source1, source2];
+
+            const btn = document.createElement('button');
+            btn.className = 'voice-speak-btn';
+
+            vm._stopTTS(btn);
+
+            expect(source1.stop).toHaveBeenCalled();
+            expect(source2.stop).toHaveBeenCalled();
+            expect(vm._ttsSources).toEqual([]);
+        });
     });
 
     describe('_stopAllTTS()', () => {
