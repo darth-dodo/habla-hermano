@@ -18,6 +18,7 @@ from httpx import ASGITransport, AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
+from tests.conftest import CSRF_HEADERS
 
 
 def create_app_with_auth_mocked() -> FastAPI:
@@ -239,7 +240,7 @@ class TestNewConversationEndpoint:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app, follow_redirects=False) as client:
+            with TestClient(app, headers=CSRF_HEADERS, follow_redirects=False) as client:
                 response = client.post("/new")
 
                 # HTMX redirect uses 200 with HX-Redirect header
@@ -256,7 +257,7 @@ class TestNewConversationEndpoint:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app, follow_redirects=False) as client:
+            with TestClient(app, headers=CSRF_HEADERS, follow_redirects=False) as client:
                 response = client.post("/new")
 
                 # HX-Redirect header should point to home
@@ -276,7 +277,7 @@ class TestNewConversationEndpoint:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app, follow_redirects=False) as client:
+            with TestClient(app, headers=CSRF_HEADERS, follow_redirects=False) as client:
                 # First make a chat request
                 client.post("/chat", data={"message": "Hello", "level": "A1"})
 
@@ -297,7 +298,7 @@ class TestNewConversationEndpoint:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app, follow_redirects=False) as client:
+            with TestClient(app, headers=CSRF_HEADERS, follow_redirects=False) as client:
                 # Call /new without any prior requests
                 response = client.post("/new")
 
@@ -368,7 +369,7 @@ class TestChatWithPersistence:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 response = client.post(
                     "/chat",
                     data={"message": "Hello", "level": "A1"},
@@ -396,7 +397,7 @@ class TestChatWithPersistence:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 # First request
                 response1 = client.post(
                     "/chat",
@@ -434,7 +435,7 @@ class TestChatWithPersistence:
         ):
             app = create_app_with_auth_mocked()
 
-            with TestClient(app) as client:
+            with TestClient(app, headers=CSRF_HEADERS) as client:
                 client.post(
                     "/chat",
                     data={"message": "Hello", "level": "A1"},
@@ -614,7 +615,11 @@ class TestAsyncClientPersistence:
         ):
             app = create_app_with_auth_mocked()
             transport = ASGITransport(app=app)
-            async with AsyncClient(transport=transport, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=transport,
+                base_url="http://test",
+                headers=CSRF_HEADERS,
+            ) as client:
                 response = await client.post(
                     "/chat",
                     data={"message": "Hello", "level": "A1"},
@@ -634,7 +639,11 @@ class TestAsyncClientPersistence:
         ):
             app = create_app_with_auth_mocked()
             transport = ASGITransport(app=app)
-            async with AsyncClient(transport=transport, base_url="http://test") as client:
+            async with AsyncClient(
+                transport=transport,
+                base_url="http://test",
+                headers=CSRF_HEADERS,
+            ) as client:
                 response = await client.post(
                     "/new",
                     follow_redirects=False,

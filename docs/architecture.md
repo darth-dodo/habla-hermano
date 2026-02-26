@@ -152,7 +152,7 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
 | **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean), mobile-responsive |
-| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time speech-to-text and text-to-speech via WebSocket proxy |
+| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time STT/TTS via JWT-authenticated WebSocket proxy |
 | **JS Testing** | Vitest + jsdom | 186 tests with ~90% coverage on ES modules |
 
 ---
@@ -167,24 +167,27 @@ habla-hermano/
 │   ├── api/
 │   │   ├── __init__.py          # [Implemented]
 │   │   ├── main.py              # [Implemented] FastAPI app entry
-│   │   ├── config.py            # [Implemented] Settings (Pydantic)
+│   │   ├── config.py            # [Implemented] Re-export shim (canonical location: src/config.py)
 │   │   ├── dependencies.py      # [Implemented] DI for graph, db session
 │   │   ├── auth.py              # [Implemented] JWT validation, CurrentUserDep, OptionalUserDep, EffectiveUser (legacy)
 │   │   ├── session.py           # [Implemented] Thread ID management
-│   │   ├── supabase_client.py   # [Implemented] Supabase client singleton (anon + user-authenticated)
+│   │   ├── supabase_client.py   # [Implemented] Re-export shim (canonical location: src/db/client.py)
 │   │   ├── streaming.py         # [Implemented] SSE streaming: StreamResult dataclass, stream_chat_events() async generator
 │   │   ├── cookies.py          # [Implemented] Centralized cookie utility (signing, secure flag)
-│   │   ├── middleware.py       # [Implemented] Security headers middleware (CSP, HSTS)
-│   │   ├── validation.py       # [Implemented] Shared input validation (language, level, days)
+│   │   ├── middleware.py       # [Implemented] SecurityHeadersMiddleware (CSP, HSTS) + CSRFMiddleware (OWASP custom header)
+│   │   ├── validation.py       # [Implemented] Re-export shim (canonical location: src/validation.py)
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] POST /chat, POST /chat/stream (SSE streaming)
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
-│   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (list, play, steps, exercises)
+│   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (routing only; completion logic in services/lesson_completion.py)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
 │   │       ├── review.py        # [Implemented] Spaced repetition review endpoints
 │   │       ├── learn.py         # [Implemented] Learning path and recommendation endpoints
-│   │       └── voice.py         # [Implemented] WebSocket STT proxy + REST/WS TTS endpoints
+│   │       └── voice.py         # [Implemented] WebSocket STT/TTS proxy (JWT-authenticated) + REST TTS endpoint
+│   │
+│   ├── config.py                  # [Implemented] Canonical Settings + get_settings (moved from api/config.py)
+│   ├── validation.py              # [Implemented] Canonical VALID_LANGUAGES, VALID_LEVELS, validate_* helpers
 │   │
 │   ├── agent/
 │   │   ├── __init__.py          # [Implemented]
@@ -214,6 +217,7 @@ habla-hermano/
 │   │
 │   ├── db/
 │   │   ├── __init__.py          # [Implemented] Module exports
+│   │   ├── client.py            # [Implemented] Canonical get_supabase, get_supabase_admin (moved from api/supabase_client.py)
 │   │   ├── models.py            # [Implemented] Pydantic models (Vocabulary, LearningSession, LessonProgress)
 │   │   ├── repository.py        # [Implemented] Repository classes for Supabase data access
 │   │   └── seed.py              # [Implemented] Initial data seeding
@@ -224,9 +228,10 @@ habla-hermano/
 │   │   ├── levels.py            # [Implemented] Level detection/adjustment
 │   │   ├── progress.py          # [Implemented] ProgressService for dashboard aggregation
 │   │   ├── merge.py             # [Removed] Previously GuestDataMergeService - no longer needed
-│   │   ├── review.py            # [Implemented] ReviewService with SM-2 algorithm
+│   │   ├── review.py            # [Implemented] ReviewService with SM-2 algorithm (uses VocabularyRepository)
 │   │   ├── paths.py             # [Implemented] PathService for structured learning paths
-│   │   └── adaptive.py          # [Implemented] AdaptiveService for daily recommendations
+│   │   ├── adaptive.py          # [Implemented] AdaptiveService for daily recommendations
+│   │   └── lesson_completion.py # [Implemented] Extracted lesson completion logic (exercise validation, vocab upsert, persistence)
 │   │
 │   ├── templates/               # [Implemented] All template files (mobile-responsive)
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables, safe areas, dynamic viewport
@@ -602,7 +607,7 @@ class ChartData:
 
 2. **No Admin Client for Guest Operations**: The previous design used a service role client (`get_supabase_admin()`) to bypass RLS for guest data. The simplified model eliminates this pattern entirely. All data operations use a user-authenticated Supabase client.
 
-3. **User-Authenticated Supabase Client** (`src/api/supabase_client.py`):
+3. **User-Authenticated Supabase Client** (`src/db/client.py`, re-exported from `src/api/supabase_client.py`):
 ```python
 def get_supabase_for_user(access_token: str) -> SupabaseClient:
     """Get Supabase client authenticated with user's JWT.
@@ -2052,6 +2057,97 @@ CREATE POLICY "Users can delete own vocabulary"
 
 ---
 
+## Middleware Stack
+
+Middleware is registered in `src/api/main.py` and executes in the following order (outermost first):
+
+```
+Request → SecurityHeadersMiddleware → CSRFMiddleware → CORSMiddleware → Route Handler
+```
+
+### SecurityHeadersMiddleware (`src/api/middleware.py`)
+
+Adds security response headers on every request:
+- `Content-Security-Policy` (CSP)
+- `Strict-Transport-Security` (HSTS)
+- `X-Frame-Options`
+- `X-Content-Type-Options`
+
+### CSRFMiddleware (`src/api/middleware.py`)
+
+Uses the OWASP "custom header" pattern to protect state-changing requests:
+
+- **Protected methods**: POST, PUT, DELETE, PATCH
+- **Validation**: Requires either `HX-Request: true` (HTMX) or `X-Requested-With: XMLHttpRequest` (fetch/JS)
+- **Exempt paths**: `/health`, `/static/`, and other safe endpoints
+- **Safe methods**: GET, HEAD, OPTIONS bypass CSRF checks
+
+This approach works because browsers enforce that custom headers cannot be set by cross-origin forms or simple requests. Both HTMX and the application's `fetch()` calls (stream.js, voice.js) set these headers automatically.
+
+### CORSMiddleware
+
+Standard FastAPI CORS middleware for cross-origin request handling.
+
+---
+
+## Layer Architecture
+
+The application follows a layered architecture where inner layers (agent, services, db) do not import from outer layers (api). After the P1 audit remediation, shared modules that were previously inside `src/api/` have been moved to canonical locations at the `src/` level.
+
+### Canonical Module Locations
+
+| Canonical Location | Contains | Old Location (now re-export shim) |
+|---|---|---|
+| `src/config.py` | `Settings`, `get_settings()` | `src/api/config.py` |
+| `src/validation.py` | `VALID_LANGUAGES`, `VALID_LEVELS`, `validate_*` helpers | `src/api/validation.py` |
+| `src/db/client.py` | `get_supabase()`, `get_supabase_admin()` | `src/api/supabase_client.py` |
+
+The old locations remain as thin re-export shims for backward compatibility (existing imports from `src.api.config`, etc. continue to work). Inner layers (agent, services, db) now import exclusively from the canonical locations, eliminating the layer violation where inner modules depended on the API layer.
+
+### Layer Dependency Rules
+
+```
+src/api/        → can import from: src/config, src/validation, src/db, src/services, src/agent, src/lessons
+src/services/   → can import from: src/config, src/validation, src/db, src/lessons
+src/agent/      → can import from: src/config, src/validation, src/db
+src/db/         → can import from: src/config
+src/lessons/    → can import from: src/config
+```
+
+---
+
+## Lesson Completion Service
+
+The `src/services/lesson_completion.py` module extracts business logic that was previously embedded in `src/api/routes/lessons.py` (reduced from 817 to 468 lines).
+
+### Components
+
+| Component | Purpose |
+|---|---|
+| `ExerciseFeedback` dataclass | Result of exercise answer validation (correct, feedback text, correct answer) |
+| `CompletionResult` dataclass | Result of lesson completion (user identity, progress persisted, next lesson) |
+| `check_exercise_answer()` | Validates user answers against lesson exercise data (multiple choice, fill-blank, translate) |
+| `initialize_lesson_vocabulary_for_review()` | Upserts lesson vocabulary into the user's vocabulary table with initial SM-2 scheduling |
+| `complete_lesson_and_persist()` | Resolves user identity, persists completion to `lesson_progress`, and determines the next lesson |
+
+This refactoring ensures the route handler focuses on HTTP concerns (request parsing, response formatting) while the service handles domain logic (validation rules, persistence orchestration, SM-2 initialization).
+
+---
+
+## WebSocket Authentication
+
+WebSocket endpoints (`/ws/transcribe` and `/ws/speak`) enforce JWT authentication before accepting connections. The `_authenticate_websocket()` helper in `src/api/routes/voice.py` extracts the JWT from the `sb-access-token` cookie and validates it via the same Supabase Auth mechanism used by REST endpoints. Unauthenticated WebSocket connections are closed with code 4401 before any data is exchanged.
+
+```
+Client connects to /ws/transcribe
+    → _authenticate_websocket() reads sb-access-token cookie
+    → JWT validated via Supabase Auth
+    → If invalid: WebSocket closed (4401), no Deepgram connection made
+    → If valid: WebSocket accepted, Deepgram proxy established
+```
+
+---
+
 ## Development Setup
 
 ### Makefile
@@ -2229,3 +2325,12 @@ asyncio_mode = "auto"
 8. 60-second `AbortController` timeout for streaming safety
 9. Chat form migrated from HTMX (`hx-post` removed) to `fetch()` POST via `stream.js`
 10. Existing `POST /chat` preserved as non-streaming fallback
+
+### P1 Audit Remediation - COMPLETED
+1. **B1 - WebSocket Authentication**: `/ws/transcribe` and `/ws/speak` enforce JWT auth via `_authenticate_websocket()` helper
+2. **B2 - CSRF Middleware**: `CSRFMiddleware` using OWASP custom header pattern (HX-Request or X-Requested-With required for POST/PUT/DELETE/PATCH)
+3. **B5 - Layer Violation Fixes**: Canonical modules created at `src/` level (`src/config.py`, `src/validation.py`, `src/db/client.py`); old API locations remain as re-export shims
+4. **B6 - ReviewService Repository Pattern**: ReviewService refactored to use `VocabularyRepository` methods instead of direct `client.table()` calls
+5. **B7 - Lesson Completion Service**: Business logic extracted from `src/api/routes/lessons.py` (817 to 468 lines) into `src/services/lesson_completion.py`
+6. Middleware stack ordering: SecurityHeaders -> CSRF -> CORS
+7. Old import paths preserved via thin re-export shims for backward compatibility

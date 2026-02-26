@@ -438,9 +438,9 @@ class TestLessonCompletionPersistenceAuthenticated:
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_instance = MagicMock()
             MockRepo.return_value = mock_repo_instance
@@ -472,9 +472,9 @@ class TestLessonCompletionPersistenceAuthenticated:
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_instance = MagicMock()
             MockRepo.return_value = mock_repo_instance
@@ -512,10 +512,12 @@ class TestLessonCompletionPersistenceGuest:
         mock_admin_client = MagicMock()
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.get_supabase_admin", return_value=mock_admin_client),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch(
+                "src.services.lesson_completion.get_supabase_admin", return_value=mock_admin_client
+            ),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_instance = MagicMock()
             MockRepo.return_value = mock_repo_instance
@@ -546,9 +548,9 @@ class TestLessonCompletionErrorResilience:
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
         with (
-            patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo,
-            patch("src.api.routes.lessons.VocabularyRepository"),
-            patch("src.api.routes.lessons.ReviewService"),
+            patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo,
+            patch("src.services.lesson_completion.VocabularyRepository"),
+            patch("src.services.lesson_completion.ReviewService"),
         ):
             mock_repo_instance = MagicMock()
             mock_repo_instance.complete_lesson.side_effect = APIError(
@@ -579,7 +581,7 @@ class TestLessonCompletionErrorResilience:
         app.dependency_overrides[get_current_user_optional] = lambda: mock_user
         app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_service
 
-        with patch("src.api.routes.lessons.LessonProgressRepository") as MockRepo:
+        with patch("src.services.lesson_completion.LessonProgressRepository") as MockRepo:
             MockRepo.side_effect = APIError(
                 {
                     "code": "500",

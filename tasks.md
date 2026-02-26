@@ -13,11 +13,12 @@
 
 ## Current State
 
-**Branch**: `feat/phase16-esm-migration` (active development)
-**Phase**: Phase 16 — ES Module Migration + Voice Improvements
-**Test Coverage**: 2140+ tests passing (1954 Python + 186 JS), 97% coverage
-**Last Audit**: 2026-02-22 (multi-dimensional: security, architecture, dependencies, deployment)
-**Audit Remediation**: 2026-02-23 — 23 of 24 items complete (A1-A24, excluding A10)
+**Branch**: `fix/p1-audit-remediation` (P1 remediation complete, ready to merge)
+**Phase**: Post-Audit Remediation — P1 items complete, P2/P3 pending
+**Test Coverage**: 2157+ tests passing (1971 Python + 186 JS), 97% coverage
+**Last Audit**: 2026-02-26 (multi-dimensional: security, performance, architecture, workspace hygiene)
+**P1 Remediation**: 2026-02-26 → 7/7 HIGH severity items complete (B1-B7)
+**Previous Audit**: 2026-02-22 → remediated 2026-02-23 (23/24 items, A1-A24 excluding A10)
 
 ### What's Working
 
@@ -39,6 +40,10 @@
 | Learning Paths | 14 | Static paths + adaptive daily recommendations |
 | SSE Streaming | 15 | Real-time chat via Server-Sent Events |
 | Security Hardening | Audit | Headers, signed cookies, XSS sanitization, JWT refresh |
+| CSRF Protection | P1 | Custom-header pattern (HX-Request/X-Requested-With) for POST/PUT/DELETE/PATCH |
+| WebSocket Auth | P1 | JWT authentication enforced on /ws/transcribe and /ws/speak |
+| Layer Architecture | P1 | Canonical modules at src/ level (config, validation, db/client), re-export shims |
+| Lesson Completion Service | P1 | Business logic extracted from lessons.py → src/services/lesson_completion.py |
 | Voice Conversation | 17 | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, graceful degradation |
 | ES Module Architecture | 16 | 6 JS modules, 186 Vitest tests, CI/CD integration |
 | Voice Improvements | 16 | Floating TTS stop bar, concurrent TTS fix, mobile click reliability |
@@ -95,6 +100,56 @@ Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
 
 **Design doc**: `docs/design/phase17-voice-conversation.md`
 **ADR**: `docs/adr/ADR-010-deepgram-voice-stt-tts.md`
+
+---
+
+### Codebase Audit Findings (2026-02-26) — P1 ✅ Complete, P2/P3 Pending
+
+Full audit covering security, performance, architecture, code quality, and workspace hygiene.
+Ran 3 parallel specialized agents (security-engineer, architecture-strategist, performance-engineer) plus direct quality checks.
+
+**Scores** (pre-remediation): Code Quality 8/10 | Testing 9/10 | Architecture 6/10 | Security 7/10 | Performance 5/10 | Workspace Hygiene 5/10 | CI/CD 8/10
+
+**Baseline** (post-P1): 2157+ tests (1971 Python + 186 JS), ruff clean, mypy clean (0 issues in 58 files)
+
+#### Priority: P1 — High Severity ✅ All Done
+
+| # | Task | Severity | Status | Notes |
+|---|------|----------|--------|-------|
+| B1 | Add WebSocket authentication to `/ws/transcribe` and `/ws/speak` | HIGH | ✅ Done | `_authenticate_websocket()` helper validates JWT cookie on connect. Rejects with code 4001 if invalid. `src/api/routes/voice.py` |
+| B2 | Add CSRF protection for state-changing POST endpoints | HIGH | ✅ Done | `CSRFMiddleware` in `src/api/middleware.py` — OWASP custom-header pattern (HX-Request/X-Requested-With). 15 tests in `tests/api/test_csrf.py`. |
+| B3 | Add `VocabularyRepository.get_by_id()` method | HIGH | ✅ Done | Single-row lookup replaces `get_all()` + Python filter in ReviewService. `src/db/repository.py` |
+| B4 | Persist LangGraph checkpointer across requests | HIGH | ✅ Done | Documented singleton pattern with `get_checkpointer()` async context manager. Dev limitation accepted. `src/agent/checkpointer.py` |
+| B5 | Fix 9 layer violations (inner layers importing from API) | HIGH | ✅ Done | Created `src/config.py`, `src/validation.py`, `src/db/client.py`. Old locations are re-export shims. 8 inner-layer imports updated. |
+| B6 | Fix ReviewService direct DB access bypassing repository | HIGH | ✅ Done | ReviewService now uses `VocabularyRepository` methods exclusively. No more direct `client.table()` calls. `src/services/review.py` |
+| B7 | Extract large route files into focused modules (SRP) | HIGH | ✅ Done | `lessons.py` (817→468 lines) — business logic extracted to `src/services/lesson_completion.py`. |
+
+#### Priority: P2 — Medium Severity (Next Sprint)
+
+| # | Task | Severity | Status | Notes |
+|---|------|----------|--------|-------|
+| B8 | Tighten CSP `script-src` (remove `unsafe-eval`) | MEDIUM | ⏳ | `unsafe-eval` in CSP for Tailwind CDN; consider self-hosting or nonce-based. `src/api/middleware.py:45` |
+| B9 | Add rate limiting to voice WebSocket endpoints | MEDIUM | ⏳ | `/ws/transcribe` and `/ws/speak` have no rate limits. Could be abused for Deepgram API cost. |
+| B10 | Cache LangGraph graph compilation | MEDIUM | ⏳ | `build_graph()` recompiles on every request. Cache compiled graph at module level. `src/agent/graph.py` |
+| B11 | Cache `ChatAnthropic` instances per profile | MEDIUM | ⏳ | `get_llm()` creates new client instances. Add `@lru_cache` or module-level cache. `src/agent/llm.py` |
+| B12 | Fix 4 full-table scans in review answer flow | MEDIUM | ⏳ | Each review answer triggers: `get_all()` → Python filter (4x). Add targeted `get_by_user_and_word()`. `src/services/review.py` |
+| B13 | Remove dead code and unused imports | MEDIUM | ⏳ | Scattered dead code across agent nodes and service files identified by architecture audit. |
+| B14 | Standardize error handling patterns in route files | MEDIUM | ⏳ | Inconsistent try/except patterns across routes. Some catch and re-raise, others swallow silently. |
+| B15 | Add connection pooling for Supabase client | MEDIUM | ⏳ | Each request creates fresh Supabase client. Consider connection pooling for production. |
+| B16 | Fix Pydantic V1 deprecation warnings | MEDIUM | ⏳ | 54 remaining deprecation warnings from Pydantic V1 compatibility methods. Migrate to V2 patterns. |
+| B17 | Add structured logging (JSON format) | MEDIUM | ⏳ | Current logging uses plain text. Switch to structured JSON for production observability. |
+
+#### Priority: P3 — Low Severity (Backlog)
+
+| # | Task | Severity | Status | Notes |
+|---|------|----------|--------|-------|
+| B18 | Clean up 6 orphan PNG screenshots in project root | LOW | ⏳ | `e2e-flow*.png`, `mobile-step1.png` — should be in `docs/screenshots/` or deleted. |
+| B19 | Clean up 17 stale worktree branches | LOW | ⏳ | Leftover from parallel agent workflows. `git branch \| wc -l` shows 17 branches. |
+| B20 | Reduce `node_modules/` footprint (53M) | LOW | ⏳ | Only needed for Vitest. Consider moving JS tests to CI-only or using lighter test runner. |
+| B21 | Add `Cache-Control` headers for static assets | LOW | ⏳ | Static JS/CSS served without cache headers. Add fingerprinting + long-lived cache. |
+| B22 | Document Phase 17 voice endpoints in `docs/api.md` | LOW | ⏳ | API docs missing `/ws/transcribe`, `/ws/speak`, `POST /api/speak` endpoints. |
+| B23 | Update `docs/architecture.md` with voice/STT/TTS section | LOW | ⏳ | Architecture docs don't cover Deepgram integration or WebSocket proxy pattern. |
+| B24 | Add integration tests for WebSocket voice proxy | LOW | ⏳ | Current voice tests mock Deepgram SDK. No actual WebSocket integration tests. |
 
 ---
 
@@ -256,6 +311,42 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 
 ## Session Logs
 
+### 2026-02-26: P1 Audit Remediation — 7 HIGH Severity Items
+- **Branch**: `fix/p1-audit-remediation`
+- **Scope**: All 7 P1 (HIGH severity) findings from 2026-02-26 audit (B1-B7)
+- **Method**: Mix of parallel worktree agents and direct implementation across 2 sessions
+- **Changes**:
+  - **B1**: WebSocket auth — `_authenticate_websocket()` validates JWT cookie on `/ws/transcribe` and `/ws/speak`. Rejects with code 4001.
+  - **B2**: CSRF middleware — `CSRFMiddleware` using OWASP custom-header pattern. `HX-Request: true` (HTMX) or `X-Requested-With: XMLHttpRequest` (fetch). 15 tests.
+  - **B3**: `VocabularyRepository.get_by_id()` — single-row lookup, replaces full-table scan in ReviewService.
+  - **B4**: Checkpointer docs — documented singleton pattern, dev limitation accepted.
+  - **B5**: Layer violations — created `src/config.py`, `src/validation.py`, `src/db/client.py` as canonical modules. Old API locations are re-export shims. 8 inner-layer imports fixed.
+  - **B6**: ReviewService — refactored to use VocabularyRepository exclusively, no more direct `client.table()` calls.
+  - **B7**: Lesson completion — extracted business logic from `lessons.py` (817→468 lines) into `src/services/lesson_completion.py`.
+- **Key new files**: `src/config.py`, `src/validation.py`, `src/db/client.py`, `src/services/lesson_completion.py`, `tests/api/test_csrf.py`
+- **Test patches**: ~30 test files updated for relocated mock targets (patch paths changed from `src.api.routes.lessons.*` → `src.services.lesson_completion.*`, `src.api.config.*` → `src.config.*`, etc.)
+- **Results**: 1971 Python tests passing (up from 1954), ruff clean, mypy clean (58 source files)
+
+### 2026-02-26: Comprehensive Codebase Audit (Round 2)
+- **Branch**: `feat/phase16-esm-migration` (12 commits ahead of main)
+- **Scope**: Full multi-dimensional audit — security, performance, architecture, code quality, workspace hygiene
+- **Method**: 3 parallel specialized agents (security-engineer, architecture-strategist, performance-engineer) + direct quality checks
+- **Direct checks**:
+  - `uv run python -m pytest -q --tb=line` → 1954 passed, 5 skipped
+  - `uv run ruff check src/ tests/` → all clean
+  - `uv run mypy src/` → 0 issues in 54 files
+  - `npm test` → 186 JS tests passed
+  - Workspace hygiene: 6 orphan PNGs, 17 stale branches, 53M node_modules
+- **Results**: 52 total findings across 7 dimensions
+  - **Security** (12 findings): WebSocket auth gaps, CSRF missing, CSP too permissive
+  - **Performance** (17 findings): Full-table scans in review flow, uncached graph/LLM, no connection pooling
+  - **Architecture** (12 findings): 9 layer violations, repository bypass, SRP violations in route files
+  - **Workspace** (6 findings): Orphan files, stale branches, node_modules bloat
+- **Dimension scores**: Code Quality 8/10, Testing 9/10, Architecture 6/10, Security 7/10, Performance 5/10, Workspace Hygiene 5/10, CI/CD 8/10
+- **Action plan**: 24 items (B1-B24) in 3 tiers — 7 HIGH (P1), 10 MEDIUM (P2), 7 LOW (P3)
+- **Positive findings**: Clean lint/mypy, comprehensive test suite, strong auth flow, good security headers (post-Feb-23 audit)
+- **Vue/TS migration evaluated**: Recommended against — complexity doesn't justify it for ~1500 lines of vanilla JS in server-rendered HTMX app
+
 ### 2026-02-25: Phase 16 — ES Module Migration + Voice UX
 - **Branch**: `feat/phase16-esm-migration`
 - **Scope**: Monolithic JS refactor to 6 ES modules, 186 JS tests, CI integration, mobile-first fixes, TTS UX improvements
@@ -373,19 +464,33 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 - **Key Constraint**: `lesson_progress` stores base IDs without language/level scoping; PathService always scopes calls
 - **Cookie Security**: All cookies go through `src/api/cookies.py` — signed with `itsdangerous`, environment-aware `secure` flag
 
-### Security Architecture (Post-Audit 2026-02-23)
+### Security Architecture (Post-Audit 2026-02-26)
+- **CSRF Protection**: `CSRFMiddleware` — OWASP custom-header pattern. POST/PUT/DELETE/PATCH require `HX-Request: true` or `X-Requested-With: XMLHttpRequest`. Returns 403 without.
+- **WebSocket Auth**: `/ws/transcribe` and `/ws/speak` validate JWT cookie on connect. Reject with code 4001 if invalid.
 - **Security Headers**: `SecurityHeadersMiddleware` adds CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- **Middleware Stack Order**: SecurityHeaders → CSRF → CORS (last `add_middleware()` runs first/outermost)
 - **XSS Protection**: LLM output sanitized via `nh3` through `| sanitize` Jinja2 filter; f-string HTML uses `markupsafe.escape()`
 - **Cookie Signing**: Review session cookies signed with `itsdangerous` via `sign_cookie_value()` / `unsign_json_cookie()`
 - **JWT Unverified Path**: Blocked by default via `ALLOW_UNVERIFIED_JWT=false`; only enable in development
-- **Input Validation**: Centralized in `src/api/validation.py` — language, level, and days bounds checking
+- **Input Validation**: Canonical location `src/validation.py` — language, level, and days bounds checking. `src/api/validation.py` is a re-export shim.
 - **Exception Handling**: All `except` blocks catch specific types (`APIError`, `httpx.HTTPError`, `anthropic.APIError`, etc.)
 - **Rate Limiting**: Global function-level (not per-IP) — acceptable for current scale
 
+### Layer Architecture (Post-P1 Remediation)
+Canonical modules at `src/` level prevent inner layers from importing API:
+- `src/config.py` — Settings + get_settings (canonical). `src/api/config.py` is a re-export shim.
+- `src/validation.py` — VALID_LANGUAGES, VALID_LEVELS, helpers (canonical). `src/api/validation.py` is a re-export shim.
+- `src/db/client.py` — get_supabase, get_supabase_admin (canonical). `src/api/supabase_client.py` is a re-export shim.
+- Inner layers (agent/, services/, db/) import from canonical locations. API layer can import from either.
+
 ### Key New Files (from audit remediation)
+- `src/config.py` — Canonical Settings + get_settings
+- `src/validation.py` — Canonical domain validation constants and helpers
+- `src/db/client.py` — Canonical Supabase client factory
+- `src/services/lesson_completion.py` — Lesson completion business logic (extracted from lessons.py)
+- `tests/api/test_csrf.py` — CSRF middleware test suite (15 tests)
 - `src/api/cookies.py` — Centralized cookie utility (signing, secure flag, set/delete helpers)
-- `src/api/middleware.py` — Security headers middleware
-- `src/api/validation.py` — Shared input validation (language, level, days)
+- `src/api/middleware.py` — SecurityHeadersMiddleware + CSRFMiddleware
 - `src/agent/utils.py` — `extract_json_from_markdown()` utility
 - `data/stopwords.json` — Extracted stopwords config
 

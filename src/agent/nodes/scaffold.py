@@ -15,7 +15,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from src.agent.llm import get_llm
 from src.agent.state import ConversationState, ScaffoldingConfig
 from src.agent.utils import extract_json_from_response
-from src.api.validation import get_language_name
+from src.validation import get_language_name
 
 logger = logging.getLogger(__name__)
 

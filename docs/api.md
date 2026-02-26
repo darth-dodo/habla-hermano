@@ -31,8 +31,39 @@ The API uses two cookie-based identity mechanisms:
 | Progress (`/progress/*`) | Required for data (`OptionalUserDep`) | Returns empty/zero stats with `is_guest: True` |
 | Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Lessons (`/lessons/*`) | Optional | Full access to browse and play lessons |
-| Voice (`/ws/transcribe`, `/ws/speak`, `/api/speak`) | None (API key on server) | Full access when voice configured |
+| Voice (`/ws/transcribe`, `/ws/speak`) | Required (`sb-access-token` JWT cookie) | WebSocket rejected with close code `4001` |
+| Voice (`/api/speak`) | Optional (`OptionalUserDep`) + CSRF header | Full access when voice configured |
 | Auth (`/auth/*`) | None | Public endpoints |
+
+### CSRF Protection
+
+All state-changing requests (POST, PUT, DELETE, PATCH) must include a CSRF header. The server validates that the request originated from JavaScript running on the same origin, not from a cross-site form submission.
+
+**Required header** (one of the following):
+
+| Header | Value | When to use |
+|--------|-------|-------------|
+| `HX-Request` | `true` | HTMX sends this automatically on every request |
+| `X-Requested-With` | `XMLHttpRequest` | JavaScript `fetch()` or `XMLHttpRequest` calls |
+
+**Failure response**: `403 {"detail": "CSRF validation failed"}`
+
+**Exempt paths**: `/health`, `/static/`, and safe HTTP methods (`GET`, `OPTIONS`).
+
+Since the HTMX library automatically sends the `HX-Request: true` header, all HTMX-driven form submissions pass CSRF validation without changes. For custom JavaScript (such as `stream.js` or `voice.js`), include the `X-Requested-With` header in `fetch()` calls:
+
+```javascript
+fetch('/api/speak', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
+  },
+  body: JSON.stringify({ text: 'Hola amigo' })
+});
+```
+
+---
 
 ### GET /auth/login
 
@@ -468,6 +499,7 @@ The chat form uses `stream.js` (fetch + ReadableStream) instead of HTMX for form
 | Status | Cause | Response |
 |--------|-------|----------|
 | 400 | Missing required `message` parameter | Validation error |
+| 403 | Missing CSRF header on state-changing request | `{"detail": "CSRF validation failed"}` |
 | 422 | Invalid form data | Unprocessable Entity |
 | 500 | LangGraph or LLM error | Internal Server Error |
 
@@ -536,11 +568,15 @@ curl -X POST http://localhost:8000/chat \
 
 Voice features require `DEEPGRAM_API_KEY` to be configured. When not configured, the voice UI is hidden and endpoints return errors.
 
+**Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie. If the cookie is missing or the JWT is expired/invalid, the WebSocket connection is rejected immediately with close code `4001` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
+
 ### WebSocket /ws/transcribe
 
 Real-time speech-to-text via Deepgram Nova-3 proxy. Browser sends raw audio chunks, server forwards to Deepgram and relays transcripts back.
 
 **Protocol**: WebSocket
+
+**Authentication**: Required. The `sb-access-token` cookie must contain a valid JWT. Connection is rejected with close code `4001` if authentication fails.
 
 | Query Parameter | Type | Default | Description |
 |----------------|------|---------|-------------|
@@ -562,12 +598,17 @@ Real-time speech-to-text via Deepgram Nova-3 proxy. Browser sends raw audio chun
 - `1000`: Normal close
 - `1008`: Invalid language parameter
 - `1011`: Voice features not configured or internal error
+- `4001`: Authentication required (missing or invalid JWT)
 
 ---
 
 ### POST /api/speak
 
 Synthesize speech from text using Deepgram Aura-2 TTS (REST fallback).
+
+**Authentication**: Optional (`OptionalUserDep`).
+
+**CSRF**: Required. Include `HX-Request: true` or `X-Requested-With: XMLHttpRequest` header (see [CSRF Protection](#csrf-protection)).
 
 **Content-Type**: `application/json`
 
@@ -582,7 +623,16 @@ Synthesize speech from text using Deepgram Aura-2 TTS (REST fallback).
 
 **Error Responses**:
 - `400`: Invalid voice ID
+- `403`: CSRF validation failed (missing required header)
 - `503`: Voice features not configured
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/api/speak \
+  -H "Content-Type: application/json" \
+  -H "X-Requested-With: XMLHttpRequest" \
+  -d '{"text": "Hola, me llamo Ana", "voice": "aura-2-celeste-es"}'
+```
 
 ---
 
@@ -592,15 +642,24 @@ Stream TTS audio via WebSocket for low-latency playback (~300ms to first audio).
 
 **Protocol**: WebSocket
 
+**Authentication**: Required. The `sb-access-token` cookie must contain a valid JWT. Connection is rejected with close code `4001` if authentication fails.
+
 | Query Parameter | Type | Default | Description |
 |----------------|------|---------|-------------|
 | `voice` | string | `aura-2-nestor-es` | Deepgram voice model ID |
 
 **Client → Server**: JSON messages:
 ```json
-{"text": "Hola amigo"}
+{"text": "Hola amigo", "voice": "aura-2-celeste-es", "speed": 1.0}
 {"type": "close"}
 ```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `text` | string | Yes | - | Text to synthesize |
+| `voice` | string | No | `aura-2-nestor-es` | Deepgram voice model ID |
+| `speed` | float | No | `1.0` | Playback speed multiplier |
+| `type` | string | No | - | Set to `"close"` to end the session |
 
 **Server → Client**:
 - Binary audio chunks (linear16 PCM, 24kHz, mono)
@@ -609,6 +668,7 @@ Stream TTS audio via WebSocket for low-latency playback (~300ms to first audio).
 **Close Codes**:
 - `1008`: Invalid voice parameter
 - `1011`: Voice features not configured or internal error
+- `4001`: Authentication required (missing or invalid JWT)
 
 ---
 

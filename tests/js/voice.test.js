@@ -1602,7 +1602,7 @@ describe('voice.js — VoiceManager', () => {
 
             expect(globalThis.fetch).toHaveBeenCalledWith('/api/speak', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                 body: JSON.stringify({ text: 'Hola', voice: 'aura-2-nestor-es' }),
             });
 

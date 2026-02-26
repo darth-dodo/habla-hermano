@@ -375,7 +375,7 @@ def test_app(
     )
     # Patch LessonProgressRepository in lessons routes for complete_lesson endpoint
     app._lesson_progress_repo_patcher = patch(
-        "src.api.routes.lessons.LessonProgressRepository",
+        "src.services.lesson_completion.LessonProgressRepository",
         return_value=MagicMock(),
     )
     # Patch get_supabase_for_user to return a mock client
@@ -385,11 +385,11 @@ def test_app(
     )
     # Patch VocabularyRepository and ReviewService in lessons routes (CI has no Supabase)
     app._lessons_vocab_repo_patcher = patch(
-        "src.api.routes.lessons.VocabularyRepository",
+        "src.services.lesson_completion.VocabularyRepository",
         return_value=MagicMock(),
     )
     app._lessons_review_service_patcher = patch(
-        "src.api.routes.lessons.ReviewService",
+        "src.services.lesson_completion.ReviewService",
         return_value=MagicMock(),
     )
     app._progress_service_patcher.start()

@@ -28,6 +28,7 @@
 | DB Models | `db/test_models.py` | 25+ | Pydantic models for Supabase |
 | DB Repository | `db/test_repository.py` | 30+ | Data access layer with mocked client |
 | Supabase Client | `api/test_supabase_client.py` | 15+ | Client singleton, cache management |
+| CSRF Middleware | `api/test_csrf.py` | 15 | CSRF token validation, safe/unsafe methods, exempt paths |
 | Services Levels | `services/test_levels.py` | 20+ | CEFR level detection |
 | Services Vocab | `services/test_vocabulary.py` | 20+ | Vocabulary tracking |
 | Lessons/Progress | `api/routes/test_progress.py` | 50+ | Lesson endpoints, progress tracking |
@@ -51,7 +52,7 @@
 | JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
 
-**Total**: 2140+ tests (1954 Python + 186 JavaScript) with 97% code coverage
+**Total**: 2157+ tests (1971 Python + 186 JavaScript) with 97% code coverage
 
 ---
 
@@ -1021,6 +1022,9 @@ make dev
 ### Common Fixtures (`tests/conftest.py`)
 
 ```python
+# CSRF_HEADERS constant — used by all test clients to satisfy CSRF middleware
+CSRF_HEADERS = {"x-csrf-token": "test-csrf-token"}
+
 @pytest.fixture
 def sample_conversation_state() -> ConversationState:
     """Provide a sample conversation state for testing."""
@@ -1125,6 +1129,7 @@ tests/
 │   ├── __init__.py
 │   ├── test_auth.py               # JWT validation, signup/login flows
 │   ├── test_config.py             # Configuration tests
+│   ├── test_csrf.py               # CSRF middleware tests (15 tests)
 │   ├── test_session.py            # Thread ID management, cookies
 │   ├── test_supabase_client.py    # Client singleton tests
 │   ├── test_data_capture.py       # Vocabulary/session capture
@@ -1206,7 +1211,7 @@ describe('VoiceManager', () => {
 
 ## Continuous Integration
 
-Tests run on every push via GitHub Actions:
+Tests run on every push via GitHub Actions. mypy strict checks cover 58 source files.
 
 ```yaml
 # .github/workflows/test.yml

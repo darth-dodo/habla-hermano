@@ -1262,7 +1262,7 @@ class TestGetLlm:
             LLM_TEMPERATURE=0.5,
         )
 
-        with patch("src.api.config.get_settings", return_value=mock_settings):
+        with patch("src.config.get_settings", return_value=mock_settings):
             with patch("src.agent.llm.ChatAnthropic") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 from src.agent.llm import get_llm

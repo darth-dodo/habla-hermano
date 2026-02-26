@@ -1,15 +1,121 @@
-"""Security headers middleware for OWASP compliance.
+"""Security middleware for OWASP compliance.
 
-Adds standard security headers to every HTTP response. The HSTS header
-is only included when DEBUG is False (production) because local development
-typically runs over plain HTTP.
+Provides two middleware classes:
+- SecurityHeadersMiddleware: Adds standard security headers to every HTTP response.
+- CSRFMiddleware: Protects state-changing requests (POST/PUT/DELETE/PATCH) using
+  the "custom header" CSRF pattern.
+
+The HSTS header is only included when DEBUG is False (production) because local
+development typically runs over plain HTTP.
 """
+
+import logging
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from src.api.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+# HTTP methods that change state and require CSRF protection
+_STATE_CHANGING_METHODS: frozenset[str] = frozenset({"POST", "PUT", "DELETE", "PATCH"})
+
+# Paths exempt from CSRF checks (health checks, static assets)
+_CSRF_EXEMPT_PATHS: frozenset[str] = frozenset({"/health"})
+
+# Path prefixes exempt from CSRF (static files served by StaticFiles mount)
+_CSRF_EXEMPT_PREFIXES: tuple[str, ...] = ("/static/",)
+
+
+def _is_csrf_exempt(method: str, path: str) -> bool:
+    """Check whether a request is exempt from CSRF validation.
+
+    A request is exempt if:
+    - Its HTTP method is safe (not in _STATE_CHANGING_METHODS or is OPTIONS)
+    - Its path matches an exact exempt path or an exempt prefix
+
+    Args:
+        method: Uppercased HTTP method (e.g. "POST").
+        path: Request URL path (e.g. "/chat").
+
+    Returns:
+        True if the request should skip CSRF validation.
+    """
+    if method not in _STATE_CHANGING_METHODS:
+        return True
+    if path in _CSRF_EXEMPT_PATHS:
+        return True
+    return any(path.startswith(prefix) for prefix in _CSRF_EXEMPT_PREFIXES)
+
+
+def _has_csrf_header(request: Request) -> bool:
+    """Check whether the request carries a valid CSRF-proving header.
+
+    Accepts:
+    - ``HX-Request: true`` (HTMX automatic header)
+    - ``X-Requested-With: XMLHttpRequest`` (conventional XHR/fetch marker)
+
+    Args:
+        request: Incoming HTTP request.
+
+    Returns:
+        True if a valid CSRF header is present.
+    """
+    hx_request = request.headers.get("hx-request", "").lower()
+    if hx_request == "true":
+        return True
+
+    x_requested_with = request.headers.get("x-requested-with", "").lower()
+    return x_requested_with == "xmlhttprequest"
+
+
+class CSRFMiddleware(BaseHTTPMiddleware):
+    """Protect state-changing endpoints against Cross-Site Request Forgery.
+
+    Uses the "custom header" pattern recommended by OWASP:
+    https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+
+    For HTMX requests:
+        HTMX automatically sends ``HX-Request: true`` on every request it makes.
+        Browsers will not send custom headers cross-origin without a CORS preflight,
+        so the presence of this header proves the request is same-origin.
+
+    For JavaScript fetch() requests (stream.js, voice.js):
+        These include ``X-Requested-With: XMLHttpRequest`` which similarly cannot
+        be forged cross-origin without CORS approval.
+
+    Exempt from CSRF:
+        - GET, HEAD, OPTIONS requests (safe methods)
+        - ``/health`` endpoint
+        - Static file paths (``/static/``)
+        - WebSocket upgrade requests (handled by a different protocol)
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Check CSRF headers on state-changing requests."""
+        method = request.method.upper()
+        path = request.url.path
+
+        # Skip CSRF for safe methods and exempt paths
+        if _is_csrf_exempt(method, path):
+            return await call_next(request)
+
+        # Validate that a CSRF-proving header is present
+        if _has_csrf_header(request):
+            return await call_next(request)
+
+        # None of the CSRF signals matched -- reject the request
+        logger.warning(
+            "CSRF validation failed: %s %s (missing HX-Request or X-Requested-With header)",
+            method,
+            path,
+        )
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "CSRF validation failed"},
+        )
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

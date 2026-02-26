@@ -19,6 +19,14 @@ from src.api.dependencies import get_cached_templates
 from src.api.rate_limit import reset_rate_limits
 
 # =============================================================================
+# CSRF Header Constant
+# =============================================================================
+# All test clients that exercise the full application (with CSRFMiddleware)
+# must include a CSRF-passing header on state-changing requests.  HTMX adds
+# "HX-Request: true" automatically in production, so we replicate that here.
+CSRF_HEADERS: dict[str, str] = {"HX-Request": "true"}
+
+# =============================================================================
 # User and Authentication Fixtures
 # =============================================================================
 
@@ -130,7 +138,7 @@ def mock_supabase(mock_supabase_client: MagicMock) -> Generator[MagicMock, None,
     Yields:
         MagicMock: The patched mock client.
     """
-    with patch("src.api.supabase_client.get_supabase", return_value=mock_supabase_client):
+    with patch("src.db.client.get_supabase", return_value=mock_supabase_client):
         yield mock_supabase_client
 
 
@@ -377,7 +385,7 @@ def app_with_mocked_graph(
         patch("src.api.routes.chat.build_graph", mock_build_graph),
         patch("src.api.routes.chat.get_checkpointer", mock_get_checkpointer),
         patch("src.db.repository.get_supabase", return_value=mock_supabase),
-        patch("src.api.routes.lessons.get_supabase_admin", return_value=mock_supabase),
+        patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_supabase),
         patch("src.api.routes.learn.get_supabase_admin", return_value=mock_supabase),
     ):
         # Clear caches to ensure fresh app creation
@@ -403,13 +411,16 @@ def app_with_mocked_graph(
 def test_client(app_with_mocked_graph: FastAPI) -> Generator[TestClient, None, None]:
     """Create synchronous test client for FastAPI app.
 
+    Includes HX-Request header by default to pass CSRF middleware, matching
+    the real-world behavior where HTMX sends this header automatically.
+
     Args:
         app_with_mocked_graph: FastAPI app with mocked dependencies.
 
     Yields:
         TestClient: Synchronous test client for route testing.
     """
-    with TestClient(app_with_mocked_graph) as client:
+    with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
         yield client
 
 
@@ -419,6 +430,8 @@ async def async_client(
 ) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client for FastAPI app.
 
+    Includes HX-Request header by default to pass CSRF middleware.
+
     Args:
         app_with_mocked_graph: FastAPI app with mocked dependencies.
 
@@ -426,7 +439,11 @@ async def async_client(
         AsyncClient: Async HTTP client for route testing.
     """
     transport = ASGITransport(app=app_with_mocked_graph)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers=CSRF_HEADERS,
+    ) as client:
         yield client
 
 

@@ -4,6 +4,7 @@ Phase 12: Added review word initialization on lesson completion.
 Phase 9: Added AI-enhanced endpoints using LangGraph subgraphs.
 Phase 7: Added lesson completion persistence for authenticated users.
 Phase 6: Full implementation of lesson API routes.
+B7: Extracted business logic to src.services.lesson_completion (SRP refactor).
 
 Provides lesson listing, content delivery, step navigation, exercises,
 and progress tracking. Supports both authenticated users and guests.
@@ -15,82 +16,23 @@ AI-Enhanced endpoints (Phase 9):
 
 import contextlib
 import logging
-import uuid
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
-from markupsafe import escape
-from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
 from src.api.cookies import set_secure_cookie
 from src.api.dependencies import LessonServiceDep, TemplatesDep
-from src.api.supabase_client import get_supabase_admin
-from src.db.repository import LessonProgressRepository, VocabularyRepository
-from src.lessons.models import (
-    FillBlankExercise,
-    LessonLevel,
-    MultipleChoiceExercise,
-    TranslateExercise,
+from src.lessons.models import LessonLevel
+from src.services.lesson_completion import (
+    check_exercise_answer,
+    complete_lesson_and_persist,
 )
-from src.services.review import ReviewService
-
-if TYPE_CHECKING:
-    from supabase import Client as SupabaseClient
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# =============================================================================
-# Helper Functions
-# =============================================================================
-
-
-def _initialize_lesson_vocabulary_for_review(
-    effective_id: str,
-    vocabulary: list[dict[str, str]],
-    language: str,
-    client: "SupabaseClient | None" = None,
-) -> None:
-    """Initialize vocabulary from a lesson for spaced repetition review.
-
-    Upserts each vocabulary word and schedules it for review if not already scheduled.
-    This is called after lesson completion to ensure learned words enter the review rotation.
-
-    Args:
-        effective_id: User ID or guest session ID.
-        vocabulary: List of vocabulary dicts with 'word' and 'translation' keys.
-        language: Target language code (es, de, fr).
-        client: Optional Supabase client for guest access.
-    """
-    if not vocabulary:
-        return
-
-    vocab_repo = VocabularyRepository(effective_id, client=client)
-    review_service = ReviewService(effective_id, client=client)
-
-    for word_entry in vocabulary:
-        try:
-            # Upsert the vocabulary word
-            vocab = vocab_repo.upsert(
-                word=word_entry.get("word", ""),
-                translation=word_entry.get("translation", ""),
-                language=language,
-                part_of_speech=word_entry.get("part_of_speech"),
-            )
-
-            # Schedule for review if not already scheduled
-            if vocab.id and vocab.next_review_at is None:
-                review_service.initialize_word_for_review(vocab.id)
-        except APIError:
-            # Log but continue with other words
-            logger.exception(
-                "Failed to initialize word '%s' for review",
-                word_entry.get("word", "unknown"),
-            )
 
 
 # =============================================================================
@@ -111,19 +53,6 @@ async def get_lessons_page(
 
     Supports filtering by language and CEFR level. Lesson completion
     status is scoped to the current user.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lessons.
-        language: Optional language filter (es, de, fr).
-        level: Optional CEFR level filter (A0, A1, A2, B1).
-
-    Returns:
-        HTMLResponse: Rendered lessons page with lesson cards.
-
-    Raises:
     """
     # Parse level filter if provided
     level_enum = None
@@ -172,40 +101,21 @@ async def get_lesson_player(
     lesson_service: LessonServiceDep,
     lesson_id: str,
 ) -> HTMLResponse:
-    """Render the lesson player page for interactive learning.
-
-    Displays the lesson content with step navigation and progress tracking.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-
-    Returns:
-        HTMLResponse: Rendered lesson player page.
-
-    Raises:
-                HTTPException: 404 if lesson not found.
-    """
+    """Render the lesson player page for interactive learning."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
-    # Get ordered steps
     steps = lesson.content.get_ordered_steps()
-    current_step = 0
-    total_steps = len(steps)
 
     return templates.TemplateResponse(
         request=request,
         name="lesson_player.html",
         context={
             "lesson": lesson,
-            "step": steps[current_step] if steps else None,
-            "current_step": current_step,
-            "total_steps": total_steps,
+            "step": steps[0] if steps else None,
+            "current_step": 0,
+            "total_steps": len(steps),
             "user": user,
         },
     )
@@ -225,24 +135,7 @@ async def get_lesson_step(
     lesson_id: str,
     step_index: int,
 ) -> HTMLResponse:
-    """Get a specific lesson step as partial HTML.
-
-    Returns the step content for HTMX-based navigation without full page reload.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-        step_index: Zero-based index of the step.
-
-    Returns:
-        HTMLResponse: Partial HTML for the step content.
-
-    Raises:
-                HTTPException: 404 if lesson or step not found.
-    """
+    """Get a specific lesson step as partial HTML."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
@@ -254,13 +147,11 @@ async def get_lesson_step(
             detail=f"Step {step_index} not found. Lesson has {len(steps)} steps.",
         )
 
-    step = steps[step_index]
-
     return templates.TemplateResponse(
         request=request,
         name="partials/lesson_step.html",
         context={
-            "step": step,
+            "step": steps[step_index],
             "step_index": step_index,
             "lesson_id": lesson_id,
             "total_steps": len(steps),
@@ -277,38 +168,19 @@ async def next_lesson_step(
     lesson_id: str,
     current_step: int = Form(...),
 ) -> HTMLResponse:
-    """Navigate to the next step in the lesson.
-
-    Increments the step index and returns the next step content.
-    If at the last step, returns the same step (boundary handling).
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-        current_step: Current step index from form data.
-
-    Returns:
-        HTMLResponse: Partial HTML for the next step content.
-
-    Raises:
-                HTTPException: 404 if lesson not found.
-    """
+    """Navigate to the next step in the lesson."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
     steps = lesson.content.get_ordered_steps()
     next_index = min(current_step + 1, len(steps) - 1)
-    step = steps[next_index]
 
     return templates.TemplateResponse(
         request=request,
         name="partials/lesson_step.html",
         context={
-            "step": step,
+            "step": steps[next_index],
             "step_index": next_index,
             "lesson_id": lesson_id,
             "total_steps": len(steps),
@@ -325,38 +197,19 @@ async def previous_lesson_step(
     lesson_id: str,
     current_step: int = Form(...),
 ) -> HTMLResponse:
-    """Navigate to the previous step in the lesson.
-
-    Decrements the step index and returns the previous step content.
-    If at the first step, returns the same step (boundary handling).
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-        current_step: Current step index from form data.
-
-    Returns:
-        HTMLResponse: Partial HTML for the previous step content.
-
-    Raises:
-                HTTPException: 404 if lesson not found.
-    """
+    """Navigate to the previous step in the lesson."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
     steps = lesson.content.get_ordered_steps()
     prev_index = max(current_step - 1, 0)
-    step = steps[prev_index]
 
     return templates.TemplateResponse(
         request=request,
         name="partials/lesson_step.html",
         context={
-            "step": step,
+            "step": steps[prev_index],
             "step_index": prev_index,
             "lesson_id": lesson_id,
             "total_steps": len(steps),
@@ -378,25 +231,7 @@ async def get_exercise(
     lesson_id: str,
     exercise_id: str,
 ) -> HTMLResponse:
-    """Get an exercise as partial HTML for interactive practice.
-
-    Renders the appropriate exercise template based on exercise type
-    (multiple choice, fill blank, translate).
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-        exercise_id: Unique identifier for the exercise.
-
-    Returns:
-        HTMLResponse: Partial HTML for the exercise.
-
-    Raises:
-                HTTPException: 404 if lesson or exercise not found.
-    """
+    """Get an exercise as partial HTML for interactive practice."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
@@ -426,24 +261,7 @@ async def submit_exercise(
     exercise_id: str,
     answer: str = Form(...),
 ) -> HTMLResponse:
-    """Submit an answer for an exercise.
-
-    Validates the answer against the exercise's correct answer and returns
-    feedback HTML indicating whether the answer was correct or incorrect.
-
-    Args:
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-        exercise_id: Unique identifier for the exercise.
-        answer: User's submitted answer.
-
-    Returns:
-        HTMLResponse: Feedback HTML with result and explanation.
-
-    Raises:
-                HTTPException: 404 if lesson or exercise not found.
-    """
+    """Submit an answer for an exercise and return feedback HTML."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
@@ -455,48 +273,8 @@ async def submit_exercise(
             detail=f"Exercise not found: {exercise_id}",
         )
 
-    # Check answer based on exercise type
-    is_correct = False
-    correct_answer = ""
-
-    if isinstance(exercise, MultipleChoiceExercise):
-        # For multiple choice, answer is the index
-        try:
-            selected_index = int(answer)
-            is_correct = selected_index == exercise.correct_index
-            correct_answer = exercise.options[exercise.correct_index]
-        except (ValueError, IndexError):
-            is_correct = False
-            correct_answer = exercise.options[exercise.correct_index]
-
-    elif isinstance(exercise, FillBlankExercise):
-        is_correct = exercise.check_answer(answer)
-        correct_answer = exercise.correct_answer
-
-    elif isinstance(exercise, TranslateExercise):
-        is_correct = exercise.check_answer(answer)
-        correct_answer = exercise.correct_translation
-
-    # Build feedback response (escape user-facing content to prevent XSS)
-    css_class = "correct" if is_correct else "incorrect"
-    result_text = "Correct!" if is_correct else "Incorrect - try again"
-    answer_html = (
-        f'<p class="correct-answer">Correct answer: {escape(correct_answer)}</p>'
-        if not is_correct
-        else ""
-    )
-    explanation_html = (
-        f'<p class="explanation">{escape(exercise.explanation)}</p>' if exercise.explanation else ""
-    )
-    feedback_html = f"""
-    <div class="exercise-feedback {css_class}">
-        <p class="result">{result_text}</p>
-        {answer_html}
-        {explanation_html}
-    </div>
-    """
-
-    return HTMLResponse(content=feedback_html)
+    feedback = check_exercise_answer(exercise, answer)
+    return HTMLResponse(content=feedback.feedback_html)
 
 
 # =============================================================================
@@ -515,29 +293,7 @@ async def get_enhanced_lesson_step(
     level: str = "A1",
     language: str = "es",
 ) -> HTMLResponse:
-    """Get AI-enhanced lesson step content.
-
-    Uses the lesson subgraph to:
-    1. Load the step from YAML
-    2. Have Hermano enhance it with dynamic, personalized content
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for validation.
-        lesson_id: Unique identifier for the lesson.
-        step_index: Zero-based index of the step.
-        level: CEFR level for content adaptation (A0, A1, A2, B1).
-        language: Target language code (es, de, fr).
-
-    Returns:
-        HTMLResponse: Enhanced step content with Hermano's additions.
-
-    Raises:
-        HTTPException: 404 if lesson or step not found.
-    """
-    # Validate lesson exists
+    """Get AI-enhanced lesson step content via the lesson subgraph."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
@@ -549,7 +305,6 @@ async def get_enhanced_lesson_step(
             detail=f"Step {step_index} not found. Lesson has {len(steps)} steps.",
         )
 
-    # Import and invoke the lesson subgraph
     from src.agent.lesson_graph import lesson_subgraph
 
     result = await lesson_subgraph.ainvoke(
@@ -594,31 +349,7 @@ async def submit_exercise_enhanced(
     level: str = Form("A1"),
     language: str = Form("es"),
 ) -> HTMLResponse:
-    """Submit exercise with AI-generated personalized feedback from Hermano.
-
-    Goes beyond simple correct/incorrect to provide:
-    - Enthusiastic celebration on correct answers
-    - Helpful hints and encouragement on incorrect answers
-    - Cultural context when relevant
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for validation.
-        lesson_id: Unique identifier for the lesson.
-        exercise_id: Unique identifier for the exercise.
-        answer: User's submitted answer.
-        level: CEFR level for feedback adaptation.
-        language: Target language code.
-
-    Returns:
-        HTMLResponse: Enhanced feedback with Hermano's personalized response.
-
-    Raises:
-        HTTPException: 404 if lesson or exercise not found.
-    """
-    # Validate lesson and exercise exist
+    """Submit exercise with AI-generated personalized feedback from Hermano."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
@@ -630,7 +361,6 @@ async def submit_exercise_enhanced(
             detail=f"Exercise not found: {exercise_id}",
         )
 
-    # Import and invoke the exercise validation graph
     from src.agent.lesson_graph import exercise_validation_graph
 
     result = await exercise_validation_graph.ainvoke(
@@ -673,79 +403,21 @@ async def complete_lesson(
     score: int = Form(default=100),
     session_id: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
-    """Mark a lesson as completed and show completion view.
-
-    Records the lesson completion for the current user and displays
-    a celebration view with score and next steps. Also initializes
-    vocabulary from the lesson for spaced repetition review.
-
-    Args:
-        request: FastAPI request for template context.
-        templates: Jinja2 template engine.
-        user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the completed lesson.
-        score: User's score on the lesson (0-100).
-
-    Returns:
-        HTMLResponse: Completion celebration view with score and links.
-
-    Raises:
-                HTTPException: 404 if lesson not found.
-    """
+    """Mark a lesson as completed and show completion view."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
-    # Get vocabulary from lesson
     vocabulary = lesson_service.get_lesson_vocabulary(lesson_id)
-    vocab_count = len(vocabulary)
 
-    # Persist lesson completion for any user with identity
-    effective_id: str | None = None
-    new_session_id: str | None = None
-
-    if user:
-        effective_id = user.id
-    elif session_id:
-        effective_id = session_id
-    else:
-        # First-time guest completing a lesson — create session cookie
-        new_session_id = str(uuid.uuid4())
-        effective_id = new_session_id
-
-    repo = None
-    if effective_id:
-        try:
-            client = None
-            if not user:
-                client = get_supabase_admin()
-            repo = LessonProgressRepository(effective_id, client=client)
-            repo.complete_lesson(lesson_id, score=score)
-
-            # Initialize vocabulary for review (Phase 12)
-            _initialize_lesson_vocabulary_for_review(
-                effective_id=effective_id,
-                vocabulary=vocabulary,
-                language=lesson.metadata.language,
-                client=client,
-            )
-        except APIError:
-            logger.exception("Failed to persist lesson completion for user %s", effective_id)
-
-    # Phase 14: Compute next lesson in the learning path
-    next_path_lesson = None
-    if repo:
-        try:
-            from src.services.paths import get_path_service
-
-            path_service = get_path_service()
-            all_progress = repo.get_completed()
-            next_path_lesson = path_service.get_next_path_lesson(
-                lesson.metadata.language, all_progress
-            )
-        except (APIError, KeyError, ValueError):
-            logger.exception("Failed to get next path lesson for user %s", effective_id)
+    result = complete_lesson_and_persist(
+        user=user,
+        session_id=session_id,
+        lesson_id=lesson_id,
+        score=score,
+        vocabulary=vocabulary,
+        language=lesson.metadata.language,
+    )
 
     response = templates.TemplateResponse(
         request=request,
@@ -755,18 +427,18 @@ async def complete_lesson(
             "lesson": lesson,
             "completed": True,
             "score": score,
-            "vocab_count": vocab_count,
+            "vocab_count": result.vocab_count,
             "user": user,
-            "next_path_lesson": next_path_lesson,
+            "next_path_lesson": result.next_path_lesson,
         },
     )
 
     # Set session cookie for first-time guests
-    if new_session_id:
+    if result.new_session_id:
         set_secure_cookie(
             response,
             key="session_id",
-            value=new_session_id,
+            value=result.new_session_id,
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -784,34 +456,13 @@ async def handoff_to_chat(
     lesson_service: LessonServiceDep,
     lesson_id: str,
 ) -> Response:
-    """Hand off from lesson to chat conversation.
-
-    Prepares context from the completed lesson (vocabulary, topics) and
-    redirects to the chat page where the user can practice with Hermano.
-
-    Uses HX-Redirect header for HTMX-based navigation.
-
-    Args:
-        _user: User if authenticated, None for guests.
-        lesson_service: Lesson service for fetching lesson content.
-        lesson_id: Unique identifier for the lesson.
-
-    Returns:
-        Response: Empty response with HX-Redirect header to /chat.
-
-    Raises:
-                HTTPException: 404 if lesson not found.
-    """
+    """Hand off from lesson to chat conversation via HX-Redirect."""
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
-    # Build redirect URL with lesson context
-    # The chat page can use query params to initialize conversation context
     redirect_url = f"/chat?lesson={lesson_id}&topic={lesson.metadata.category or 'general'}"
 
-    # Return response with HX-Redirect header for HTMX
     response = Response(status_code=200)
     response.headers["HX-Redirect"] = redirect_url
-
     return response

@@ -1,6 +1,7 @@
 """Tests for src/api/routes/voice.py - Voice STT/TTS endpoints.
 
 Phase 17: WebSocket STT proxy via Deepgram and REST TTS proxy endpoint.
+B1: WebSocket endpoints require authentication via cookies.
 """
 
 import asyncio
@@ -23,6 +24,10 @@ from src.api.routes.voice import (
     VALID_STT_LANGUAGES,
     SpeakRequest,
 )
+from tests.conftest import CSRF_HEADERS
+
+# Guest session UUID used for WebSocket authentication in tests
+GUEST_SESSION_ID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
 
 # =============================================================================
 # Fixtures
@@ -33,6 +38,12 @@ from src.api.routes.voice import (
 def mock_user() -> AuthenticatedUser:
     """Create mock authenticated user."""
     return AuthenticatedUser(id="user-voice-123", email="voice@example.com")
+
+
+@pytest.fixture
+def ws_cookies() -> dict[str, str]:
+    """Cookies dict with a valid guest session_id for WebSocket auth."""
+    return {"session_id": GUEST_SESSION_ID}
 
 
 @pytest.fixture
@@ -77,7 +88,7 @@ def voice_app(mock_user: AuthenticatedUser) -> Generator[FastAPI, None, None]:
         patch("src.api.routes.chat.build_graph", mock_build_graph),
         patch("src.api.routes.chat.get_checkpointer", mock_get_checkpointer),
         patch("src.db.repository.get_supabase", return_value=mock_supabase),
-        patch("src.api.routes.lessons.get_supabase_admin", return_value=mock_supabase),
+        patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_supabase),
         patch("src.api.routes.learn.get_supabase_admin", return_value=mock_supabase),
     ):
         get_settings.cache_clear()
@@ -95,7 +106,7 @@ def voice_app(mock_user: AuthenticatedUser) -> Generator[FastAPI, None, None]:
 @pytest.fixture
 def test_client(voice_app: FastAPI) -> Generator[TestClient, None, None]:
     """Create synchronous test client for WebSocket and sync tests."""
-    with TestClient(voice_app) as client:
+    with TestClient(voice_app, headers=CSRF_HEADERS) as client:
         yield client
 
 
@@ -103,7 +114,11 @@ def test_client(voice_app: FastAPI) -> Generator[TestClient, None, None]:
 async def async_client(voice_app: FastAPI) -> AsyncIterator[AsyncClient]:
     """Create async test client for HTTP endpoint tests."""
     transport = ASGITransport(app=voice_app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers=CSRF_HEADERS,
+    ) as client:
         yield client
 
 
@@ -656,63 +671,86 @@ class TestTranscribeWebSocket:
     WebSocketDisconnect with a .code attribute when the server
     closes the connection before or after accept.
 
-    The Deepgram v6 SDK uses an async context manager pattern:
-        async with deepgram.listen.v1.connect(**options) as dg_ws:
-            dg_ws.on(EventType.MESSAGE, on_message)
-            listen_task = asyncio.create_task(dg_ws.start_listening())
-            await dg_ws.send_media(audio_data)
-            await dg_ws.send_finalize()
+    B1: All WebSocket tests pass a session_id cookie for authentication.
     """
+
+    def test_unauthenticated_closes_with_1008(
+        self,
+        test_client: TestClient,
+    ) -> None:
+        """No auth cookies closes WebSocket with code 1008."""
+        with pytest.raises(WebSocketDisconnect) as exc_info:
+            with test_client.websocket_connect("/ws/transcribe?language=es"):
+                pass  # pragma: no cover
+        assert exc_info.value.code == 1008
+
+    def test_invalid_session_id_closes_with_1008(
+        self,
+        test_client: TestClient,
+    ) -> None:
+        """Invalid session_id cookie (not UUID v4) closes with 1008."""
+        with pytest.raises(WebSocketDisconnect) as exc_info:
+            with test_client.websocket_connect(
+                "/ws/transcribe?language=es",
+                cookies={"session_id": "not-a-valid-uuid"},
+            ):
+                pass  # pragma: no cover
+        assert exc_info.value.code == 1008
 
     def test_invalid_language_closes_connection(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
     ) -> None:
         """Invalid language param closes WebSocket with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe?language=xx"):
+            with test_client.websocket_connect("/ws/transcribe?language=xx", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
     def test_invalid_language_japanese_closes_connection(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
     ) -> None:
         """Japanese (ja) is not a supported STT language and should close with 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe?language=ja"):
+            with test_client.websocket_connect("/ws/transcribe?language=ja", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
     def test_empty_language_closes_connection(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
     ) -> None:
         """Empty string language param closes WebSocket with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe?language="):
+            with test_client.websocket_connect("/ws/transcribe?language=", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
     def test_no_api_key_closes_connection(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_no_deepgram: MagicMock,
     ) -> None:
         """Missing DEEPGRAM_API_KEY closes WebSocket with code 1011."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe?language=es"):
+            with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1011
 
     def test_no_api_key_default_language_closes_connection(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_no_deepgram: MagicMock,
     ) -> None:
         """Default language (multi) still closes with 1011 when no API key."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe"):
+            with test_client.websocket_connect("/ws/transcribe", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1011
 
@@ -720,67 +758,56 @@ class TestTranscribeWebSocket:
     def test_valid_language_accepted_with_api_key(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
         language: str,
     ) -> None:
-        """Valid languages (es, de, fr, multi) pass initial validation.
-
-        The connection should be accepted (not closed with 1008 or 1011).
-        With the Deepgram SDK mocked, the WebSocket completes the handshake
-        and the Deepgram connection is established via async context manager.
-        We close from the client side.
-        """
-        with test_client.websocket_connect(f"/ws/transcribe?language={language}") as ws:
-            # Connection was accepted -- language and API key are valid.
-            # Close normally from the client side.
+        """Valid languages (es, de, fr, multi) pass initial validation."""
+        with test_client.websocket_connect(
+            f"/ws/transcribe?language={language}", cookies=ws_cookies
+        ) as ws:
             ws.close()
 
     def test_default_language_is_multi(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """When no language param is provided, default is 'multi'."""
-        with test_client.websocket_connect("/ws/transcribe") as ws:
-            # Connection accepted -- default 'multi' is valid.
+        with test_client.websocket_connect("/ws/transcribe", cookies=ws_cookies) as ws:
             ws.close()
 
-        # Verify 'multi' was passed through to the connect() kwargs
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
         assert connect_kwargs["language"] == "multi"
 
     def test_websocket_accepts_binary_audio(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """WebSocket accepts binary audio data after connection.
-
-        Mocks the full Deepgram SDK v6 chain to verify audio bytes
-        flow from client through to dg_ws.send_media().
-        """
-        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
-            # Send binary audio data
+        """WebSocket accepts binary audio data after connection."""
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01\x02\x03")
             ws.close()
 
         mock_dg_ws = mock_deepgram_sdk["dg_ws"]
-        # Verify audio was forwarded via send_media()
         mock_dg_ws.send_media.assert_awaited()
-        # Verify finalize was called during cleanup
         mock_dg_ws.send_finalize.assert_awaited()
 
     def test_websocket_forwards_language_to_deepgram(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Selected language is passed through to the Deepgram connect() kwargs."""
-        with test_client.websocket_connect("/ws/transcribe?language=de") as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=de", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
@@ -789,35 +816,29 @@ class TestTranscribeWebSocket:
     def test_websocket_registers_transcript_handler(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Endpoint registers a transcript event handler on the Deepgram connection."""
-        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         mock_dg_ws = mock_deepgram_sdk["dg_ws"]
-        # Verify .on() was called to register a transcript handler
         mock_dg_ws.on.assert_called_once()
-        # Verify the event type is EventType.MESSAGE
         call_args = mock_dg_ws.on.call_args
         assert call_args[0][0] == mock_deepgram_sdk["event_type"].MESSAGE
 
     def test_websocket_connect_exception_closes_with_1011(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
-        """When Deepgram connect() raises an exception, server closes with 1011.
+        """When Deepgram connect() raises an exception, server closes with 1011."""
+        mock_deepgram_sdk["dg_ws"]  # fixture needed for sys.modules patching
 
-        In the v6 SDK, connection failures surface as exceptions from the
-        async context manager rather than a boolean return from start().
-        """
-        # Make the context manager __aenter__ raise an exception
-        mock_deepgram_sdk["dg_ws"]  # unused but fixture needed for sys.modules patching
-
-        # Patch the connect function to return a context manager that raises
         mock_failing_ctx = MagicMock()
 
         async def _failing_aenter(self: object) -> None:
@@ -834,20 +855,21 @@ class TestTranscribeWebSocket:
         mock_deepgram_sdk["instance"].listen.v1.connect = MagicMock(return_value=mock_failing_ctx)
 
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
-                # Server closes the connection after connect() fails.
-                # Attempting to receive triggers the disconnect exception.
+            with test_client.websocket_connect(
+                "/ws/transcribe?language=es", cookies=ws_cookies
+            ) as ws:
                 ws.receive_json()
         assert exc_info.value.code == 1011
 
     def test_websocket_passes_model_to_connect(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Deepgram connect() is called with model='nova-3'."""
-        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
@@ -856,11 +878,12 @@ class TestTranscribeWebSocket:
     def test_websocket_passes_encoding_to_connect(
         self,
         test_client: TestClient,
+        ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Deepgram connect() is called with encoding='linear16' and sample_rate='16000'."""
-        with test_client.websocket_connect("/ws/transcribe?language=es") as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         connect_kwargs = mock_deepgram_sdk["connect_kwargs"]
