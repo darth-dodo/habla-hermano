@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.8 | **Tests**: 2140+ | **Coverage**: 97% | **Date**: February 2026
+**Version**: 1.9 | **Tests**: 2157+ | **Coverage**: 97% | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -42,7 +42,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2140+ tests (Python + JS) with 97% coverage, strict typing
+- ✅ 2157+ tests (Python + JS) with 97% coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -189,13 +189,18 @@ flowchart TB
 ```
 habla-hermano/
 ├── src/
+│   ├── config.py                         # Canonical Settings + get_settings (inner layers import from here)
+│   ├── validation.py                     # Canonical domain validation constants and helpers (VALID_LANGUAGES, VALID_LEVELS, etc.)
+│   │
 │   ├── api/                          # FastAPI application
 │   │   ├── main.py                   # App creation, lifespan, routes
-│   │   ├── config.py                 # Settings from env vars
+│   │   ├── config.py                 # Re-export shim → delegates to src/config.py
 │   │   ├── dependencies.py           # DI: templates, settings
 │   │   ├── auth.py                   # JWT validation
 │   │   ├── session.py                # Session management
-│   │   ├── supabase_client.py        # Supabase client singleton
+│   │   ├── supabase_client.py        # Re-export shim → delegates to src/db/client.py
+│   │   ├── validation.py             # Re-export shim → delegates to src/validation.py
+│   │   ├── middleware.py             # SecurityHeadersMiddleware + CSRFMiddleware
 │   │   ├── streaming.py              # SSE streaming: StreamResult, stream_chat_events()
 │   │   └── routes/
 │   │       ├── chat.py               # POST /chat, POST /chat/stream (SSE), GET /
@@ -228,6 +233,7 @@ habla-hermano/
 │   │   └── service.py               # YAML loading, filtering, vocabulary extraction
 │   │
 │   ├── db/                           # Database layer
+│   │   ├── client.py                 # Canonical Supabase client factory (get_supabase, get_supabase_admin)
 │   │   ├── models.py                 # Pydantic models
 │   │   ├── repository.py             # Data access layer
 │   │   └── seed.py                   # Initial data loader
@@ -238,7 +244,8 @@ habla-hermano/
 │   │   ├── progress.py               # ProgressService: dashboard aggregation
 │   │   ├── review.py                 # ReviewService: spaced repetition (SM-2)
 │   │   ├── paths.py                  # PathService: structured learning paths per language
-│   │   └── adaptive.py               # AdaptiveService: daily adaptive recommendations
+│   │   ├── adaptive.py               # AdaptiveService: daily adaptive recommendations
+│   │   └── lesson_completion.py      # Lesson completion logic (ExerciseFeedback, CompletionResult, check_exercise_answer, complete_lesson_and_persist)
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
@@ -272,7 +279,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 2140+ tests (Python + JS), 97% coverage
+├── tests/                            # 2157+ tests (Python + JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -290,6 +297,7 @@ habla-hermano/
 │   ├── api/
 │   │   ├── test_auth.py              # JWT validation tests
 │   │   ├── test_config.py            # Settings tests
+│   │   ├── test_csrf.py              # CSRF middleware tests (15 tests)
 │   │   ├── test_session.py           # Session management tests
 │   │   ├── test_supabase_client.py   # Supabase client tests
 │   │   ├── test_data_capture.py      # Data capture tests
@@ -784,7 +792,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2140+ tests: Python + JS)
+### Coverage: 97% (2157+ tests: Python + JS)
 
 ### Test Categories
 
@@ -792,7 +800,7 @@ class Settings(BaseSettings):
 |----------|-----------|-------|
 | Agent | `tests/agent/` | LangGraph nodes, state, routing, checkpointer |
 | Agent Nodes | `tests/agent/nodes/` | Individual node tests (analyze, scaffold, review) |
-| API | `tests/api/` | Auth, config, session, supabase client |
+| API | `tests/api/` | Auth, config, CSRF, session, supabase client |
 | API Routes | `tests/api/routes/` | Chat, auth, learn, lessons, progress, review, e2e |
 | Database | `tests/db/` | Models, repository |
 | Lessons | `tests/lessons/` | Lesson models, lesson service |
@@ -898,8 +906,11 @@ CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", 
 ### Key Files
 
 ```
+src/config.py                # Canonical Settings + get_settings
+src/validation.py            # Canonical domain validation (VALID_LANGUAGES, VALID_LEVELS)
 src/api/main.py              # FastAPI app entry
-src/api/config.py            # Settings
+src/api/config.py            # Re-export shim → src/config.py
+src/api/middleware.py         # SecurityHeadersMiddleware + CSRFMiddleware
 src/api/routes/chat.py       # Chat endpoints (POST /chat, POST /chat/stream)
 src/api/streaming.py         # SSE streaming logic
 src/static/js/main.js        # JS entry point (imports all modules)
@@ -907,10 +918,12 @@ src/static/js/modules/stream.js  # SSE client (fetch + ReadableStream)
 src/static/js/modules/voice.js   # Deepgram STT/TTS client
 src/api/routes/voice.py      # WebSocket STT proxy + REST TTS endpoint
 src/api/routes/progress.py   # Progress dashboard endpoints
+src/db/client.py             # Canonical Supabase client factory
 src/agent/graph.py           # LangGraph pipeline
 src/agent/nodes/*.py         # Pipeline nodes
 src/agent/prompts.py         # Level-specific prompts
 src/services/progress.py     # ProgressService: dashboard aggregation
+src/services/lesson_completion.py  # Lesson completion business logic
 src/services/review.py       # ReviewService: spaced repetition (SM-2)
 src/services/paths.py        # PathService: structured learning paths per language
 src/services/adaptive.py     # AdaptiveService: daily adaptive recommendations
@@ -939,4 +952,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.8 — Habla Hermano (2140+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture)*
+*Crash Course v1.9 — Habla Hermano (2157+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture)*
