@@ -591,6 +591,14 @@ VoiceManager.prototype._stopTTS = function(btn) {
     }
     this._ttsWs = null;
 
+    // Stop all scheduled AudioBufferSourceNodes (WebSocket streaming TTS)
+    if (this._ttsSources && this._ttsSources.length > 0) {
+        this._ttsSources.forEach(function(source) {
+            try { source.stop(); } catch (_) {}
+        });
+        this._ttsSources = [];
+    }
+
     if (this.currentAudio) {
         this.currentAudio.pause();
         this.currentAudio = null;
@@ -693,6 +701,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     var self = this;
     this._audioCtx = audioCtx;
     this._ttsPlaying = true;
+    this._ttsSources = [];
 
     // Queue of AudioBuffers scheduled for playback
     var nextStartTime = 0;
@@ -710,6 +719,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
 
     function cleanup() {
         self._ttsPlaying = false;
+        self._ttsSources = [];
         if (self._ttsWs === ws) self._ttsWs = null;
         btn.classList.remove('voice-playing', 'voice-loading');
         btn.innerHTML = SPEAKER_ICON;
@@ -749,6 +759,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
             source.buffer = audioBuffer;
             source.playbackRate.value = speed;
             source.connect(audioCtx.destination);
+            self._ttsSources.push(source);
 
             // Schedule seamlessly after previous chunk
             // Duration is adjusted by speed (faster = shorter playback)
