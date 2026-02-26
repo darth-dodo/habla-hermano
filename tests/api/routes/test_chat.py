@@ -92,6 +92,63 @@ class TestChatPageEndpoint:
         assert response.status_code == 200
         assert "Habla Hermano" in response.text
 
+    def test_chat_page_sets_session_cookie_for_guests(
+        self, test_client: TestClient
+    ) -> None:
+        """GET / should set session_id cookie for guest users so voice WebSocket auth works."""
+        from src.api.auth import get_current_user_optional
+
+        app = test_client.app
+
+        # Override auth to return None (guest user)
+        async def mock_no_user():
+            return None
+
+        app.dependency_overrides[get_current_user_optional] = mock_no_user
+        try:
+            response = test_client.get("/")
+            assert response.status_code == 200
+            assert "session_id" in response.cookies
+            # Should be a valid UUID v4
+            import uuid
+
+            session_val = response.cookies["session_id"]
+            parsed = uuid.UUID(session_val, version=4)
+            assert str(parsed) == session_val
+        finally:
+            app.dependency_overrides.pop(get_current_user_optional, None)
+
+    def test_chat_page_does_not_overwrite_existing_session_cookie(
+        self, test_client: TestClient
+    ) -> None:
+        """GET / should not overwrite an existing session_id cookie."""
+        from src.api.auth import get_current_user_optional
+
+        app = test_client.app
+
+        async def mock_no_user():
+            return None
+
+        app.dependency_overrides[get_current_user_optional] = mock_no_user
+        try:
+            existing_session = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+            test_client.cookies.set("session_id", existing_session)
+            response = test_client.get("/")
+            assert response.status_code == 200
+            # Should NOT set a new session_id cookie
+            assert "session_id" not in response.cookies
+        finally:
+            app.dependency_overrides.pop(get_current_user_optional, None)
+            test_client.cookies.clear()
+
+    def test_chat_page_no_session_cookie_for_authenticated_users(
+        self, test_client: TestClient
+    ) -> None:
+        """GET / should not set session_id cookie for authenticated users."""
+        response = test_client.get("/")
+        assert response.status_code == 200
+        assert "session_id" not in response.cookies
+
 
 class TestSendMessageEndpoint:
     """Tests for POST /chat - Message submission and AI response."""

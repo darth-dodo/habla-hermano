@@ -75,6 +75,7 @@ async def chat_page(
     user: OptionalUserDep,
     mode: str | None = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
+    session_id: Annotated[str | None, Cookie()] = None,
     language: str = "es",
 ) -> HTMLResponse:
     """Render the main chat interface.
@@ -129,11 +130,23 @@ async def chat_page(
         except APIError:
             logger.exception("Failed to get review stats for user %s", user.id)
 
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="chat.html",
         context=context,
     )
+
+    # Set session cookie on page load for guests so voice WebSocket auth works
+    # before they send their first message
+    if not user and not session_id:
+        set_secure_cookie(
+            response,
+            key="session_id",
+            value=str(uuid.uuid4()),
+            max_age=60 * 60 * 24 * 7,  # 7 days
+        )
+
+    return response
 
 
 def _resolve_chat_identity(
