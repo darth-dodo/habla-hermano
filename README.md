@@ -1,4 +1,5 @@
 # Habla Hermano
+[![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
 
 **Learn Spanish, German, or French through conversation, not flashcards.**
 
