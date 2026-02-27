@@ -100,7 +100,7 @@
     </footer>
 </div>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 // Update progress and step count on HTMX swap
 document.body.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.detail.target.id === 'step-content') {
