@@ -10,6 +10,7 @@ development typically runs over plain HTTP.
 """
 
 import logging
+import secrets
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -132,7 +133,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        """Process request and add security headers to response."""
+        """Process request and add security headers to response.
+
+        Generates a per-request CSP nonce and stores it on ``request.state``
+        so that Jinja2 templates can render ``nonce="{{ request.state.csp_nonce }}"``
+        on ``<script>`` tags.  The nonce is generated **before** ``call_next()``
+        to ensure it is available during template rendering.
+        """
+        # Generate a per-request nonce for CSP script-src
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
         settings = get_settings()
@@ -144,11 +155,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # microphone=(self) needed for voice STT feature
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
 
-        # CSP: Allow inline scripts/styles for HTMX and Alpine.js,
-        # CDN resources for Tailwind and HTMX, WebSocket for voice STT/TTS
+        # CSP: Nonce-based script allowlisting with CDN origins.
+        # 'unsafe-eval' remains required because Tailwind CDN uses eval() internally;
+        # full removal requires a build-time CSS migration (deferred).
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
+            f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "

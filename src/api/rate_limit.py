@@ -10,6 +10,7 @@ proxy (e.g., nginx) or upgrading to a Redis-backed solution.
 
 import functools
 import logging
+import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
@@ -28,6 +29,13 @@ CHAT_RATE_LIMIT_PERIOD = 60  # 1 minute
 
 GENERAL_RATE_LIMIT_CALLS = 60
 GENERAL_RATE_LIMIT_PERIOD = 60  # 1 minute
+
+VOICE_RATE_LIMIT_CALLS = 10
+VOICE_RATE_LIMIT_PERIOD = 60  # 1 minute
+
+# Per-connection WebSocket message rate limits
+VOICE_WS_MESSAGE_RATE = 60  # audio frames per minute (STT)
+VOICE_WS_TTS_MESSAGE_RATE = 30  # text messages per minute (TTS)
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -82,3 +90,39 @@ def reset_rate_limits() -> None:
     for limiter_instance in _active_limiters:
         limiter_instance.num_calls = 0
         limiter_instance.last_reset = limiter_instance.clock()
+
+
+class WebSocketMessageRateLimiter:
+    """Per-connection sliding window rate limiter for WebSocket messages.
+
+    Tracks message timestamps within a rolling window and rejects messages
+    that would exceed the configured rate. Each WebSocket connection should
+    create its own instance.
+
+    Args:
+        max_messages: Maximum messages allowed within the window.
+        window_seconds: Sliding window duration in seconds.
+    """
+
+    def __init__(self, max_messages: int, window_seconds: int) -> None:
+        self._max_messages = max_messages
+        self._window_seconds = window_seconds
+        self._timestamps: list[float] = []
+
+    def check(self) -> bool:
+        """Check if a message is allowed under the rate limit.
+
+        Removes expired timestamps and checks if the new message would
+        exceed the limit.
+
+        Returns:
+            True if the message is allowed, False if rate limited.
+        """
+        now = time.monotonic()
+        cutoff = now - self._window_seconds
+        # Prune expired timestamps
+        self._timestamps = [t for t in self._timestamps if t > cutoff]
+        if len(self._timestamps) >= self._max_messages:
+            return False
+        self._timestamps.append(now)
+        return True

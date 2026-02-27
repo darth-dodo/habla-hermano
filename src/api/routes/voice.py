@@ -23,6 +23,14 @@ from starlette.websockets import WebSocketState
 
 from src.api.auth import EffectiveUserDep
 from src.api.config import get_settings
+from src.api.rate_limit import (
+    VOICE_RATE_LIMIT_CALLS,
+    VOICE_RATE_LIMIT_PERIOD,
+    VOICE_WS_MESSAGE_RATE,
+    VOICE_WS_TTS_MESSAGE_RATE,
+    WebSocketMessageRateLimiter,
+    rate_limited,
+)
 from src.api.validation import VALID_LANGUAGES
 
 logger = logging.getLogger(__name__)
@@ -142,6 +150,9 @@ async def transcribe_stream(  # noqa: PLR0915
 
     await websocket.accept()
 
+    # B9: Per-connection message rate limiter for audio frames
+    msg_limiter = WebSocketMessageRateLimiter(VOICE_WS_MESSAGE_RATE, 60)
+
     try:
         from deepgram import AsyncDeepgramClient
         from deepgram.core.events import EventType
@@ -189,7 +200,7 @@ async def transcribe_stream(  # noqa: PLR0915
                         )
                         _bg_tasks.add(task)
                         task.add_done_callback(_bg_tasks.discard)
-                except Exception:
+                except (AttributeError, IndexError, ConnectionError, OSError):
                     logger.exception("Error forwarding transcript")
 
             dg_ws.on(EventType.MESSAGE, on_message)
@@ -203,6 +214,12 @@ async def transcribe_stream(  # noqa: PLR0915
             try:
                 while True:
                     audio_data = await websocket.receive_bytes()
+                    if not msg_limiter.check():
+                        logger.warning("STT WebSocket message rate limit exceeded")
+                        await websocket.send_json(
+                            {"error": "Rate limit exceeded", "code": "RATE_LIMITED"}
+                        )
+                        continue
                     await dg_ws.send_media(audio_data)
             except WebSocketDisconnect:
                 logger.debug("Browser WebSocket disconnected")
@@ -215,13 +232,14 @@ async def transcribe_stream(  # noqa: PLR0915
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during setup")
-    except Exception:
+    except (ConnectionError, OSError, RuntimeError):
         logger.exception("Error in transcription WebSocket")
         with contextlib.suppress(Exception):
             await websocket.close(code=1011, reason="Internal error")
 
 
 @router.post("/api/speak", response_model=None)
+@rate_limited(VOICE_RATE_LIMIT_CALLS, VOICE_RATE_LIMIT_PERIOD)
 async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResponse | JSONResponse:
     """Synthesize speech from text using Deepgram TTS.
 
@@ -290,11 +308,15 @@ async def _forward_deepgram_to_browser(dg_ws: Any, websocket: WebSocket) -> None
                 await websocket.send_text(message)
     except ws_lib.ConnectionClosed:
         pass
-    except Exception:
+    except (ConnectionError, OSError, RuntimeError):
         logger.exception("Error forwarding Deepgram TTS audio")
 
 
-async def _handle_browser_tts_messages(websocket: WebSocket, dg_ws: Any) -> None:
+async def _handle_browser_tts_messages(
+    websocket: WebSocket,
+    dg_ws: Any,
+    msg_limiter: WebSocketMessageRateLimiter,
+) -> None:
     """Receive text from browser and forward Speak+Flush commands to Deepgram."""
     try:
         while True:
@@ -307,6 +329,14 @@ async def _handle_browser_tts_messages(websocket: WebSocket, dg_ws: Any) -> None
 
             text = msg.get("text", "").strip()
             if not text or len(text) > MAX_TTS_TEXT_LENGTH:
+                continue
+
+            # B9: Per-connection message rate limiting
+            if not msg_limiter.check():
+                logger.warning("TTS WebSocket message rate limit exceeded")
+                await websocket.send_text(
+                    json.dumps({"error": "Rate limit exceeded", "code": "RATE_LIMITED"})
+                )
                 continue
 
             await dg_ws.send(json.dumps({"type": "Speak", "text": text}))
@@ -348,6 +378,9 @@ async def speak_stream(
 
     await websocket.accept()
 
+    # B9: Per-connection message rate limiter for TTS text messages
+    tts_limiter = WebSocketMessageRateLimiter(VOICE_WS_TTS_MESSAGE_RATE, 60)
+
     try:
         import websockets
 
@@ -359,7 +392,7 @@ async def speak_stream(
         async with websockets.connect(dg_url, additional_headers=dg_headers) as dg_ws:
             forward_task = asyncio.create_task(_forward_deepgram_to_browser(dg_ws, websocket))
             try:
-                await _handle_browser_tts_messages(websocket, dg_ws)
+                await _handle_browser_tts_messages(websocket, dg_ws, tts_limiter)
             finally:
                 forward_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
@@ -369,7 +402,7 @@ async def speak_stream(
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during TTS setup")
-    except Exception:
+    except (ConnectionError, OSError, RuntimeError):
         logger.exception("Error in TTS WebSocket")
         with contextlib.suppress(Exception):
             await websocket.close(code=1011, reason="Internal error")
