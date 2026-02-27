@@ -895,7 +895,11 @@ class TestGetStats:
 
     def test_zero_state_no_vocab(self, service, mock_vocab_repo) -> None:
         """Test stats when user has no vocabulary."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 0,
+            "total_in_rotation": 0,
+            "next_review_at": None,
+        }
 
         stats = service.get_stats(language="es")
 
@@ -904,11 +908,12 @@ class TestGetStats:
         assert stats.total_in_rotation == 0
 
     def test_words_not_in_rotation(self, service, mock_vocab_repo) -> None:
-        """Test words with no next_review_at are not counted in rotation."""
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", next_review_at=None),
-            _make_vocab("gracias", next_review_at=None),
-        ]
+        """Test stats report zero rotation when no words have next_review_at."""
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 0,
+            "total_in_rotation": 0,
+            "next_review_at": None,
+        }
 
         stats = service.get_stats(language="es")
 
@@ -918,24 +923,24 @@ class TestGetStats:
     def test_words_in_rotation_counted(self, service, mock_vocab_repo) -> None:
         """Test words with next_review_at are counted in rotation."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
-            _make_vocab("gracias", vocab_id=2, next_review_at=now + timedelta(hours=2)),
-            _make_vocab("bueno", vocab_id=3, next_review_at=None),
-        ]
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 1,
+            "total_in_rotation": 2,
+            "next_review_at": (now + timedelta(hours=2)).isoformat(),
+        }
 
         stats = service.get_stats(language="es")
 
         assert stats.total_in_rotation == 2
 
     def test_due_words_counted_correctly(self, service, mock_vocab_repo) -> None:
-        """Test due words (next_review_at <= now) are counted."""
+        """Test due words are counted from repo stats."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=2)),
-            _make_vocab("gracias", vocab_id=2, next_review_at=now - timedelta(minutes=5)),
-            _make_vocab("bueno", vocab_id=3, next_review_at=now + timedelta(hours=1)),
-        ]
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 2,
+            "total_in_rotation": 3,
+            "next_review_at": (now + timedelta(hours=1)).isoformat(),
+        }
 
         stats = service.get_stats(language="es")
 
@@ -950,15 +955,11 @@ class TestGetStats:
         and service execution.
         """
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
-            _make_vocab(
-                "gracias",
-                vocab_id=2,
-                next_review_at=now + timedelta(hours=3, minutes=30),
-            ),
-            _make_vocab("bueno", vocab_id=3, next_review_at=now + timedelta(days=2)),
-        ]
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 1,
+            "total_in_rotation": 3,
+            "next_review_at": (now + timedelta(hours=3, minutes=30)).isoformat(),
+        }
 
         stats = service.get_stats(language="es")
 
@@ -966,11 +967,11 @@ class TestGetStats:
 
     def test_next_review_in_none_when_all_due(self, service, mock_vocab_repo) -> None:
         """Test next_review_in is None when all words are already due."""
-        now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
-            _make_vocab("gracias", vocab_id=2, next_review_at=now - timedelta(hours=2)),
-        ]
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 2,
+            "total_in_rotation": 2,
+            "next_review_at": None,
+        }
 
         stats = service.get_stats(language="es")
 
@@ -978,19 +979,27 @@ class TestGetStats:
 
     def test_default_language_is_es(self, service, mock_vocab_repo) -> None:
         """Test default language parameter is 'es'."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 0,
+            "total_in_rotation": 0,
+            "next_review_at": None,
+        }
 
         service.get_stats()
 
-        mock_vocab_repo.get_all.assert_called_once_with(language="es")
+        mock_vocab_repo.get_review_stats.assert_called_once_with(language="es")
 
     def test_language_parameter_passed_through(self, service, mock_vocab_repo) -> None:
         """Test custom language parameter is forwarded to repository."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_review_stats.return_value = {
+            "due_count": 0,
+            "total_in_rotation": 0,
+            "next_review_at": None,
+        }
 
         service.get_stats(language="de")
 
-        mock_vocab_repo.get_all.assert_called_once_with(language="de")
+        mock_vocab_repo.get_review_stats.assert_called_once_with(language="de")
 
 
 # =============================================================================
@@ -1003,79 +1012,81 @@ class TestGetDueWords:
 
     def test_returns_empty_list_when_no_vocab(self, service, mock_vocab_repo) -> None:
         """Test empty list returned when no vocabulary exists."""
-        mock_vocab_repo.get_all.return_value = []
+        mock_vocab_repo.get_due_for_review.return_value = []
 
         result = service.get_due_words(language="es")
 
         assert result == []
+        mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=None)
 
-    def test_filters_to_only_due_words(self, service, mock_vocab_repo) -> None:
-        """Test only words with next_review_at <= now are returned."""
+    def test_returns_due_words_from_repo(self, service, mock_vocab_repo) -> None:
+        """Test due words are returned directly from the repository query."""
         now = datetime.now(UTC)
         due_word = _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1))
-        future_word = _make_vocab("gracias", vocab_id=2, next_review_at=now + timedelta(hours=2))
-        no_review_word = _make_vocab("bueno", vocab_id=3, next_review_at=None)
 
-        mock_vocab_repo.get_all.return_value = [due_word, future_word, no_review_word]
+        mock_vocab_repo.get_due_for_review.return_value = [due_word]
 
         result = service.get_due_words(language="es")
 
         assert len(result) == 1
         assert result[0].word == "hola"
 
-    def test_sorted_by_most_overdue_first(self, service, mock_vocab_repo) -> None:
-        """Test due words are sorted by earliest next_review_at first."""
+    def test_delegates_sorting_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test due words order is determined by the repository (server-side)."""
         now = datetime.now(UTC)
-        word_a = _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1))
         word_b = _make_vocab("gracias", vocab_id=2, next_review_at=now - timedelta(hours=5))
         word_c = _make_vocab("bueno", vocab_id=3, next_review_at=now - timedelta(hours=3))
+        word_a = _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1))
 
-        mock_vocab_repo.get_all.return_value = [word_a, word_b, word_c]
+        # Repo returns pre-sorted (most overdue first)
+        mock_vocab_repo.get_due_for_review.return_value = [word_b, word_c, word_a]
 
         result = service.get_due_words(language="es")
 
         assert len(result) == 3
-        # Most overdue first: gracias (5h ago), bueno (3h ago), hola (1h ago)
         assert result[0].word == "gracias"
         assert result[1].word == "bueno"
         assert result[2].word == "hola"
 
-    def test_limit_restricts_results(self, service, mock_vocab_repo) -> None:
-        """Test limit parameter caps the number of returned words."""
+    def test_limit_passed_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test limit parameter is forwarded to the repository query."""
         now = datetime.now(UTC)
         words = [
             _make_vocab(f"word{i}", vocab_id=i, next_review_at=now - timedelta(hours=i))
-            for i in range(1, 11)
+            for i in range(1, 4)
         ]
-        mock_vocab_repo.get_all.return_value = words
+        mock_vocab_repo.get_due_for_review.return_value = words
 
         result = service.get_due_words(language="es", limit=3)
 
         assert len(result) == 3
+        mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=3)
 
-    def test_limit_none_returns_all(self, service, mock_vocab_repo) -> None:
-        """Test limit=None returns all due words."""
+    def test_limit_none_passed_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test limit=None is forwarded to the repository query."""
         now = datetime.now(UTC)
         words = [
             _make_vocab(f"word{i}", vocab_id=i, next_review_at=now - timedelta(hours=i))
             for i in range(1, 6)
         ]
-        mock_vocab_repo.get_all.return_value = words
+        mock_vocab_repo.get_due_for_review.return_value = words
 
         result = service.get_due_words(language="es", limit=None)
 
         assert len(result) == 5
+        mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=None)
 
     def test_limit_larger_than_available(self, service, mock_vocab_repo) -> None:
         """Test limit larger than available due words returns all available."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        mock_vocab_repo.get_due_for_review.return_value = [
             _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
         ]
 
         result = service.get_due_words(language="es", limit=100)
 
         assert len(result) == 1
+        mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=100)
 
 
 # =============================================================================
@@ -1086,59 +1097,71 @@ class TestGetDueWords:
 class TestGetTopicalReviewWords:
     """Tests for ReviewService.get_topical_review_words."""
 
-    def test_empty_keywords_returns_first_n_due(self, service, mock_vocab_repo) -> None:
-        """Test empty topic_keywords returns first due words up to limit."""
+    def test_empty_keywords_falls_back_to_due_for_review(
+        self, service, mock_vocab_repo
+    ) -> None:
+        """Test empty topic_keywords calls get_due_for_review with limit."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        due_words = [
             _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
             _make_vocab("gracias", vocab_id=2, next_review_at=now - timedelta(hours=2)),
-            _make_vocab("bueno", vocab_id=3, next_review_at=now - timedelta(hours=3)),
         ]
+        mock_vocab_repo.get_due_for_review.return_value = due_words
 
         result = service.get_topical_review_words(language="es", topic_keywords=[], limit=2)
 
         assert len(result) == 2
+        mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=2)
+        mock_vocab_repo.get_due_by_keywords.assert_not_called()
 
-    def test_matches_on_word_case_insensitive(self, service, mock_vocab_repo) -> None:
-        """Test matching works case-insensitively on the word field."""
+    def test_keywords_delegates_to_get_due_by_keywords(
+        self, service, mock_vocab_repo
+    ) -> None:
+        """Test non-empty keywords calls get_due_by_keywords on the repository."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        matched = [
             _make_vocab("Hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
-            _make_vocab("gracias", vocab_id=2, next_review_at=now - timedelta(hours=2)),
         ]
+        mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(language="es", topic_keywords=["hola"], limit=5)
+        result = service.get_topical_review_words(
+            language="es", topic_keywords=["hola"], limit=5
+        )
 
         assert len(result) == 1
         assert result[0].word == "Hola"
+        mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
+            language="es", keywords=["hola"], limit=5
+        )
+        mock_vocab_repo.get_due_for_review.assert_not_called()
 
-    def test_matches_on_translation_case_insensitive(self, service, mock_vocab_repo) -> None:
-        """Test matching works case-insensitively on the translation field."""
+    def test_keywords_passed_to_repo_for_matching(self, service, mock_vocab_repo) -> None:
+        """Test keywords are forwarded to repo which handles ilike matching."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        matched = [
             _make_vocab(
                 "hola",
                 translation="Hello",
                 vocab_id=1,
                 next_review_at=now - timedelta(hours=1),
             ),
-            _make_vocab(
-                "gracias",
-                translation="Thanks",
-                vocab_id=2,
-                next_review_at=now - timedelta(hours=2),
-            ),
         ]
+        mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(language="es", topic_keywords=["hello"], limit=5)
+        result = service.get_topical_review_words(
+            language="es", topic_keywords=["hello"], limit=5
+        )
 
         assert len(result) == 1
         assert result[0].word == "hola"
+        mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
+            language="es", keywords=["hello"], limit=5
+        )
 
-    def test_partial_match_on_keyword(self, service, mock_vocab_repo) -> None:
-        """Test keywords match as substrings (contains match)."""
+    def test_partial_keyword_forwarded_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test partial keywords are forwarded to repo for server-side ilike matching."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        matched = [
             _make_vocab(
                 "buenos dias",
                 translation="good morning",
@@ -1146,34 +1169,43 @@ class TestGetTopicalReviewWords:
                 next_review_at=now - timedelta(hours=1),
             ),
         ]
+        mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(language="es", topic_keywords=["buenos"], limit=5)
+        result = service.get_topical_review_words(
+            language="es", topic_keywords=["buenos"], limit=5
+        )
 
         assert len(result) == 1
+        mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
+            language="es", keywords=["buenos"], limit=5
+        )
 
-    def test_respects_limit(self, service, mock_vocab_repo) -> None:
-        """Test topical match respects the limit parameter."""
+    def test_limit_forwarded_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test limit parameter is forwarded to the repository query."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        words = [
             _make_vocab(
                 f"food{i}",
                 translation=f"comida{i}",
                 vocab_id=i,
                 next_review_at=now - timedelta(hours=i),
             )
-            for i in range(1, 10)
+            for i in range(1, 4)
         ]
+        mock_vocab_repo.get_due_by_keywords.return_value = words
 
-        result = service.get_topical_review_words(language="es", topic_keywords=["food"], limit=3)
+        result = service.get_topical_review_words(
+            language="es", topic_keywords=["food"], limit=3
+        )
 
         assert len(result) == 3
+        mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
+            language="es", keywords=["food"], limit=3
+        )
 
     def test_no_matches_returns_empty(self, service, mock_vocab_repo) -> None:
-        """Test returns empty list when no words match keywords."""
-        now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab("hola", vocab_id=1, next_review_at=now - timedelta(hours=1)),
-        ]
+        """Test returns empty list when repo returns no matching words."""
+        mock_vocab_repo.get_due_by_keywords.return_value = []
 
         result = service.get_topical_review_words(
             language="es", topic_keywords=["restaurant"], limit=5
@@ -1181,38 +1213,35 @@ class TestGetTopicalReviewWords:
 
         assert result == []
 
-    def test_only_due_words_considered(self, service, mock_vocab_repo) -> None:
-        """Test topical matching only considers due words (not future or unscheduled)."""
+    def test_due_filtering_delegated_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test that due-word filtering is handled server-side by the repository."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab(
-                "hola",
-                vocab_id=1,
-                next_review_at=now + timedelta(hours=5),  # not due
-            ),
-            _make_vocab(
-                "hola amigo",
-                vocab_id=2,
-                next_review_at=now - timedelta(hours=1),  # due
-            ),
-        ]
+        # Repo only returns the due word (server-side WHERE clause)
+        due_word = _make_vocab(
+            "hola amigo",
+            vocab_id=2,
+            next_review_at=now - timedelta(hours=1),
+        )
+        mock_vocab_repo.get_due_by_keywords.return_value = [due_word]
 
-        result = service.get_topical_review_words(language="es", topic_keywords=["hola"], limit=5)
+        result = service.get_topical_review_words(
+            language="es", topic_keywords=["hola"], limit=5
+        )
 
         assert len(result) == 1
         assert result[0].word == "hola amigo"
 
-    def test_word_matched_only_once(self, service, mock_vocab_repo) -> None:
-        """Test each vocabulary item is added at most once even if multiple keywords match."""
+    def test_dedup_delegated_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test deduplication is handled server-side by the repository."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab(
-                "hola amigo",
-                translation="hello friend",
-                vocab_id=1,
-                next_review_at=now - timedelta(hours=1),
-            ),
-        ]
+        word = _make_vocab(
+            "hola amigo",
+            translation="hello friend",
+            vocab_id=1,
+            next_review_at=now - timedelta(hours=1),
+        )
+        # Repo returns deduplicated results
+        mock_vocab_repo.get_due_by_keywords.return_value = [word]
 
         result = service.get_topical_review_words(
             language="es", topic_keywords=["hola", "hello"], limit=5
@@ -1220,29 +1249,22 @@ class TestGetTopicalReviewWords:
 
         assert len(result) == 1
 
-    def test_multiple_keywords_match_different_words(self, service, mock_vocab_repo) -> None:
-        """Test multiple keywords can match different vocabulary items."""
+    def test_multiple_keywords_forwarded_to_repo(self, service, mock_vocab_repo) -> None:
+        """Test multiple keywords are forwarded to repo for server-side matching."""
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
-            _make_vocab(
-                "hola",
-                translation="hello",
-                vocab_id=1,
-                next_review_at=now - timedelta(hours=2),
-            ),
-            _make_vocab(
-                "comer",
-                translation="to eat",
-                vocab_id=2,
-                next_review_at=now - timedelta(hours=1),
-            ),
-            _make_vocab(
-                "dormir",
-                translation="to sleep",
-                vocab_id=3,
-                next_review_at=now - timedelta(hours=3),
-            ),
-        ]
+        hola = _make_vocab(
+            "hola",
+            translation="hello",
+            vocab_id=1,
+            next_review_at=now - timedelta(hours=2),
+        )
+        comer = _make_vocab(
+            "comer",
+            translation="to eat",
+            vocab_id=2,
+            next_review_at=now - timedelta(hours=1),
+        )
+        mock_vocab_repo.get_due_by_keywords.return_value = [hola, comer]
 
         result = service.get_topical_review_words(
             language="es", topic_keywords=["hello", "eat"], limit=5
@@ -1251,6 +1273,9 @@ class TestGetTopicalReviewWords:
         assert len(result) == 2
         matched_words = {v.word for v in result}
         assert matched_words == {"hola", "comer"}
+        mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
+            language="es", keywords=["hello", "eat"], limit=5
+        )
 
 
 # =============================================================================
@@ -1658,9 +1683,13 @@ class TestEdgeCases:
         assert update_data["repetition_count"] == 3
 
     def test_due_words_with_exactly_now_review_time(self, service, mock_vocab_repo) -> None:
-        """Test words with next_review_at exactly now are considered due."""
+        """Test words with next_review_at exactly now are considered due.
+
+        The server-side query uses WHERE next_review_at <= NOW(), so a word
+        with next_review_at == now is due. The repo returns it directly.
+        """
         now = datetime.now(UTC)
-        mock_vocab_repo.get_all.return_value = [
+        mock_vocab_repo.get_due_for_review.return_value = [
             _make_vocab("hola", vocab_id=1, next_review_at=now),
         ]
 
