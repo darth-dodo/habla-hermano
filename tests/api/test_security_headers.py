@@ -71,7 +71,7 @@ class TestCSPNonce:
         nonce = match.group(1)
         # The nonce should appear in the rendered HTML
         assert f'nonce="{nonce}"' in html, (
-            f"Script tags in rendered HTML should include nonce=\"{nonce}\""
+            f'Script tags in rendered HTML should include nonce="{nonce}"'
         )
 
     def test_standard_security_headers_present(self, test_client: TestClient) -> None:

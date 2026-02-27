@@ -1097,9 +1097,7 @@ class TestGetDueWords:
 class TestGetTopicalReviewWords:
     """Tests for ReviewService.get_topical_review_words."""
 
-    def test_empty_keywords_falls_back_to_due_for_review(
-        self, service, mock_vocab_repo
-    ) -> None:
+    def test_empty_keywords_falls_back_to_due_for_review(self, service, mock_vocab_repo) -> None:
         """Test empty topic_keywords calls get_due_for_review with limit."""
         now = datetime.now(UTC)
         due_words = [
@@ -1114,9 +1112,7 @@ class TestGetTopicalReviewWords:
         mock_vocab_repo.get_due_for_review.assert_called_once_with(language="es", limit=2)
         mock_vocab_repo.get_due_by_keywords.assert_not_called()
 
-    def test_keywords_delegates_to_get_due_by_keywords(
-        self, service, mock_vocab_repo
-    ) -> None:
+    def test_keywords_delegates_to_get_due_by_keywords(self, service, mock_vocab_repo) -> None:
         """Test non-empty keywords calls get_due_by_keywords on the repository."""
         now = datetime.now(UTC)
         matched = [
@@ -1124,9 +1120,7 @@ class TestGetTopicalReviewWords:
         ]
         mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(
-            language="es", topic_keywords=["hola"], limit=5
-        )
+        result = service.get_topical_review_words(language="es", topic_keywords=["hola"], limit=5)
 
         assert len(result) == 1
         assert result[0].word == "Hola"
@@ -1148,9 +1142,7 @@ class TestGetTopicalReviewWords:
         ]
         mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(
-            language="es", topic_keywords=["hello"], limit=5
-        )
+        result = service.get_topical_review_words(language="es", topic_keywords=["hello"], limit=5)
 
         assert len(result) == 1
         assert result[0].word == "hola"
@@ -1171,9 +1163,7 @@ class TestGetTopicalReviewWords:
         ]
         mock_vocab_repo.get_due_by_keywords.return_value = matched
 
-        result = service.get_topical_review_words(
-            language="es", topic_keywords=["buenos"], limit=5
-        )
+        result = service.get_topical_review_words(language="es", topic_keywords=["buenos"], limit=5)
 
         assert len(result) == 1
         mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
@@ -1194,9 +1184,7 @@ class TestGetTopicalReviewWords:
         ]
         mock_vocab_repo.get_due_by_keywords.return_value = words
 
-        result = service.get_topical_review_words(
-            language="es", topic_keywords=["food"], limit=3
-        )
+        result = service.get_topical_review_words(language="es", topic_keywords=["food"], limit=3)
 
         assert len(result) == 3
         mock_vocab_repo.get_due_by_keywords.assert_called_once_with(
@@ -1224,9 +1212,7 @@ class TestGetTopicalReviewWords:
         )
         mock_vocab_repo.get_due_by_keywords.return_value = [due_word]
 
-        result = service.get_topical_review_words(
-            language="es", topic_keywords=["hola"], limit=5
-        )
+        result = service.get_topical_review_words(language="es", topic_keywords=["hola"], limit=5)
 
         assert len(result) == 1
         assert result[0].word == "hola amigo"

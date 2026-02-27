@@ -95,9 +95,25 @@ def csrf_app() -> Generator[FastAPI, None, None]:
     mock_table = MagicMock()
     mock_execute_result = MagicMock(data=[], count=0)
     for method in (
-        "select", "insert", "update", "delete", "eq", "neq",
-        "gt", "gte", "lt", "lte", "ilike", "like",
-        "is_", "in_", "or_", "order", "limit", "range", "single",
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "eq",
+        "neq",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "ilike",
+        "like",
+        "is_",
+        "in_",
+        "or_",
+        "order",
+        "limit",
+        "range",
+        "single",
     ):
         setattr(mock_table, method, MagicMock(return_value=mock_table))
     mock_table.execute = MagicMock(return_value=mock_execute_result)
