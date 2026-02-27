@@ -9,7 +9,7 @@ state-changing endpoints (POST/PUT/DELETE/PATCH) while allowing:
 """
 
 from collections.abc import Generator
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -92,33 +92,6 @@ def csrf_app() -> Generator[FastAPI, None, None]:
         return mock_user
 
     mock_supabase = MagicMock()
-    mock_table = MagicMock()
-    mock_execute_result = MagicMock(data=[], count=0)
-    for method in (
-        "select",
-        "insert",
-        "update",
-        "delete",
-        "eq",
-        "neq",
-        "gt",
-        "gte",
-        "lt",
-        "lte",
-        "ilike",
-        "like",
-        "is_",
-        "in_",
-        "or_",
-        "order",
-        "limit",
-        "range",
-        "single",
-    ):
-        setattr(mock_table, method, MagicMock(return_value=mock_table))
-    mock_table.execute = MagicMock(return_value=mock_execute_result)
-    type(mock_table).not_ = PropertyMock(return_value=mock_table)
-    mock_supabase.table = MagicMock(return_value=mock_table)
 
     with (
         patch("src.api.routes.chat.build_graph", mock_build_graph),

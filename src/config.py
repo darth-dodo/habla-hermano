@@ -65,9 +65,6 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     PORT: int = 8000
 
-    # Logging format: "text" for human-readable, "json" for structured logging
-    LOG_FORMAT: Literal["text", "json"] = "text"
-
     # Paths (computed relative to project root)
     @property
     def project_root(self) -> Path:

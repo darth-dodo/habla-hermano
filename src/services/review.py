@@ -59,8 +59,8 @@ class ReviewService:
     def get_stats(self, language: str = "es") -> ReviewStats:
         """Get review statistics for UI display.
 
-        Uses server-side queries to count due words and in-rotation totals
-        instead of fetching all vocabulary and filtering in Python.
+        Computes the number of words due for review, time until next review,
+        and total words in the review rotation.
 
         Args:
             language: Target language code (es, de).
@@ -68,23 +68,21 @@ class ReviewService:
         Returns:
             ReviewStats with due count, next review time, and total in rotation.
         """
-        repo_stats = self._vocab_repo.get_review_stats(language=language)
+        vocab = self._vocab_repo.get_all(language=language)
+        now = datetime.now(UTC)
 
-        due_count: int = repo_stats["due_count"]
-        total_in_rotation: int = repo_stats["total_in_rotation"]
+        # Words with next_review_at set are "in rotation"
+        in_rotation = [v for v in vocab if v.next_review_at is not None]
+        total_in_rotation = len(in_rotation)
 
-        # Calculate next review time from the repo's next_review_at
-        next_review_in: str | None = None
-        next_review_at_raw = repo_stats.get("next_review_at")
-        if isinstance(next_review_at_raw, str):
-            next_review_at = datetime.fromisoformat(next_review_at_raw)
-            now = datetime.now(UTC)
-            if next_review_at > now:
-                next_review_in = self._format_timedelta(next_review_at - now)
-        elif isinstance(next_review_at_raw, datetime):
-            now = datetime.now(UTC)
-            if next_review_at_raw > now:
-                next_review_in = self._format_timedelta(next_review_at_raw - now)
+        # Words that are due (next_review_at <= now)
+        due_words = [
+            v for v in in_rotation if v.next_review_at is not None and v.next_review_at <= now
+        ]
+        due_count = len(due_words)
+
+        # Calculate next review time for words not yet due
+        next_review_in = self._calculate_next_review_in(in_rotation, now)
 
         return ReviewStats(
             due_count=due_count,
@@ -99,9 +97,6 @@ class ReviewService:
     ) -> list[Vocabulary]:
         """Get words due for review, ordered by most overdue first.
 
-        Uses a server-side query with WHERE next_review_at <= NOW()
-        instead of fetching all vocabulary and filtering in Python.
-
         Args:
             language: Target language code (es, de).
             limit: Maximum number of words to return. None returns all due words.
@@ -109,7 +104,18 @@ class ReviewService:
         Returns:
             List of Vocabulary entries due for review.
         """
-        return self._vocab_repo.get_due_for_review(language=language, limit=limit)
+        vocab = self._vocab_repo.get_all(language=language)
+        now = datetime.now(UTC)
+
+        # Filter to words in rotation that are due
+        due_words = [v for v in vocab if v.next_review_at is not None and v.next_review_at <= now]
+
+        # Sort by most overdue first (earliest next_review_at)
+        due_words.sort(key=lambda v: v.next_review_at or now)
+
+        if limit is not None:
+            return due_words[:limit]
+        return due_words
 
     def get_topical_review_words(
         self,
@@ -119,9 +125,8 @@ class ReviewService:
     ) -> list[Vocabulary]:
         """Get due words matching conversation topic for chat weaving.
 
-        Uses server-side ilike queries to match keywords against word
-        and translation columns instead of fetching all due words and
-        filtering in Python.
+        Filters due words to those whose word or translation contains
+        any of the provided topic keywords (case-insensitive).
 
         Args:
             language: Target language code (es, de).
@@ -131,12 +136,29 @@ class ReviewService:
         Returns:
             List of Vocabulary entries matching topic and due for review.
         """
-        if not topic_keywords:
-            return self._vocab_repo.get_due_for_review(language=language, limit=limit)
+        due_words = self.get_due_words(language=language)
 
-        return self._vocab_repo.get_due_by_keywords(
-            language=language, keywords=topic_keywords, limit=limit
-        )
+        if not topic_keywords:
+            return due_words[:limit]
+
+        # Normalize keywords for case-insensitive matching
+        keywords_lower = [kw.lower() for kw in topic_keywords]
+
+        # Match words where the word or translation contains any keyword
+        matching_words: list[Vocabulary] = []
+        for vocab in due_words:
+            word_lower = vocab.word.lower()
+            translation_lower = vocab.translation.lower()
+
+            for keyword in keywords_lower:
+                if keyword in word_lower or keyword in translation_lower:
+                    matching_words.append(vocab)
+                    break  # Only add once per vocab
+
+            if len(matching_words) >= limit:
+                break
+
+        return matching_words
 
     def update_sm2(self, vocab_id: int, quality: int) -> Vocabulary:
         """Apply SM-2 algorithm to a vocabulary item and persist.

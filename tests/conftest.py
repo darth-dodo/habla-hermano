@@ -4,7 +4,7 @@ import os
 import time
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import jwt
 import pytest
@@ -13,8 +13,6 @@ from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.agent.graph import clear_graph_cache
-from src.agent.llm import clear_llm_cache
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
 from src.api.dependencies import get_cached_templates
@@ -112,35 +110,15 @@ def mock_supabase_client() -> MagicMock:
     mock_client.auth.sign_up = AsyncMock()
     mock_client.auth.sign_out = MagicMock()
 
-    # Mock table operations — chain all Supabase PostgREST filter methods
-    # back to mock_table so .execute() always returns the stubbed response.
+    # Mock table operations
     mock_table = MagicMock()
-    mock_execute_result = MagicMock(data=[], count=0)
-    for method in (
-        "select",
-        "insert",
-        "update",
-        "delete",
-        "eq",
-        "neq",
-        "gt",
-        "gte",
-        "lt",
-        "lte",
-        "ilike",
-        "like",
-        "is_",
-        "in_",
-        "order",
-        "limit",
-        "range",
-        "single",
-    ):
-        setattr(mock_table, method, MagicMock(return_value=mock_table))
-    mock_table.execute = MagicMock(return_value=mock_execute_result)
-    # .not_ is a property accessor in Supabase that returns a filter builder.
-    # Use PropertyMock on the type to prevent MagicMock auto-attribute magic.
-    type(mock_table).not_ = PropertyMock(return_value=mock_table)
+    mock_table.select = MagicMock(return_value=mock_table)
+    mock_table.insert = MagicMock(return_value=mock_table)
+    mock_table.update = MagicMock(return_value=mock_table)
+    mock_table.delete = MagicMock(return_value=mock_table)
+    mock_table.eq = MagicMock(return_value=mock_table)
+    mock_table.single = MagicMock(return_value=mock_table)
+    mock_table.execute = MagicMock(return_value=MagicMock(data=[], count=0))
     mock_client.table = MagicMock(return_value=mock_table)
 
     # Mock storage module
@@ -255,20 +233,15 @@ def clean_env() -> Generator[None, None, None]:
 def reset_settings_cache() -> Generator[None, None, None]:
     """Reset settings cache and rate limits before and after each test.
 
-    This ensures each test starts with fresh settings, clean rate limit state,
-    and uncached LLM/graph instances.
+    This ensures each test starts with fresh settings and clean rate limit state.
     """
     get_settings.cache_clear()
     get_cached_templates.cache_clear()
     reset_rate_limits()
-    clear_llm_cache()
-    clear_graph_cache()
     yield
     get_settings.cache_clear()
     get_cached_templates.cache_clear()
     reset_rate_limits()
-    clear_llm_cache()
-    clear_graph_cache()
 
 
 # =============================================================================
@@ -406,38 +379,7 @@ def app_with_mocked_graph(
         """Return mock user for optional auth routes."""
         return mock_user
 
-    # Build a mock Supabase client with properly chained table operations.
-    # All PostgREST filter methods chain back to mock_table so that
-    # .execute() always returns the stubbed empty result.
     mock_supabase = MagicMock()
-    mock_table = MagicMock()
-    mock_execute_result = MagicMock(data=[], count=0)
-    for method in (
-        "select",
-        "insert",
-        "update",
-        "delete",
-        "eq",
-        "neq",
-        "gt",
-        "gte",
-        "lt",
-        "lte",
-        "ilike",
-        "like",
-        "is_",
-        "in_",
-        "or_",
-        "order",
-        "limit",
-        "range",
-        "single",
-    ):
-        setattr(mock_table, method, MagicMock(return_value=mock_table))
-    mock_table.execute = MagicMock(return_value=mock_execute_result)
-    # .not_ is a property accessor in Supabase PostgREST
-    type(mock_table).not_ = PropertyMock(return_value=mock_table)
-    mock_supabase.table = MagicMock(return_value=mock_table)
 
     with (
         patch("src.api.routes.chat.build_graph", mock_build_graph),
