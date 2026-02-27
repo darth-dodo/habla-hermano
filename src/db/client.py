@@ -51,6 +51,7 @@ def get_supabase() -> SupabaseClient:
     )
 
 
+@lru_cache
 def get_supabase_admin() -> SupabaseClient:
     """Get Supabase client with service role key for admin operations.
 
@@ -115,8 +116,9 @@ def get_supabase_for_user(access_token: str) -> SupabaseClient:
 
 
 def clear_supabase_cache() -> None:
-    """Clear the cached Supabase client.
+    """Clear all cached Supabase clients.
 
     Useful for testing or when configuration changes.
     """
     get_supabase.cache_clear()
+    get_supabase_admin.cache_clear()
