@@ -4,7 +4,7 @@
 
 {% block head %}
 <!-- Chart.js CDN -->
-<script nonce="{{ request.state.csp_nonce }}" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -94,7 +94,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script nonce="{{ request.state.csp_nonce }}">
+<script>
 // Fetch chart data and render charts
 async function initCharts() {
     try {

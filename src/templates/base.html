@@ -8,8 +8,8 @@
     <title>{% block title %}Habla Hermano{% endblock %}</title>
 
     <!-- Tailwind CSS CDN (development) -->
-    <script nonce="{{ request.state.csp_nonce }}" src="https://cdn.tailwindcss.com"></script>
-    <script nonce="{{ request.state.csp_nonce }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -120,10 +120,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- HTMX -->
-    <script nonce="{{ request.state.csp_nonce }}" src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 
     <!-- Alpine.js for minimal interactivity -->
-    <script nonce="{{ request.state.csp_nonce }}" defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
     <!-- Theme System -->
     <style>
@@ -740,7 +740,7 @@
     </div>
 
     <!-- Custom JavaScript (ES Modules) -->
-    <script nonce="{{ request.state.csp_nonce }}" type="module" src="{{ url_for('static', path='js/main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', path='js/main.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

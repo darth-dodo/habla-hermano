@@ -113,7 +113,7 @@ Variables expected:
     </div>
 </div>
 
-<script nonce="{{ request.state.csp_nonce }}">
+<script>
 // Focus the input after HTMX swap
 document.addEventListener('htmx:afterSwap', function(evt) {
     const input = document.getElementById('review-answer-input');

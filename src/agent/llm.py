@@ -13,7 +13,6 @@ Profiles:
     - "enhancement": temperature=0.7, max_tokens=1024
 """
 
-from functools import lru_cache
 from typing import Any
 
 from langchain_anthropic import ChatAnthropic
@@ -30,7 +29,6 @@ _PROFILES: dict[str, tuple[float | None, int]] = {
 }
 
 
-@lru_cache(maxsize=8)
 def get_llm(profile: str = "default") -> ChatAnthropic:
     """
     Create and return a ChatAnthropic instance configured for the given profile.
@@ -72,11 +70,3 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
         max_tokens=max_tokens,  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
         api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]  # SecretStr vs str mismatch in stubs
     )
-
-
-def clear_llm_cache() -> None:
-    """Clear the cached LLM instances.
-
-    Useful for testing or when settings change.
-    """
-    get_llm.cache_clear()

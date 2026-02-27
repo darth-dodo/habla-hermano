@@ -50,9 +50,6 @@ dependencies = [
 
     # WebSocket client (used in streaming TTS proxy)
     "websockets>=13.0",
-
-    # Structured logging
-    "python-json-logger>=3.0.0",
 ]
 
 [project.optional-dependencies]

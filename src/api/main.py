@@ -18,25 +18,10 @@ from src.api.routes import auth, chat, learn, lessons, progress, review, voice
 
 # Configure logging
 settings = get_settings()
-
-if settings.LOG_FORMAT == "json":
-    from pythonjsonlogger.json import JsonFormatter
-
-    handler = logging.StreamHandler()
-    handler.setFormatter(
-        JsonFormatter(
-            fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
-            rename_fields={"asctime": "timestamp", "levelname": "level"},
-        )
-    )
-    logging.root.handlers = [handler]
-    logging.root.setLevel(settings.log_level)
-else:
-    logging.basicConfig(
-        level=settings.log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
+logging.basicConfig(
+    level=settings.log_level,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
