@@ -26,7 +26,6 @@ from src.api.config import get_settings
 from src.api.rate_limit import (
     VOICE_RATE_LIMIT_CALLS,
     VOICE_RATE_LIMIT_PERIOD,
-    VOICE_WS_MESSAGE_RATE,
     VOICE_WS_TTS_MESSAGE_RATE,
     WebSocketMessageRateLimiter,
     rate_limited,
@@ -150,9 +149,6 @@ async def transcribe_stream(  # noqa: PLR0915
 
     await websocket.accept()
 
-    # B9: Per-connection message rate limiter for audio frames
-    msg_limiter = WebSocketMessageRateLimiter(VOICE_WS_MESSAGE_RATE, 60)
-
     try:
         from deepgram import AsyncDeepgramClient
         from deepgram.core.events import EventType
@@ -214,12 +210,6 @@ async def transcribe_stream(  # noqa: PLR0915
             try:
                 while True:
                     audio_data = await websocket.receive_bytes()
-                    if not msg_limiter.check():
-                        logger.warning("STT WebSocket message rate limit exceeded")
-                        await websocket.send_json(
-                            {"error": "Rate limit exceeded", "code": "RATE_LIMITED"}
-                        )
-                        continue
                     await dg_ws.send_media(audio_data)
             except WebSocketDisconnect:
                 logger.debug("Browser WebSocket disconnected")

@@ -33,8 +33,10 @@ GENERAL_RATE_LIMIT_PERIOD = 60  # 1 minute
 VOICE_RATE_LIMIT_CALLS = 10
 VOICE_RATE_LIMIT_PERIOD = 60  # 1 minute
 
-# Per-connection WebSocket message rate limits
-VOICE_WS_MESSAGE_RATE = 60  # audio frames per minute (STT)
+# Per-connection WebSocket message rate limit for TTS.
+# STT audio frames are not rate-limited per-message because AudioWorklet
+# fires process() at 128-sample intervals (~375/sec at 48kHz). The
+# authenticated WebSocket connection itself is the throttle for STT.
 VOICE_WS_TTS_MESSAGE_RATE = 30  # text messages per minute (TTS)
 
 F = TypeVar("F", bound=Callable[..., Any])
