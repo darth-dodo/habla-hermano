@@ -38,6 +38,7 @@ function createMockAudioContext() {
         destination: {},
         createMediaStreamSource: vi.fn(() => ({
             connect: vi.fn(),
+            disconnect: vi.fn(),
         })),
         createAnalyser: vi.fn(() => ({
             fftSize: 0,
@@ -676,8 +677,34 @@ describe('voice.js — VoiceManager', () => {
 
             expect(vm.isRecording).toBe(false);
             expect(vm._scriptProcessor).toBeNull();
+            expect(vm._source).toBeNull();
             expect(vm._stream).toBeNull();
             expect(vm.ws).toBeNull();
+        });
+
+        it('disconnects MediaStreamAudioSourceNode to release mic indicator', async () => {
+            setupVoiceDOM();
+            globalThis.AudioContext = vi.fn(() => {
+                var ctx = createMockAudioContext();
+                delete ctx.audioWorklet;
+                return ctx;
+            });
+            vm = await importVoice();
+
+            vm.startRecording();
+            await vi.advanceTimersByTimeAsync(0);
+
+            const ws = MockWebSocket._lastInstance;
+            ws.readyState = MockWebSocket.OPEN;
+            ws.onopen();
+
+            const source = vm._source;
+            expect(source).not.toBeNull();
+
+            vm.stopRecording();
+
+            expect(source.disconnect).toHaveBeenCalled();
+            expect(vm._source).toBeNull();
         });
 
         it('cleans up WorkletNode when present', async () => {

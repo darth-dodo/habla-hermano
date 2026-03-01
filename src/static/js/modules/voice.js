@@ -76,6 +76,7 @@ function VoiceManager() {
     this._sttAudioCtx = null;
     this._finalTranscript = ''; // Accumulated final transcripts
     this._analyser = null;
+    this._source = null;
     this._levelAnimFrame = null;
     this._timerInterval = null;
     this._timerStartTime = 0;
@@ -198,6 +199,7 @@ VoiceManager.prototype.startRecording = function() {
         // Create AudioContext for both PCM capture and level bars
         self._sttAudioCtx = new Ctx();
         var source = self._sttAudioCtx.createMediaStreamSource(stream);
+        self._source = source;
 
         // Analyser for level bars (doesn't affect audio pipeline)
         self._analyser = self._sttAudioCtx.createAnalyser();
@@ -319,6 +321,12 @@ VoiceManager.prototype.stopRecording = function() {
         this._workletNode.port.postMessage('stop');
         try { this._workletNode.disconnect(); } catch (_) {}
         this._workletNode = null;
+    }
+
+    // Disconnect MediaStreamAudioSourceNode so browser releases mic indicator
+    if (this._source) {
+        try { this._source.disconnect(); } catch (_) {}
+        this._source = null;
     }
 
     // Stop microphone stream tracks
