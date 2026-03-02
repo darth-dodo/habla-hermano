@@ -285,7 +285,7 @@ describe('stream.js — initStreamingForm', () => {
     // NEW: createStreamingBubble — creates AI response bubble with cursor
     // ------------------------------------------------------------------
 
-    it('creates a streaming bubble with cursor when stream starts', async () => {
+    it('creates a streaming bubble with thinking indicator when stream starts', async () => {
         await submitAndWait(initStreamingForm, [
             { event: 'done', data: {} },
         ]);
@@ -323,6 +323,17 @@ describe('stream.js — initStreamingForm', () => {
     // ------------------------------------------------------------------
     // NEW: appendToken + finalizeBubble — cursor removed after finalize
     // ------------------------------------------------------------------
+
+    it('removes thinking indicator and shows cursor when first token arrives', async () => {
+        await submitAndWait(initStreamingForm, [
+            { event: 'token', data: { content: 'Hi' } },
+            { event: 'done', data: {} },
+        ]);
+
+        const chatMessages = document.getElementById('chat-messages');
+        const thinking = chatMessages.querySelector('.thinking-indicator');
+        expect(thinking).toBeNull();
+    });
 
     it('removes the streaming cursor after response_complete', async () => {
         await submitAndWait(initStreamingForm, [

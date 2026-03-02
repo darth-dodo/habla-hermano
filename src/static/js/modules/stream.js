@@ -51,7 +51,8 @@ function parseSSEEvent(eventStr) {
 // ============================================
 
 /**
- * Create an empty AI response bubble with a streaming cursor.
+ * Create an empty AI response bubble with a "Thinking..." indicator.
+ * The indicator is replaced by a streaming cursor once the first token arrives.
  * @returns {string} The bubble ID for later reference
  */
 function createStreamingBubble() {
@@ -62,7 +63,7 @@ function createStreamingBubble() {
     const bubbleHtml = `
         <div class="message-enter flex justify-start mb-6" id="${id}-wrapper">
             <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm border border-border">
-                <div class="text-ai-text leading-relaxed" id="${id}-text"><span class="streaming-cursor" id="${id}-cursor"></span></div>
+                <div class="text-ai-text leading-relaxed" id="${id}-text"><span class="thinking-indicator" id="${id}-thinking">Thinking\u2026</span><span class="streaming-cursor hidden" id="${id}-cursor"></span></div>
             </div>
         </div>
     `;
@@ -73,6 +74,7 @@ function createStreamingBubble() {
 
 /**
  * Append token text to the streaming bubble.
+ * On the first token, removes the "Thinking..." indicator and shows the cursor.
  * @param {string} bubbleId
  * @param {string} content - Token text to append
  */
@@ -80,8 +82,13 @@ function appendToken(bubbleId, content) {
     const textEl = document.getElementById(bubbleId + '-text');
     if (!textEl) return;
 
+    // Remove thinking indicator on first token
+    const thinking = document.getElementById(bubbleId + '-thinking');
+    if (thinking) thinking.remove();
+
     const cursor = document.getElementById(bubbleId + '-cursor');
     if (cursor) {
+        cursor.classList.remove('hidden');
         // Insert text before cursor
         cursor.insertAdjacentText('beforebegin', content);
     } else {
@@ -90,10 +97,12 @@ function appendToken(bubbleId, content) {
 }
 
 /**
- * Finalize the streaming bubble: remove cursor.
+ * Finalize the streaming bubble: remove cursor and thinking indicator.
  * @param {string} bubbleId
  */
 function finalizeBubble(bubbleId) {
+    const thinking = document.getElementById(bubbleId + '-thinking');
+    if (thinking) thinking.remove();
     const cursor = document.getElementById(bubbleId + '-cursor');
     if (cursor) cursor.remove();
 }
