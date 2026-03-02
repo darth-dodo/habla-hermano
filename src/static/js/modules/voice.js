@@ -69,6 +69,7 @@ function VoiceManager() {
     this._ttsWs = null;
     this._audioCtx = null;
     this._ttsPlaying = false;
+    this._ttsEndFallback = null;
     // STT audio capture state
     this._stream = null;
     this._scriptProcessor = null;
@@ -600,6 +601,11 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
 VoiceManager.prototype._stopTTS = function(btn) {
     this._ttsPlaying = false;
 
+    if (this._ttsEndFallback) {
+        clearTimeout(this._ttsEndFallback);
+        this._ttsEndFallback = null;
+    }
+
     if (this._ttsWs && this._ttsWs.readyState === WebSocket.OPEN) {
         try { this._ttsWs.send(JSON.stringify({ type: 'close' })); } catch (_) {}
         this._ttsWs.close();
@@ -733,6 +739,10 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     this._ttsWs = ws;
 
     function cleanup() {
+        if (self._ttsEndFallback) {
+            clearTimeout(self._ttsEndFallback);
+            self._ttsEndFallback = null;
+        }
         self._ttsPlaying = false;
         self._ttsSources = [];
         if (self._ttsWs === ws) self._ttsWs = null;
@@ -834,8 +844,14 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
         wsDone = true;
         if (totalScheduled <= 0) {
             cleanup();
+        } else {
+            // Fallback: ensure cleanup runs after remaining audio finishes.
+            // source.onended may not fire reliably for all scheduled buffers.
+            var remaining = Math.max(0, nextStartTime - audioCtx.currentTime);
+            self._ttsEndFallback = setTimeout(function() {
+                if (self._ttsPlaying) cleanup();
+            }, (remaining * 1000) + 500);
         }
-        // Otherwise, the last source.onended will trigger cleanup
     };
 };
 
