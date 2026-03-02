@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Chat - Habla Hermano{% endblock %}
+{% block title %}{% if lesson_mode %}{{ lesson_title }} - Habla Hermano{% else %}Chat - Habla Hermano{% endif %}{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or 'A1' }}', language: '{{ current_language or 'es' }}', menuOpen: false, reviewMode: {{ 'true' if review_mode else 'false' }} }">
+<div class="flex flex-col h-full" x-data="{ level: '{{ current_level or lesson_level or 'A1' }}', language: '{{ current_language or lesson_language or 'es' }}', menuOpen: false, reviewMode: {{ 'true' if review_mode else 'false' }} }"
+    {% if lesson_mode %}data-lesson-mode="true" data-lesson-id="{{ lesson_id }}"{% endif %}>
     <!-- Header - Nordic Minimal -->
     <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 safe-top safe-x">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
@@ -231,6 +232,30 @@
         </div>
     </header>
 
+    {% if lesson_mode %}
+    <!-- Lesson Mode Header -->
+    <div id="lesson-header" class="flex-shrink-0 bg-accent-muted/30 border-b border-border px-4 py-2.5">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-lg">📖</span>
+                    <div class="min-w-0">
+                        <h2 class="text-sm font-semibold text-text truncate">{{ lesson_title }}</h2>
+                        <p class="text-xs text-text-muted">{{ lesson_level }} · {{ lesson_description|truncate(50) }}</p>
+                    </div>
+                </div>
+                <div id="lesson-phase-badge" class="flex-shrink-0 ml-2 px-2 py-0.5 bg-accent/10 text-accent text-xs font-medium rounded-full">
+                    Starting...
+                </div>
+            </div>
+            <!-- Progress bar -->
+            <div class="mt-2 h-1 bg-surface-overlay rounded-full overflow-hidden">
+                <div id="lesson-progress-bar" class="h-full bg-accent rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Chat Messages Container -->
     <main class="flex-1 overflow-y-auto bg-surface" id="chat-container">
         <div class="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
@@ -242,6 +267,9 @@
                 {% else %}
                 <!-- Normal Chat Mode -->
 
+                {% if lesson_mode %}
+                <!-- Lesson Mode - Auto-start message sent by JS -->
+                {% else %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->
                 {% set due_count = review_stats.due_count %}
@@ -269,6 +297,7 @@
                         </p>
                     </div>
                 </div>
+                {% endif %}
 
                 {% if messages %}
                     {% for msg in messages %}
@@ -306,6 +335,9 @@
                 <!-- Hidden inputs -->
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
+                {% if lesson_mode %}
+                <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
+                {% endif %}
 
                 <!-- Voice Mic Button + Speed Picker (Phase 17) -->
                 {% if voice_enabled %}

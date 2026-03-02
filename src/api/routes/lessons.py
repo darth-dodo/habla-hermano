@@ -461,7 +461,7 @@ async def handoff_to_chat(
     if not lesson:
         raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
 
-    redirect_url = f"/chat?lesson={lesson_id}&topic={lesson.metadata.category or 'general'}"
+    redirect_url = f"/chat/lesson/{lesson_id}"
 
     response = Response(status_code=200)
     response.headers["HX-Redirect"] = redirect_url
