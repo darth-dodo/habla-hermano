@@ -306,35 +306,46 @@ VoiceManager.prototype.startRecording = function() {
 
 VoiceManager.prototype.stopRecording = function() {
     this.isRecording = false;
-    this._stopLevelAnimation();
     this._stopTimer();
 
-    // Disconnect ScriptProcessor to stop audio capture
+    // 1. Disconnect audio processing nodes first (stops data flow)
     if (this._scriptProcessor) {
         this._scriptProcessor.onaudioprocess = null;
         try { this._scriptProcessor.disconnect(); } catch (_) {}
         this._scriptProcessor = null;
     }
-
-    // Disconnect AudioWorklet node
     if (this._workletNode) {
         this._workletNode.port.postMessage('stop');
         try { this._workletNode.disconnect(); } catch (_) {}
         this._workletNode = null;
     }
 
-    // Disconnect MediaStreamAudioSourceNode so browser releases mic indicator
+    // 2. Stop level animation (cancels rAF, nulls analyser — but does NOT close AudioContext yet)
+    if (this._levelAnimFrame) {
+        cancelAnimationFrame(this._levelAnimFrame);
+        this._levelAnimFrame = null;
+    }
+    this._analyser = null;
+
+    // 3. Disconnect MediaStreamAudioSourceNode
     if (this._source) {
         try { this._source.disconnect(); } catch (_) {}
         this._source = null;
     }
 
-    // Stop microphone stream tracks
+    // 4. Stop all MediaStream tracks (releases microphone hardware)
     if (this._stream) {
         this._stream.getTracks().forEach(function(t) { t.stop(); });
         this._stream = null;
     }
 
+    // 5. Close AudioContext AFTER tracks are stopped (ensures browser releases mic indicator)
+    if (this._sttAudioCtx && this._sttAudioCtx.state !== 'closed') {
+        this._sttAudioCtx.close().catch(function() {});
+    }
+    this._sttAudioCtx = null;
+
+    // 6. Close WebSocket
     if (this.ws) {
         if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
             this.ws.close(1000, 'Recording stopped');
@@ -443,10 +454,6 @@ VoiceManager.prototype._stopLevelAnimation = function() {
         cancelAnimationFrame(this._levelAnimFrame);
         this._levelAnimFrame = null;
     }
-    if (this._sttAudioCtx && this._sttAudioCtx.state !== 'closed') {
-        this._sttAudioCtx.close().catch(function() {});
-    }
-    this._sttAudioCtx = null;
     this._analyser = null;
 };
 

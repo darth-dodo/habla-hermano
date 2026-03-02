@@ -914,12 +914,10 @@ describe('voice.js — VoiceManager', () => {
             expect(requestAnimationFrame).not.toHaveBeenCalled();
         });
 
-        it('_stopLevelAnimation cancels animation frame and closes audio context', async () => {
+        it('_stopLevelAnimation cancels animation frame and nulls analyser', async () => {
             setupVoiceDOM();
             vm = await importVoice();
 
-            const mockCtx = createMockAudioContext();
-            vm._sttAudioCtx = mockCtx;
             vm._levelAnimFrame = 42;
             vm._analyser = {};
 
@@ -927,8 +925,6 @@ describe('voice.js — VoiceManager', () => {
 
             expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
             expect(vm._levelAnimFrame).toBeNull();
-            expect(mockCtx.close).toHaveBeenCalled();
-            expect(vm._sttAudioCtx).toBeNull();
             expect(vm._analyser).toBeNull();
         });
     });
