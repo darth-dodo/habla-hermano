@@ -564,27 +564,99 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-## Voice Endpoints
+## Voice Endpoints (Phase 17)
 
-Voice features require `DEEPGRAM_API_KEY` to be configured. When not configured, the voice UI is hidden and endpoints return errors.
+Phase 17 introduces voice conversation capabilities powered by Deepgram. The server acts as a proxy between the browser and Deepgram's real-time APIs, handling authentication, rate limiting, and audio format negotiation. Voice features are optional and require `DEEPGRAM_API_KEY` to be configured. When not configured, the voice UI is hidden and endpoints return appropriate errors.
 
-**Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie. If the cookie is missing or the JWT is expired/invalid, the WebSocket connection is rejected immediately with close code `4001` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
+**Deepgram Models**:
+- **STT**: Nova-3 (real-time speech recognition with smart formatting and punctuation)
+- **TTS**: Aura-2 (low-latency text-to-speech with natural voices)
+
+**Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie or a `session_id` guest cookie. If neither is present or valid, the WebSocket connection is rejected before acceptance with close code `4001` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
+
+**Rate Limiting**: Voice endpoints are rate-limited to prevent API budget abuse:
+
+| Endpoint | Type | Limit | Scope |
+|----------|------|-------|-------|
+| `POST /api/speak` | REST | 10 calls per 60 seconds | Function-level (all callers share the limit) |
+| `GET /ws/speak` | WebSocket | 30 text messages per 60 seconds | Per-connection (each WebSocket gets its own counter) |
+| `GET /ws/transcribe` | WebSocket | Not rate-limited per-message | Per-connection (AudioWorklet fires at ~375 frames/sec; the authenticated connection itself is the throttle) |
+
+When the REST rate limit is exceeded, the server returns HTTP `429 Too Many Requests`. When the WebSocket TTS message rate limit is exceeded, the server sends a JSON error frame instead of closing the connection:
+
+```json
+{"error": "Rate limit exceeded", "code": "RATE_LIMITED"}
+```
+
+### Available Voices
+
+Voice IDs follow Deepgram's Aura-2 naming convention: `aura-2-{name}-{lang}`.
+
+| Language | Voice ID | Default |
+|----------|----------|---------|
+| Spanish (`es`) | `aura-2-celeste-es` | |
+| Spanish (`es`) | `aura-2-estrella-es` | |
+| Spanish (`es`) | `aura-2-nestor-es` | Yes |
+| German (`de`) | `aura-2-elara-de` | |
+| German (`de`) | `aura-2-julius-de` | Yes |
+| French (`fr`) | `aura-2-agathe-fr` | |
+| French (`fr`) | `aura-2-hector-fr` | Yes |
+
+Default voices are masculine to match the Hermano ("big brother") tutor persona.
+
+### STT Language Options
+
+| Code | Description |
+|------|-------------|
+| `es` | Spanish |
+| `de` | German |
+| `fr` | French |
+| `multi` | Code-switching mode (default) -- allows mixing target language with English |
+
+---
 
 ### WebSocket /ws/transcribe
 
-Real-time speech-to-text via Deepgram Nova-3 proxy. Browser sends raw audio chunks, server forwards to Deepgram and relays transcripts back.
+Real-time speech-to-text proxy using Deepgram Nova-3. The browser captures microphone audio via an AudioWorklet, sends raw PCM frames over a WebSocket, and the server relays them to Deepgram's streaming STT API. Transcript results are forwarded back to the browser as JSON messages.
 
 **Protocol**: WebSocket
 
-**Authentication**: Required. The `sb-access-token` cookie must contain a valid JWT. Connection is rejected with close code `4001` if authentication fails.
+**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `4001` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
 
 | Query Parameter | Type | Default | Description |
 |----------------|------|---------|-------------|
-| `language` | string | `multi` | STT language: `es`, `de`, `fr`, or `multi` (code-switching) |
+| `language` | string | `multi` | STT language code: `es`, `de`, `fr`, or `multi` (code-switching) |
 
-**Client → Server**: Binary audio chunks (linear16 PCM, 16kHz, mono)
+#### Connection Lifecycle
 
-**Server → Client**: JSON transcript messages:
+```
+Browser                        Server                       Deepgram
+  |                              |                              |
+  |--- WebSocket upgrade ------->|                              |
+  |                              |-- validate JWT/session ----  |
+  |                              |   (reject 4001 if invalid)   |
+  |                              |                              |
+  |<-- WebSocket accepted -------|                              |
+  |                              |--- open STT WebSocket ------>|
+  |                              |   (Nova-3, language, PCM)    |
+  |                              |                              |
+  |--- binary audio chunk ------>|--- forward audio ----------->|
+  |--- binary audio chunk ------>|--- forward audio ----------->|
+  |                              |                              |
+  |                              |<-- transcript result --------|
+  |<-- JSON transcript ---------|                              |
+  |                              |                              |
+  |--- disconnect -------------->|--- send finalize ----------->|
+  |                              |--- close Deepgram WS ------->|
+```
+
+#### Client to Server
+
+Binary audio frames: linear16 PCM, 16kHz sample rate, mono channel. The browser's AudioWorklet (`pcm-processor.js`) captures microphone input at the native sample rate and resamples to 16kHz before sending.
+
+#### Server to Client
+
+JSON transcript messages with three fields:
 
 ```json
 {
@@ -594,81 +666,253 @@ Real-time speech-to-text via Deepgram Nova-3 proxy. Browser sends raw audio chun
 }
 ```
 
-**Close Codes**:
-- `1000`: Normal close
-- `1008`: Invalid language parameter
-- `1011`: Voice features not configured or internal error
-- `4001`: Authentication required (missing or invalid JWT)
+| Field | Type | Description |
+|-------|------|-------------|
+| `transcript` | string | Recognized text from the audio |
+| `is_final` | boolean | `true` if Deepgram considers this a final (non-interim) result |
+| `speech_final` | boolean | `true` if Deepgram detected end of utterance (endpointing) |
+
+Interim results (`is_final: false`) are sent as the user speaks, allowing the UI to display live transcription. Final results replace the interim text. The `speech_final` flag indicates a natural pause where the user has stopped speaking (configured at 300ms endpointing with 1000ms utterance end).
+
+#### Deepgram STT Configuration
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `model` | `nova-3` | Latest Deepgram speech recognition model |
+| `smart_format` | `true` | Automatic formatting (capitalization, numerals) |
+| `punctuate` | `true` | Add punctuation to transcripts |
+| `interim_results` | `true` | Send partial results during speech |
+| `endpointing` | `300` | Silence duration (ms) to trigger end of speech |
+| `utterance_end_ms` | `1000` | Maximum silence before utterance is finalized |
+| `vad_events` | `true` | Voice activity detection events |
+| `encoding` | `linear16` | Raw PCM audio encoding |
+| `sample_rate` | `16000` | 16kHz sample rate |
+
+#### Close Codes
+
+| Code | Reason | Description |
+|------|--------|-------------|
+| `1000` | Normal closure | Client disconnected normally |
+| `1008` | Policy violation | Invalid `language` parameter or authentication failure |
+| `1011` | Internal error | Voice features not configured (`DEEPGRAM_API_KEY` missing) or server error |
+| `4001` | Authentication required | Missing or invalid JWT/session cookie |
+
+#### JavaScript Integration
+
+```javascript
+// Open STT WebSocket with language parameter
+const ws = new WebSocket(`ws://localhost:8000/ws/transcribe?language=es`);
+// Note: cookies (sb-access-token, session_id) are sent automatically
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.speech_final) {
+    // User finished speaking -- use data.transcript as final text
+    console.log('Final:', data.transcript);
+  } else if (data.is_final) {
+    // Intermediate final result
+    console.log('Partial final:', data.transcript);
+  } else {
+    // Interim result -- update live transcription display
+    console.log('Interim:', data.transcript);
+  }
+};
+
+// Send audio from AudioWorklet
+audioWorkletNode.port.onmessage = (event) => {
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(event.data);  // ArrayBuffer of linear16 PCM
+  }
+};
+
+// Clean up
+ws.close();
+```
 
 ---
 
 ### POST /api/speak
 
-Synthesize speech from text using Deepgram Aura-2 TTS (REST fallback).
+Synthesize speech from text using Deepgram Aura-2 TTS via REST. This endpoint proxies the request to Deepgram's REST TTS API and streams back the audio response as `audio/mpeg`. Use this endpoint for one-shot TTS requests (e.g., clicking a speaker icon on a message). For low-latency conversational TTS, use the WebSocket `/ws/speak` endpoint instead.
 
 **Authentication**: Optional (`OptionalUserDep`).
 
 **CSRF**: Required. Include `HX-Request: true` or `X-Requested-With: XMLHttpRequest` header (see [CSRF Protection](#csrf-protection)).
 
+**Rate Limiting**: 10 calls per 60 seconds. Exceeding the limit returns HTTP `429 Too Many Requests` with body `{"detail": "Rate limit exceeded. Please try again later."}`.
+
 **Content-Type**: `application/json`
+
+#### Request Body
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `text` | string | Yes | - | Text to synthesize (1-2000 chars) |
-| `voice` | string | No | `aura-2-nestor-es` | Deepgram voice model ID |
+| `text` | string | Yes | - | Text to synthesize (1-2000 characters) |
+| `voice` | string | No | `aura-2-nestor-es` | Deepgram Aura-2 voice model ID (see [Available Voices](#available-voices)) |
 
-**Allowed Voices**: `aura-2-celeste-es`, `aura-2-estrella-es`, `aura-2-nestor-es`, `aura-2-elara-de`, `aura-2-julius-de`, `aura-2-agathe-fr`, `aura-2-hector-fr`
+#### Response
 
-**Response**: `audio/mpeg` streaming response
+**Success** (`200`): `audio/mpeg` streaming response with the following headers:
+- `Content-Type: audio/mpeg`
+- `Cache-Control: no-cache`
+- `Content-Disposition: inline`
 
-**Error Responses**:
-- `400`: Invalid voice ID
-- `403`: CSRF validation failed (missing required header)
-- `503`: Voice features not configured
+The audio is streamed in 1024-byte chunks as they arrive from Deepgram, allowing playback to begin before the full response is generated.
 
-**Example**:
+#### Error Responses
+
+| Status | Cause | Response Body |
+|--------|-------|---------------|
+| `400` | Invalid voice ID (not in allowed voices list) | `{"detail": "Invalid voice: <voice_id>"}` |
+| `403` | Missing CSRF header | `{"detail": "CSRF validation failed"}` |
+| `429` | Rate limit exceeded | `{"detail": "Rate limit exceeded. Please try again later."}` |
+| `503` | `DEEPGRAM_API_KEY` not configured | `{"detail": "Voice features not configured"}` |
+
+#### Example
+
 ```bash
 curl -X POST http://localhost:8000/api/speak \
   -H "Content-Type: application/json" \
   -H "X-Requested-With: XMLHttpRequest" \
-  -d '{"text": "Hola, me llamo Ana", "voice": "aura-2-celeste-es"}'
+  -d '{"text": "Hola, me llamo Ana", "voice": "aura-2-celeste-es"}' \
+  --output speech.mp3
+```
+
+#### JavaScript Integration
+
+```javascript
+const response = await fetch('/api/speak', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
+  },
+  body: JSON.stringify({
+    text: 'Hola, me llamo Ana',
+    voice: 'aura-2-nestor-es'
+  })
+});
+
+if (response.ok) {
+  const blob = await response.blob();
+  const audio = new Audio(URL.createObjectURL(blob));
+  audio.play();
+}
 ```
 
 ---
 
 ### WebSocket /ws/speak
 
-Stream TTS audio via WebSocket for low-latency playback (~300ms to first audio).
+Stream TTS audio via WebSocket for low-latency playback. The browser sends JSON text messages and the server proxies them to Deepgram's WebSocket TTS API, forwarding binary audio chunks back as they are generated. This achieves lower latency than the REST `/api/speak` endpoint because audio begins streaming before the full synthesis is complete.
 
 **Protocol**: WebSocket
 
-**Authentication**: Required. The `sb-access-token` cookie must contain a valid JWT. Connection is rejected with close code `4001` if authentication fails.
+**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `4001` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
+
+**Rate Limiting**: 30 text messages per 60 seconds per connection (sliding window). When exceeded, the server sends a JSON error frame and drops the message without forwarding it to Deepgram. The connection remains open.
 
 | Query Parameter | Type | Default | Description |
 |----------------|------|---------|-------------|
-| `voice` | string | `aura-2-nestor-es` | Deepgram voice model ID |
+| `voice` | string | `aura-2-nestor-es` | Deepgram Aura-2 voice model ID (see [Available Voices](#available-voices)) |
 
-**Client → Server**: JSON messages:
-```json
-{"text": "Hola amigo", "voice": "aura-2-celeste-es", "speed": 1.0}
-{"type": "close"}
+#### Connection Lifecycle
+
 ```
+Browser                        Server                       Deepgram
+  |                              |                              |
+  |--- WebSocket upgrade ------->|                              |
+  |   ?voice=aura-2-nestor-es   |                              |
+  |                              |-- validate JWT/session ----  |
+  |                              |   (reject 4001 if invalid)   |
+  |                              |-- validate voice parameter   |
+  |                              |   (reject 1008 if invalid)   |
+  |                              |                              |
+  |<-- WebSocket accepted -------|                              |
+  |                              |--- open TTS WebSocket ------>|
+  |                              |   (Aura-2, linear16, 24kHz)  |
+  |                              |                              |
+  |--- {"text": "Hola"} ------->|--- Speak + Flush ----------->|
+  |                              |                              |
+  |                              |<-- binary audio chunks ------|
+  |<-- binary audio chunks ------|                              |
+  |                              |<-- {"type": "Flushed"} ------|
+  |<-- {"type": "Flushed"} -----|                              |
+  |                              |                              |
+  |--- {"type": "close"} ------>|--- Close ------------------->|
+  |                              |--- close Deepgram WS ------->|
+```
+
+#### Client to Server
+
+JSON text messages with the following fields:
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `text` | string | Yes | - | Text to synthesize |
-| `voice` | string | No | `aura-2-nestor-es` | Deepgram voice model ID |
-| `speed` | float | No | `1.0` | Playback speed multiplier |
-| `type` | string | No | - | Set to `"close"` to end the session |
+| `text` | string | Yes | - | Text to synthesize (1-2000 characters; empty or oversized messages are silently dropped) |
+| `type` | string | No | - | Set to `"close"` to gracefully end the TTS session |
 
-**Server → Client**:
-- Binary audio chunks (linear16 PCM, 24kHz, mono)
-- JSON metadata: `{"type": "Flushed"}` when audio generation is complete
+**Example messages**:
+```json
+{"text": "Hola amigo, como estas?"}
+{"type": "close"}
+```
 
-**Close Codes**:
-- `1008`: Invalid voice parameter
-- `1011`: Voice features not configured or internal error
-- `4001`: Authentication required (missing or invalid JWT)
+Each text message triggers a Deepgram `Speak` command followed by a `Flush` command, which causes Deepgram to immediately begin synthesizing and streaming audio for that text segment.
+
+#### Server to Client
+
+The server forwards two types of messages from Deepgram:
+
+**Binary frames**: Raw audio data (linear16 PCM, 24kHz sample rate, mono channel). The browser uses an AudioWorklet (`pcm-processor.js`) or an `AudioContext` to decode and play these chunks in real time.
+
+**Text frames**: JSON metadata messages from Deepgram:
+```json
+{"type": "Flushed"}
+```
+
+The `Flushed` message indicates that all audio for the preceding text has been generated and sent. The client can use this signal to know when playback of a particular utterance is complete.
+
+#### Close Codes
+
+| Code | Reason | Description |
+|------|--------|-------------|
+| `1008` | Policy violation | Invalid `voice` parameter or authentication failure |
+| `1011` | Internal error | Voice features not configured (`DEEPGRAM_API_KEY` missing) or server error |
+| `4001` | Authentication required | Missing or invalid JWT/session cookie |
+
+#### JavaScript Integration
+
+```javascript
+// Open TTS WebSocket with voice parameter
+const ws = new WebSocket(`ws://localhost:8000/ws/speak?voice=aura-2-nestor-es`);
+// Note: cookies are sent automatically by the browser
+
+ws.binaryType = 'arraybuffer';
+
+ws.onmessage = (event) => {
+  if (event.data instanceof ArrayBuffer) {
+    // Binary audio chunk -- queue for playback
+    playAudioChunk(event.data);  // linear16 PCM, 24kHz, mono
+  } else {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'Flushed') {
+      // All audio for the last text has been sent
+      console.log('Audio generation complete');
+    }
+    if (msg.error) {
+      // Rate limit or other error
+      console.warn(msg.error, msg.code);
+    }
+  }
+};
+
+// Send text for synthesis
+ws.send(JSON.stringify({ text: 'Hola, como estas?' }));
+
+// Gracefully close
+ws.send(JSON.stringify({ type: 'close' }));
+```
 
 ---
 

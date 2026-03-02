@@ -355,6 +355,18 @@
             }
         }
 
+        /* Thinking indicator - shown while waiting for first SSE token */
+        .thinking-indicator {
+            color: var(--text-muted);
+            font-style: italic;
+            animation: thinkingPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes thinkingPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
         /* Streaming cursor - blinking caret for token-by-token display */
         .streaming-cursor {
             display: inline-block;

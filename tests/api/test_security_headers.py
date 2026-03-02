@@ -1,14 +1,19 @@
-"""Tests for SecurityHeadersMiddleware CSP nonce generation.
+"""Tests for SecurityHeadersMiddleware: CSP nonce and Cache-Control.
 
 Validates that:
 - Each response includes a CSP header with a per-request nonce.
 - The nonce changes between requests (not reused).
 - The nonce is stored on request.state for template access.
+- Static assets receive Cache-Control headers with appropriate max-age.
+- Non-static responses do not receive Cache-Control headers.
 """
 
 import re
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+
+from src.api.config import Settings
 
 
 class TestCSPNonce:
@@ -82,3 +87,64 @@ class TestCSPNonce:
         assert response.headers["X-XSS-Protection"] == "1; mode=block"
         assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert "microphone=(self)" in response.headers["Permissions-Policy"]
+
+
+class TestCacheControlHeaders:
+    """Tests for Cache-Control headers on static assets."""
+
+    def test_static_js_has_cache_control(self, test_client: TestClient) -> None:
+        """Static JS files should include a Cache-Control header."""
+        response = test_client.get("/static/js/main.js")
+        assert response.status_code == 200
+        assert "Cache-Control" in response.headers
+        cache_control = response.headers["Cache-Control"]
+        assert "public" in cache_control
+        assert "max-age=" in cache_control
+
+    def test_static_css_has_cache_control(self, test_client: TestClient) -> None:
+        """Static CSS files should include a Cache-Control header."""
+        response = test_client.get("/static/css/styles.css")
+        assert response.status_code == 200
+        assert "Cache-Control" in response.headers
+        cache_control = response.headers["Cache-Control"]
+        assert "public" in cache_control
+        assert "max-age=" in cache_control
+
+    def test_static_nested_module_has_cache_control(self, test_client: TestClient) -> None:
+        """Nested static files (JS modules) should also get Cache-Control."""
+        response = test_client.get("/static/js/modules/stream.js")
+        assert response.status_code == 200
+        assert "Cache-Control" in response.headers
+        assert "public" in response.headers["Cache-Control"]
+
+    def test_non_static_path_no_cache_control(self, test_client: TestClient) -> None:
+        """Non-static paths (e.g. /health) should NOT have Cache-Control set."""
+        response = test_client.get("/health")
+        assert "Cache-Control" not in response.headers
+
+    def test_debug_mode_uses_short_max_age(self, test_client: TestClient) -> None:
+        """In DEBUG mode, static assets should use max-age=3600 (1 hour)."""
+        debug_settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            DEBUG=True,
+        )
+        with patch("src.api.middleware.get_settings", return_value=debug_settings):
+            response = test_client.get("/static/js/main.js")
+        assert response.headers["Cache-Control"] == "public, max-age=3600"
+
+    def test_production_mode_uses_long_max_age(self, test_client: TestClient) -> None:
+        """In production (DEBUG=False), static assets should use max-age=86400 (1 day)."""
+        prod_settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            DEBUG=False,
+        )
+        with patch("src.api.middleware.get_settings", return_value=prod_settings):
+            response = test_client.get("/static/css/styles.css")
+        assert response.headers["Cache-Control"] == "public, max-age=86400"
+
+    def test_html_page_no_cache_control(self, test_client: TestClient) -> None:
+        """HTML pages served by route handlers should not get Cache-Control."""
+        response = test_client.get("/")
+        assert "Cache-Control" not in response.headers

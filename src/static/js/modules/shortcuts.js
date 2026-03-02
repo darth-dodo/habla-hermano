@@ -14,11 +14,11 @@ import { getMessageInput, getChatForm, focusInputExplicit } from './dom.js';
  * @param {KeyboardEvent} event
  */
 function handleKeyboardShortcuts(event) {
-    // Cmd/Ctrl + Enter to send (alternative to Enter)
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    // Enter to send (Shift+Enter for newline)
+    if (event.key === 'Enter' && !event.shiftKey && document.activeElement.id === 'message-input') {
+        event.preventDefault();
         const chatForm = getChatForm();
-        if (chatForm && document.activeElement.id === 'message-input') {
-            event.preventDefault();
+        if (chatForm) {
             chatForm.requestSubmit();
         }
     }

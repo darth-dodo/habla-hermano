@@ -1,7 +1,8 @@
 """Security middleware for OWASP compliance.
 
 Provides two middleware classes:
-- SecurityHeadersMiddleware: Adds standard security headers to every HTTP response.
+- SecurityHeadersMiddleware: Adds standard security headers to every HTTP response,
+  including Cache-Control for static assets.
 - CSRFMiddleware: Protects state-changing requests (POST/PUT/DELETE/PATCH) using
   the "custom header" CSRF pattern.
 
@@ -28,6 +29,15 @@ _CSRF_EXEMPT_PATHS: frozenset[str] = frozenset({"/health"})
 
 # Path prefixes exempt from CSRF (static files served by StaticFiles mount)
 _CSRF_EXEMPT_PREFIXES: tuple[str, ...] = ("/static/",)
+
+# Cache-Control settings for static assets.
+# In DEBUG mode, use a short max-age (1 hour) to ease local development.
+# In production, cache for 1 day and allow shared caches to store assets.
+_STATIC_CACHE_DEBUG: str = "public, max-age=3600"
+_STATIC_CACHE_PRODUCTION: str = "public, max-age=86400"
+
+# Static asset path prefix
+_STATIC_PREFIX: str = "/static/"
 
 
 def _is_csrf_exempt(method: str, path: str) -> bool:
@@ -130,6 +140,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Permissions-Policy: camera=(), microphone=(self), geolocation=()
     - Content-Security-Policy: (allows HTMX, Alpine.js, Tailwind CDN)
     - Strict-Transport-Security: (production only)
+    - Cache-Control: public caching for /static/ assets (duration varies by DEBUG)
     """
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -171,5 +182,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # HSTS only in production (HTTPS)
         if not settings.DEBUG:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+        # Cache-Control for static assets (JS, CSS, images).
+        # Non-static responses intentionally omit Cache-Control so that
+        # browsers follow default heuristic caching for HTML pages.
+        if request.url.path.startswith(_STATIC_PREFIX):
+            response.headers["Cache-Control"] = (
+                _STATIC_CACHE_DEBUG if settings.DEBUG else _STATIC_CACHE_PRODUCTION
+            )
 
         return response

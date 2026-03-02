@@ -13,10 +13,11 @@
 
 ## Current State
 
-**Branch**: `fix/p2-audit-remediation` (P2 remediation complete, PR #41)
-**Phase**: Post-Audit Remediation — P1+P2 items complete, P3 pending
-**Test Coverage**: 2168+ tests passing (1981 Python + 187 JS), 97% coverage
+**Branch**: `fix/p3-audit-remediation` (P3 remediation complete)
+**Phase**: Post-Audit Remediation — All audit items complete (P1+P2+P3)
+**Test Coverage**: 2243+ tests passing (2055 Python + 188 JS), 97% coverage
 **Last Audit**: 2026-02-26 (multi-dimensional: security, performance, architecture, workspace hygiene)
+**P3 Remediation**: 2026-03-02 → 7/7 LOW severity items complete (B18-B24)
 **P2 Remediation**: 2026-02-27 → 10/10 MEDIUM severity items complete (B8-B17)
 **P1 Remediation**: 2026-02-26 → 7/7 HIGH severity items complete (B1-B7)
 **Previous Audit**: 2026-02-22 → remediated 2026-02-23 (23/24 items, A1-A24 excluding A10)
@@ -55,6 +56,11 @@
 | Structured JSON Logging | P2 | `python-json-logger` with `LOG_FORMAT=json` setting for production observability |
 | Pydantic V2 ConfigDict | P2 | Models migrated from V1 `class Config` to V2 `model_config = ConfigDict(...)` |
 | Error Handling | P2 | Narrowed `except Exception` to specific types in voice routes |
+| Cache-Control Headers | P3 | Static `/static/` assets get `Cache-Control` (1h debug, 1d production) |
+| Voice API Docs | P3 | `/ws/transcribe`, `/ws/speak`, `POST /api/speak` documented in `docs/api.md` |
+| Voice Architecture Docs | P3 | STT/TTS data flows, proxy pattern, error handling in `docs/architecture.md` |
+| Voice Integration Tests | P3 | 67 transport-level WebSocket tests in `test_voice_integration.py` |
+| Workspace Cleanup | P3 | 8 orphan PNGs deleted, 17 stale branches removed, npm versions pinned |
 
 ### LangGraph Flow
 
@@ -111,14 +117,14 @@ Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
 
 ---
 
-### Codebase Audit Findings (2026-02-26) — P1 ✅ Complete, P2 ✅ Complete, P3 Pending
+### Codebase Audit Findings (2026-02-26) — P1 ✅ Complete, P2 ✅ Complete, P3 ✅ Complete
 
 Full audit covering security, performance, architecture, code quality, and workspace hygiene.
 Ran 3 parallel specialized agents (security-engineer, architecture-strategist, performance-engineer) plus direct quality checks.
 
 **Scores** (pre-remediation): Code Quality 8/10 | Testing 9/10 | Architecture 6/10 | Security 7/10 | Performance 5/10 | Workspace Hygiene 5/10 | CI/CD 8/10
 
-**Baseline** (post-P2): 2168+ tests (1981 Python + 187 JS), ruff clean, mypy clean (0 issues in 58 files)
+**Baseline** (post-P3): 2243+ tests (2055 Python + 188 JS), ruff clean, mypy clean (0 issues in 58 files)
 
 #### Priority: P1 — High Severity ✅ All Done
 
@@ -147,17 +153,17 @@ Ran 3 parallel specialized agents (security-engineer, architecture-strategist, p
 | B16 | Migrate Pydantic models to V2 ConfigDict | MEDIUM | ✅ Done | Replaced 3x `class Config: from_attributes = True` with `model_config = ConfigDict(from_attributes=True)` in `Vocabulary`, `LearningSession`, `LessonProgress`. `src/db/models.py`. |
 | B17 | Add structured JSON logging | MEDIUM | ✅ Done | `python-json-logger>=3.0.0` dependency. `LOG_FORMAT` setting (text/json). JSON formatter auto-selected when `LOG_FORMAT=json`. `src/config.py`, `src/api/main.py`, `pyproject.toml`. |
 
-#### Priority: P3 — Low Severity (Backlog)
+#### Priority: P3 — Low Severity ✅ All Done
 
 | # | Task | Severity | Status | Notes |
 |---|------|----------|--------|-------|
-| B18 | Clean up 6 orphan PNG screenshots in project root | LOW | ⏳ | `e2e-flow*.png`, `mobile-step1.png` — should be in `docs/screenshots/` or deleted. |
-| B19 | Clean up 17 stale worktree branches | LOW | ⏳ | Leftover from parallel agent workflows. `git branch \| wc -l` shows 17 branches. |
-| B20 | Reduce `node_modules/` footprint (53M) | LOW | ⏳ | Only needed for Vitest. Consider moving JS tests to CI-only or using lighter test runner. |
-| B21 | Add `Cache-Control` headers for static assets | LOW | ⏳ | Static JS/CSS served without cache headers. Add fingerprinting + long-lived cache. |
-| B22 | Document Phase 17 voice endpoints in `docs/api.md` | LOW | ⏳ | API docs missing `/ws/transcribe`, `/ws/speak`, `POST /api/speak` endpoints. |
-| B23 | Update `docs/architecture.md` with voice/STT/TTS section | LOW | ⏳ | Architecture docs don't cover Deepgram integration or WebSocket proxy pattern. |
-| B24 | Add integration tests for WebSocket voice proxy | LOW | ⏳ | Current voice tests mock Deepgram SDK. No actual WebSocket integration tests. |
+| B18 | Clean up 6 orphan PNG screenshots in project root | LOW | ✅ Done | Deleted 8 orphan `e2e-*.png` screenshots from project root. |
+| B19 | Clean up 17 stale worktree branches | LOW | ✅ Done | Deleted 17 stale local branches. Only `main` + working branches remain. |
+| B20 | Reduce `node_modules/` footprint (53M) | LOW | ✅ Done | Evaluated: 53M is minimal for Vitest+jsdom+coverage toolchain. Pinned exact versions in `package.json`, added `.npmrc` with `save-exact=true`. |
+| B21 | Add `Cache-Control` headers for static assets | LOW | ✅ Done | `SecurityHeadersMiddleware` extended: `max-age=3600` (debug), `max-age=86400` (production) for `/static/` paths. 7 new tests in `test_security_headers.py`. |
+| B22 | Document Phase 17 voice endpoints in `docs/api.md` | LOW | ✅ Done | ~350 lines documenting `/ws/transcribe`, `/ws/speak`, `POST /api/speak` with lifecycle diagrams, rate limits, voices, close codes, JS examples. |
+| B23 | Update `docs/architecture.md` with voice/STT/TTS section | LOW | ✅ Done | ~290 lines covering proxy rationale, STT/TTS data flows, client/server architecture, auth, rate limiting, error handling. |
+| B24 | Add integration tests for WebSocket voice proxy | LOW | ✅ Done | 67 transport-level tests in `tests/api/routes/test_voice_integration.py` covering lifecycle, auth, rate limiting, message forwarding, error recovery, concurrent connections. |
 
 ---
 
@@ -318,6 +324,23 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 ---
 
 ## Session Logs
+
+### 2026-03-02: P3 Audit Remediation — 7 LOW Severity Items
+- **Branch**: `fix/p3-audit-remediation`
+- **Scope**: All 7 P3 (LOW severity) findings from 2026-02-26 audit (B18-B24)
+- **Method**: 2 direct tasks (B18, B19) + 5 parallel worktree agents (B20-B24)
+- **Changes**:
+  - **B18**: Deleted 8 orphan `e2e-*.png` screenshots from project root.
+  - **B19**: Deleted 17 stale local branches from previous parallel agent workflows.
+  - **B20**: Evaluated node_modules (53M) — already minimal for Vitest+jsdom+coverage. Pinned exact versions, added `.npmrc`.
+  - **B21**: Extended `SecurityHeadersMiddleware` with `Cache-Control` for `/static/` paths: `max-age=3600` (debug), `max-age=86400` (production). 7 new tests.
+  - **B22**: Comprehensive voice endpoint documentation in `docs/api.md` (~350 lines) — lifecycle diagrams, rate limits, available voices, close codes, JS integration examples.
+  - **B23**: Voice architecture section in `docs/architecture.md` (~290 lines) — proxy rationale, STT/TTS data flows, client/server architecture, auth, rate limiting, error handling.
+  - **B24**: 67 transport-level integration tests in `tests/api/routes/test_voice_integration.py` covering lifecycle, auth (JWT/session/malformed), rate limiting, STT/TTS message forwarding, error recovery, concurrent connections, cleanup.
+- **Key new files**: `tests/api/routes/test_voice_integration.py` (67 tests), `.npmrc`
+- **Key modified files**: `src/api/middleware.py` (Cache-Control), `tests/api/test_security_headers.py` (+7 tests), `docs/api.md`, `docs/architecture.md`, `package.json`
+- **Results**: 2055 Python tests + 188 JS tests passing, ruff clean, mypy clean (58 source files)
+- **All audit items now complete**: P1 (7 HIGH) + P2 (10 MEDIUM) + P3 (7 LOW) = 24/24 findings resolved
 
 ### 2026-02-27: P2 Audit Remediation — 10 MEDIUM Severity Items
 - **Branch**: `fix/p2-audit-remediation` (PR #41)
@@ -493,8 +516,9 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 - **Key Constraint**: `lesson_progress` stores base IDs without language/level scoping; PathService always scopes calls
 - **Cookie Security**: All cookies go through `src/api/cookies.py` — signed with `itsdangerous`, environment-aware `secure` flag
 
-### Security Architecture (Post-Audit 2026-02-27)
+### Security Architecture (Post-Audit 2026-03-02)
 - **CSP Nonce**: Per-request `secrets.token_urlsafe(16)` nonce in `script-src` replaces `unsafe-inline`. Generated before `call_next()`, stored on `request.state.csp_nonce`. All `<script>` tags use `nonce="{{ request.state.csp_nonce }}"`. `unsafe-eval` retained for Tailwind CDN eval() dependency.
+- **Cache-Control**: `SecurityHeadersMiddleware` adds `Cache-Control` for `/static/` paths: `max-age=3600` (debug), `max-age=86400` (production). Non-static paths intentionally omit the header.
 - **CSRF Protection**: `CSRFMiddleware` — OWASP custom-header pattern. POST/PUT/DELETE/PATCH require `HX-Request: true` or `X-Requested-With: XMLHttpRequest`. Returns 403 without.
 - **WebSocket Auth**: `/ws/transcribe` and `/ws/speak` validate JWT cookie on connect. Reject with code 4001 if invalid.
 - **Security Headers**: `SecurityHeadersMiddleware` adds CSP (nonce-based), HSTS, X-Frame-Options, X-Content-Type-Options
@@ -519,16 +543,19 @@ Canonical modules at `src/` level prevent inner layers from importing API:
 - `src/db/client.py` — Canonical Supabase client factory (+ `@lru_cache` on admin for P2)
 - `src/services/lesson_completion.py` — Lesson completion business logic (extracted from lessons.py)
 - `tests/api/test_csrf.py` — CSRF middleware test suite (15 tests)
-- `tests/api/test_security_headers.py` — CSP nonce test suite (7 tests, P2)
+- `tests/api/test_security_headers.py` — CSP nonce + Cache-Control test suite (14 tests, P2+P3)
 - `src/api/cookies.py` — Centralized cookie utility (signing, secure flag, set/delete helpers)
-- `src/api/middleware.py` — SecurityHeadersMiddleware (CSP nonce) + CSRFMiddleware
+- `src/api/middleware.py` — SecurityHeadersMiddleware (CSP nonce + Cache-Control) + CSRFMiddleware
 - `src/api/rate_limit.py` — Rate limiting infrastructure (+ `WebSocketMessageRateLimiter` for P2)
 - `src/agent/utils.py` — `extract_json_from_markdown()` utility
 - `data/stopwords.json` — Extracted stopwords config
+- `tests/api/routes/test_voice_integration.py` — 67 transport-level voice WebSocket integration tests (P3)
+- `.npmrc` — npm config: save-exact, no fund/audit prompts (P3)
 
 ### Key Docs
 - `docs/product.md` — What we're building
-- `docs/architecture.md` — How we're building it
+- `docs/architecture.md` — How we're building it (incl. voice architecture section)
+- `docs/api.md` — API endpoint reference (incl. voice WebSocket/REST endpoints)
 - `docs/codebase-summary.md` — Full codebase crash course
 - `docs/design/` — Phase-by-phase design documents
 - `docs/adr/` — Architectural Decision Records
