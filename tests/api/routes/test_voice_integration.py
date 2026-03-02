@@ -54,9 +54,7 @@ def voice_app(mock_user: AuthenticatedUser) -> Generator[FastAPI, None, None]:
     Voice-specific mocking (Deepgram SDK, websockets library) is done per-test.
     """
     mock_graph = MagicMock()
-    mock_graph.ainvoke = AsyncMock(
-        return_value={"messages": [], "level": "A1", "language": "es"}
-    )
+    mock_graph.ainvoke = AsyncMock(return_value={"messages": [], "level": "A1", "language": "es"})
 
     async def mock_astream(inputs, config, stream_mode):
         return
@@ -335,9 +333,7 @@ class TestSTTWebSocketLifecycle:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Full lifecycle: connect -> send audio bytes -> client-initiated close."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             # Send multiple audio frames
             ws.send_bytes(b"\x00\x01\x02\x03")
             ws.send_bytes(b"\x04\x05\x06\x07")
@@ -357,9 +353,7 @@ class TestSTTWebSocketLifecycle:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Connect and immediately close without sending any audio."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         # send_media should not have been called
@@ -391,9 +385,7 @@ class TestSTTWebSocketLifecycle:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """A single-byte audio frame is forwarded to Deepgram without error."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x42")
             ws.close()
 
@@ -557,9 +549,7 @@ class TestSTTWebSocketErrorRecovery:
     ) -> None:
         """Missing API key closes WebSocket with code 1011 before accept."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=es", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1011
 
@@ -570,9 +560,7 @@ class TestSTTWebSocketErrorRecovery:
     ) -> None:
         """Invalid language parameter closes WebSocket with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=zz", cookies=ws_cookies
-            ):
+            with test_client.websocket_connect("/ws/transcribe?language=zz", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
@@ -604,9 +592,7 @@ class TestSTTWebSocketErrorRecovery:
         mock_dg_ws.send_finalize = AsyncMock(side_effect=RuntimeError("finalize failed"))
 
         # Should not raise despite send_finalize failure
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01")
             ws.close()
 
@@ -629,9 +615,7 @@ class TestSTTMessageForwarding:
         """Binary audio frames are forwarded via send_media to Deepgram."""
         audio_frames = [b"\x00" * 320, b"\x01" * 320, b"\x02" * 320]
 
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             for frame in audio_frames:
                 ws.send_bytes(frame)
             ws.close()
@@ -653,9 +637,7 @@ class TestSTTMessageForwarding:
         """Large audio frames (simulating longer audio segments) are forwarded."""
         large_frame = b"\xff" * 16384  # 16KB audio frame
 
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(large_frame)
             ws.close()
 
@@ -670,9 +652,7 @@ class TestSTTMessageForwarding:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """send_finalize is called during cleanup when client disconnects."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01")
             ws.close()
 
@@ -687,9 +667,7 @@ class TestSTTMessageForwarding:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """The language parameter is passed through to Deepgram connect kwargs."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=fr", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=fr", cookies=ws_cookies) as ws:
             ws.close()
 
         assert mock_deepgram_sdk["connect_kwargs"]["language"] == "fr"
@@ -702,9 +680,7 @@ class TestSTTMessageForwarding:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Deepgram is connected with nova-3 model and linear16 encoding."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         kwargs = mock_deepgram_sdk["connect_kwargs"]
@@ -720,9 +696,7 @@ class TestSTTMessageForwarding:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """A transcript event handler is registered after connect."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         # The on_handler_ref should have been populated by our mock
@@ -753,9 +727,7 @@ class TestSTTMessageForwarding:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """The Deepgram API key from settings is passed to AsyncDeepgramClient."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.close()
 
         mock_deepgram_sdk["client_cls"].assert_called_once()
@@ -825,9 +797,7 @@ class TestTTSWebSocketLifecycle:
         mock_ws_module = _make_websockets_module(mock_connect)
 
         with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak", cookies=ws_cookies
-            ) as ws:
+            with test_client.websocket_connect("/ws/speak", cookies=ws_cookies) as ws:
                 ws.send_text(json.dumps({"type": "close"}))
 
         # Default voice is aura-2-nestor-es
@@ -1026,9 +996,7 @@ class TestTTSMessageFlow:
 
         mock_dg_ws = mock_connect._mock_dg_ws
         calls = mock_dg_ws.send.call_args_list
-        speak_calls = [
-            json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"
-        ]
+        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
         assert len(speak_calls) == 1
         assert len(speak_calls[0]["text"]) == MAX_TTS_TEXT_LENGTH
 
@@ -1054,9 +1022,7 @@ class TestTTSMessageFlow:
 
         mock_dg_ws = mock_connect._mock_dg_ws
         calls = mock_dg_ws.send.call_args_list
-        speak_calls = [
-            json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"
-        ]
+        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
         assert len(speak_calls) == 3
         assert [s["text"] for s in speak_calls] == texts
 
@@ -1158,9 +1124,7 @@ class TestTTSWebSocketErrorRecovery:
         mock_settings_with_deepgram: MagicMock,
     ) -> None:
         """When an OSError occurs during TTS, server closes with 1011."""
-        mock_connect = _make_websockets_connect_mock(
-            connect_error=OSError("TTS network error")
-        )
+        mock_connect = _make_websockets_connect_mock(connect_error=OSError("TTS network error"))
         mock_ws_module = _make_websockets_module(mock_connect)
 
         with patch.dict(sys.modules, {"websockets": mock_ws_module}):
@@ -1191,9 +1155,7 @@ class TestTTSWebSocketRateLimiting:
         mock_ws_module = _make_websockets_module(mock_connect)
 
         with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with patch(
-                "src.api.routes.voice.WebSocketMessageRateLimiter"
-            ) as mock_limiter_cls:
+            with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
                 mock_limiter = MagicMock()
                 # First call allowed, subsequent calls rejected
                 mock_limiter.check = MagicMock(side_effect=[True, False, False])
@@ -1234,9 +1196,7 @@ class TestTTSWebSocketRateLimiting:
 
         mock_dg_ws = mock_connect._mock_dg_ws
         calls = mock_dg_ws.send.call_args_list
-        speak_calls = [
-            json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"
-        ]
+        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
         assert len(speak_calls) == 1
         assert speak_calls[0]["text"] == "Primer mensaje"
 
@@ -1251,9 +1211,7 @@ class TestTTSWebSocketRateLimiting:
         mock_ws_module = _make_websockets_module(mock_connect)
 
         with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with patch(
-                "src.api.routes.voice.WebSocketMessageRateLimiter"
-            ) as mock_limiter_cls:
+            with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
                 mock_limiter = MagicMock()
                 # All messages rejected
                 mock_limiter.check = MagicMock(return_value=False)
@@ -1411,16 +1369,12 @@ class TestConcurrentConnections:
     ) -> None:
         """Multiple sequential STT connections operate independently."""
         # First connection with Spanish
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01")
             ws.close()
 
         # Second connection with German
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=de", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=de", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x02\x03")
             ws.close()
 
@@ -1453,9 +1407,7 @@ class TestConcurrentConnections:
     ) -> None:
         """A failed STT connection does not prevent subsequent connections."""
         # First connection fails (Deepgram unreachable)
-        failing_mocks = _make_deepgram_sdk_mocks(
-            connect_error=ConnectionError("Deepgram down")
-        )
+        failing_mocks = _make_deepgram_sdk_mocks(connect_error=ConnectionError("Deepgram down"))
         with patch.dict(sys.modules, failing_mocks["modules"]):
             with pytest.raises(WebSocketDisconnect) as exc_info:
                 with test_client.websocket_connect(
@@ -1481,9 +1433,7 @@ class TestConcurrentConnections:
     ) -> None:
         """A failed TTS connection does not prevent subsequent TTS connections."""
         # First connection fails
-        failing_connect = _make_websockets_connect_mock(
-            connect_error=ConnectionError("TTS down")
-        )
+        failing_connect = _make_websockets_connect_mock(connect_error=ConnectionError("TTS down"))
         failing_ws_module = _make_websockets_module(failing_connect)
 
         with patch.dict(sys.modules, {"websockets": failing_ws_module}):
@@ -1514,9 +1464,7 @@ class TestConcurrentConnections:
     ) -> None:
         """STT and TTS connections can be opened sequentially without interference."""
         # STT connection
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01")
             ws.close()
 
@@ -1548,9 +1496,7 @@ class TestCleanupOnDisconnect:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """The Deepgram listen task is cancelled when the client disconnects."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             ws.send_bytes(b"\x00\x01\x02")
             ws.close()
 
@@ -1606,9 +1552,7 @@ class TestCleanupOnDisconnect:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Cleanup runs correctly after processing many audio frames."""
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es", cookies=ws_cookies
-        ) as ws:
+        with test_client.websocket_connect("/ws/transcribe?language=es", cookies=ws_cookies) as ws:
             for i in range(20):
                 ws.send_bytes(bytes([i % 256]) * 320)
             ws.close()
