@@ -65,10 +65,10 @@ describe('initKeyboardShortcuts', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Cmd/Ctrl + Enter  (submit form)
+// Enter to send (Shift+Enter for newline)
 // ---------------------------------------------------------------------------
 
-describe('Cmd/Ctrl + Enter shortcut', () => {
+describe('Enter shortcut', () => {
     beforeEach(() => {
         setupDOM();
         vi.useFakeTimers();
@@ -78,28 +78,28 @@ describe('Cmd/Ctrl + Enter shortcut', () => {
         vi.useRealTimers();
     });
 
-    it('submits the form when message-input is focused (metaKey)', () => {
+    it('submits the form when message-input is focused', () => {
         const form = document.getElementById('chat-form');
         form.requestSubmit = vi.fn();
 
         const input = document.getElementById('message-input');
         input.focus();
 
-        pressKey('Enter', { metaKey: true });
+        pressKey('Enter');
 
         expect(form.requestSubmit).toHaveBeenCalledOnce();
     });
 
-    it('submits the form when message-input is focused (ctrlKey)', () => {
+    it('does not submit when Shift+Enter is pressed (allows newline)', () => {
         const form = document.getElementById('chat-form');
         form.requestSubmit = vi.fn();
 
         const input = document.getElementById('message-input');
         input.focus();
 
-        pressKey('Enter', { ctrlKey: true });
+        pressKey('Enter', { shiftKey: true });
 
-        expect(form.requestSubmit).toHaveBeenCalledOnce();
+        expect(form.requestSubmit).not.toHaveBeenCalled();
     });
 
     it('does nothing when message-input is not focused', () => {
@@ -109,14 +109,13 @@ describe('Cmd/Ctrl + Enter shortcut', () => {
         // Focus something other than message-input
         document.getElementById('send-button').focus();
 
-        pressKey('Enter', { metaKey: true });
+        pressKey('Enter');
 
         expect(form.requestSubmit).not.toHaveBeenCalled();
     });
 
     it('does nothing when chat-form is missing', () => {
         document.getElementById('chat-form').removeAttribute('id');
-        const input = document.getElementById('message-input');
         // Re-create input outside any form
         document.body.innerHTML = '<textarea id="message-input"></textarea>';
         const newInput = document.getElementById('message-input');
@@ -124,7 +123,7 @@ describe('Cmd/Ctrl + Enter shortcut', () => {
 
         // Should not throw even though getChatForm() returns null
         expect(() => {
-            pressKey('Enter', { metaKey: true });
+            pressKey('Enter');
         }).not.toThrow();
     });
 });
