@@ -196,14 +196,14 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
     # Determine next phase
     new_step_index = batch_end
     # Check if next step is a practice step (skip it, transition to exercises)
-    if new_step_index < len(ordered_steps) and ordered_steps[new_step_index].get("type") == "practice":
+    if (
+        new_step_index < len(ordered_steps)
+        and ordered_steps[new_step_index].get("type") == "practice"
+    ):
         new_step_index += 1  # Skip the practice step marker
 
     # If more non-practice steps remain, keep teaching
-    remaining_content = [
-        s for s in ordered_steps[new_step_index:]
-        if s.get("type") != "practice"
-    ]
+    remaining_content = [s for s in ordered_steps[new_step_index:] if s.get("type") != "practice"]
 
     if remaining_content:
         next_phase = "teaching"
@@ -214,7 +214,10 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
 
     logger.info(
         "Lesson %s: teaching steps %d-%d -> %s",
-        state.get("lesson_id", "?"), step_index, batch_end - 1, next_phase,
+        state.get("lesson_id", "?"),
+        step_index,
+        batch_end - 1,
+        next_phase,
     )
 
     return {
@@ -255,7 +258,9 @@ async def _handle_exercise_ask(state: LessonChatState) -> dict[str, Any]:
     response = await _call_llm(full_prompt, state)
     logger.info(
         "Lesson %s: exercise_ask %d/%d",
-        state.get("lesson_id", "?"), exercise_index + 1, len(exercises),
+        state.get("lesson_id", "?"),
+        exercise_index + 1,
+        len(exercises),
     )
 
     return {
@@ -314,9 +319,11 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
         correct_answer = ""
 
     # Build exercise description for feedback prompt
-    exercise_description = exercise_data.get("question", "") or exercise_data.get(
-        "sentence_template", ""
-    ) or exercise_data.get("source_text", "")
+    exercise_description = (
+        exercise_data.get("question", "")
+        or exercise_data.get("sentence_template", "")
+        or exercise_data.get("source_text", "")
+    )
 
     # Determine feedback context
     is_last_exercise = exercise_index >= len(exercises) - 1
@@ -345,11 +352,13 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
     response = await _call_llm(full_prompt, state)
 
     # Record result
-    exercise_results.append({
-        "exercise_id": exercise_data.get("id", f"ex-{exercise_index}"),
-        "is_correct": is_correct,
-        "user_answer": user_answer,
-    })
+    exercise_results.append(
+        {
+            "exercise_id": exercise_data.get("id", f"ex-{exercise_index}"),
+            "is_correct": is_correct,
+            "user_answer": user_answer,
+        }
+    )
 
     # Determine next phase
     new_exercise_index = exercise_index + 1
@@ -358,12 +367,16 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
     logger.info(
         "Lesson %s: exercise_eval %d/%d correct=%s -> %s",
         state.get("lesson_id", "?"),
-        exercise_index + 1, len(exercises), is_correct, next_phase,
+        exercise_index + 1,
+        len(exercises),
+        is_correct,
+        next_phase,
     )
 
     # Build UI with exercise result
     ui = _build_lesson_ui(
-        state, "exercise_eval",
+        state,
+        "exercise_eval",
         exercise_result={
             "is_correct": is_correct,
             "exercise_id": exercise_data.get("id", f"ex-{exercise_index}"),
@@ -417,11 +430,15 @@ async def _handle_complete(state: LessonChatState) -> dict[str, Any]:
     response = await _call_llm(full_prompt, state)
     logger.info(
         "Lesson %s: complete, score=%d%% (%d/%d)",
-        state.get("lesson_id", "?"), score, correct_count, total_exercises,
+        state.get("lesson_id", "?"),
+        score,
+        correct_count,
+        total_exercises,
     )
 
     ui = _build_lesson_ui(
-        state, "complete",
+        state,
+        "complete",
         score=score,
         vocab_count=vocab_count,
         correct_count=correct_count,

@@ -237,9 +237,9 @@ Match your language mix to {level} level:
 
 _STEP_TYPE_ICONS: dict[str, str] = {
     "instruction": "\U0001f4dd",  # memo
-    "vocabulary": "\U0001f4d6",   # open book
-    "example": "\U0001f4ac",      # speech bubble
-    "tip": "\U0001f4a1",          # light bulb
+    "vocabulary": "\U0001f4d6",  # open book
+    "example": "\U0001f4ac",  # speech bubble
+    "tip": "\U0001f4a1",  # light bulb
 }
 
 
@@ -360,10 +360,7 @@ def format_exercise_for_prompt(exercise_data: dict[str, object]) -> str:
         target_lang = str(exercise_data.get("target_language", ""))
         source_name = LANGUAGE_NAMES.get(source_lang, source_lang)
         target_name = LANGUAGE_NAMES.get(target_lang, target_lang)
-        return (
-            f"Translate: {source_text}\n"
-            f"(From {source_name} to {target_name})"
-        )
+        return f"Translate: {source_text}\n(From {source_name} to {target_name})"
 
     # Fallback for unknown exercise types
     return f"Exercise ({exercise_type}): {exercise_data}"

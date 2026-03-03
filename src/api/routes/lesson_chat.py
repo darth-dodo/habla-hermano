@@ -214,11 +214,13 @@ async def stream_lesson_message(
                 # Emit lesson_complete SSE event
                 yield {
                     "event": "lesson_complete",
-                    "data": json.dumps({
-                        "score": score,
-                        "vocab_count": vocab_count,
-                        "lesson_id": lesson_id,
-                    }),
+                    "data": json.dumps(
+                        {
+                            "score": score,
+                            "vocab_count": vocab_count,
+                            "lesson_id": lesson_id,
+                        }
+                    ),
                 }
 
                 # Persist completion for authenticated users

@@ -149,7 +149,9 @@ class TestLessonChatPage:
         response = client.get("/chat/lesson/es_a1_greetings_01")
         text = response.text
         # Should contain lesson mode markers
-        assert "data-lesson-mode" in text or "lesson_mode" in text.lower() or "lesson-header" in text
+        assert (
+            "data-lesson-mode" in text or "lesson_mode" in text.lower() or "lesson-header" in text
+        )
 
     def test_lesson_page_404_for_missing_lesson(
         self, lesson_chat_app: FastAPI, mock_lesson_service: MagicMock
@@ -159,9 +161,7 @@ class TestLessonChatPage:
             response = c.get("/chat/lesson/nonexistent")
             assert response.status_code == 404
 
-    def test_lesson_page_sets_session_cookie_for_guests(
-        self, client: TestClient
-    ) -> None:
+    def test_lesson_page_sets_session_cookie_for_guests(self, client: TestClient) -> None:
         response = client.get("/chat/lesson/es_a1_greetings_01")
         # Should set session_id cookie for guests
         cookies = response.cookies
@@ -185,9 +185,7 @@ class TestLessonStreamValidation:
         # Should return SSE with error event
         assert response.status_code == 200
 
-    def test_level_and_language_not_accepted_as_form_params(
-        self, client: TestClient
-    ) -> None:
+    def test_level_and_language_not_accepted_as_form_params(self, client: TestClient) -> None:
         """Level/language come from lesson metadata, not client input."""
         response = client.post(
             "/chat/lesson/stream",

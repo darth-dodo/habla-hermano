@@ -61,7 +61,11 @@ def sample_lesson_data() -> dict[str, Any]:
                     ],
                 },
                 {"order": 3, "type": "example", "target_text": "¡Hola!", "translation": "Hello!"},
-                {"order": 4, "type": "tip", "content": "In Spanish, exclamation marks come in pairs!"},
+                {
+                    "order": 4,
+                    "type": "tip",
+                    "content": "In Spanish, exclamation marks come in pairs!",
+                },
                 {"order": 5, "type": "practice", "content": "Time to practice!"},
             ],
             "exercises": [
@@ -286,9 +290,7 @@ class TestHandleTeaching:
             assert len(result["messages"]) == 1
 
     @pytest.mark.asyncio
-    async def test_teaching_breaks_on_practice_step(
-        self, mock_llm_response: AIMessage
-    ) -> None:
+    async def test_teaching_breaks_on_practice_step(self, mock_llm_response: AIMessage) -> None:
         """Teaching should stop batching when it hits a practice step."""
         lesson_data: dict[str, Any] = {
             "metadata": {"title": "Test"},
@@ -298,7 +300,15 @@ class TestHandleTeaching:
                     {"order": 2, "type": "practice", "content": "Practice"},
                     {"order": 3, "type": "instruction", "content": "Step 3"},
                 ],
-                "exercises": [{"id": "ex-1", "type": "multiple_choice", "question": "Q?", "options": ["a", "b"], "correct_index": 0}],
+                "exercises": [
+                    {
+                        "id": "ex-1",
+                        "type": "multiple_choice",
+                        "question": "Q?",
+                        "options": ["a", "b"],
+                        "correct_index": 0,
+                    }
+                ],
             },
         }
         state = LessonChatState(
@@ -328,15 +338,21 @@ class TestHandleTeaching:
             assert result["step_index"] >= 1
 
     @pytest.mark.asyncio
-    async def test_teaching_transitions_to_exercises(
-        self, mock_llm_response: AIMessage
-    ) -> None:
+    async def test_teaching_transitions_to_exercises(self, mock_llm_response: AIMessage) -> None:
         """When all teaching steps are done, transition to exercise_ask."""
         lesson_data: dict[str, Any] = {
             "metadata": {"title": "Test"},
             "content": {
                 "steps": [{"order": 1, "type": "instruction", "content": "Only step"}],
-                "exercises": [{"id": "ex-1", "type": "multiple_choice", "question": "Q?", "options": ["a", "b"], "correct_index": 0}],
+                "exercises": [
+                    {
+                        "id": "ex-1",
+                        "type": "multiple_choice",
+                        "question": "Q?",
+                        "options": ["a", "b"],
+                        "correct_index": 0,
+                    }
+                ],
             },
         }
         state = LessonChatState(

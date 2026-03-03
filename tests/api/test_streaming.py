@@ -97,13 +97,15 @@ class TestScaffoldTemplateCSPCompliance:
             autoescape=True,
         )
         template = env.get_template("partials/scaffold.html")
-        return template.render(scaffolding={
-            "enabled": True,
-            "word_bank": ["hola (hello)", "gracias (thank you)"],
-            "hint_text": "Try saying hello!",
-            "sentence_starter": "Me llamo",
-            "auto_expand": True,
-        })
+        return template.render(
+            scaffolding={
+                "enabled": True,
+                "word_bank": ["hola (hello)", "gracias (thank you)"],
+                "hint_text": "Try saying hello!",
+                "sentence_starter": "Me llamo",
+                "auto_expand": True,
+            }
+        )
 
     def test_no_inline_onclick_handlers(self, rendered_scaffold: str) -> None:
         """Scaffold buttons must NOT use onclick (blocked by nonce CSP)."""
