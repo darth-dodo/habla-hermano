@@ -25,8 +25,9 @@
 | **Phase 15** | SSE Streaming - Real-time token streaming via POST /chat/stream and stream.js | ✅ Completed |
 | **Phase 16** | ES Module Migration - JavaScript restructured into 6 ES modules with Vitest testing | ✅ Completed |
 | **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
+| **Phase 19** | Conversational Lesson Delivery - Phase machine teaches lessons through chat UI | ✅ Completed |
 
-**Test Coverage**: 2140+ tests (1954 Python + 186 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2312+ tests (2123 Python + 189 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -985,6 +986,64 @@ The chat form in `chat.html` no longer uses HTMX for submission (`hx-post` remov
 - Dynamic Alpine.js component initialization via `Alpine.initTree()` for injected HTML
 - `AbortController` timeout patterns for streaming request safety
 - Coexistence of streaming and non-streaming endpoints for graceful degradation
+
+---
+
+### Lesson Chat Graph (Phase 19)
+
+The conversational lesson delivery system uses a dedicated LangGraph graph that teaches YAML lesson content through the chat UI.
+
+#### Architecture
+
+```
+Lesson Chat Graph:
+START → lesson_respond → END
+
+Phase Machine (inside lesson_respond node):
+  intro → teaching → exercise_ask → exercise_eval → complete
+```
+
+Unlike the main chat graph's multi-node pipeline (respond → scaffold → analyze), the lesson chat graph uses a **single node with an internal phase machine**. This design:
+- Reuses the existing SSE streaming infrastructure (`stream_chat_events()`)
+- Maintains lesson state across turns via LangGraph checkpointing
+- Isolates lesson conversations from freeform chat threads
+
+#### State Model
+
+`LessonChatState` (TypedDict) extends `ConversationState` with lesson tracking fields:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `lesson_id` | `str` | Unique lesson identifier |
+| `lesson_data` | `dict` | Serialized Lesson model |
+| `lesson_phase` | `str` | Current phase: intro, teaching, exercise_ask, exercise_eval, complete |
+| `step_index` | `int` | Current position in ordered steps |
+| `exercise_index` | `int` | Current position in exercises |
+| `exercise_results` | `list[dict]` | Accumulated exercise outcomes |
+| `lesson_score` | `int` | Running score 0-100 |
+| `lesson_ui` | `dict` | SSE payload for progress updates |
+| `lesson_completed` | `bool` | Flag for post-stream persistence |
+
+#### Phase Flow
+
+1. **Intro**: Welcome learner, preview lesson content, transition to teaching
+2. **Teaching**: Present steps in batches of `STEP_BATCH_SIZE=3`, advance `step_index` each turn
+3. **Exercise Ask**: Present the current exercise from the lesson
+4. **Exercise Eval**: Evaluate user's answer (MC, fill-blank, translate), record result, advance
+5. **Complete**: Calculate score, count vocabulary, emit completion events
+
+#### Thread Isolation
+
+Lesson threads use a scoped format: `lesson:{user_or_session_id}:{lesson_id}`
+
+This ensures each user has independent lesson progress per lesson, separate from their freeform chat threads.
+
+#### SSE Events
+
+Post-response events emitted for UI updates:
+- `lesson_progress`: Step/total progress, phase, title
+- `exercise_result`: Correctness feedback per exercise
+- `lesson_complete`: Final score, vocab count, lesson ID
 
 ---
 

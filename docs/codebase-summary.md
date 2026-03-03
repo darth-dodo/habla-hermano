@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 1.9 | **Tests**: 2157+ | **Coverage**: 97% | **Date**: February 2026
+**Version**: 2.0 | **Tests**: 2312+ | **Coverage**: 97% | **Date**: February 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -29,6 +29,7 @@ block-beta
         S["UI"] T["Hamburger menu, lesson player, step navigation"]
         U["Voice"] V["Deepgram STT (Nova-3) + TTS (Aura-2)"]
         W["JS Testing"] X["Vitest + jsdom (186 tests, ~90% coverage)"]
+        Y["Lesson Chat"] Z["Phase machine: intro→teaching→exercise→complete"]
     end
 ```
 
@@ -42,7 +43,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2157+ tests (Python + JS) with 97% coverage, strict typing
+- ✅ 2312+ tests (Python + JS) with 97% coverage, strict typing
 - ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -59,6 +60,7 @@ block-beta
 - ✅ ES Module architecture: 6 JavaScript modules with Vitest test suite (186 tests)
 - ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
 - ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
+- ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
 
 ---
 
@@ -209,7 +211,8 @@ habla-hermano/
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │       ├── review.py             # Spaced repetition review sessions (auth-only)
 │   │       ├── learn.py              # Learning paths & adaptive recommendations
-│   │       └── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
+│   │       ├── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
+│   │       └── lesson_chat.py        # Conversational lesson delivery (Phase 19)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -222,11 +225,15 @@ habla-hermano/
 │   │       ├── scaffold.py           # Word banks & hints (A0-A1)
 │   │       ├── analyze.py            # Grammar & vocab extraction
 │   │       ├── lesson.py             # AI-enhanced lesson nodes
-│   │       └── feedback.py           # Format corrections
+│   │       ├── feedback.py           # Format corrections
+│   │       └── lesson_chat.py        # Lesson chat node (Phase 19)
 │   │
 │   ├── agent/
 │   │   ├── lesson_state.py           # LessonState for lesson subgraph
-│   │   └── lesson_graph.py           # Lesson and exercise subgraphs
+│   │   ├── lesson_graph.py           # Lesson and exercise subgraphs
+│   │   ├── lesson_chat_state.py      # LessonChatState for lesson chat graph (Phase 19)
+│   │   ├── lesson_chat_graph.py      # Lesson chat graph builder (Phase 19)
+│   │   └── prompts_lesson_chat.py    # Lesson chat system prompts (Phase 19)
 │   │
 │   ├── lessons/                      # Micro-lessons system
 │   │   ├── models.py                 # Pydantic lesson, step, exercise models
@@ -279,7 +286,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 2157+ tests (Python + JS), 97% coverage
+├── tests/                            # 2312+ tests (Python + JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -466,6 +473,13 @@ class ConversationState(TypedDict):
 | `load_step_node` | Load step data from YAML lessons | step_type, step_content, vocabulary |
 | `enhance_step_node` | Hermano enhances with personalized content | enhanced_content, hermano_intro |
 | `validate_exercise_node` | Validate answer with AI feedback | is_correct, exercise_feedback |
+
+### Lesson Chat Graph (Phase 19)
+
+```
+START → lesson_respond → END
+  Phase machine: intro → teaching → exercise_ask → exercise_eval → complete
+```
 
 ### Conditional Routing
 
@@ -792,7 +806,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2157+ tests: Python + JS)
+### Coverage: 97% (2312+ tests: Python + JS)
 
 ### Test Categories
 
@@ -952,4 +966,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v1.9 — Habla Hermano (2157+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture)*
+*Crash Course v2.0 — Habla Hermano (2312+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture + Conversational Lessons)*

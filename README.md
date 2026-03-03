@@ -115,6 +115,19 @@ Each lesson includes:
 | German | 5 | 5 | 5 | 5 | 20 |
 | French | 5 | 5 | 5 | 5 | 20 |
 
+### Conversational Lesson Mode
+
+Prefer learning through conversation? Hermano can teach any lesson through the chat interface — no static player needed.
+
+Click **"Learn with Hermano"** on any lesson card, and Hermano walks you through the content conversationally:
+
+1. **Introduction** — Hermano welcomes you and previews what you'll learn
+2. **Teaching** — Vocabulary, grammar, and examples delivered in natural dialogue (batched in groups of 3)
+3. **Exercises** — Multiple choice, fill-in-the-blank, and translation exercises evaluated in real-time
+4. **Completion** — Score, vocabulary count, and links to continue your learning path
+
+The conversational approach uses the same SSE streaming as freeform chat, so responses feel natural and immediate.
+
 ---
 
 ## Learning Paths
@@ -193,7 +206,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
 | **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
-| **Testing** | pytest + Vitest (2140+ tests, 97% coverage) |
+| **Testing** | pytest + Vitest (2300+ tests, 97% coverage) |
 
 ### Architecture Highlights
 
@@ -203,6 +216,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - **AI-enhanced lessons** — LangGraph subgraphs generate contextual exercises and vocabulary steps
 - **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
 - **Voice conversation** — Deepgram STT/TTS via WebSocket proxy with floating stop controls and speed adjustment
+- **Conversational lesson delivery** — Phase machine (intro → teaching → exercise → complete) inside a LangGraph node teaches structured lessons through the chat UI
 - **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (186 tests, ~90% coverage)
 
 ---
@@ -227,6 +241,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - [Phase 15: SSE Streaming](docs/design/phase15-sse-streaming.md)
 - [Phase 16: ES Module Refactor](docs/design/phase16-esm-refactor.md)
 - [Phase 17: Voice Conversation](docs/design/phase17-voice-deepgram.md)
+- [Phase 19: Conversational Lessons](docs/design/phase19-conversational-lessons.md)
 
 ---
 

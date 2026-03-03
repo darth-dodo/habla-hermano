@@ -73,7 +73,8 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Guest Access** | ✅ Complete | Chat works without authentication; grammar feedback, pronunciation tips, and scaffolding included |
 | **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats (authenticated users only) |
 | **Learning Paths** | ✅ Complete | Structured progression from A0 to B1 with adaptive daily recommendations |
-| **Voice Input/Output** | 🔜 Planned | Speak to Hermano and hear him reply using Deepgram STT/TTS |
+| **Voice Input/Output** | ✅ Complete | Deepgram STT (Nova-3) + TTS (Aura-2) via WebSocket proxy |
+| **Conversational Lessons** | ✅ Complete | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete) |
 
 ### Guest vs. Authenticated Experience
 
@@ -91,6 +92,7 @@ To unlock the full learning loop, guests need to sign up:
 | Progress page and stats | -- | Yes |
 | Spaced repetition and review | -- | Yes |
 | Lesson completion tracking | -- | Yes |
+| Conversational lessons | Yes | Yes (+ score persistence) |
 
 ---
 
