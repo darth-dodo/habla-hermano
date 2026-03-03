@@ -22,6 +22,58 @@ strings suitable for injection into the prompt templates.
 from src.validation import LANGUAGE_NAMES
 
 # ---------------------------------------------------------------------------
+# CEFR-level teaching adjustments
+# ---------------------------------------------------------------------------
+
+TEACHING_ADJUSTMENTS: dict[str, str] = {
+    "A0": """\
+CEFR A0 (Absolute Beginner) teaching adjustments:
+- ONE concept at a time. Never combine vocab + grammar + culture in a single turn.
+- Repeat key words 2-3 times in different mini-contexts so they stick.
+- Use English for ALL explanations; target language only for the word/phrase being taught.
+- Ask only yes/no or single-word response questions.
+- When the learner is wrong: celebrate the attempt, provide the answer immediately, move on positively.
+- For pronunciation: use simple phonetic comparisons to English ("sounds like...").\
+""",
+    "A1": """\
+CEFR A1 (Beginner) teaching adjustments:
+- Group 2-3 related concepts together (e.g., related vocab words).
+- Give one example sentence per vocab word before introducing any grammar pattern.
+- Explain grammar through pattern recognition, not abstract rules.
+- Use a 50/50 language mix — target language for simple structures, English for explanations.
+- When the learner is wrong: model the correct form naturally in your response, don't lecture.
+- Ask simple choice questions or short-answer questions.\
+""",
+    "A2": """\
+CEFR A2 (Elementary) teaching adjustments:
+- Present concepts in context (mini-dialogues, real situations).
+- Introduce grammar through contrast (past vs present, formal vs informal).
+- Share "insider" expressions that locals actually use.
+- Let small errors slide; only correct patterns that keep recurring.
+- Use 80% target language — switch to English only for tricky explanations.
+- Ask follow-up questions to extend the conversation naturally.\
+""",
+    "B1": """\
+CEFR B1 (Intermediate) teaching adjustments:
+- Discuss nuance: register differences, regional variations, connotation.
+- Teach through authentic examples (emails, conversations, media snippets).
+- Explain exceptions and edge cases — the learner can handle complexity.
+- Correct as a peer: "you could also say..." not "the correct form is...".
+- Use 95%+ target language — even for explanations and asides.
+- Ask for opinions, reasons, and hypotheticals to push production.\
+""",
+}
+
+
+def get_teaching_adjustments(level: str) -> str:
+    """Return CEFR-level-specific teaching adjustments for prompt injection.
+
+    Falls back to A1 for unknown levels.
+    """
+    return TEACHING_ADJUSTMENTS.get(level, TEACHING_ADJUSTMENTS["A1"])
+
+
+# ---------------------------------------------------------------------------
 # Prompt templates
 # ---------------------------------------------------------------------------
 
@@ -51,6 +103,8 @@ Match your language mix to {level} level:
   A1 = 50/50
   A2 = 80% {language_name}, 20% English
   B1 = 95%+ {language_name}
+
+{teaching_adjustments}
 """
 
 LESSON_TEACHING_PROMPT: str = """\
@@ -81,6 +135,8 @@ Match your language mix to {level} level:
   A2 = 80% {language_name}, 20% English
   B1 = 95%+ {language_name}
 
+{teaching_adjustments}
+
 Do NOT include any instructions to the learner about exercises or next steps.
 Just teach the content naturally.
 """
@@ -107,6 +163,8 @@ For fill in the blank: show the sentence with the blank and give the hint.
 For translate: tell them what to translate and in which direction.
 
 Match your language mix to {level} level. Keep Hermano's casual, supportive vibe.
+
+{teaching_adjustments}
 """
 
 LESSON_EXERCISE_EVAL_PROMPT: str = """\
@@ -138,6 +196,8 @@ Use the feedback context to decide how to end:
 - If this was the last exercise, hint that you are wrapping up
 
 Match your language mix to {level} level. Stay in character as supportive Hermano.
+
+{teaching_adjustments}
 """
 
 LESSON_COMPLETE_PROMPT: str = """\

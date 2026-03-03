@@ -24,6 +24,7 @@ from src.agent.prompts_lesson_chat import (
     LESSON_TEACHING_PROMPT,
     format_exercise_for_prompt,
     format_steps_for_prompt,
+    get_teaching_adjustments,
 )
 from src.lessons.models import FillBlankExercise, TranslateExercise
 from src.validation import LANGUAGE_NAMES
@@ -135,6 +136,7 @@ async def _handle_intro(state: LessonChatState) -> dict[str, Any]:
         lesson_description=metadata.get("description", ""),
         step_count=len(ordered_steps),
         exercise_count=len(exercises),
+        teaching_adjustments=get_teaching_adjustments(level),
     )
 
     # Prepend the base level prompt for Hermano personality
@@ -183,6 +185,7 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
         lesson_title=lesson_data.get("metadata", {}).get("title", ""),
         steps_content=steps_content,
         step_numbers=step_numbers,
+        teaching_adjustments=get_teaching_adjustments(level),
     )
 
     base_prompt = get_prompt_for_level(language, level)
@@ -243,6 +246,7 @@ async def _handle_exercise_ask(state: LessonChatState) -> dict[str, Any]:
         exercise_type=exercise_data.get("type", "unknown"),
         exercise_content=exercise_content,
         exercise_number=f"{exercise_index + 1} of {len(exercises)}",
+        teaching_adjustments=get_teaching_adjustments(level),
     )
 
     base_prompt = get_prompt_for_level(language, level)
@@ -332,6 +336,7 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
         correct_answer=correct_answer,
         exercise_description=exercise_description,
         feedback_context=feedback_context,
+        teaching_adjustments=get_teaching_adjustments(level),
     )
 
     base_prompt = get_prompt_for_level(language, level)

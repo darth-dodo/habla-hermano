@@ -185,28 +185,21 @@ class TestLessonStreamValidation:
         # Should return SSE with error event
         assert response.status_code == 200
 
-    def test_invalid_level_returns_error(self, client: TestClient) -> None:
+    def test_level_and_language_not_accepted_as_form_params(
+        self, client: TestClient
+    ) -> None:
+        """Level/language come from lesson metadata, not client input."""
         response = client.post(
             "/chat/lesson/stream",
             data={
                 "message": "hello",
                 "lesson_id": "es_a1_greetings_01",
                 "level": "Z9",
-            },
-            headers=CSRF_HEADERS,
-        )
-        assert response.status_code == 200
-
-    def test_invalid_language_returns_error(self, client: TestClient) -> None:
-        response = client.post(
-            "/chat/lesson/stream",
-            data={
-                "message": "hello",
-                "lesson_id": "es_a1_greetings_01",
                 "language": "xx",
             },
             headers=CSRF_HEADERS,
         )
+        # Extra form fields are ignored — lesson proceeds using metadata values
         assert response.status_code == 200
 
     def test_missing_lesson_returns_error(

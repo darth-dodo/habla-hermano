@@ -22,6 +22,14 @@ from src.agent.nodes.lesson_chat import (
     _parse_mc_answer,
     lesson_respond_node,
 )
+from src.agent.prompts_lesson_chat import (
+    LESSON_EXERCISE_ASK_PROMPT,
+    LESSON_EXERCISE_EVAL_PROMPT,
+    LESSON_INTRO_PROMPT,
+    LESSON_TEACHING_PROMPT,
+    TEACHING_ADJUSTMENTS,
+    get_teaching_adjustments,
+)
 
 # =============================================================================
 # Fixtures
@@ -838,3 +846,186 @@ class TestLessonChatState:
         )
         assert state["lesson_phase"] == "intro"
         assert state["lesson_id"] == "test"
+
+
+# =============================================================================
+# CEFR Teaching Adjustments Tests
+# =============================================================================
+
+
+class TestTeachingAdjustments:
+    """Tests for CEFR-level teaching adjustments."""
+
+    def test_all_four_levels_present(self) -> None:
+        assert set(TEACHING_ADJUSTMENTS.keys()) == {"A0", "A1", "A2", "B1"}
+
+    def test_each_level_has_unique_content(self) -> None:
+        values = list(TEACHING_ADJUSTMENTS.values())
+        # All 4 values should be distinct
+        assert len(set(values)) == 4
+
+    def test_a0_emphasizes_one_concept(self) -> None:
+        assert "ONE concept" in TEACHING_ADJUSTMENTS["A0"]
+
+    def test_a0_emphasizes_english(self) -> None:
+        assert "English for ALL explanations" in TEACHING_ADJUSTMENTS["A0"]
+
+    def test_a1_mentions_pattern_recognition(self) -> None:
+        assert "pattern recognition" in TEACHING_ADJUSTMENTS["A1"]
+
+    def test_a2_mentions_insider_expressions(self) -> None:
+        assert "insider" in TEACHING_ADJUSTMENTS["A2"]
+
+    def test_b1_mentions_nuance(self) -> None:
+        assert "nuance" in TEACHING_ADJUSTMENTS["B1"]
+
+    def test_b1_targets_95_percent(self) -> None:
+        assert "95%" in TEACHING_ADJUSTMENTS["B1"]
+
+    def test_get_teaching_adjustments_known_level(self) -> None:
+        result = get_teaching_adjustments("A0")
+        assert result == TEACHING_ADJUSTMENTS["A0"]
+
+    def test_get_teaching_adjustments_falls_back_to_a1(self) -> None:
+        result = get_teaching_adjustments("C2")
+        assert result == TEACHING_ADJUSTMENTS["A1"]
+
+    def test_get_teaching_adjustments_empty_string(self) -> None:
+        result = get_teaching_adjustments("")
+        assert result == TEACHING_ADJUSTMENTS["A1"]
+
+    def test_adjustments_injected_into_intro_prompt(self) -> None:
+        """Verify {teaching_adjustments} placeholder works in LESSON_INTRO_PROMPT."""
+        result = LESSON_INTRO_PROMPT.format(
+            language_name="Spanish",
+            level="A0",
+            lesson_title="Test",
+            lesson_description="Desc",
+            step_count=3,
+            exercise_count=2,
+            teaching_adjustments=get_teaching_adjustments("A0"),
+        )
+        assert "ONE concept" in result
+
+    def test_adjustments_injected_into_teaching_prompt(self) -> None:
+        """Verify {teaching_adjustments} placeholder works in LESSON_TEACHING_PROMPT."""
+        result = LESSON_TEACHING_PROMPT.format(
+            language_name="German",
+            level="B1",
+            lesson_title="Test",
+            steps_content="Some content",
+            step_numbers="1-3 of 5",
+            teaching_adjustments=get_teaching_adjustments("B1"),
+        )
+        assert "nuance" in result
+
+    def test_adjustments_injected_into_exercise_ask_prompt(self) -> None:
+        """Verify {teaching_adjustments} placeholder works in LESSON_EXERCISE_ASK_PROMPT."""
+        result = LESSON_EXERCISE_ASK_PROMPT.format(
+            language_name="French",
+            level="A2",
+            exercise_type="multiple_choice",
+            exercise_content="Q: What?",
+            exercise_number="1 of 2",
+            teaching_adjustments=get_teaching_adjustments("A2"),
+        )
+        assert "insider" in result
+
+    def test_adjustments_injected_into_exercise_eval_prompt(self) -> None:
+        """Verify {teaching_adjustments} placeholder works in LESSON_EXERCISE_EVAL_PROMPT."""
+        result = LESSON_EXERCISE_EVAL_PROMPT.format(
+            language_name="Spanish",
+            level="A1",
+            is_correct="Yes",
+            user_answer="hola",
+            correct_answer="hola",
+            exercise_description="What does 'hola' mean?",
+            feedback_context="Last exercise.",
+            teaching_adjustments=get_teaching_adjustments("A1"),
+        )
+        assert "pattern recognition" in result
+
+
+class TestPhaseHandlersInjectAdjustments:
+    """Verify that phase handlers pass teaching_adjustments to prompt formatting."""
+
+    @pytest.fixture
+    def _mock_llm(self, mock_llm_response: AIMessage) -> AsyncMock:
+        """Shared mock for LLM calls."""
+        mock = AsyncMock(return_value=mock_llm_response)
+        return mock
+
+    @pytest.mark.asyncio
+    async def test_intro_includes_adjustments(
+        self,
+        base_lesson_state: LessonChatState,
+        _mock_llm: AsyncMock,
+    ) -> None:
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm", return_value=_mock_llm),
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="Base prompt"),
+        ):
+            # Change level to A0 to verify A0-specific content
+            state = {**base_lesson_state, "level": "A0"}
+            await lesson_respond_node(state)
+
+            # The system prompt should contain A0 adjustments
+            call_args = _mock_llm.ainvoke.call_args[0][0]
+            system_msg = call_args[0].content
+            assert "ONE concept" in system_msg
+
+    @pytest.mark.asyncio
+    async def test_teaching_includes_adjustments(
+        self,
+        base_lesson_state: LessonChatState,
+        _mock_llm: AsyncMock,
+    ) -> None:
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm", return_value=_mock_llm),
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="Base prompt"),
+        ):
+            state = {**base_lesson_state, "lesson_phase": "teaching", "level": "B1"}
+            await lesson_respond_node(state)
+
+            call_args = _mock_llm.ainvoke.call_args[0][0]
+            system_msg = call_args[0].content
+            assert "nuance" in system_msg
+
+    @pytest.mark.asyncio
+    async def test_exercise_ask_includes_adjustments(
+        self,
+        base_lesson_state: LessonChatState,
+        _mock_llm: AsyncMock,
+    ) -> None:
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm", return_value=_mock_llm),
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="Base prompt"),
+        ):
+            state = {**base_lesson_state, "lesson_phase": "exercise_ask", "level": "A2"}
+            await lesson_respond_node(state)
+
+            call_args = _mock_llm.ainvoke.call_args[0][0]
+            system_msg = call_args[0].content
+            assert "insider" in system_msg
+
+    @pytest.mark.asyncio
+    async def test_exercise_eval_includes_adjustments(
+        self,
+        base_lesson_state: LessonChatState,
+        _mock_llm: AsyncMock,
+    ) -> None:
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm", return_value=_mock_llm),
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="Base prompt"),
+        ):
+            state = {
+                **base_lesson_state,
+                "lesson_phase": "exercise_eval",
+                "level": "A1",
+                "messages": [HumanMessage(content="hello")],
+            }
+            await lesson_respond_node(state)
+
+            call_args = _mock_llm.ainvoke.call_args[0][0]
+            system_msg = call_args[0].content
+            assert "pattern recognition" in system_msg

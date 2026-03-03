@@ -29,7 +29,7 @@ from src.api.dependencies import LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.streaming import StreamResult, stream_chat_events
 from src.api.supabase_client import get_supabase_for_user
-from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
+from src.api.validation import MAX_MESSAGE_LENGTH
 from src.services.lesson_completion import complete_lesson_and_persist
 
 logger = logging.getLogger(__name__)
@@ -122,8 +122,6 @@ async def stream_lesson_message(
     lesson_service: LessonServiceDep,
     message: Annotated[str, Form()],
     lesson_id: Annotated[str, Form()],
-    level: Annotated[str, Form()] = "A1",
-    language: Annotated[str, Form()] = "es",
     session_id: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> EventSourceResponse:
@@ -132,8 +130,8 @@ async def stream_lesson_message(
     Uses the lesson-specific LangGraph graph which includes the phase machine
     (intro -> teaching -> exercise_ask -> exercise_eval -> complete).
 
-    The graph node is registered as "respond" so the existing stream_chat_events()
-    handles token streaming without modification.
+    Level and language are derived from the lesson metadata, not from client
+    input, ensuring the correct difficulty and language are always used.
     """
     # Validate
     message = message.strip()
@@ -149,18 +147,6 @@ async def stream_lesson_message(
             media_type="text/event-stream",
         )
 
-    if level not in VALID_LEVELS:
-        return EventSourceResponse(
-            content=_stream_error(f"Invalid level '{level}'."),
-            media_type="text/event-stream",
-        )
-
-    if language not in VALID_LANGUAGES:
-        return EventSourceResponse(
-            content=_stream_error(f"Invalid language '{language}'."),
-            media_type="text/event-stream",
-        )
-
     # Load lesson
     lesson = lesson_service.get_lesson(lesson_id)
     if not lesson:
@@ -168,6 +154,10 @@ async def stream_lesson_message(
             content=_stream_error(f"Lesson not found: {lesson_id}"),
             media_type="text/event-stream",
         )
+
+    # Authoritative level/language from lesson metadata (not Form input)
+    level = str(lesson.metadata.level)
+    language = lesson.metadata.language
 
     # Resolve identity
     effective_user_id = user.id if user else None

@@ -133,8 +133,8 @@
                 <h1 class="text-lg font-semibold text-text tracking-tight">Habla Hermano</h1>
             </a>
 
-            <!-- Right: Language & Level -->
-            <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Right: Language & Level (hidden in lesson mode — derived from lesson metadata) -->
+            <div class="flex items-center gap-1.5 sm:gap-2" {% if lesson_mode %}style="display: none"{% endif %}>
                 <!-- Language Selector -->
                 <div class="relative" x-data="{ open: false }">
                     <button
