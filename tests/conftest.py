@@ -180,6 +180,7 @@ def mock_settings() -> Settings:
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
         ANTHROPIC_API_KEY="test-api-key-12345",  # pragma: allowlist secret
+        SECRET_KEY="test-secret-key",  # pragma: allowlist secret
         APP_NAME="Habla Hermano-Test",
         DEBUG=True,
         LLM_MODEL="claude-test-model",
@@ -198,6 +199,7 @@ def env_vars() -> dict[str, str]:
     """
     return {
         "ANTHROPIC_API_KEY": "test-anthropic-api-key",  # pragma: allowlist secret
+        "SECRET_KEY": "test-secret-key",  # pragma: allowlist secret
         "APP_NAME": "TestApp",
         "DEBUG": "true",
         "LLM_MODEL": "claude-test",

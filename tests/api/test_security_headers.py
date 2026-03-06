@@ -127,6 +127,7 @@ class TestCacheControlHeaders:
         debug_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             DEBUG=True,
         )
         with patch("src.api.middleware.get_settings", return_value=debug_settings):
@@ -138,6 +139,7 @@ class TestCacheControlHeaders:
         prod_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             DEBUG=False,
         )
         with patch("src.api.middleware.get_settings", return_value=prod_settings):

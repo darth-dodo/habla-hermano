@@ -24,8 +24,14 @@ from src.db.repository import (
 
 @pytest.fixture
 def mock_supabase() -> MagicMock:
-    """Create a mock Supabase client."""
-    return MagicMock()
+    """Create a mock Supabase client.
+
+    RPC calls raise APIError by default to simulate the atomic Postgres
+    functions (migration 003) not being deployed, forcing fallback paths.
+    """
+    client = MagicMock()
+    client.rpc.side_effect = APIError({"message": "RPC not found", "code": "42883"})
+    return client
 
 
 @pytest.fixture

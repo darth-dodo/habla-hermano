@@ -398,6 +398,7 @@ class TestVoiceConfig:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
         )
         assert settings.DEEPGRAM_API_KEY == ""
 
@@ -406,6 +407,7 @@ class TestVoiceConfig:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             DEEPGRAM_API_KEY="dg-test-key-123",  # pragma: allowlist secret
         )
         assert settings.voice_enabled is True
@@ -415,6 +417,7 @@ class TestVoiceConfig:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             DEEPGRAM_API_KEY="",
         )
         assert settings.voice_enabled is False
@@ -427,6 +430,7 @@ class TestVoiceConfig:
             os.environ,
             {
                 "ANTHROPIC_API_KEY": "test-key",  # pragma: allowlist secret
+                "SECRET_KEY": "test",
                 "DEEPGRAM_API_KEY": "env-dg-key",  # pragma: allowlist secret
             },
             clear=True,

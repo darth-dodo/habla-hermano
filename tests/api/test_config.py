@@ -28,9 +28,9 @@ class TestSettingsClass:
             assert "ANTHROPIC_API_KEY" in field_names
 
     def test_settings_with_required_fields_only(self) -> None:
-        """Settings should work with only required ANTHROPIC_API_KEY."""
+        """Settings should work with only required fields."""
         # Use _env_file=None to prevent loading defaults from .env
-        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="test-key-123")  # type: ignore[call-arg]
+        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="test-key-123", SECRET_KEY="test-secret")  # type: ignore[call-arg]
 
         assert settings.ANTHROPIC_API_KEY == "test-key-123"  # pragma: allowlist secret
         # Check defaults
@@ -69,7 +69,7 @@ class TestSettingsClass:
         """Settings should parse DEBUG=false correctly."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "DEBUG": "false"},  # pragma: allowlist secret
+            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "DEBUG": "false"},  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -79,7 +79,7 @@ class TestSettingsClass:
         """Settings should parse DEBUG=true correctly."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "DEBUG": "true"},  # pragma: allowlist secret
+            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "DEBUG": "true"},  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -89,7 +89,7 @@ class TestSettingsClass:
         """Settings should convert PORT string to integer."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "PORT": "3000"},  # pragma: allowlist secret
+            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "PORT": "3000"},  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -100,7 +100,7 @@ class TestSettingsClass:
         """Settings should convert LLM_TEMPERATURE string to float."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "LLM_TEMPERATURE": "0.9"},  # pragma: allowlist secret
+            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "LLM_TEMPERATURE": "0.9"},  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -113,6 +113,7 @@ class TestSettingsClass:
             os.environ,
             {
                 "ANTHROPIC_API_KEY": "test-key",  # pragma: allowlist secret
+                "SECRET_KEY": "test",
                 "UNKNOWN_SETTING": "some-value",
                 "ANOTHER_UNKNOWN": "another-value",
             },
@@ -130,6 +131,7 @@ class TestSettingsClass:
             os.environ,
             {
                 "ANTHROPIC_API_KEY": "correct-key",  # pragma: allowlist secret
+                "SECRET_KEY": "test",
                 "anthropic_api_key": "wrong-key",  # pragma: allowlist secret
             },
             clear=True,
@@ -178,6 +180,7 @@ class TestSettingsProperties:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             DEBUG=True,
         )
         assert settings.log_level == "DEBUG"
@@ -187,6 +190,7 @@ class TestSettingsProperties:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             DEBUG=False,
         )
         assert settings.log_level == "INFO"
@@ -196,6 +200,7 @@ class TestSettingsProperties:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
         )
         assert settings.log_level == "INFO"
 
@@ -205,14 +210,14 @@ class TestGetSettings:
 
     def test_get_settings_returns_settings_instance(self) -> None:
         """get_settings should return a Settings instance."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}, clear=True):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
             get_settings.cache_clear()
             settings = get_settings()
             assert isinstance(settings, Settings)
 
     def test_get_settings_caches_result(self) -> None:
         """get_settings should return the same instance on subsequent calls."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}, clear=True):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
             get_settings.cache_clear()
             settings1 = get_settings()
             settings2 = get_settings()
@@ -220,7 +225,7 @@ class TestGetSettings:
 
     def test_get_settings_cache_info(self) -> None:
         """get_settings cache should show hits after multiple calls."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}, clear=True):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
             get_settings.cache_clear()
 
             # First call - miss
@@ -243,7 +248,7 @@ class TestGetSettings:
 
     def test_get_settings_cache_clear(self) -> None:
         """get_settings cache should be clearable."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}, clear=True):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
             get_settings.cache_clear()
 
             get_settings()
@@ -260,6 +265,7 @@ class TestGetSettings:
             os.environ,
             {
                 "ANTHROPIC_API_KEY": "env-test-key",  # pragma: allowlist secret
+                "SECRET_KEY": "test",
                 "APP_NAME": "EnvTestApp",
             },
             clear=True,
@@ -278,7 +284,7 @@ class TestSettingsValidation:
         """Empty string for ANTHROPIC_API_KEY should be accepted (no min length)."""
         # Note: pydantic-settings accepts empty strings, validation for actual
         # API key validity would happen at the Anthropic client level
-        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="")  # type: ignore[call-arg]
+        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="", SECRET_KEY="test")  # type: ignore[call-arg]
         assert settings.ANTHROPIC_API_KEY == ""
 
     def test_whitespace_api_key_preserved(self) -> None:
@@ -286,6 +292,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="  test-key-with-spaces  ",
+            SECRET_KEY="test",
         )
         assert settings.ANTHROPIC_API_KEY == "  test-key-with-spaces  "
 
@@ -295,6 +302,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             PORT=-1,
         )
         assert settings.PORT == -1
@@ -304,6 +312,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             LLM_TEMPERATURE=0.0,
         )
         assert settings.LLM_TEMPERATURE == 0.0
@@ -313,6 +322,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             LLM_TEMPERATURE=1.0,
         )
         assert settings.LLM_TEMPERATURE == 1.0
@@ -322,6 +332,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             LLM_TEMPERATURE=1.5,
         )
         assert settings.LLM_TEMPERATURE == 1.5
@@ -331,6 +342,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             APP_NAME="Habla Hermano - Test Version (v1.0)",
         )
         assert settings.APP_NAME == "Habla Hermano - Test Version (v1.0)"
@@ -340,6 +352,7 @@ class TestSettingsValidation:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",
+            SECRET_KEY="test",
             APP_NAME="Habla Hermano Espanol",
         )
         assert settings.APP_NAME == "Habla Hermano Espanol"

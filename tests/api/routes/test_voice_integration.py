@@ -451,11 +451,16 @@ class TestSTTWebSocketAuth:
             "test-secret",
             algorithm="HS256",
         )
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es",
-            cookies={"sb-access-token": token},
-        ) as ws:
-            ws.close()
+        # Mock server-side JWT verification to accept test tokens
+        with patch(
+            "src.api.routes.voice._verify_jwt_via_supabase",
+            return_value="user-jwt-789",
+        ):
+            with test_client.websocket_connect(
+                "/ws/transcribe?language=es",
+                cookies={"sb-access-token": token},
+            ) as ws:
+                ws.close()
 
     def test_jwt_without_sub_claim_falls_back_to_session(
         self,
@@ -473,13 +478,17 @@ class TestSTTWebSocketAuth:
             "test-secret",
             algorithm="HS256",
         )
-        # Provide both cookies: JWT without sub + valid session_id
+        # Mock server-side verification to return None (no sub → no user_id)
         cookies = {"sb-access-token": token, **ws_cookies}
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es",
-            cookies=cookies,
-        ) as ws:
-            ws.close()
+        with patch(
+            "src.api.routes.voice._verify_jwt_via_supabase",
+            return_value=None,
+        ):
+            with test_client.websocket_connect(
+                "/ws/transcribe?language=es",
+                cookies=cookies,
+            ) as ws:
+                ws.close()
 
     def test_jwt_without_sub_and_no_session_rejects(
         self,
@@ -493,13 +502,18 @@ class TestSTTWebSocketAuth:
             "test-secret",
             algorithm="HS256",
         )
-        with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/transcribe?language=es",
-                cookies={"sb-access-token": token},
-            ):
-                pass  # pragma: no cover
-        assert exc_info.value.code == 1008
+        # Mock server-side verification to return None (invalid token)
+        with patch(
+            "src.api.routes.voice._verify_jwt_via_supabase",
+            return_value=None,
+        ):
+            with pytest.raises(WebSocketDisconnect) as exc_info:
+                with test_client.websocket_connect(
+                    "/ws/transcribe?language=es",
+                    cookies={"sb-access-token": token},
+                ):
+                    pass  # pragma: no cover
+            assert exc_info.value.code == 1008
 
     def test_malformed_jwt_falls_back_to_session(
         self,
@@ -509,12 +523,17 @@ class TestSTTWebSocketAuth:
         mock_deepgram_sdk: dict[str, MagicMock],
     ) -> None:
         """Malformed JWT token falls back to session_id cookie for auth."""
+        # Mock server-side verification to return None (malformed token)
         cookies = {"sb-access-token": "not-a-valid-jwt", **ws_cookies}
-        with test_client.websocket_connect(
-            "/ws/transcribe?language=es",
-            cookies=cookies,
-        ) as ws:
-            ws.close()
+        with patch(
+            "src.api.routes.voice._verify_jwt_via_supabase",
+            return_value=None,
+        ):
+            with test_client.websocket_connect(
+                "/ws/transcribe?language=es",
+                cookies=cookies,
+            ) as ws:
+                ws.close()
 
 
 # =============================================================================
@@ -882,12 +901,17 @@ class TestTTSWebSocketAuth:
         mock_connect = _make_websockets_connect_mock()
         mock_ws_module = _make_websockets_module(mock_connect)
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es",
-                cookies={"sb-access-token": token},
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
+        # Mock server-side JWT verification to accept test tokens
+        with patch(
+            "src.api.routes.voice._verify_jwt_via_supabase",
+            return_value="user-tts-jwt",
+        ):
+            with patch.dict(sys.modules, {"websockets": mock_ws_module}):
+                with test_client.websocket_connect(
+                    "/ws/speak?voice=aura-2-nestor-es",
+                    cookies={"sb-access-token": token},
+                ) as ws:
+                    ws.send_text(json.dumps({"type": "close"}))
 
 
 # =============================================================================

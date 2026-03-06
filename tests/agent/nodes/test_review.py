@@ -1258,6 +1258,7 @@ class TestGetLlm:
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-review-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             LLM_MODEL="claude-test-model",
             LLM_TEMPERATURE=0.5,
         )

@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.db.repository import VocabularyRepository
 
@@ -141,8 +141,16 @@ class ReviewService:
     def update_sm2(self, vocab_id: int, quality: int) -> Vocabulary:
         """Apply SM-2 algorithm to a vocabulary item and persist.
 
-        Updates the vocabulary's easiness factor, interval, repetition count,
-        and schedules the next review based on the quality of recall.
+        Uses an atomic Postgres RPC with optimistic concurrency control.
+        The RPC ``vocabulary_update_sm2`` updates SM-2 scheduling fields
+        and atomically increments ``times_seen`` / ``times_correct`` using
+        ``SET col = col + 1``, guarded by a ``WHERE repetition_count =
+        :expected`` clause.  If a concurrent request modified the row between
+        the read and the write, the update affects 0 rows and the method
+        re-reads the vocabulary and retries once.
+
+        If the RPC is not deployed, falls back to the previous non-atomic
+        path.
 
         Quality scores:
             5 - Perfect response, no hesitation
@@ -172,12 +180,71 @@ class ReviewService:
         if vocab is None:
             raise ValueError(f"Vocabulary with id {vocab_id} not found")
 
-        # Get current SM-2 values (with defaults for new entries)
+        # Try atomic path (with one retry on optimistic lock failure)
+        for attempt in range(2):
+            if attempt > 0:
+                # Re-read on retry after optimistic lock failure
+                vocab = self._vocab_repo.get_by_id(vocab_id)
+                if vocab is None:
+                    raise ValueError(f"Vocabulary with id {vocab_id} not found")
+                logger.info(
+                    "SM-2 optimistic lock retry attempt=%d for vocab_id=%s",
+                    attempt,
+                    vocab_id,
+                )
+
+            sm2_values = self._compute_sm2(vocab, quality)
+
+            # Attempt atomic update via RPC
+            result = self._vocab_repo.update_sm2_atomic(
+                vocab_id=vocab_id,
+                easiness_factor=sm2_values["easiness_factor"],
+                interval_days=sm2_values["interval_days"],
+                repetition_count=sm2_values["repetition_count"],
+                next_review_at=sm2_values["next_review_at"],
+                last_reviewed_at=sm2_values["last_reviewed_at"],
+                expected_repetition_count=sm2_values["expected_repetition_count"],
+                quality=quality,
+            )
+
+            if result is not None:
+                return result
+
+            # result is None: either RPC unavailable or optimistic lock failed.
+            # On first attempt with lock failure, retry.  If RPC is entirely
+            # unavailable, the second attempt will also return None and we
+            # fall through to the non-atomic path below.
+
+        # Fallback: non-atomic path (RPC not deployed)
+        logger.warning(
+            "Atomic SM-2 update unavailable for vocab_id=%s, using non-atomic "
+            "fallback. Deploy migration 003_atomic_counter_operations.sql to fix.",
+            vocab_id,
+        )
+        return self._update_vocab_sm2_legacy(vocab_id, quality)
+
+    def _compute_sm2(
+        self, vocab: Vocabulary, quality: int
+    ) -> dict[str, Any]:
+        """Compute new SM-2 values from current vocabulary state.
+
+        Pure computation with no side effects. Returns a dictionary of
+        all fields needed for the update, including the expected
+        repetition_count for optimistic locking.
+
+        Args:
+            vocab: Current vocabulary state.
+            quality: Recall quality score (0-5).
+
+        Returns:
+            Dictionary with keys: easiness_factor, interval_days,
+            repetition_count, next_review_at, last_reviewed_at,
+            expected_repetition_count.
+        """
         easiness_factor = getattr(vocab, "easiness_factor", 2.5) or 2.5
         interval_days = getattr(vocab, "interval_days", 0) or 0
         repetition_count = getattr(vocab, "repetition_count", 0) or 0
-        times_seen = vocab.times_seen
-        times_correct = vocab.times_correct
+        expected_repetition_count = repetition_count
 
         # Apply SM-2 algorithm
         if quality >= 3:  # Successful recall
@@ -189,7 +256,6 @@ class ReviewService:
                 interval_days = round(interval_days * easiness_factor)
 
             repetition_count += 1
-            times_correct += 1
         else:  # Failed recall - reset
             repetition_count = 0
             interval_days = 1
@@ -205,17 +271,50 @@ class ReviewService:
         next_review_at = now + timedelta(days=interval_days)
         last_reviewed_at = now
 
-        # Update times_seen
-        times_seen += 1
+        return {
+            "easiness_factor": easiness_factor,
+            "interval_days": interval_days,
+            "repetition_count": repetition_count,
+            "next_review_at": next_review_at,
+            "last_reviewed_at": last_reviewed_at,
+            "expected_repetition_count": expected_repetition_count,
+        }
 
-        # Persist to database
+    def _update_vocab_sm2_legacy(
+        self, vocab_id: int, quality: int
+    ) -> Vocabulary:
+        """Non-atomic SM-2 update fallback (read-then-write).
+
+        Used when the ``vocabulary_update_sm2`` RPC is not deployed.
+        Susceptible to lost updates under concurrent access.
+
+        Args:
+            vocab_id: The vocabulary entry ID.
+            quality: Recall quality score (0-5).
+
+        Returns:
+            Updated Vocabulary entry.
+
+        Raises:
+            ValueError: If vocabulary not found.
+        """
+        vocab = self._vocab_repo.get_by_id(vocab_id)
+        if vocab is None:
+            raise ValueError(f"Vocabulary with id {vocab_id} not found")
+
+        sm2 = self._compute_sm2(vocab, quality)
+
+        # In the legacy path, compute absolute counter values
+        times_seen = vocab.times_seen + 1
+        times_correct = vocab.times_correct + (1 if quality >= 3 else 0)
+
         return self._update_vocab_sm2(
             vocab_id=vocab_id,
-            easiness_factor=easiness_factor,
-            interval_days=interval_days,
-            repetition_count=repetition_count,
-            next_review_at=next_review_at,
-            last_reviewed_at=last_reviewed_at,
+            easiness_factor=sm2["easiness_factor"],
+            interval_days=sm2["interval_days"],
+            repetition_count=sm2["repetition_count"],
+            next_review_at=sm2["next_review_at"],
+            last_reviewed_at=sm2["last_reviewed_at"],
             times_seen=times_seen,
             times_correct=times_correct,
         )
