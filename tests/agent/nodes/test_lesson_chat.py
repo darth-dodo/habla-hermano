@@ -261,7 +261,7 @@ class TestHandleIntro:
 
             result = await lesson_respond_node(base_lesson_state)
             ui = result["lesson_ui"]
-            assert ui["phase"] == "intro"
+            assert ui["phase"] == "teaching"
             assert "title" in ui
 
 

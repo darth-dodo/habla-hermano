@@ -403,9 +403,8 @@ function updateLessonProgress(data) {
     const progressBar = document.getElementById('lesson-progress-bar');
     const phaseBadge = document.getElementById('lesson-phase-badge');
 
-    if (progressBar && data.step !== undefined && data.total_steps) {
-        const pct = Math.round((data.step / data.total_steps) * 100);
-        progressBar.style.width = pct + '%';
+    if (progressBar && data.progress !== undefined) {
+        progressBar.style.width = data.progress + '%';
     }
 
     if (phaseBadge && data.phase) {

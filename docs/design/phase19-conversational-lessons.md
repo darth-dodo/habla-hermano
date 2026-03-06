@@ -206,6 +206,45 @@ On page load, the JS client auto-sends a `/start` message after 500ms delay to t
 - **Mid-lesson**: "Exit Lesson" pill button in lesson header → redirects to `/lessons/`
 - **Completion**: In-chat panel with score, vocabulary count, and navigation buttons (next lesson, back to lessons catalog)
 
+### CEFR Teaching Adjustments
+
+All prompt templates include a `{teaching_adjustments}` placeholder, and each phase handler passes `teaching_adjustments=get_teaching_adjustments(level)` to its format call. This ensures Hermano's pedagogy adapts to the learner's CEFR level.
+
+`TEACHING_ADJUSTMENTS` is a `dict[str, str]` in `src/agent/prompts_lesson_chat.py` with 4 entries:
+
+| Level | Key Pedagogical Instructions |
+|-------|------------------------------|
+| **A0** (Absolute Beginner) | ONE concept at a time; repeat key words 2-3 times; English for ALL explanations; yes/no or single-word questions only |
+| **A1** (Beginner) | Group 2-3 related concepts; grammar through pattern recognition; 50/50 language mix; model correct form naturally |
+| **A2** (Elementary) | Present in context (mini-dialogues); insider expressions; let small errors slide; 80% target language |
+| **B1** (Intermediate) | Discuss nuance and regional variations; correct as a peer; 95%+ target language; ask for opinions and hypotheticals |
+
+`get_teaching_adjustments(level)` returns the matching entry, falling back to A1 for unknown levels.
+
+**Rationale**: A single system prompt cannot serve all levels well. An A0 learner needs slow, isolated vocabulary delivery with heavy English scaffolding. A B1 learner needs to be pushed toward full target-language production. Without explicit per-level instructions, the LLM tends to default to a generic intermediate style that overwhelms beginners and bores advanced students.
+
+---
+
+## Post-Implementation Bug Fixes
+
+### Progress Bar Bug (stale checkpoint progress)
+
+**Root cause**: `_build_lesson_ui()` originally read `step_index` from the input state (pre-advance), so the checkpoint always stored the step index *before* the handler advanced it. Additionally, each handler was passing the current phase to `_build_lesson_ui()` instead of the next phase.
+
+**Fix**: `_build_lesson_ui()` now accepts a `step` override via `**extra` kwargs. Progress is computed comprehensively as `(completed_teaching_steps + completed_exercises) / (total_teaching_steps + total_exercises) * 100`, giving a smooth 0-100% bar that accounts for both teaching and exercise progress. Each handler passes the **post-advance** step index and the **next** phase to `_build_lesson_ui()`.
+
+### Checkpoint Overwrite Bug (state reset on every request)
+
+**Root cause**: The stream endpoint sent `lesson_phase: "intro"`, `step_index: 0`, etc. as input on every request. Because LangGraph merges inputs into state before invoking the node, this overwrote the checkpoint's tracked progression, resetting the lesson to the beginning every turn.
+
+**Fix**: The route now checks for an existing checkpoint via `graph.aget_state()`. On the first invocation (no checkpoint), the full initialization payload is sent (lesson data, phase, indices, etc.). On subsequent turns, only the new message, `user_id`, and `supabase_client` are sent -- the checkpoint preserves all lesson progression state.
+
+### Header Layout Centering Bug
+
+**Root cause**: The language/level selectors in lesson mode were hidden with `display: none`, which removed them from the flex layout and caused the header content to shift off-center.
+
+**Fix**: Changed to `visibility: hidden` so the elements remain in the flex layout flow (preserving centering) while being invisible. The selectors are derived from lesson metadata in lesson mode, so user interaction with them is not needed.
+
 ---
 
 ## SSE Event Flow
@@ -225,11 +264,13 @@ pronunciation → {"html": "..."}
 ### New Lesson Events (emitted after response_complete)
 
 ```
-lesson_progress → {"step": 2, "total": 7, "phase": "teaching", "title": "Basic Greetings"}
+lesson_progress → {"step": 2, "total_steps": 7, "phase": "teaching", "progress": 28, "title": "Basic Greetings"}
 exercise_result → {"is_correct": true, "exercise_id": "ex-mc-001"}       (exercise_eval only)
-lesson_complete → {"score": 85, "vocab_count": 6, "next_lesson_id": "..."} (complete only)
+lesson_complete → {"score": 85, "vocab_count": 6, "lesson_id": "..."}    (complete only)
 done            → {}
 ```
+
+**Progress calculation**: `progress` is a server-computed 0-100 integer: `(completed_teaching_steps + completed_exercises) / (total_teaching_steps + total_exercises) * 100`. The client uses `data.progress` directly for the progress bar width, rather than computing `step/total_steps` locally.
 
 **Backward compatible**: Regular chat never produces these events. The client's `switch`/`default` ignores unknown event types.
 
@@ -256,15 +297,15 @@ done            → {}
 | # | File | ~Lines | Purpose |
 |---|------|--------|---------|
 | 1 | `src/agent/lesson_chat_state.py` | 70 | LessonChatState TypedDict, phase constants |
-| 2 | `src/agent/prompts_lesson_chat.py` | 150 | System prompts for intro, teaching (per step type), exercise_ask, exercise_eval, complete |
-| 3 | `src/agent/nodes/lesson_chat.py` | 300 | `lesson_respond_node` with phase machine, exercise parsing, prompt building |
+| 2 | `src/agent/prompts_lesson_chat.py` | 370 | System prompts for intro, teaching, exercise_ask, exercise_eval, complete + `TEACHING_ADJUSTMENTS` dict (4 CEFR levels) + `get_teaching_adjustments()` helper + step/exercise formatting helpers |
+| 3 | `src/agent/nodes/lesson_chat.py` | 520 | `lesson_respond_node` with phase machine, exercise parsing, prompt building, `_build_lesson_ui()` with comprehensive progress calculation and `step` override |
 | 4 | `src/agent/lesson_chat_graph.py` | 50 | `build_lesson_chat_graph(checkpointer)` |
-| 5 | `src/api/routes/lesson_chat.py` | 180 | `GET /chat/lesson/{id}` page route, `POST /chat/lesson/stream` SSE endpoint |
+| 5 | `src/api/routes/lesson_chat.py` | 300 | `GET /chat/lesson/{id}` page route, `POST /chat/lesson/stream` SSE endpoint (checkpoint-aware: first invocation sends full init state, subsequent turns send only new message) |
 | 6 | `src/templates/partials/lesson_chat_header.html` | 40 | Progress bar, step counter, lesson title, exit button |
 | 7 | `src/templates/partials/lesson_chat_complete.html` | 50 | In-chat completion panel (score, vocab, next lesson, back to catalog) |
-| 8 | `tests/agent/nodes/test_lesson_chat.py` | 250 | Unit tests for all phases, exercise parsing, edge cases |
+| 8 | `tests/agent/nodes/test_lesson_chat.py` | 1000+ | 75 unit tests: all phases, exercise parsing, edge cases, 15 TEACHING_ADJUSTMENTS tests, 4 handler injection tests |
 
-**Total new code**: ~1,090 lines across 8 files
+**Total new code**: ~2,000+ lines across 8 files
 
 ## Files to Modify
 
@@ -273,8 +314,8 @@ done            → {}
 | 1 | `src/api/main.py` | Register `lesson_chat.router` | 3 |
 | 2 | `src/api/routes/lessons.py` | Fix `handoff_to_chat` → redirect to `/chat/lesson/{id}` | 3 |
 | 3 | `src/api/streaming.py` | Emit `lesson_progress`, `exercise_result`, `lesson_complete` SSE events | 25 |
-| 4 | `src/templates/chat.html` | Lesson mode conditional: lesson header partial, hidden input, `data-lesson-mode` | 30 |
-| 5 | `src/static/js/modules/stream.js` | Handle 3 new SSE events, detect lesson mode, auto-start, switch stream URL | 45 |
+| 4 | `src/templates/chat.html` | Lesson mode conditional: lesson header partial, hidden input, `data-lesson-mode`, `visibility: hidden` for language/level selectors (preserves flex centering) | 30 |
+| 5 | `src/static/js/modules/stream.js` | Handle 3 new SSE events, detect lesson mode, auto-start, switch stream URL, `updateLessonProgress()` uses server-computed `data.progress` | 45 |
 | 6 | `src/templates/lessons.html` | Add "Learn with Hermano" button on lesson cards | 10 |
 | 7 | `src/templates/partials/lesson_complete.html` | Update handoff button href | 3 |
 
@@ -313,11 +354,13 @@ done            → {}
 
 ## Verification
 
-1. **Unit tests**: `uv run python -m pytest tests/agent/nodes/test_lesson_chat.py -v`
+1. **Unit tests**: `uv run python -m pytest tests/agent/nodes/test_lesson_chat.py -v` (75 tests)
    - All 5 phases produce correct state transitions
    - Exercise parsing handles letter, number, text, and ambiguous input
    - Step batching groups correctly (2-3 per batch, practice breaks batch)
    - Score calculation accurate (correct / total * 100)
+   - 15 tests for `TEACHING_ADJUSTMENTS` (4 levels present, unique content, key phrases per level, fallback behavior)
+   - 4 tests verifying each handler (intro, teaching, exercise_ask, exercise_eval) injects level-specific content into the system prompt
 
 2. **API tests**: `uv run python -m pytest tests/api/routes/test_lesson_chat.py -v`
    - `GET /chat/lesson/{id}` renders lesson mode chat page

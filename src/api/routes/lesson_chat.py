@@ -174,22 +174,39 @@ async def stream_lesson_message(
         async with get_checkpointer() as checkpointer:
             graph = build_lesson_chat_graph(checkpointer=checkpointer)
 
-            inputs: dict[str, Any] = {
-                "messages": [HumanMessage(content=message)],
-                "level": level,
-                "language": language,
-                "user_id": effective_user_id,
-                "supabase_client": user_client,
-                # Lesson-specific state
-                "lesson_id": lesson_id,
-                "lesson_data": lesson.model_dump(),
-                "lesson_phase": "intro",
-                "step_index": 0,
-                "exercise_index": 0,
-                "exercise_results": [],
-                "lesson_score": 0,
-            }
             graph_config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
+
+            # Check if a checkpoint already exists for this thread.
+            # If so, only send the new message — lesson state (phase, step,
+            # exercises) is already tracked in the checkpoint and must not
+            # be overwritten with initial values.
+            existing = await graph.aget_state(
+                RunnableConfig(configurable={"thread_id": thread_id})
+            )
+            has_checkpoint = existing and existing.values.get("lesson_phase")
+
+            if has_checkpoint:
+                inputs: dict[str, Any] = {
+                    "messages": [HumanMessage(content=message)],
+                    "user_id": effective_user_id,
+                    "supabase_client": user_client,
+                }
+            else:
+                inputs = {
+                    "messages": [HumanMessage(content=message)],
+                    "level": level,
+                    "language": language,
+                    "user_id": effective_user_id,
+                    "supabase_client": user_client,
+                    # Lesson-specific state — only on first invocation
+                    "lesson_id": lesson_id,
+                    "lesson_data": lesson.model_dump(),
+                    "lesson_phase": "intro",
+                    "step_index": 0,
+                    "exercise_index": 0,
+                    "exercise_results": [],
+                    "lesson_score": 0,
+                }
 
             async for event in stream_chat_events(
                 graph=graph,

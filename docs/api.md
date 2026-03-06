@@ -1392,7 +1392,7 @@ Render the lesson chat page for a specific lesson.
 |-----------|------|----------|-------------|
 | `lesson_id` | string | Yes | Lesson identifier (e.g., `es_a1_greetings_01`) |
 
-**Response**: Full HTML page with lesson chat interface. The page includes lesson metadata (title, description, level, language) and auto-starts the lesson conversation.
+**Response**: Full HTML page with lesson chat interface. The page includes lesson metadata (title, description, level, language) and auto-starts the lesson conversation. Language and level selectors are hidden via `visibility: hidden` (not `display: none`) to preserve the header flex layout.
 
 **Cookies Set**: `session_id` cookie for guests (7-day expiry) if not already present.
 
@@ -1420,8 +1420,10 @@ Stream a lesson chat response as Server-Sent Events.
 |-----------|------|----------|---------|-------------|
 | `message` | string | Yes | — | User's message (max 2000 chars) |
 | `lesson_id` | string | Yes | — | Lesson identifier |
-| `level` | string | No | `A1` | CEFR level (A0, A1, A2, B1) |
-| `language` | string | No | `es` | Target language (es, de, fr) |
+
+> **Note**: `level` and `language` parameters were removed. These are now derived server-side from lesson metadata, ensuring correct difficulty and language regardless of client input.
+
+**Checkpoint-aware invocation**: The endpoint checks for an existing LangGraph checkpoint before sending inputs. On the first invocation (no checkpoint), the full initialization state is sent (lesson data, lesson phase, step index, etc.). On subsequent turns, only the new user message is sent, preventing the checkpoint state from being overwritten.
 
 **Response**: `text/event-stream` with the following event types:
 
@@ -1429,7 +1431,7 @@ Stream a lesson chat response as Server-Sent Events.
 |-------|------|------|
 | `token` | `{"content": "..."}` | Each token of the AI response |
 | `message_complete` | `{"html": "..."}` | Full rendered HTML of the response |
-| `lesson_progress` | `{"step": N, "total_steps": N, "phase": "...", "title": "..."}` | After every turn |
+| `lesson_progress` | `{"step": N, "total_steps": N, "progress": N, "phase": "...", "title": "..."}` | After every turn. `progress` is a 0-100 integer computed server-side from `(completed_teaching_steps + completed_exercises) / total_items * 100`. `step` and `total_steps` remain for backwards compatibility. |
 | `exercise_result` | `{"is_correct": bool, "exercise_id": "..."}` | After exercise evaluation |
 | `lesson_complete` | `{"score": N, "vocab_count": N, "lesson_id": "..."}` | When lesson finishes |
 | `error` | `{"message": "..."}` | Validation errors |
@@ -1456,9 +1458,7 @@ intro → teaching → exercise_ask → exercise_eval → complete
 curl -X POST http://localhost:8000/chat/lesson/stream \
   -H "X-Requested-With: XMLHttpRequest" \
   -d "message=Start the lesson" \
-  -d "lesson_id=es_a1_greetings_01" \
-  -d "level=A1" \
-  -d "language=es"
+  -d "lesson_id=es_a1_greetings_01"
 ```
 
 ---

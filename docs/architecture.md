@@ -1008,6 +1008,19 @@ Unlike the main chat graph's multi-node pipeline (respond → scaffold → analy
 - Maintains lesson state across turns via LangGraph checkpointing
 - Isolates lesson conversations from freeform chat threads
 
+#### CEFR Teaching Adjustments
+
+All four lesson prompt templates (INTRO, TEACHING, EXERCISE_ASK, EXERCISE_EVAL) include a `{teaching_adjustments}` placeholder that injects level-specific pedagogy instructions at render time. The `TEACHING_ADJUSTMENTS` dict in `src/agent/prompts_lesson_chat.py` maps each CEFR level to tailored teaching behavior:
+
+| Level | Key Behavior |
+|-------|-------------|
+| A0 | One concept at a time, ~80% English, yes/no questions only |
+| A1 | 2-3 related concepts grouped, 50/50 language mix, pattern-based grammar |
+| A2 | Context-driven teaching (mini-dialogues), 80% target language, insider expressions |
+| B1 | Nuanced discussion, 95%+ target language, peer-style corrections |
+
+`get_teaching_adjustments(level)` resolves the level string (falls back to A1 for unknown levels). This ensures Hermano adapts its pedagogy per lesson based on the learner's CEFR level.
+
 #### State Model
 
 `LessonChatState` (TypedDict) extends `ConversationState` with lesson tracking fields:
@@ -1032,6 +1045,30 @@ Unlike the main chat graph's multi-node pipeline (respond → scaffold → analy
 4. **Exercise Eval**: Evaluate user's answer (MC, fill-blank, translate), record result, advance
 5. **Complete**: Calculate score, count vocabulary, emit completion events
 
+Each phase handler passes the **post-advance** step index and the **next** phase to `_build_lesson_ui()`, so the checkpoint always stores the correct forward-looking state.
+
+#### Progress Calculation
+
+`_build_lesson_ui()` in `src/agent/nodes/lesson_chat.py` computes a comprehensive progress percentage:
+
+```
+progress = (completed_teaching_steps + completed_exercises)
+         / (total_teaching_steps + total_exercises) * 100
+```
+
+The function accepts a `step` override via `**extra` kwargs, which phase handlers use to pass the post-advance step index rather than the stale value in state. Practice-type steps are excluded from the teaching count. The resulting `progress` field (0-100) is included in every `lesson_ui` SSE payload.
+
+The JS client (`stream.js` `updateLessonProgress()`) uses the server-computed `data.progress` directly rather than deriving it client-side, keeping the progress bar in sync with checkpoint state.
+
+#### Checkpoint-Aware Inputs
+
+The lesson chat route (`src/api/routes/lesson_chat.py`) checks for an existing checkpoint before sending inputs to the graph:
+
+- **First invocation** (no checkpoint): sends full initialization — `lesson_data`, `lesson_phase="intro"`, `step_index=0`, `exercise_index=0`, etc.
+- **Subsequent turns** (checkpoint exists): sends only the new message, `user_id`, and `supabase_client`.
+
+This prevents the checkpoint's progression state (phase, step index, exercise results) from being overwritten with initial values on every request.
+
 #### Thread Isolation
 
 Lesson threads use a scoped format: `lesson:{user_or_session_id}:{lesson_id}`
@@ -1041,7 +1078,7 @@ This ensures each user has independent lesson progress per lesson, separate from
 #### SSE Events
 
 Post-response events emitted for UI updates:
-- `lesson_progress`: Step/total progress, phase, title
+- `lesson_progress`: Server-computed `progress` (0-100%), step, phase, title
 - `exercise_result`: Correctness feedback per exercise
 - `lesson_complete`: Final score, vocab count, lesson ID
 

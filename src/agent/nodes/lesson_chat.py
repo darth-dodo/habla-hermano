@@ -94,13 +94,39 @@ def _build_lesson_ui(
     phase: str,
     **extra: Any,
 ) -> dict[str, Any]:
-    """Build lesson_ui dict for SSE events."""
+    """Build lesson_ui dict for SSE events.
+
+    Pass ``step=<new_index>`` in extra to override the step from state,
+    which is important when the handler advances the step index.
+
+    Progress is calculated as: (completed teaching steps + completed exercises)
+    / (total teaching steps + total exercises), giving a smooth 0-100% bar.
+    """
     lesson_data = state["lesson_data"]
     ordered_steps = _get_ordered_steps(lesson_data)
+    exercises = _get_exercises(lesson_data)
+    # Only count non-practice steps for progress
+    teaching_steps = [s for s in ordered_steps if s.get("type") != "practice"]
+    total_teaching = len(teaching_steps)
+    total_exercises = len(exercises)
+    total_items = total_teaching + total_exercises
+
+    step = extra.pop("step", state.get("step_index", 0))
+    completed_exercises = len(state.get("exercise_results", []))
+
+    # Clamp step to teaching count (exercises advance separately)
+    completed_teaching = min(step, total_teaching)
+    progress = (
+        round((completed_teaching + completed_exercises) / total_items * 100)
+        if total_items > 0
+        else 0
+    )
+
     ui: dict[str, Any] = {
-        "step": state.get("step_index", 0),
+        "step": step,
         "total_steps": len(ordered_steps),
         "phase": phase,
+        "progress": progress,
         "title": lesson_data.get("metadata", {}).get("title", ""),
     }
     ui.update(extra)
@@ -150,7 +176,7 @@ async def _handle_intro(state: LessonChatState) -> dict[str, Any]:
         "messages": [response],
         "lesson_phase": "teaching",
         "step_index": 0,
-        "lesson_ui": _build_lesson_ui(state, "intro"),
+        "lesson_ui": _build_lesson_ui(state, "teaching", step=0),
     }
 
 
@@ -224,7 +250,7 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
         "messages": [response],
         "lesson_phase": next_phase,
         "step_index": new_step_index,
-        "lesson_ui": _build_lesson_ui(state, "teaching"),
+        "lesson_ui": _build_lesson_ui(state, next_phase, step=new_step_index),
     }
 
 
@@ -266,7 +292,7 @@ async def _handle_exercise_ask(state: LessonChatState) -> dict[str, Any]:
     return {
         "messages": [response],
         "lesson_phase": "exercise_eval",
-        "lesson_ui": _build_lesson_ui(state, "exercise_ask"),
+        "lesson_ui": _build_lesson_ui(state, "exercise_eval"),
     }
 
 
@@ -376,7 +402,7 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
     # Build UI with exercise result
     ui = _build_lesson_ui(
         state,
-        "exercise_eval",
+        next_phase,
         exercise_result={
             "is_correct": is_correct,
             "exercise_id": exercise_data.get("id", f"ex-{exercise_index}"),
