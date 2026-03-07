@@ -30,7 +30,9 @@ class TestSettingsClass:
     def test_settings_with_required_fields_only(self) -> None:
         """Settings should work with only required fields."""
         # Use _env_file=None to prevent loading defaults from .env
-        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="test-key-123", SECRET_KEY="test-secret")  # type: ignore[call-arg]
+        settings = Settings(
+            _env_file=None, ANTHROPIC_API_KEY="test-key-123", SECRET_KEY="test-secret"
+        )  # type: ignore[call-arg]
 
         assert settings.ANTHROPIC_API_KEY == "test-key-123"  # pragma: allowlist secret
         # Check defaults
@@ -69,7 +71,11 @@ class TestSettingsClass:
         """Settings should parse DEBUG=false correctly."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "DEBUG": "false"},  # pragma: allowlist secret
+            {
+                "ANTHROPIC_API_KEY": "test-key",
+                "SECRET_KEY": "test",
+                "DEBUG": "false",
+            },  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -79,7 +85,11 @@ class TestSettingsClass:
         """Settings should parse DEBUG=true correctly."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "DEBUG": "true"},  # pragma: allowlist secret
+            {
+                "ANTHROPIC_API_KEY": "test-key",
+                "SECRET_KEY": "test",
+                "DEBUG": "true",
+            },  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -89,7 +99,11 @@ class TestSettingsClass:
         """Settings should convert PORT string to integer."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "PORT": "3000"},  # pragma: allowlist secret
+            {
+                "ANTHROPIC_API_KEY": "test-key",
+                "SECRET_KEY": "test",
+                "PORT": "3000",
+            },  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -100,7 +114,11 @@ class TestSettingsClass:
         """Settings should convert LLM_TEMPERATURE string to float."""
         with patch.dict(
             os.environ,
-            {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test", "LLM_TEMPERATURE": "0.9"},  # pragma: allowlist secret
+            {
+                "ANTHROPIC_API_KEY": "test-key",
+                "SECRET_KEY": "test",
+                "LLM_TEMPERATURE": "0.9",
+            },  # pragma: allowlist secret
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -210,14 +228,18 @@ class TestGetSettings:
 
     def test_get_settings_returns_settings_instance(self) -> None:
         """get_settings should return a Settings instance."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
+        with patch.dict(
+            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+        ):
             get_settings.cache_clear()
             settings = get_settings()
             assert isinstance(settings, Settings)
 
     def test_get_settings_caches_result(self) -> None:
         """get_settings should return the same instance on subsequent calls."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
+        with patch.dict(
+            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+        ):
             get_settings.cache_clear()
             settings1 = get_settings()
             settings2 = get_settings()
@@ -225,7 +247,9 @@ class TestGetSettings:
 
     def test_get_settings_cache_info(self) -> None:
         """get_settings cache should show hits after multiple calls."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
+        with patch.dict(
+            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+        ):
             get_settings.cache_clear()
 
             # First call - miss
@@ -248,7 +272,9 @@ class TestGetSettings:
 
     def test_get_settings_cache_clear(self) -> None:
         """get_settings cache should be clearable."""
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True):
+        with patch.dict(
+            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+        ):
             get_settings.cache_clear()
 
             get_settings()

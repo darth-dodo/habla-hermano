@@ -52,8 +52,7 @@ class Settings(BaseSettings):
     ALLOW_UNVERIFIED_JWT: bool = False
 
     # Secret key for signing cookies (review sessions, etc.)
-    # No default — app will fail to start if SECRET_KEY is not set in environment
-    SECRET_KEY: str
+    SECRET_KEY: str = "change-me-to-a-random-string"
 
     # Voice features (Phase 17) - Deepgram STT/TTS
     DEEPGRAM_API_KEY: str = ""

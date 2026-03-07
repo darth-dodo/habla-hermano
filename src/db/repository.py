@@ -652,15 +652,11 @@ class VocabularyRepository:
                 "p_interval_days": interval_days,
                 "p_repetition_count": repetition_count,
                 "p_next_review_at": next_review_at.isoformat(),
-                "p_last_reviewed_at": (
-                    last_reviewed_at.isoformat() if last_reviewed_at else None
-                ),
+                "p_last_reviewed_at": (last_reviewed_at.isoformat() if last_reviewed_at else None),
                 "p_expected_repetition_count": expected_repetition_count,
                 "p_quality": quality,
             }
-            rpc_response = self._client.rpc(
-                "vocabulary_update_sm2", params
-            ).execute()
+            rpc_response = self._client.rpc("vocabulary_update_sm2", params).execute()
             if rpc_response.data:
                 return Vocabulary(**rpc_response.data[0])
             # Empty result means the optimistic lock failed (concurrent update)

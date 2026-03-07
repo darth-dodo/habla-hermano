@@ -180,9 +180,7 @@ async def stream_lesson_message(
             # If so, only send the new message — lesson state (phase, step,
             # exercises) is already tracked in the checkpoint and must not
             # be overwritten with initial values.
-            existing = await graph.aget_state(
-                RunnableConfig(configurable={"thread_id": thread_id})
-            )
+            existing = await graph.aget_state(RunnableConfig(configurable={"thread_id": thread_id}))
             has_checkpoint = existing and existing.values.get("lesson_phase")
 
             if has_checkpoint:

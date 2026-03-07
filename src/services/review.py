@@ -223,9 +223,7 @@ class ReviewService:
         )
         return self._update_vocab_sm2_legacy(vocab_id, quality)
 
-    def _compute_sm2(
-        self, vocab: Vocabulary, quality: int
-    ) -> dict[str, Any]:
+    def _compute_sm2(self, vocab: Vocabulary, quality: int) -> dict[str, Any]:
         """Compute new SM-2 values from current vocabulary state.
 
         Pure computation with no side effects. Returns a dictionary of
@@ -280,9 +278,7 @@ class ReviewService:
             "expected_repetition_count": expected_repetition_count,
         }
 
-    def _update_vocab_sm2_legacy(
-        self, vocab_id: int, quality: int
-    ) -> Vocabulary:
+    def _update_vocab_sm2_legacy(self, vocab_id: int, quality: int) -> Vocabulary:
         """Non-atomic SM-2 update fallback (read-then-write).
 
         Used when the ``vocabulary_update_sm2`` RPC is not deployed.
