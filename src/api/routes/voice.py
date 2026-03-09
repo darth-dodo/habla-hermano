@@ -5,6 +5,7 @@ Voice features are optional -- endpoints return errors when DEEPGRAM_API_KEY is 
 
 Security (B1): All endpoints require authentication via JWT token or guest session cookie.
 WebSocket endpoints validate identity from cookies before accepting the connection.
+JWT tokens are verified server-side via Supabase auth.get_user() in production.
 """
 
 import asyncio
@@ -31,10 +32,69 @@ from src.api.rate_limit import (
     rate_limited,
 )
 from src.api.validation import VALID_LANGUAGES
+from src.db.client import get_supabase
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["voice"])
+
+
+def _verify_jwt_via_supabase(token: str) -> str | None:
+    """Verify a JWT token server-side via Supabase auth.get_user().
+
+    This is the secure verification path used in production. The token
+    signature is validated by Supabase's auth service.
+
+    Args:
+        token: Raw JWT access token string.
+
+    Returns:
+        User ID string if verification succeeds, None otherwise.
+    """
+    try:
+        client = get_supabase()
+        response = client.auth.get_user(token)
+    except ValueError:
+        logger.debug("WebSocket JWT verification skipped: Supabase not configured")
+        return None
+    except httpx.HTTPError:
+        logger.debug("WebSocket JWT verification failed: Supabase request error")
+        return None
+
+    if response is None or response.user is None:
+        logger.debug("WebSocket JWT verification failed: invalid or expired token")
+        return None
+
+    return str(response.user.id)
+
+
+def _decode_jwt_unverified(token: str) -> str | None:
+    """Decode a JWT token WITHOUT signature verification (local dev only).
+
+    WARNING: This does NOT verify the token signature. Forged tokens will
+    be accepted. Only used when ALLOW_UNVERIFIED_JWT=true.
+
+    Args:
+        token: Raw JWT access token string.
+
+    Returns:
+        User ID string if decode succeeds, None otherwise.
+    """
+    try:
+        import jwt as pyjwt
+
+        payload = pyjwt.decode(
+            token,
+            options={"verify_signature": False},
+            algorithms=["HS256"],
+        )
+        user_id = payload.get("sub")
+        if user_id:
+            return str(user_id)
+    except Exception:
+        logger.debug("WebSocket JWT decode failed")
+
+    return None
 
 
 async def _authenticate_websocket(websocket: WebSocket) -> str | None:
@@ -45,25 +105,43 @@ async def _authenticate_websocket(websocket: WebSocket) -> str | None:
     connection.  Checks JWT (``sb-access-token``) first, then falls back
     to a guest session UUID (``session_id``).
 
+    Security:
+    - Production (Supabase configured): JWT is verified server-side via
+      Supabase auth.get_user(), mirroring the HTTP auth path.
+    - Local dev (ALLOW_UNVERIFIED_JWT=true): Falls back to unverified
+      JWT decode with a WARNING log.
+    - Neither configured: Returns None (denies access).
+
     Returns:
         User/session ID string if authenticated, None otherwise.
     """
+    settings = get_settings()
+
     # Try JWT cookie first
     token = websocket.cookies.get("sb-access-token")
     if token:
-        try:
-            import jwt as pyjwt
-
-            payload = pyjwt.decode(
-                token,
-                options={"verify_signature": False},
-                algorithms=["HS256"],
-            )
-            user_id = payload.get("sub")
+        if settings.supabase_configured:
+            # Production path: verify token server-side via Supabase
+            user_id = _verify_jwt_via_supabase(token)
             if user_id:
-                return str(user_id)
-        except Exception:
-            logger.debug("WebSocket JWT decode failed")
+                return user_id
+            # Verification failed -- do not fall through to unverified decode
+            logger.debug("WebSocket JWT server-side verification failed")
+        elif settings.ALLOW_UNVERIFIED_JWT:
+            # Local dev path: unverified decode (insecure)
+            logger.warning(
+                "SECURITY WARNING: WebSocket JWT signature verification is DISABLED "
+                "(ALLOW_UNVERIFIED_JWT=true). Do NOT use this in production."
+            )
+            user_id = _decode_jwt_unverified(token)
+            if user_id:
+                return user_id
+        else:
+            # Supabase not configured and unverified JWT not allowed
+            logger.debug(
+                "WebSocket JWT rejected: Supabase not configured and "
+                "ALLOW_UNVERIFIED_JWT is not enabled"
+            )
 
     # Fall back to guest session cookie
     session_id = websocket.cookies.get("session_id")

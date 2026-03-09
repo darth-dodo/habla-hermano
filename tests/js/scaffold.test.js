@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { insertWord, insertStarter } from '../../src/static/js/modules/scaffold.js';
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
+import { insertWord, insertStarter, initScaffoldDelegation } from '../../src/static/js/modules/scaffold.js';
 
 describe('scaffold module', () => {
     let input;
@@ -150,6 +150,63 @@ describe('scaffold module', () => {
             document.body.innerHTML = '';
 
             expect(() => insertStarter('Hola')).not.toThrow();
+        });
+    });
+
+    // ============================================
+    // initScaffoldDelegation (event delegation)
+    // ============================================
+
+    describe('initScaffoldDelegation', () => {
+        beforeAll(() => {
+            initScaffoldDelegation();
+        });
+
+        beforeEach(() => {
+            document.body.innerHTML = `
+                <textarea id="message-input"></textarea>
+                <div id="scaffold-area">
+                    <button data-insert-word="hola (hello)">hola (hello)</button>
+                    <button data-insert-starter="Me llamo">Me llamo...</button>
+                </div>
+            `;
+            input = document.getElementById('message-input');
+            input.selectionStart = input.selectionEnd = 0;
+        });
+
+        it('inserts word when data-insert-word button is clicked', () => {
+            const wordBtn = document.querySelector('[data-insert-word]');
+            wordBtn.click();
+
+            expect(input.value).toBe('hola ');
+        });
+
+        it('inserts starter when data-insert-starter button is clicked', () => {
+            const starterBtn = document.querySelector('[data-insert-starter]');
+            starterBtn.click();
+
+            expect(input.value).toBe('Me llamo ');
+        });
+
+        it('handles dynamically added buttons', () => {
+            const newBtn = document.createElement('button');
+            newBtn.setAttribute('data-insert-word', 'gracias (thank you)');
+            newBtn.textContent = 'gracias (thank you)';
+            document.getElementById('scaffold-area').appendChild(newBtn);
+
+            newBtn.click();
+
+            expect(input.value).toBe('gracias ');
+        });
+
+        it('does not interfere with non-scaffold buttons', () => {
+            const otherBtn = document.createElement('button');
+            otherBtn.textContent = 'Other';
+            document.body.appendChild(otherBtn);
+
+            otherBtn.click();
+
+            expect(input.value).toBe('');
         });
     });
 });

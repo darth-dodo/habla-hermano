@@ -25,8 +25,9 @@
 | **Phase 15** | SSE Streaming - Real-time token streaming via POST /chat/stream and stream.js | ✅ Completed |
 | **Phase 16** | ES Module Migration - JavaScript restructured into 6 ES modules with Vitest testing | ✅ Completed |
 | **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
+| **Phase 19** | Conversational Lesson Delivery - Phase machine teaches lessons through chat UI | ✅ Completed |
 
-**Test Coverage**: 2140+ tests (1954 Python + 186 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2312+ tests (2123 Python + 189 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -985,6 +986,101 @@ The chat form in `chat.html` no longer uses HTMX for submission (`hx-post` remov
 - Dynamic Alpine.js component initialization via `Alpine.initTree()` for injected HTML
 - `AbortController` timeout patterns for streaming request safety
 - Coexistence of streaming and non-streaming endpoints for graceful degradation
+
+---
+
+### Lesson Chat Graph (Phase 19)
+
+The conversational lesson delivery system uses a dedicated LangGraph graph that teaches YAML lesson content through the chat UI.
+
+#### Architecture
+
+```
+Lesson Chat Graph:
+START → lesson_respond → END
+
+Phase Machine (inside lesson_respond node):
+  intro → teaching → exercise_ask → exercise_eval → complete
+```
+
+Unlike the main chat graph's multi-node pipeline (respond → scaffold → analyze), the lesson chat graph uses a **single node with an internal phase machine**. This design:
+- Reuses the existing SSE streaming infrastructure (`stream_chat_events()`)
+- Maintains lesson state across turns via LangGraph checkpointing
+- Isolates lesson conversations from freeform chat threads
+
+#### CEFR Teaching Adjustments
+
+All four lesson prompt templates (INTRO, TEACHING, EXERCISE_ASK, EXERCISE_EVAL) include a `{teaching_adjustments}` placeholder that injects level-specific pedagogy instructions at render time. The `TEACHING_ADJUSTMENTS` dict in `src/agent/prompts_lesson_chat.py` maps each CEFR level to tailored teaching behavior:
+
+| Level | Key Behavior |
+|-------|-------------|
+| A0 | One concept at a time, ~80% English, yes/no questions only |
+| A1 | 2-3 related concepts grouped, 50/50 language mix, pattern-based grammar |
+| A2 | Context-driven teaching (mini-dialogues), 80% target language, insider expressions |
+| B1 | Nuanced discussion, 95%+ target language, peer-style corrections |
+
+`get_teaching_adjustments(level)` resolves the level string (falls back to A1 for unknown levels). This ensures Hermano adapts its pedagogy per lesson based on the learner's CEFR level.
+
+#### State Model
+
+`LessonChatState` (TypedDict) extends `ConversationState` with lesson tracking fields:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `lesson_id` | `str` | Unique lesson identifier |
+| `lesson_data` | `dict` | Serialized Lesson model |
+| `lesson_phase` | `str` | Current phase: intro, teaching, exercise_ask, exercise_eval, complete |
+| `step_index` | `int` | Current position in ordered steps |
+| `exercise_index` | `int` | Current position in exercises |
+| `exercise_results` | `list[dict]` | Accumulated exercise outcomes |
+| `lesson_score` | `int` | Running score 0-100 |
+| `lesson_ui` | `dict` | SSE payload for progress updates |
+| `lesson_completed` | `bool` | Flag for post-stream persistence |
+
+#### Phase Flow
+
+1. **Intro**: Welcome learner, preview lesson content, transition to teaching
+2. **Teaching**: Present steps in batches of `STEP_BATCH_SIZE=3`, advance `step_index` each turn
+3. **Exercise Ask**: Present the current exercise from the lesson
+4. **Exercise Eval**: Evaluate user's answer (MC, fill-blank, translate), record result, advance
+5. **Complete**: Calculate score, count vocabulary, emit completion events
+
+Each phase handler passes the **post-advance** step index and the **next** phase to `_build_lesson_ui()`, so the checkpoint always stores the correct forward-looking state.
+
+#### Progress Calculation
+
+`_build_lesson_ui()` in `src/agent/nodes/lesson_chat.py` computes a comprehensive progress percentage:
+
+```
+progress = (completed_teaching_steps + completed_exercises)
+         / (total_teaching_steps + total_exercises) * 100
+```
+
+The function accepts a `step` override via `**extra` kwargs, which phase handlers use to pass the post-advance step index rather than the stale value in state. Practice-type steps are excluded from the teaching count. The resulting `progress` field (0-100) is included in every `lesson_ui` SSE payload.
+
+The JS client (`stream.js` `updateLessonProgress()`) uses the server-computed `data.progress` directly rather than deriving it client-side, keeping the progress bar in sync with checkpoint state.
+
+#### Checkpoint-Aware Inputs
+
+The lesson chat route (`src/api/routes/lesson_chat.py`) checks for an existing checkpoint before sending inputs to the graph:
+
+- **First invocation** (no checkpoint): sends full initialization — `lesson_data`, `lesson_phase="intro"`, `step_index=0`, `exercise_index=0`, etc.
+- **Subsequent turns** (checkpoint exists): sends only the new message, `user_id`, and `supabase_client`.
+
+This prevents the checkpoint's progression state (phase, step index, exercise results) from being overwritten with initial values on every request.
+
+#### Thread Isolation
+
+Lesson threads use a scoped format: `lesson:{user_or_session_id}:{lesson_id}`
+
+This ensures each user has independent lesson progress per lesson, separate from their freeform chat threads.
+
+#### SSE Events
+
+Post-response events emitted for UI updates:
+- `lesson_progress`: Server-computed `progress` (0-100%), step, phase, title
+- `exercise_result`: Correctness feedback per exercise
+- `lesson_complete`: Final score, vocab count, lesson ID
 
 ---
 

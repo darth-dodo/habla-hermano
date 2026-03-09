@@ -19,6 +19,27 @@ let bubbleCounter = 0;
 let tokenCounter = 0;
 
 // ============================================
+// Lesson Mode Detection
+// ============================================
+
+/**
+ * Detect if the page is in lesson mode.
+ * @returns {boolean}
+ */
+function isLessonMode() {
+    const chatRoot = document.querySelector('[data-lesson-mode]');
+    return chatRoot !== null;
+}
+
+/**
+ * Get the stream URL based on mode.
+ * @returns {string}
+ */
+function getStreamUrl() {
+    return isLessonMode() ? '/chat/lesson/stream' : '/chat/stream';
+}
+
+// ============================================
 // SSE Event Parsing
 // ============================================
 
@@ -215,6 +236,18 @@ function handleStreamEvent(event, dataStr, bubbleId) {
             }
             break;
 
+        case 'lesson_progress':
+            updateLessonProgress(data);
+            break;
+
+        case 'exercise_result':
+            showExerciseResult(data);
+            break;
+
+        case 'lesson_complete':
+            showLessonComplete(data);
+            break;
+
         case 'done':
             finishStreaming();
             break;
@@ -257,7 +290,7 @@ async function streamChat(formData) {
     }, 60000);
 
     try {
-        const response = await fetch('/chat/stream', {
+        const response = await fetch(getStreamUrl(), {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData,
@@ -351,6 +384,124 @@ function showStreamError(message) {
 }
 
 // ============================================
+// Lesson Mode Handlers
+// ============================================
+
+const PHASE_LABELS = {
+    intro: 'Introduction',
+    teaching: 'Teaching',
+    exercise_ask: 'Exercise',
+    exercise_eval: 'Checking...',
+    complete: 'Complete!',
+};
+
+/**
+ * Update lesson progress bar and phase badge.
+ * @param {Object} data - lesson_progress SSE data
+ */
+function updateLessonProgress(data) {
+    const progressBar = document.getElementById('lesson-progress-bar');
+    const phaseBadge = document.getElementById('lesson-phase-badge');
+
+    if (progressBar && data.progress !== undefined) {
+        progressBar.style.width = data.progress + '%';
+    }
+
+    if (phaseBadge && data.phase) {
+        phaseBadge.textContent = PHASE_LABELS[data.phase] || data.phase;
+    }
+}
+
+/**
+ * Show exercise result feedback inline.
+ * @param {Object} data - exercise_result SSE data
+ */
+function showExerciseResult(data) {
+    const chatMessages = getChatMessages();
+    if (!chatMessages) return;
+
+    const isCorrect = data.is_correct;
+    const icon = isCorrect ? '✅' : '❌';
+    const colorClass = isCorrect
+        ? 'bg-success-muted border-success/30 text-success'
+        : 'bg-red-900/20 border-red-700/30 text-red-300';
+
+    const html = `
+        <div class="message-enter flex justify-start mb-4" data-exercise-result="true">
+            <div class="${colorClass} rounded-xl px-4 py-2 text-sm border font-medium">
+                ${icon} ${isCorrect ? 'Correct!' : 'Not quite'}
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', html);
+    scrollToBottom();
+}
+
+/**
+ * Show lesson completion banner.
+ * @param {Object} data - lesson_complete SSE data
+ */
+function showLessonComplete(data) {
+    const chatMessages = getChatMessages();
+    if (!chatMessages) return;
+
+    // Update progress bar to 100%
+    const progressBar = document.getElementById('lesson-progress-bar');
+    if (progressBar) progressBar.style.width = '100%';
+
+    const phaseBadge = document.getElementById('lesson-phase-badge');
+    if (phaseBadge) phaseBadge.textContent = 'Complete!';
+
+    const score = data.score || 0;
+    const vocabCount = data.vocab_count || 0;
+    const lessonId = data.lesson_id || '';
+
+    let statsHtml = `<span class="text-2xl font-bold text-accent">${score}%</span> score`;
+    if (vocabCount > 0) {
+        statsHtml += ` · <span class="font-semibold text-green-400">${vocabCount}</span> words`;
+    }
+
+    const html = `
+        <div class="message-enter my-6 p-6 bg-surface-elevated rounded-2xl border border-accent/30 text-center" data-lesson-complete="true">
+            <div class="text-4xl mb-3">🎉</div>
+            <h3 class="text-lg font-bold text-text mb-2">Lesson Complete!</h3>
+            <p class="text-text-muted mb-4">${statsHtml}</p>
+            <div class="flex flex-col sm:flex-row gap-2 justify-center">
+                <a href="/lessons/" class="px-4 py-2 border border-border text-text hover:bg-surface-overlay rounded-lg text-sm font-medium transition-colors">
+                    More Lessons
+                </a>
+                <a href="/chat" class="px-4 py-2 bg-accent hover:bg-accent-hover text-accent-text rounded-lg text-sm font-medium transition-colors">
+                    Free Chat
+                </a>
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', html);
+    scrollToBottom();
+}
+
+// ============================================
+// Lesson Auto-Start
+// ============================================
+
+/**
+ * In lesson mode, auto-send a "start" message to kick off the lesson.
+ */
+function autoStartLesson() {
+    if (!isLessonMode()) return;
+
+    const form = document.getElementById('chat-form');
+    if (!form) return;
+
+    // Build FormData with a start message
+    const formData = new FormData(form);
+    formData.set('message', 'Start the lesson');
+
+    // Start streaming (no user bubble shown for auto-start)
+    streamChat(formData);
+}
+
+// ============================================
 // Form Intercept
 // ============================================
 
@@ -382,4 +533,9 @@ export function initStreamingForm() {
         // Start streaming
         streamChat(formData);
     });
+
+    // Auto-start lesson after a short delay to let the page render
+    if (isLessonMode()) {
+        setTimeout(autoStartLesson, 300);
+    }
 }

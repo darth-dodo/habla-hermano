@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-03-02
+
+### Added - Phase 19: Conversational Lesson Delivery
+- **Conversational lesson chat** (`/chat/lesson/{lesson_id}`): Hermano teaches YAML lessons through the chat UI instead of a static lesson player. Lessons flow through a phase machine: intro → teaching → exercise_ask → exercise_eval → complete
+- **Lesson chat LangGraph graph** (`src/agent/lesson_chat_graph.py`): Dedicated LangGraph graph for lesson delivery using the same SSE streaming infrastructure as freeform chat
+- **Lesson respond node** (`src/agent/nodes/lesson_chat.py`): Phase machine node dispatching to 5 handlers (intro, teaching, exercise_ask, exercise_eval, complete) with step batching (STEP_BATCH_SIZE=3)
+- **Lesson chat state** (`src/agent/lesson_chat_state.py`): TypedDict extending conversation fields with lesson tracking (phase, step_index, exercise_index, exercise_results, lesson_score)
+- **Lesson-specific prompts** (`src/agent/prompts_lesson_chat.py`): 5 phase-specific system prompts for intro, teaching, exercise ask, exercise eval, and completion
+- **Exercise evaluation**: Multiple-choice (letter/number/text parsing), fill-in-the-blank, and translation exercises with correctness checking
+- **Lesson progress SSE events**: `lesson_progress`, `exercise_result`, and `lesson_complete` events streamed post-response for UI updates
+- **Lesson completion persistence**: Authenticated users get scores and vocabulary persisted via `complete_lesson_and_persist()`
+- **Lesson completion UI** (`src/templates/partials/lesson_complete.html`): Celebration screen with score, vocab count, next lesson link, practice with Hermano button
+- **68 new tests**: `tests/agent/nodes/test_lesson_chat.py` (45 tests) and `tests/api/routes/test_lesson_chat.py` (23 tests)
+- **Design doc**: `docs/design/phase19-conversational-lessons.md` with architecture and phase machine documentation
+
+### Changed
+- **Test count**: 2123 Python tests (up from 2055), 189 JS tests (up from 188)
+- **Source files**: 63 mypy-checked source files (up from 58)
+
 ## [0.16.0] - 2026-02-25
 
 ### Added - Phase 16: ES Module JavaScript Refactor & Phase 17 Voice Improvements

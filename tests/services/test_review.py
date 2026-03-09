@@ -86,7 +86,10 @@ def _make_mock_vocab_with_none_sm2(
 def mock_vocab_repo():
     """Create a mock VocabularyRepository."""
     with patch("src.services.review.VocabularyRepository") as mock_class:
-        yield mock_class.return_value
+        instance = mock_class.return_value
+        # RPC-based atomic update not deployed in tests — force legacy path
+        instance.update_sm2_atomic.return_value = None
+        yield instance
 
 
 @pytest.fixture

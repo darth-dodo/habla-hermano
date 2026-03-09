@@ -12,9 +12,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
+from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
 from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
-from src.api.routes import auth, chat, learn, lessons, progress, review, voice
+from src.api.routes import auth, chat, learn, lesson_chat, lessons, progress, review, voice
+from src.lessons.service import get_lesson_service
 
 # Configure logging
 settings = get_settings()
@@ -56,10 +58,18 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Templates directory: %s", settings.templates_dir)
     logger.info("Static files directory: %s", settings.static_dir)
 
+    # Pre-warm cached singletons so the first request isn't slow
+    get_settings()
+    get_lesson_service()
+
+    # Initialise persistent Postgres checkpointer (connection pool + DDL once)
+    await init_checkpointer()
+
     yield
 
     # Shutdown
     logger.info("Shutting down %s...", settings.APP_NAME)
+    await close_checkpointer()
 
 
 def create_app() -> FastAPI:
@@ -104,6 +114,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(auth.router)
     app.include_router(chat.router)
+    app.include_router(lesson_chat.router)
     app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(review.router)

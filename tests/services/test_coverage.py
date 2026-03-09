@@ -494,6 +494,7 @@ class TestGetPostgresCheckpointerSuccessPath:
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             SUPABASE_URL="https://test.supabase.co",
             SUPABASE_ANON_KEY="test-anon-key",
             SUPABASE_DB_URL="postgresql://user:pass@localhost:5432/test",
@@ -527,6 +528,7 @@ class TestGetPostgresCheckpointerSuccessPath:
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             SUPABASE_URL="https://test.supabase.co",
             SUPABASE_ANON_KEY="test-anon-key",
             SUPABASE_DB_URL="postgresql://user:pass@db.supabase.co:5432/postgres",
@@ -561,6 +563,7 @@ class TestGetPostgresCheckpointerSuccessPath:
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             SUPABASE_URL="https://test.supabase.co",
             SUPABASE_ANON_KEY="test-anon-key",
             SUPABASE_DB_URL="postgresql://postgres.[PROJECT-REF]:password@db.supabase.co:5432/postgres",

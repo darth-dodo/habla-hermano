@@ -985,6 +985,7 @@ class TestGetLlmAnalyze:
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
             LLM_MODEL="claude-test",
             LLM_TEMPERATURE=0.5,
         )

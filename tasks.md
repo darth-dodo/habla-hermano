@@ -13,9 +13,11 @@
 
 ## Current State
 
-**Branch**: `fix/p3-audit-remediation` (P3 remediation complete)
-**Phase**: Post-Audit Remediation — All audit items complete (P1+P2+P3)
-**Test Coverage**: 2243+ tests passing (2055 Python + 188 JS), 97% coverage
+**Branch**: `feature/phase19-conversational-lessons`
+**Phase**: Phase 19 — Conversational Lesson Delivery
+**Test Coverage**: 2312+ tests passing (2123 Python + 189 JS), 97% coverage
+**Phase 19**: 2026-03-02 → Conversational lesson delivery via chat UI with phase machine
+**Latest Commits**: CLT pedagogy in README, SECRET_KEY fix, 5 CRITICAL audit findings resolved
 **Last Audit**: 2026-02-26 (multi-dimensional: security, performance, architecture, workspace hygiene)
 **P3 Remediation**: 2026-03-02 → 7/7 LOW severity items complete (B18-B24)
 **P2 Remediation**: 2026-02-27 → 10/10 MEDIUM severity items complete (B8-B17)
@@ -61,6 +63,7 @@
 | Voice Architecture Docs | P3 | STT/TTS data flows, proxy pattern, error handling in `docs/architecture.md` |
 | Voice Integration Tests | P3 | 67 transport-level WebSocket tests in `test_voice_integration.py` |
 | Workspace Cleanup | P3 | 8 orphan PNGs deleted, 17 stale branches removed, npm versions pinned |
+| Conversational Lessons | 19 | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete) |
 
 ### LangGraph Flow
 
@@ -75,6 +78,12 @@ START → load_step → enhance_step → END
 
 Exercise Validation Subgraph (Phase 9):
 START → validate_exercise → END
+
+Lesson Chat Graph (Phase 19):
+START → lesson_respond → END
+  Phase machine inside node: intro → teaching → exercise_ask → exercise_eval → complete
+  Step batching: STEP_BATCH_SIZE=3 per teaching turn
+  Thread ID: lesson:{user_or_session_id}:{lesson_id}
 
 Persistence: PostgresSaver (Supabase) with MemorySaver fallback for dev
 Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
@@ -114,6 +123,22 @@ Auth: Supabase Auth → JWT cookie (with refresh) → Protected routes
 
 **Design doc**: `docs/design/phase17-voice-conversation.md`
 **ADR**: `docs/adr/ADR-010-deepgram-voice-stt-tts.md`
+
+### Phase 19: Conversational Lesson Delivery — ✅ Complete
+
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| L1 | Create LessonChatState TypedDict | ✅ | `src/agent/lesson_chat_state.py` with phase tracking fields |
+| L2 | Create lesson-specific prompts (5 phases) | ✅ | `src/agent/prompts_lesson_chat.py` |
+| L3 | Build lesson respond node with phase machine | ✅ | `src/agent/nodes/lesson_chat.py` (intro/teaching/exercise_ask/exercise_eval/complete) |
+| L4 | Build lesson chat LangGraph graph | ✅ | `src/agent/lesson_chat_graph.py` with SSE streaming support |
+| L5 | Create lesson chat API routes | ✅ | `src/api/routes/lesson_chat.py` (GET page + POST stream) |
+| L6 | Create lesson completion partial | ✅ | `src/templates/partials/lesson_complete.html` |
+| L7 | Add lesson progress SSE events | ✅ | lesson_progress, exercise_result, lesson_complete events |
+| L8 | Write unit tests (68 tests) | ✅ | 45 node tests + 23 route tests |
+| L9 | Create design doc | ✅ | `docs/design/phase19-conversational-lessons.md` |
+
+**Design doc**: `docs/design/phase19-conversational-lessons.md`
 
 ---
 
@@ -318,12 +343,30 @@ All items resolved as part of Phase 16 ES Module Migration.
 | 15 | SSE Streaming | Real-time chat via Server-Sent Events |
 | 16 | ES Module Migration | 6 JS modules, 186 Vitest tests, mobile hardening, TTS UX |
 | 17 | Voice Conversation | Deepgram STT/TTS, WebSocket proxy, graceful degradation |
+| 19 | Conversational Lessons | Phase machine in chat, 5 prompts, exercise eval, 68 tests |
 
 Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 
 ---
 
 ## Session Logs
+
+### 2026-03-02: Phase 19 — Conversational Lesson Delivery
+- **Branch**: `feature/phase19-conversational-lessons`
+- **Scope**: Full conversational lesson delivery system — Hermano teaches YAML lessons through chat UI
+- **Key changes**:
+  - **Lesson chat graph**: Dedicated LangGraph graph (`src/agent/lesson_chat_graph.py`) reusing SSE streaming infrastructure
+  - **Phase machine**: Single node (`src/agent/nodes/lesson_chat.py`) with 5 phase handlers: intro → teaching → exercise_ask → exercise_eval → complete
+  - **Step batching**: STEP_BATCH_SIZE=3 delivers lesson content across multiple teaching turns
+  - **Exercise evaluation**: MC (letter/number/text parsing), fill-blank, translate with correctness checking
+  - **SSE events**: lesson_progress, exercise_result, lesson_complete events for UI updates
+  - **Lesson completion**: Score calculation, vocabulary counting, persistence for authenticated users
+  - **Completion UI**: `lesson_complete.html` partial with score, vocab count, next lesson, practice button
+  - **Thread isolation**: `lesson:{user_or_session_id}:{lesson_id}` format per lesson per user
+- **Key new files**: `src/agent/lesson_chat_state.py`, `src/agent/lesson_chat_graph.py`, `src/agent/nodes/lesson_chat.py`, `src/agent/prompts_lesson_chat.py`, `src/api/routes/lesson_chat.py`, `src/templates/partials/lesson_complete.html`, `docs/design/phase19-conversational-lessons.md`
+- **Key test files**: `tests/agent/nodes/test_lesson_chat.py` (45 tests), `tests/api/routes/test_lesson_chat.py` (23 tests)
+- **Results**: 2123 Python tests + 189 JS tests passing, ruff clean, mypy clean (63 source files)
+- **E2E validated**: Playwright MCP tested full lesson flow (German greetings) — intro → 3 teaching turns → 4 exercises → completion. Zero console errors.
 
 ### 2026-03-02: P3 Audit Remediation — 7 LOW Severity Items
 - **Branch**: `fix/p3-audit-remediation`
@@ -506,6 +549,10 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 ---
 
 ## Notes for Future Agents
+
+### Project Status
+- Phase 19 conversational lessons are complete and merged. The known issue is exercise string matching being too strict (FillBlank/Translate exercises — LLM praises correct answers but badge shows "Not quite").
+- All 24 audit findings (P1 HIGH + P2 MEDIUM + P3 LOW) are resolved.
 
 ### Quick Reference
 - **Personality**: "Hermano" — friendly big brother tutor (see `src/agent/prompts.py`)

@@ -1,6 +1,9 @@
 /**
  * Habla Hermano - Scaffold Module
  * Phase 16: Word bank and sentence starter helpers.
+ *
+ * Uses event delegation (data-insert-word / data-insert-starter attributes)
+ * to avoid inline onclick handlers blocked by nonce-based CSP.
  */
 
 import { getMessageInput } from './dom.js';
@@ -53,4 +56,35 @@ export function insertStarter(starter) {
     // Focus and place cursor at end
     messageInput.focus();
     messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
+}
+
+// ============================================
+// Event Delegation (CSP-safe)
+// ============================================
+
+let _delegationInit = false;
+
+/**
+ * Set up delegated click handlers for dynamically-injected scaffold buttons.
+ * Listens on document.body so it works for scaffold HTML injected via SSE
+ * at any point after page load. Safe to call multiple times (idempotent).
+ */
+export function initScaffoldDelegation() {
+    if (_delegationInit) return;
+    _delegationInit = true;
+
+    document.body.addEventListener('click', (e) => {
+        const wordBtn = e.target.closest('[data-insert-word]');
+        if (wordBtn) {
+            e.preventDefault();
+            insertWord(wordBtn.dataset.insertWord);
+            return;
+        }
+
+        const starterBtn = e.target.closest('[data-insert-starter]');
+        if (starterBtn) {
+            e.preventDefault();
+            insertStarter(starterBtn.dataset.insertStarter);
+        }
+    });
 }

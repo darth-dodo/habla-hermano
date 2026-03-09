@@ -2,10 +2,15 @@
 
 Provides typed data access classes for each table, handling CRUD operations
 through the Supabase client. All repositories are user-scoped for RLS compliance.
+
+Async wrappers (``a``-prefixed methods) use ``asyncio.to_thread()`` to offload
+synchronous Supabase HTTP calls to the default thread-pool executor, preventing
+the FastAPI event loop from blocking during SSE streaming under concurrent load.
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -135,6 +140,14 @@ class VocabularyRepository:
             return Vocabulary(**response.data[0])
         return None
 
+    async def aget_by_id(self, vocab_id: int) -> Vocabulary | None:
+        """Non-blocking wrapper around :meth:`get_by_id`.
+
+        Offloads the synchronous Supabase HTTP call to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.get_by_id, vocab_id)
+
     def get_by_word_and_language(self, word: str, language: str) -> Vocabulary | None:
         """Get vocabulary entry by word and language.
 
@@ -157,6 +170,14 @@ class VocabularyRepository:
             return Vocabulary(**response.data[0])
         return None
 
+    async def aget_by_word_and_language(self, word: str, language: str) -> Vocabulary | None:
+        """Non-blocking wrapper around :meth:`get_by_word_and_language`.
+
+        Offloads the synchronous Supabase HTTP call to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.get_by_word_and_language, word, language)
+
     def upsert(
         self,
         word: str,
@@ -171,7 +192,13 @@ class VocabularyRepository:
         Uses an insert-first strategy to avoid the race condition inherent in
         read-then-write. If a concurrent insert wins the unique constraint
         (user_id, word, language), the duplicate key error (23505) is caught
-        and the method falls back to an update on the existing row.
+        and the method falls back to an atomic RPC update on the existing row.
+
+        The RPC ``vocabulary_upsert_increment`` performs ``SET times_seen =
+        times_seen + 1`` in a single SQL statement, eliminating the lost-update
+        window that exists when reading and writing in separate round-trips.
+        If the RPC is not yet deployed, the method falls back to the previous
+        read-then-write pattern and logs a warning.
 
         Args:
             word: The vocabulary word.
@@ -212,7 +239,30 @@ class VocabularyRepository:
                 language,
             )
 
-        # Row definitely exists now - read current state and update
+        # Row definitely exists now - use atomic RPC if available
+        try:
+            rpc_response = self._client.rpc(
+                "vocabulary_upsert_increment",
+                {
+                    "p_user_id": self._user_id,
+                    "p_word": word,
+                    "p_language": language,
+                    "p_translation": translation,
+                    "p_part_of_speech": part_of_speech,
+                },
+            ).execute()
+            if rpc_response.data:
+                return Vocabulary(**rpc_response.data[0])
+        except APIError:
+            logger.warning(
+                "RPC vocabulary_upsert_increment not available, falling back to "
+                "read-then-write for word=%s language=%s. Deploy migration "
+                "003_atomic_counter_operations.sql to fix.",
+                word,
+                language,
+            )
+
+        # Fallback: read-then-write (race condition window exists)
         existing = self.get_by_word_and_language(word, language)
         if existing is None:
             # Should not happen, but guard against unexpected state
@@ -232,6 +282,21 @@ class VocabularyRepository:
             .execute()
         )
         return Vocabulary(**response.data[0])
+
+    async def aupsert(
+        self,
+        word: str,
+        translation: str,
+        language: str,
+        part_of_speech: str | None = None,
+    ) -> Vocabulary:
+        """Non-blocking wrapper around :meth:`upsert`.
+
+        Offloads the synchronous Supabase HTTP calls (insert + possible
+        conflict-update via RPC or read-then-write) to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.upsert, word, translation, language, part_of_speech)
 
     def get_recent(self, language: str, limit: int = 20) -> list[Vocabulary]:
         """Get most recently seen vocabulary.
@@ -267,17 +332,30 @@ class VocabularyRepository:
     def increment_correct(self, word_id: int) -> None:
         """Increment the times_correct counter for a vocabulary entry.
 
-        Note: This uses a read-then-write pattern which is technically
-        susceptible to lost updates under concurrent writes. In practice the
-        risk is negligible because a single user rarely triggers concurrent
-        correct-answer submissions for the same word. An atomic Postgres
-        RPC (e.g. ``vocabulary_increment_correct(word_id)``) would eliminate
-        the window entirely if higher concurrency is needed in the future.
+        Uses the atomic Postgres RPC ``vocabulary_increment_correct`` which
+        performs ``SET times_correct = times_correct + 1`` in a single SQL
+        statement, eliminating the lost-update window from the previous
+        read-then-write pattern. Falls back to read-then-write if the RPC
+        is not yet deployed.
 
         Args:
             word_id: The vocabulary entry ID.
         """
-        # First get current value
+        try:
+            self._client.rpc(
+                "vocabulary_increment_correct",
+                {"p_vocab_id": word_id, "p_user_id": self._user_id},
+            ).execute()
+            return
+        except APIError:
+            logger.warning(
+                "RPC vocabulary_increment_correct not available for word_id=%s, "
+                "falling back to read-then-write. Deploy migration "
+                "003_atomic_counter_operations.sql to fix.",
+                word_id,
+            )
+
+        # Fallback: read-then-write (race condition window exists)
         response = (
             self._client.table("vocabulary")
             .select("times_correct")
@@ -364,6 +442,16 @@ class VocabularyRepository:
         )
         return [Vocabulary(**item) for item in response.data]
 
+    async def aget_due_by_keywords(
+        self, language: str, keywords: list[str], limit: int = 5
+    ) -> list[Vocabulary]:
+        """Non-blocking wrapper around :meth:`get_due_by_keywords`.
+
+        Offloads the synchronous Supabase HTTP call to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.get_due_by_keywords, language, keywords, limit)
+
     def update_review_schedule(self, vocab_id: int, updates: dict[str, Any]) -> Vocabulary | None:
         """Update SM-2 spaced repetition fields for a vocabulary entry.
 
@@ -406,6 +494,17 @@ class VocabularyRepository:
             return Vocabulary(**response.data[0])
         return None
 
+    async def aupdate_review_schedule(
+        self, vocab_id: int, updates: dict[str, Any]
+    ) -> Vocabulary | None:
+        """Non-blocking wrapper around :meth:`update_review_schedule`.
+
+        Offloads the synchronous Supabase HTTP calls (read + update) to a
+        thread-pool executor so the async event loop is not blocked during
+        SSE streaming.
+        """
+        return await asyncio.to_thread(self.update_review_schedule, vocab_id, updates)
+
     def _build_review_update_data(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Build update data dict from SM-2 scheduling fields.
 
@@ -441,32 +540,134 @@ class VocabularyRepository:
     def _apply_increment_flags(
         self, vocab_id: int, updates: dict[str, Any], update_data: dict[str, Any]
     ) -> None:
-        """Apply increment_seen and increment_correct flags to update_data.
+        """Apply increment_seen and increment_correct flags via atomic RPC.
 
-        Note: Uses a read-then-write pattern for the increment. See the
-        concurrency note on :meth:`increment_correct` -- the same low-risk
-        trade-off applies here.
+        Attempts to use Postgres RPC functions ``vocabulary_increment_seen``
+        and ``vocabulary_increment_correct`` which perform atomic
+        ``SET col = col + 1`` updates.  Falls back to read-then-write if the
+        RPCs are not deployed.
+
+        When the RPC path succeeds, the increment is already persisted to the
+        database, so the corresponding field is removed from ``update_data``
+        to prevent a second (overwriting) update.
 
         Args:
             vocab_id: The vocabulary entry ID.
             updates: Raw updates dictionary with increment flags.
             update_data: Update data dict to modify in place.
         """
-        current_response = (
-            self._client.table("vocabulary")
-            .select("times_seen, times_correct")
-            .eq("id", vocab_id)
-            .eq("user_id", self._user_id)
-            .execute()
-        )
-        if not current_response.data:
-            return
+        rpc_available = True
 
-        current = current_response.data[0]
         if updates.get("increment_seen"):
-            update_data["times_seen"] = current.get("times_seen", 0) + 1
+            try:
+                self._client.rpc(
+                    "vocabulary_increment_seen",
+                    {"p_vocab_id": vocab_id, "p_user_id": self._user_id},
+                ).execute()
+                # Increment already persisted; remove from update_data so the
+                # subsequent .update() call does not overwrite it.
+                update_data.pop("times_seen", None)
+            except APIError:
+                rpc_available = False
+
         if updates.get("increment_correct"):
-            update_data["times_correct"] = current.get("times_correct", 0) + 1
+            try:
+                self._client.rpc(
+                    "vocabulary_increment_correct",
+                    {"p_vocab_id": vocab_id, "p_user_id": self._user_id},
+                ).execute()
+                update_data.pop("times_correct", None)
+            except APIError:
+                rpc_available = False
+
+        if not rpc_available:
+            logger.warning(
+                "RPC increment functions not available for vocab_id=%s, "
+                "falling back to read-then-write. Deploy migration "
+                "003_atomic_counter_operations.sql to fix.",
+                vocab_id,
+            )
+            # Fallback: read-then-write (race condition window exists)
+            current_response = (
+                self._client.table("vocabulary")
+                .select("times_seen, times_correct")
+                .eq("id", vocab_id)
+                .eq("user_id", self._user_id)
+                .execute()
+            )
+            if not current_response.data:
+                return
+
+            current = current_response.data[0]
+            if updates.get("increment_seen") and "times_seen" not in update_data:
+                update_data["times_seen"] = current.get("times_seen", 0) + 1
+            if updates.get("increment_correct") and "times_correct" not in update_data:
+                update_data["times_correct"] = current.get("times_correct", 0) + 1
+
+    def update_sm2_atomic(
+        self,
+        vocab_id: int,
+        easiness_factor: float,
+        interval_days: int,
+        repetition_count: int,
+        next_review_at: datetime,
+        last_reviewed_at: datetime | None,
+        expected_repetition_count: int,
+        quality: int,
+    ) -> Vocabulary | None:
+        """Atomically update SM-2 fields with optimistic concurrency control.
+
+        Uses the Postgres RPC ``vocabulary_update_sm2`` which:
+        - Checks ``repetition_count = expected_repetition_count`` (optimistic lock)
+        - Atomically increments ``times_seen`` (always) and ``times_correct``
+          (when quality >= 3) using ``SET col = col + 1``
+        - Returns the updated row, or nothing if the optimistic lock failed
+
+        If the RPC is not deployed, returns ``None`` so the caller can fall
+        back to the non-atomic path.
+
+        Args:
+            vocab_id: The vocabulary entry ID.
+            easiness_factor: New easiness factor.
+            interval_days: New interval in days.
+            repetition_count: New repetition count to set.
+            next_review_at: Next scheduled review datetime.
+            last_reviewed_at: When the review happened (None to skip).
+            expected_repetition_count: The repetition_count read before
+                computation. Acts as a version guard -- the update only
+                succeeds if the row still has this value.
+            quality: Recall quality score (0-5), used to decide whether
+                to increment times_correct.
+
+        Returns:
+            Updated Vocabulary if the atomic update succeeded, None if the
+            RPC is unavailable or the optimistic lock failed (concurrent
+            modification detected).
+        """
+        try:
+            params: dict[str, Any] = {
+                "p_vocab_id": vocab_id,
+                "p_user_id": self._user_id,
+                "p_easiness_factor": easiness_factor,
+                "p_interval_days": interval_days,
+                "p_repetition_count": repetition_count,
+                "p_next_review_at": next_review_at.isoformat(),
+                "p_last_reviewed_at": (last_reviewed_at.isoformat() if last_reviewed_at else None),
+                "p_expected_repetition_count": expected_repetition_count,
+                "p_quality": quality,
+            }
+            rpc_response = self._client.rpc("vocabulary_update_sm2", params).execute()
+            if rpc_response.data:
+                return Vocabulary(**rpc_response.data[0])
+            # Empty result means the optimistic lock failed (concurrent update)
+            return None
+        except APIError:
+            logger.warning(
+                "RPC vocabulary_update_sm2 not available for vocab_id=%s. "
+                "Deploy migration 003_atomic_counter_operations.sql to fix.",
+                vocab_id,
+            )
+            return None
 
     def get_review_stats(self, language: str) -> dict[str, Any]:
         """Get review statistics for the user's vocabulary.
@@ -573,6 +774,14 @@ class LearningSessionRepository:
         )
         return LearningSession(**response.data[0])
 
+    async def acreate(self, language: str, level: str) -> LearningSession:
+        """Non-blocking wrapper around :meth:`create`.
+
+        Offloads the synchronous Supabase HTTP call to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.create, language, level)
+
     def get_by_id(self, session_id: int) -> LearningSession | None:
         """Get session by ID.
 
@@ -646,6 +855,14 @@ class LearningSessionRepository:
         if response.data:
             return LearningSession(**response.data[0])
         return None
+
+    async def aget_active(self) -> LearningSession | None:
+        """Non-blocking wrapper around :meth:`get_active`.
+
+        Offloads the synchronous Supabase HTTP call to a thread-pool executor
+        so the async event loop is not blocked during SSE streaming.
+        """
+        return await asyncio.to_thread(self.get_active)
 
 
 class LessonProgressRepository:

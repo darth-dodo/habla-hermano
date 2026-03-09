@@ -31,6 +31,7 @@ The API uses two cookie-based identity mechanisms:
 | Progress (`/progress/*`) | Required for data (`OptionalUserDep`) | Returns empty/zero stats with `is_guest: True` |
 | Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Lessons (`/lessons/*`) | Optional | Full access to browse and play lessons |
+| Lesson Chat (`/chat/lesson/*`) | Optional (`OptionalUserDep`) | Full lesson chat access. Score persistence requires authentication. |
 | Voice (`/ws/transcribe`, `/ws/speak`) | Required (`sb-access-token` JWT cookie) | WebSocket rejected with close code `4001` |
 | Voice (`/api/speak`) | Optional (`OptionalUserDep`) + CSRF header | Full access when voice configured |
 | Auth (`/auth/*`) | None | Public endpoints |
@@ -1373,6 +1374,91 @@ AI-generated feedback for exercise submissions.
   "exercise_feedback": "Not quite! The answer is 'tres' for three. Remember: 'tres' sounds like 'trace' - imagine tracing three lines!",
   "correct_answer": "tres"
 }
+```
+
+---
+
+## Lesson Chat
+
+Conversational lesson delivery where Hermano teaches YAML lesson content through the chat UI. Uses the same SSE streaming infrastructure as freeform chat.
+
+### GET /chat/lesson/{lesson_id}
+
+Render the lesson chat page for a specific lesson.
+
+**Path Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lesson_id` | string | Yes | Lesson identifier (e.g., `es_a1_greetings_01`) |
+
+**Response**: Full HTML page with lesson chat interface. The page includes lesson metadata (title, description, level, language) and auto-starts the lesson conversation. Language and level selectors are hidden via `visibility: hidden` (not `display: none`) to preserve the header flex layout.
+
+**Cookies Set**: `session_id` cookie for guests (7-day expiry) if not already present.
+
+**Errors**:
+- `404`: Lesson not found
+
+**Example**:
+```bash
+curl http://localhost:8000/chat/lesson/es_a1_greetings_01
+```
+
+---
+
+### POST /chat/lesson/stream
+
+Stream a lesson chat response as Server-Sent Events.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+**CSRF**: Required (`HX-Request: true` or `X-Requested-With: XMLHttpRequest`)
+
+**Rate Limit**: Same as chat endpoint (20 calls/60s)
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `message` | string | Yes | — | User's message (max 2000 chars) |
+| `lesson_id` | string | Yes | — | Lesson identifier |
+
+> **Note**: `level` and `language` parameters were removed. These are now derived server-side from lesson metadata, ensuring correct difficulty and language regardless of client input.
+
+**Checkpoint-aware invocation**: The endpoint checks for an existing LangGraph checkpoint before sending inputs. On the first invocation (no checkpoint), the full initialization state is sent (lesson data, lesson phase, step index, etc.). On subsequent turns, only the new user message is sent, preventing the checkpoint state from being overwritten.
+
+**Response**: `text/event-stream` with the following event types:
+
+| Event | Data | When |
+|-------|------|------|
+| `token` | `{"content": "..."}` | Each token of the AI response |
+| `message_complete` | `{"html": "..."}` | Full rendered HTML of the response |
+| `lesson_progress` | `{"step": N, "total_steps": N, "progress": N, "phase": "...", "title": "..."}` | After every turn. `progress` is a 0-100 integer computed server-side from `(completed_teaching_steps + completed_exercises) / total_items * 100`. `step` and `total_steps` remain for backwards compatibility. |
+| `exercise_result` | `{"is_correct": bool, "exercise_id": "..."}` | After exercise evaluation |
+| `lesson_complete` | `{"score": N, "vocab_count": N, "lesson_id": "..."}` | When lesson finishes |
+| `error` | `{"message": "..."}` | Validation errors |
+| `done` | `{}` | Stream end |
+
+**Lesson Phase Machine**:
+
+The lesson progresses through phases automatically:
+
+```
+intro → teaching → exercise_ask → exercise_eval → complete
+```
+
+- **intro**: Hermano welcomes the learner and previews the lesson
+- **teaching**: Lesson steps delivered in batches of 3 per turn
+- **exercise_ask**: Hermano presents the current exercise
+- **exercise_eval**: Evaluates the user's answer and provides feedback
+- **complete**: Calculates score, emits completion event, persists results
+
+**Thread Isolation**: Each lesson gets its own conversation thread: `lesson:{user_or_session_id}:{lesson_id}`
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/chat/lesson/stream \
+  -H "X-Requested-With: XMLHttpRequest" \
+  -d "message=Start the lesson" \
+  -d "lesson_id=es_a1_greetings_01"
 ```
 
 ---

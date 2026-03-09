@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     ALLOW_UNVERIFIED_JWT: bool = False
 
     # Secret key for signing cookies (review sessions, etc.)
-    SECRET_KEY: str = "habla-hermano-change-me-in-production"
+    SECRET_KEY: str = "change-me-to-a-random-string"
 
     # Voice features (Phase 17) - Deepgram STT/TTS
     DEEPGRAM_API_KEY: str = ""

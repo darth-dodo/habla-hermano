@@ -6,16 +6,8 @@
 import { scrollToBottom, focusInput } from './modules/dom.js';
 import { initStreamingForm } from './modules/stream.js';
 import { initKeyboardShortcuts } from './modules/shortcuts.js';
-import { insertWord, insertStarter } from './modules/scaffold.js';
+import { initScaffoldDelegation } from './modules/scaffold.js';
 import { initHTMXHandlers } from './modules/htmx-handlers.js';
-
-// ============================================
-// Window exports for inline HTML handlers
-// ============================================
-// These functions are called from onclick="" attributes in
-// server-rendered scaffolding HTML. They MUST be on window.
-window.insertWord = insertWord;
-window.insertStarter = insertStarter;
 
 // ============================================
 // Initialization
@@ -24,6 +16,7 @@ function init() {
     initHTMXHandlers();
     initStreamingForm();
     initKeyboardShortcuts();
+    initScaffoldDelegation();
 
     // Initial state
     scrollToBottom(false);

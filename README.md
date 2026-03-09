@@ -52,6 +52,25 @@ Type your messages or tap the microphone to speak. Hermano understands both.
 
 ---
 
+## Pedagogy: Communicative Language Teaching
+
+Habla Hermano is built on **Communicative Language Teaching (CLT)** — you learn by having real conversations, not by memorizing rules.
+
+| CLT Principle | How Hermano Implements It |
+|---------------|--------------------------|
+| **Conversation-first** | You talk from message one, even as a complete beginner |
+| **Meaning over form** | Getting your point across matters more than perfect grammar |
+| **Implicit correction** | Hermano recasts your errors naturally instead of interrupting ("Ah, ¿estás cansado?" not "You used the wrong verb") |
+| **Scaffolding that fades** | Word banks and hints for A0/A1 learners disappear as you level up |
+| **Contextual vocabulary** | Words are learned inside conversations and lessons, never on isolated flashcards |
+| **CEFR-aligned progression** | Language mix shifts from 80% English (A0) to 95%+ target language (B1) |
+
+**What we deliberately avoid**: grammar-translation drills, audio-lingual repetition, gamification (no XP, streaks, or leaderboards), and decontextualized flashcards.
+
+> For the full pedagogical specification, see [Product Vision → Pedagogical Approach](docs/product.md#pedagogical-approach).
+
+---
+
 ## Conversations That Adapt to You
 
 Hermano adapts his language mix based on your level:
@@ -114,6 +133,19 @@ Each lesson includes:
 | Spanish | 5 | 5 | 5 | 5 | 20 |
 | German | 5 | 5 | 5 | 5 | 20 |
 | French | 5 | 5 | 5 | 5 | 20 |
+
+### Conversational Lesson Mode
+
+Prefer learning through conversation? Hermano can teach any lesson through the chat interface — no static player needed.
+
+Click **"Learn with Hermano"** on any lesson card, and Hermano walks you through the content conversationally:
+
+1. **Introduction** — Hermano welcomes you and previews what you'll learn
+2. **Teaching** — Vocabulary, grammar, and examples delivered in natural dialogue (batched in groups of 3)
+3. **Exercises** — Multiple choice, fill-in-the-blank, and translation exercises evaluated in real-time
+4. **Completion** — Score, vocabulary count, and links to continue your learning path
+
+The conversational approach uses the same SSE streaming as freeform chat, so responses feel natural and immediate.
 
 ---
 
@@ -193,7 +225,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
 | **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
-| **Testing** | pytest + Vitest (2140+ tests, 97% coverage) |
+| **Testing** | pytest + Vitest (2300+ tests, 97% coverage) |
 
 ### Architecture Highlights
 
@@ -203,6 +235,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - **AI-enhanced lessons** — LangGraph subgraphs generate contextual exercises and vocabulary steps
 - **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
 - **Voice conversation** — Deepgram STT/TTS via WebSocket proxy with floating stop controls and speed adjustment
+- **Conversational lesson delivery** — Phase machine (intro → teaching → exercise → complete) inside a LangGraph node teaches structured lessons through the chat UI
 - **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (186 tests, ~90% coverage)
 
 ---
@@ -227,6 +260,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - [Phase 15: SSE Streaming](docs/design/phase15-sse-streaming.md)
 - [Phase 16: ES Module Refactor](docs/design/phase16-esm-refactor.md)
 - [Phase 17: Voice Conversation](docs/design/phase17-voice-deepgram.md)
+- [Phase 19: Conversational Lessons](docs/design/phase19-conversational-lessons.md)
 
 ---
 

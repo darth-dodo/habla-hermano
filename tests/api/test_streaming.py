@@ -75,6 +75,67 @@ class TestRenderPartial:
 
 
 # =============================================================================
+# CSP Compliance: scaffold template uses data attributes, not inline handlers
+# =============================================================================
+
+
+class TestScaffoldTemplateCSPCompliance:
+    """Verify scaffold.html uses data-* attributes instead of inline onclick.
+
+    The P2 audit (B8) moved from 'unsafe-inline' to nonce-based CSP.
+    Inline event handlers (onclick) are blocked by nonce-based CSP and
+    must be replaced with data-* attributes + delegated JS listeners.
+    """
+
+    @pytest.fixture
+    def rendered_scaffold(self) -> str:
+        """Render the scaffold template with sample data."""
+        from jinja2 import Environment, FileSystemLoader
+
+        env = Environment(
+            loader=FileSystemLoader("src/templates"),
+            autoescape=True,
+        )
+        template = env.get_template("partials/scaffold.html")
+        return template.render(
+            scaffolding={
+                "enabled": True,
+                "word_bank": ["hola (hello)", "gracias (thank you)"],
+                "hint_text": "Try saying hello!",
+                "sentence_starter": "Me llamo",
+                "auto_expand": True,
+            }
+        )
+
+    def test_no_inline_onclick_handlers(self, rendered_scaffold: str) -> None:
+        """Scaffold buttons must NOT use onclick (blocked by nonce CSP)."""
+        assert "onclick=" not in rendered_scaffold
+
+    def test_word_bank_uses_data_attributes(self, rendered_scaffold: str) -> None:
+        """Word bank buttons use data-insert-word for CSP-safe delegation."""
+        assert "data-insert-word=" in rendered_scaffold
+        assert 'data-insert-word="hola (hello)"' in rendered_scaffold
+        assert 'data-insert-word="gracias (thank you)"' in rendered_scaffold
+
+    def test_sentence_starter_uses_data_attribute(self, rendered_scaffold: str) -> None:
+        """Sentence starter button uses data-insert-starter for CSP-safe delegation."""
+        assert "data-insert-starter=" in rendered_scaffold
+        assert 'data-insert-starter="Me llamo"' in rendered_scaffold
+
+    def test_scaffold_not_rendered_when_disabled(self) -> None:
+        """Scaffold HTML is empty when scaffolding is disabled."""
+        from jinja2 import Environment, FileSystemLoader
+
+        env = Environment(
+            loader=FileSystemLoader("src/templates"),
+            autoescape=True,
+        )
+        template = env.get_template("partials/scaffold.html")
+        result = template.render(scaffolding={"enabled": False})
+        assert result.strip() == ""
+
+
+# =============================================================================
 # Unit Tests: StreamResult
 # =============================================================================
 

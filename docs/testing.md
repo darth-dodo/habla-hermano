@@ -51,8 +51,10 @@
 | JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
 | JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
+| Lesson Chat Node | `agent/nodes/test_lesson_chat.py` | 45 | Phase 19 lesson respond node, phase machine, exercise evaluation |
+| Lesson Chat Routes | `api/routes/test_lesson_chat.py` | 23 | Phase 19 lesson chat API routes, thread ID, validation |
 
-**Total**: 2157+ tests (1971 Python + 186 JavaScript) with 97% code coverage
+**Total**: 2312+ tests (2123 Python + 189 JavaScript) with 97% code coverage
 
 ---
 
@@ -807,6 +809,37 @@ Phase 14 introduced learning paths and adaptive recommendations. 99 new tests we
 
 ---
 
+## Phase 19 Test Coverage
+
+Phase 19 introduced conversational lesson delivery through the chat UI. 68 new tests cover the lesson respond node phase machine and the lesson chat API routes.
+
+### Lesson Chat Node Tests (`tests/agent/nodes/test_lesson_chat.py`)
+
+**45 test cases** covering the lesson respond node implementation.
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestParseMcAnswer` | 9 | Multiple-choice answer parsing (letter, digit, text match, ambiguous) |
+| `TestHelpers` | 5 | Ordered steps, exercises, language name, lesson UI builder |
+| `TestHandleIntro` | 3 | Intro phase: LLM call, phase transition, lesson UI |
+| `TestHandleTeaching` | 6 | Teaching phase: step batching, practice skip, phase transitions |
+| `TestHandleExerciseAsk` | 3 | Exercise ask: presentation, overflow to complete, UI events |
+| `TestHandleExerciseEval` | 10 | Exercise eval: MC/fill-blank/translate, correctness, result recording |
+| `TestHandleComplete` | 4 | Completion: score calculation, vocabulary count, UI events |
+| `TestLessonRespondNode` | 5 | Main dispatch: phase routing, unknown phase fallback |
+
+### Lesson Chat Route Tests (`tests/api/routes/test_lesson_chat.py`)
+
+**23 test cases** covering the lesson chat API routes.
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestResolveThreadId` | 4 | Thread ID format: authenticated, guest session, new guest, priority |
+| `TestLessonChatPage` | 4 | GET /chat/lesson/{id}: 200, context, 404, session cookie |
+| `TestLessonStreamValidation` | 4 | POST /chat/lesson/stream: empty msg, invalid level/language, missing lesson |
+
+---
+
 ## JavaScript Test Suite
 
 **Framework**: Vitest 3.x + jsdom environment
@@ -1124,7 +1157,8 @@ tests/
 │       ├── test_nodes.py          # Node function tests
 │       ├── test_analyze.py        # Phase 2 analyze node
 │       ├── test_scaffold.py       # Phase 3 scaffold node
-│       └── test_review.py         # Review node tests
+│       ├── test_review.py         # Review node tests
+│       └── test_lesson_chat.py    # Phase 19 lesson chat node
 ├── api/                           # API module tests (mirrors src/api/)
 │   ├── __init__.py
 │   ├── test_auth.py               # JWT validation, signup/login flows
@@ -1143,7 +1177,8 @@ tests/
 │       ├── test_progress.py       # Progress route tests
 │       ├── test_review.py         # Review route tests
 │       ├── test_validation.py     # Input validation tests
-│       └── test_e2e.py            # E2E route integration tests
+│       ├── test_e2e.py            # E2E route integration tests
+│       └── test_lesson_chat.py    # Phase 19 lesson chat routes
 ├── db/                            # Database tests (mirrors src/db/)
 │   ├── __init__.py
 │   ├── test_models.py             # Pydantic models for Supabase
