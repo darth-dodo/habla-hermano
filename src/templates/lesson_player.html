@@ -47,7 +47,7 @@
         <div class="max-w-2xl mx-auto flex items-center justify-between">
             <button
                 id="prev-btn"
-                hx-post="/lessons/{{ lesson.metadata.id }}/step/prev"
+                hx-post="/lessons/{{ lesson.metadata.full_id }}/step/prev"
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
@@ -67,7 +67,7 @@
             {% if current_step < total_steps - 1 %}
             <button
                 id="next-btn"
-                hx-post="/lessons/{{ lesson.metadata.id }}/step/next"
+                hx-post="/lessons/{{ lesson.metadata.full_id }}/step/next"
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 hx-include="#current-step-input"
@@ -83,7 +83,7 @@
             {% else %}
             <button
                 id="complete-btn"
-                hx-post="/lessons/{{ lesson.metadata.id }}/complete"
+                hx-post="/lessons/{{ lesson.metadata.full_id }}/complete"
                 hx-target="#step-content"
                 hx-swap="innerHTML"
                 class="px-5 py-3 sm:py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150"
@@ -134,7 +134,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
             if (isLastStep && nextBtn && !completeBtn) {
                 const btn = document.createElement('button');
                 btn.id = 'complete-btn';
-                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.id }}/complete');
+                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.full_id }}/complete');
                 btn.setAttribute('hx-target', '#step-content');
                 btn.setAttribute('hx-swap', 'innerHTML');
                 btn.className = 'px-5 py-3 sm:py-2 bg-success hover:opacity-90 text-white font-medium rounded-lg transition-all duration-150';
@@ -144,7 +144,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
             } else if (!isLastStep && completeBtn && !nextBtn) {
                 const btn = document.createElement('button');
                 btn.id = 'next-btn';
-                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.id }}/step/next');
+                btn.setAttribute('hx-post', '/lessons/{{ lesson.metadata.full_id }}/step/next');
                 btn.setAttribute('hx-target', '#step-content');
                 btn.setAttribute('hx-swap', 'innerHTML');
                 btn.setAttribute('hx-include', '#current-step-input');

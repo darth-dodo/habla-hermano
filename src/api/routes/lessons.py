@@ -10,8 +10,8 @@ Provides lesson listing, content delivery, step navigation, exercises,
 and progress tracking. Supports both authenticated users and guests.
 
 AI-Enhanced endpoints (Phase 9):
-- GET /{lesson_id}/step/{step_index}/enhanced - AI-enhanced step content
-- POST /{lesson_id}/exercise/{exercise_id}/submit/enhanced - AI-enhanced feedback
+- GET /{lesson_id:path}/step/{step_index}/enhanced - AI-enhanced step content
+- POST /{lesson_id:path}/exercise/{exercise_id}/submit/enhanced - AI-enhanced feedback
 """
 
 import contextlib
@@ -93,7 +93,7 @@ async def get_lessons_page(
 # =============================================================================
 
 
-@router.get("/{lesson_id}/play", response_class=HTMLResponse)
+@router.get("/{lesson_id:path}/play", response_class=HTMLResponse)
 async def get_lesson_player(
     request: Request,
     templates: TemplatesDep,
@@ -126,7 +126,7 @@ async def get_lesson_player(
 # =============================================================================
 
 
-@router.get("/{lesson_id}/step/{step_index}", response_class=HTMLResponse)
+@router.get("/{lesson_id:path}/step/{step_index}", response_class=HTMLResponse)
 async def get_lesson_step(
     request: Request,
     templates: TemplatesDep,
@@ -159,7 +159,7 @@ async def get_lesson_step(
     )
 
 
-@router.post("/{lesson_id}/step/next", response_class=HTMLResponse)
+@router.post("/{lesson_id:path}/step/next", response_class=HTMLResponse)
 async def next_lesson_step(
     request: Request,
     templates: TemplatesDep,
@@ -188,7 +188,7 @@ async def next_lesson_step(
     )
 
 
-@router.post("/{lesson_id}/step/prev", response_class=HTMLResponse)
+@router.post("/{lesson_id:path}/step/prev", response_class=HTMLResponse)
 async def previous_lesson_step(
     request: Request,
     templates: TemplatesDep,
@@ -222,7 +222,7 @@ async def previous_lesson_step(
 # =============================================================================
 
 
-@router.get("/{lesson_id}/exercise/{exercise_id}", response_class=HTMLResponse)
+@router.get("/{lesson_id:path}/exercise/{exercise_id}", response_class=HTMLResponse)
 async def get_exercise(
     request: Request,
     templates: TemplatesDep,
@@ -253,7 +253,7 @@ async def get_exercise(
     )
 
 
-@router.post("/{lesson_id}/exercise/{exercise_id}/submit", response_class=HTMLResponse)
+@router.post("/{lesson_id:path}/exercise/{exercise_id}/submit", response_class=HTMLResponse)
 async def submit_exercise(
     _user: OptionalUserDep,
     lesson_service: LessonServiceDep,
@@ -282,7 +282,7 @@ async def submit_exercise(
 # =============================================================================
 
 
-@router.get("/{lesson_id}/step/{step_index}/enhanced", response_class=HTMLResponse)
+@router.get("/{lesson_id:path}/step/{step_index}/enhanced", response_class=HTMLResponse)
 async def get_enhanced_lesson_step(
     request: Request,
     templates: TemplatesDep,
@@ -337,7 +337,7 @@ async def get_enhanced_lesson_step(
     )
 
 
-@router.post("/{lesson_id}/exercise/{exercise_id}/submit/enhanced", response_class=HTMLResponse)
+@router.post("/{lesson_id:path}/exercise/{exercise_id}/submit/enhanced", response_class=HTMLResponse)
 async def submit_exercise_enhanced(
     request: Request,
     templates: TemplatesDep,
@@ -393,7 +393,7 @@ async def submit_exercise_enhanced(
 # =============================================================================
 
 
-@router.post("/{lesson_id}/complete", response_class=HTMLResponse)
+@router.post("/{lesson_id:path}/complete", response_class=HTMLResponse)
 async def complete_lesson(
     request: Request,
     templates: TemplatesDep,
@@ -450,7 +450,7 @@ async def complete_lesson(
 # =============================================================================
 
 
-@router.post("/{lesson_id}/handoff")
+@router.post("/{lesson_id:path}/handoff")
 async def handoff_to_chat(
     _user: OptionalUserDep,
     lesson_service: LessonServiceDep,

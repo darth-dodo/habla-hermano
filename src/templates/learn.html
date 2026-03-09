@@ -37,7 +37,7 @@
         {% if path_progress and path_progress.next_lesson %}
         <section class="mb-6 animate-fade-in" aria-label="Continue learning">
             <a
-                href="/lessons/{{ path_progress.next_lesson.metadata.id }}/play"
+                href="/lessons/{{ path_progress.next_lesson.metadata.full_id }}/play"
                 class="group block p-5 bg-surface-elevated rounded-xl border border-border border-l-4 border-l-accent hover:border-accent hover:bg-accent-muted/50 transition-all duration-150 hover-lift"
             >
                 <p class="text-xs font-medium text-accent uppercase tracking-wide mb-2">Continue where you left off</p>

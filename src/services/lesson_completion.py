@@ -30,6 +30,15 @@ from src.services.review import ReviewService
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
 
+
+def _bare_lesson_id(lesson_id: str) -> str:
+    """Extract bare lesson ID from a full path ID.
+
+    Handles both full IDs (``es/A1/greetings-001``) and bare IDs
+    (``greetings-001``), returning the bare form in either case.
+    """
+    return lesson_id.rsplit("/", 1)[-1] if "/" in lesson_id else lesson_id
+
     from src.api.auth import AuthenticatedUser
     from src.lessons.models import AnyExercise
 
@@ -243,7 +252,7 @@ def complete_lesson_and_persist(
             if not user:
                 client = get_supabase_admin()
             repo = LessonProgressRepository(effective_id, client=client)
-            repo.complete_lesson(lesson_id, score=score)
+            repo.complete_lesson(_bare_lesson_id(lesson_id), score=score)
 
             # Initialize vocabulary for review (Phase 12)
             initialize_lesson_vocabulary_for_review(
