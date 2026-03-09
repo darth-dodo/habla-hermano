@@ -52,6 +52,25 @@ Type your messages or tap the microphone to speak. Hermano understands both.
 
 ---
 
+## Pedagogy: Communicative Language Teaching
+
+Habla Hermano is built on **Communicative Language Teaching (CLT)** — you learn by having real conversations, not by memorizing rules.
+
+| CLT Principle | How Hermano Implements It |
+|---------------|--------------------------|
+| **Conversation-first** | You talk from message one, even as a complete beginner |
+| **Meaning over form** | Getting your point across matters more than perfect grammar |
+| **Implicit correction** | Hermano recasts your errors naturally instead of interrupting ("Ah, ¿estás cansado?" not "You used the wrong verb") |
+| **Scaffolding that fades** | Word banks and hints for A0/A1 learners disappear as you level up |
+| **Contextual vocabulary** | Words are learned inside conversations and lessons, never on isolated flashcards |
+| **CEFR-aligned progression** | Language mix shifts from 80% English (A0) to 95%+ target language (B1) |
+
+**What we deliberately avoid**: grammar-translation drills, audio-lingual repetition, gamification (no XP, streaks, or leaderboards), and decontextualized flashcards.
+
+> For the full pedagogical specification, see [Product Vision → Pedagogical Approach](docs/product.md#pedagogical-approach).
+
+---
+
 ## Conversations That Adapt to You
 
 Hermano adapts his language mix based on your level:
