@@ -1142,6 +1142,7 @@ describe('voice.js — VoiceManager', () => {
             btn.dataset.language = 'es';
 
             vm.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // Flush resume() promise
 
             // Speed should be clamped to 2.0
             expect(spy).toHaveBeenCalledWith(btn, 'Hola', 'aura-2-nestor-es', 2.0, expect.anything());
@@ -1164,6 +1165,7 @@ describe('voice.js — VoiceManager', () => {
             btn.dataset.language = 'es';
 
             vm.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // Flush resume() promise
 
             expect(spy).toHaveBeenCalledWith(btn, 'Hola', 'aura-2-nestor-es', 0.75, expect.anything());
         });
@@ -1789,6 +1791,7 @@ describe('voice.js — VoiceManager', () => {
                 btn.dataset.language = lang;
 
                 vm.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0); // Flush resume() promise
 
                 // The WebSocket constructor is called with the voice in the URL
                 const ws = MockWebSocket._lastInstance;
@@ -1809,6 +1812,7 @@ describe('voice.js — VoiceManager', () => {
             btn.dataset.language = 'xx'; // unknown language
 
             vm.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // Flush resume() promise
 
             const ws = MockWebSocket._lastInstance;
             expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-nestor-es'));

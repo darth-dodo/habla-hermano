@@ -69,6 +69,7 @@ function VoiceManager() {
     this._ttsWs = null;
     this._audioCtx = null;
     this._ttsPlaying = false;
+    this._ttsGeneration = 0; // Monotonic counter — guards against stale cleanup
     this._ttsEndFallback = null;
     // STT audio capture state
     this._stream = null;
@@ -580,16 +581,15 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
         if (!_sharedTtsCtx || _sharedTtsCtx.state === 'closed') {
             _sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
-        // Resume MUST happen here, in the click handler, for mobile autoplay policy
+        // ALWAYS call resume() in the click handler — iOS Safari can report
+        // state='running' but silently refuse to produce audio after the first
+        // TTS session ends.  resume() on an already-running context is a no-op
+        // on desktop but re-activates the audio pipeline on iOS.
         var ctx = _sharedTtsCtx;
-        if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
-            var self = this;
-            ctx.resume().then(function() {
-                self._streamTTS(btn, text, voice, speed, ctx);
-            });
-        } else {
-            this._streamTTS(btn, text, voice, speed, ctx);
-        }
+        var self = this;
+        ctx.resume().then(function() {
+            self._streamTTS(btn, text, voice, speed, ctx);
+        });
     } else {
         this._restTTS(btn, text, voice, speed);
     }
@@ -606,9 +606,13 @@ VoiceManager.prototype._stopTTS = function(btn) {
         this._ttsEndFallback = null;
     }
 
-    if (this._ttsWs && this._ttsWs.readyState === WebSocket.OPEN) {
-        try { this._ttsWs.send(JSON.stringify({ type: 'close' })); } catch (_) {}
-        this._ttsWs.close();
+    if (this._ttsWs) {
+        if (this._ttsWs.readyState === WebSocket.OPEN) {
+            try { this._ttsWs.send(JSON.stringify({ type: 'close' })); } catch (_) {}
+        }
+        if (this._ttsWs.readyState === WebSocket.OPEN || this._ttsWs.readyState === WebSocket.CONNECTING) {
+            this._ttsWs.close();
+        }
     }
     this._ttsWs = null;
 
@@ -724,6 +728,10 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     this._ttsPlaying = true;
     this._ttsSources = [];
 
+    // Capture a generation id so stale cleanup closures from previous sessions
+    // cannot corrupt state for the current session (race condition fix).
+    var gen = ++this._ttsGeneration;
+
     // Queue of AudioBuffers scheduled for playback
     var nextStartTime = 0;
     var started = false;
@@ -739,6 +747,9 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     this._ttsWs = ws;
 
     function cleanup() {
+        // Guard: if a newer TTS session has started, this closure is stale — bail.
+        if (self._ttsGeneration !== gen) return;
+
         if (self._ttsEndFallback) {
             clearTimeout(self._ttsEndFallback);
             self._ttsEndFallback = null;
@@ -759,7 +770,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     };
 
     ws.onmessage = function(event) {
-        if (!self._ttsPlaying) return;
+        if (!self._ttsPlaying || self._ttsGeneration !== gen) return;
 
         // Safari may deliver ArrayBuffer as Blob despite binaryType='arraybuffer'
         if (event.data instanceof Blob) {
