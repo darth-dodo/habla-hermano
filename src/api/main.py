@@ -94,7 +94,10 @@ def create_app() -> FastAPI:
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if settings.DEBUG else [f"http://{settings.HOST}:{settings.PORT}"],
+        allow_origins=[f"http://localhost:{settings.PORT}", f"http://127.0.0.1:{settings.PORT}"]
+        if settings.DEBUG
+        else [o.strip() for o in settings.CORS_ALLOWED_ORIGINS.split(",") if o.strip()]
+        or [f"https://{settings.HOST}"],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["*"],

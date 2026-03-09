@@ -69,6 +69,7 @@ function VoiceManager() {
     this._ttsWs = null;
     this._audioCtx = null;
     this._ttsPlaying = false;
+    this._ttsGeneration = 0; // Monotonic counter — guards against stale cleanup
     this._ttsEndFallback = null;
     // STT audio capture state
     this._stream = null;
@@ -580,16 +581,15 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
         if (!_sharedTtsCtx || _sharedTtsCtx.state === 'closed') {
             _sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
-        // Resume MUST happen here, in the click handler, for mobile autoplay policy
+        // ALWAYS call resume() in the click handler — iOS Safari can report
+        // state='running' but silently refuse to produce audio after the first
+        // TTS session ends.  resume() on an already-running context is a no-op
+        // on desktop but re-activates the audio pipeline on iOS.
         var ctx = _sharedTtsCtx;
-        if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
-            var self = this;
-            ctx.resume().then(function() {
-                self._streamTTS(btn, text, voice, speed, ctx);
-            });
-        } else {
-            this._streamTTS(btn, text, voice, speed, ctx);
-        }
+        var self = this;
+        ctx.resume().then(function() {
+            self._streamTTS(btn, text, voice, speed, ctx);
+        });
     } else {
         this._restTTS(btn, text, voice, speed);
     }
@@ -606,9 +606,13 @@ VoiceManager.prototype._stopTTS = function(btn) {
         this._ttsEndFallback = null;
     }
 
-    if (this._ttsWs && this._ttsWs.readyState === WebSocket.OPEN) {
-        try { this._ttsWs.send(JSON.stringify({ type: 'close' })); } catch (_) {}
-        this._ttsWs.close();
+    if (this._ttsWs) {
+        if (this._ttsWs.readyState === WebSocket.OPEN) {
+            try { this._ttsWs.send(JSON.stringify({ type: 'close' })); } catch (_) {}
+        }
+        if (this._ttsWs.readyState === WebSocket.OPEN || this._ttsWs.readyState === WebSocket.CONNECTING) {
+            this._ttsWs.close();
+        }
     }
     this._ttsWs = null;
 
@@ -724,6 +728,10 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     this._ttsPlaying = true;
     this._ttsSources = [];
 
+    // Capture a generation id so stale cleanup closures from previous sessions
+    // cannot corrupt state for the current session (race condition fix).
+    var gen = ++this._ttsGeneration;
+
     // Queue of AudioBuffers scheduled for playback
     var nextStartTime = 0;
     var started = false;
@@ -739,6 +747,9 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     this._ttsWs = ws;
 
     function cleanup() {
+        // Guard: if a newer TTS session has started, this closure is stale — bail.
+        if (self._ttsGeneration !== gen) return;
+
         if (self._ttsEndFallback) {
             clearTimeout(self._ttsEndFallback);
             self._ttsEndFallback = null;
@@ -759,7 +770,7 @@ VoiceManager.prototype._streamTTS = function(btn, text, voice, speed, audioCtx) 
     };
 
     ws.onmessage = function(event) {
-        if (!self._ttsPlaying) return;
+        if (!self._ttsPlaying || self._ttsGeneration !== gen) return;
 
         // Safari may deliver ArrayBuffer as Blob despite binaryType='arraybuffer'
         if (event.data instanceof Blob) {
@@ -915,14 +926,115 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
 };
 
 // ============================================
+// Cleanup / Destroy
+// ============================================
+
+/**
+ * Fully tear down the VoiceManager: close WebSockets, release mic,
+ * suspend AudioContext, clear timers, and reset internal state.
+ * Safe to call multiple times — every check is defensive.
+ */
+VoiceManager.prototype.destroy = function() {
+    // 1. Stop any active recording (closes STT WebSocket, releases mic, etc.)
+    if (this.isRecording) {
+        this.stopRecording();
+    }
+
+    // 2. Stop any active TTS playback
+    this._stopAllTTS();
+
+    // 3. Close TTS WebSocket if still open (belt-and-suspenders after _stopAllTTS)
+    if (this._ttsWs) {
+        if (this._ttsWs.readyState === WebSocket.OPEN || this._ttsWs.readyState === WebSocket.CONNECTING) {
+            try { this._ttsWs.close(); } catch (_) {}
+        }
+        this._ttsWs = null;
+    }
+
+    // 4. Close/suspend shared TTS AudioContext
+    if (_sharedTtsCtx && _sharedTtsCtx.state !== 'closed') {
+        _sharedTtsCtx.close().catch(function() {});
+        _sharedTtsCtx = null;
+    }
+
+    // 5. Stop microphone stream tracks (defensive — stopRecording should have done this)
+    if (this._stream) {
+        this._stream.getTracks().forEach(function(t) { t.stop(); });
+        this._stream = null;
+    }
+
+    // 6. Clear pending timeouts
+    if (this._ttsEndFallback) {
+        clearTimeout(this._ttsEndFallback);
+        this._ttsEndFallback = null;
+    }
+    if (this._processingTimeout) {
+        clearTimeout(this._processingTimeout);
+        this._processingTimeout = null;
+    }
+    if (this._errorTimeout) {
+        clearTimeout(this._errorTimeout);
+        this._errorTimeout = null;
+    }
+
+    // 7. Clear any dynamic error timeouts (_errTimeout_*)
+    var self = this;
+    Object.keys(this).forEach(function(key) {
+        if (key.indexOf('_errTimeout_') === 0 && self[key]) {
+            clearTimeout(self[key]);
+            self[key] = null;
+        }
+    });
+
+    // 8. Stop timer and level animation
+    this._stopTimer();
+    this._stopLevelAnimation();
+
+    // 9. Hide stop bar and processing indicator
+    this._hideStopBar();
+    if (this._processingIndicator && this._processingIndicator.parentElement) {
+        this._processingIndicator.remove();
+    }
+    this._processingIndicator = null;
+
+    // 10. Reset internal state
+    this.ws = null;
+    this.isRecording = false;
+    this.currentAudio = null;
+    this.currentBlobUrl = null;
+    this._audioCtx = null;
+    this._ttsPlaying = false;
+    this._ttsGeneration = 0;
+    this._finalTranscript = '';
+    this._sttAudioCtx = null;
+    this._source = null;
+    this._scriptProcessor = null;
+    this._workletNode = null;
+    this._analyser = null;
+};
+
+// ============================================
 // Initialization
 // ============================================
+
+var _beforeUnloadRegistered = false;
+
 function init() {
     // Prevent double-init if script is re-executed (e.g. HTMX swap)
     if (window.voiceManager) return;
     var manager = new VoiceManager();
     manager.init();
     window.voiceManager = manager;
+
+    // Register beforeunload handler exactly once
+    if (!_beforeUnloadRegistered) {
+        _beforeUnloadRegistered = true;
+        window.addEventListener('beforeunload', function() {
+            if (window.voiceManager) {
+                window.voiceManager.destroy();
+            }
+        });
+    }
 }
 
 if (document.readyState === 'loading') {
