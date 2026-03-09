@@ -5,7 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.19.0] - 2026-03-02
+## [Unreleased]
+
+### Fixed
+- **iOS TTS fails after first playback**: Always call `AudioContext.resume()` on every user gesture regardless of reported state — iOS Safari can report `state='running'` but silently refuse to produce audio after a TTS session ends
+- **TTS race condition**: Added generation counter to prevent stale cleanup closures from corrupting active TTS sessions when WebSocket `onclose` fires asynchronously
+- **TTS WebSocket leak on iOS**: `_stopTTS()` now closes WebSockets in `CONNECTING` state (iOS has slower connections, so WS stays in CONNECTING longer)
+
+## [0.20.0] - 2026-03-09
+
+### Added - Phase 20: Spanish-Inspired Themes
+- **4 Spanish culture themes** replacing 3 Nordic themes: Azulejo (cool Mediterranean blue), Terracotta (warm earth tones, default), Flamenco (warm sunset palette), Sangria (deep berry reds)
+- **Theme switcher** updated in chat menu with 4 color-coded buttons
+- **Design doc**: `docs/design/phase20-spanish-themes.md` with color palette specs and accessibility notes
+- **13 screenshots retaken** with new themes across chat, lessons, auth, and menu views
+
+### Removed
+- **3 Nordic themes** (Dark, Light, Ocean) replaced entirely by Spanish-inspired themes
+- **22 stale screenshots** from `docs/screenshots/` (old Nordic themes, desktop shots, unused variants)
+
+### Changed
+- **README.md**: Updated theme section, feature descriptions, test counts, and screenshot references
+- **tasks.md**: Corrected theme names, test counts, and phase descriptions
+
+## [0.19.0] - 2026-03-09
 
 ### Added - Phase 19: Conversational Lesson Delivery
 - **Conversational lesson chat** (`/chat/lesson/{lesson_id}`): Hermano teaches YAML lessons through the chat UI instead of a static lesson player. Lessons flow through a phase machine: intro → teaching → exercise_ask → exercise_eval → complete
@@ -17,12 +40,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Lesson progress SSE events**: `lesson_progress`, `exercise_result`, and `lesson_complete` events streamed post-response for UI updates
 - **Lesson completion persistence**: Authenticated users get scores and vocabulary persisted via `complete_lesson_and_persist()`
 - **Lesson completion UI** (`src/templates/partials/lesson_complete.html`): Celebration screen with score, vocab count, next lesson link, practice with Hermano button
+- **CEFR teaching adjustments**: `TEACHING_ADJUSTMENTS` dict in `prompts_lesson_chat.py` with 4 levels (A0/A1/A2/B1), injected into all lesson prompts via `{teaching_adjustments}` placeholder
 - **68 new tests**: `tests/agent/nodes/test_lesson_chat.py` (45 tests) and `tests/api/routes/test_lesson_chat.py` (23 tests)
 - **Design doc**: `docs/design/phase19-conversational-lessons.md` with architecture and phase machine documentation
 
+### Fixed
+- **Lesson progress bar**: `_build_lesson_ui()` accepts step override, computes comprehensive `progress` field; each handler passes post-advance state
+- **Checkpoint state persistence**: Route checks for existing checkpoint, only sends full init on first invocation
+- **Header layout in lesson mode**: `visibility: hidden` instead of `display: none` for selectors
+- **Word bank click-to-insert**: Fixed nonce-based CSP blocking inline event handlers
+
 ### Changed
-- **Test count**: 2123 Python tests (up from 2055), 189 JS tests (up from 188)
+- **Test count**: 2,150 Python tests (up from 2,055), 193 JS tests (up from 189)
 - **Source files**: 63 mypy-checked source files (up from 58)
+
+## [0.18.1] - 2026-03-02
+
+### Fixed - P3 Audit Remediation (7 LOW severity items, B18-B24)
+- **Workspace cleanup** (B18-B19): Deleted 8 orphan `e2e-*.png` screenshots and 17 stale local branches
+- **Dependency management** (B20): Evaluated `node_modules` (53M is minimal), pinned exact npm versions, added `.npmrc`
+- **Cache-Control headers** (B21): Static `/static/` assets get `max-age=3600` (debug) or `max-age=86400` (production) via `SecurityHeadersMiddleware`
+- **Voice endpoint docs** (B22): ~350 lines documenting `/ws/transcribe`, `/ws/speak`, `POST /api/speak` in `docs/api.md`
+- **Voice architecture docs** (B23): ~290 lines covering STT/TTS data flows, proxy pattern, error handling in `docs/architecture.md`
+- **Voice integration tests** (B24): 67 transport-level WebSocket tests in `tests/api/routes/test_voice_integration.py`
+
+## [0.18.0] - 2026-03-01
+
+### Fixed - P2 Audit Remediation (10 MEDIUM severity items, B8-B17)
+- **Nonce-based CSP** (B8): `'unsafe-inline'` replaced with per-request nonce for all inline scripts; `'unsafe-eval'` retained for Tailwind CDN only
+- **Voice rate limiting** (B9): REST `@rate_limited` decorator + WebSocket per-connection sliding window limiter
+- **LangGraph compilation caching** (B10): Compiled graphs cached per checkpointer instance
+- **ChatAnthropic caching** (B11): LLM instances cached per profile via `@lru_cache`
+- **ReviewService server-side queries** (B12): Replaced full-table scans with server-side PostgREST queries
+- **Dead code verification** (B13): Scan confirmed clean — no changes needed
+- **Narrowed exception handling** (B14): `except Exception:` replaced with specific types in voice routes
+- **Supabase admin singleton** (B15): `get_supabase_admin()` cached with `@lru_cache`
+- **Pydantic V2 migration** (B16): `class Config` → `model_config = ConfigDict(...)` across all models
+- **Structured JSON logging** (B17): `python-json-logger` with `LOG_FORMAT=json` setting for production observability
+
+## [0.17.0] - 2026-02-26
+
+### Fixed - P1 Audit Remediation (7 HIGH severity items, B1-B7)
+- **WebSocket auth** (B1): JWT authentication enforced on `/ws/transcribe` and `/ws/speak` — reject 4001 on invalid credentials
+- **CSRF middleware** (B2): OWASP custom-header pattern — POST/PUT/DELETE/PATCH require `HX-Request: true` or `X-Requested-With: XMLHttpRequest`
+- **VocabularyRepository** (B3): Added `get_by_id()` single-row lookup method
+- **Checkpointer documentation** (B4): Singleton pattern documented in `src/agent/checkpointer.py`
+- **Layer architecture** (B5): Canonical modules at `src/` level (`config.py`, `validation.py`, `db/client.py`) with re-export shims in `src/api/`
+- **ReviewService repository pattern** (B6): Uses repository exclusively, no direct Supabase calls
+- **Lesson completion extraction** (B7): Business logic extracted from `lessons.py` (817→468 lines) into `src/services/lesson_completion.py`
 
 ## [0.16.0] - 2026-02-25
 
@@ -63,6 +128,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Security headers**: `Permissions-Policy: microphone=(self)` for voice STT
 - **Dependencies**: Added `deepgram-sdk>=6.0.0`, `httpx>=0.25.0`, `websockets>=13.0`
+
+## [0.14.1] - 2026-02-23
+
+### Added - Phase 15: SSE Streaming
+- **Server-Sent Events**: Real-time chat token streaming via `sse-starlette`
+- **Streaming endpoint** (`POST /chat/stream`): Replaces synchronous POST with SSE stream for progressive AI response rendering
+- **Streaming client** (`src/static/js/modules/stream.js`): Client-side SSE parser with ReadableStream API, streaming bubble with cursor, throttled auto-scroll
+- **Token-by-token rendering**: AI responses appear incrementally with a blinking cursor, replacing the "Thinking..." spinner
+- **Feedback sections**: Grammar, scaffolding, and pronunciation feedback rendered as server-side HTML and injected after response completion
+- **Abort handling**: 60-second timeout with `AbortController`, offline detection, graceful error display
+
+### Changed
+- **Chat form submission**: Intercepted by streaming module — sends via `fetch()` instead of HTMX POST
+- **Dependencies**: Added `sse-starlette>=1.8.0`
 
 ## [0.14.0] - 2026-02-22
 
