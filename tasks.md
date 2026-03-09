@@ -17,6 +17,7 @@
 **Phase**: Phase 19 — Conversational Lesson Delivery
 **Test Coverage**: 2312+ tests passing (2123 Python + 189 JS), 97% coverage
 **Phase 19**: 2026-03-02 → Conversational lesson delivery via chat UI with phase machine
+**Latest Commits**: CLT pedagogy in README, SECRET_KEY fix, 5 CRITICAL audit findings resolved
 **Last Audit**: 2026-02-26 (multi-dimensional: security, performance, architecture, workspace hygiene)
 **P3 Remediation**: 2026-03-02 → 7/7 LOW severity items complete (B18-B24)
 **P2 Remediation**: 2026-02-27 → 10/10 MEDIUM severity items complete (B8-B17)
@@ -548,6 +549,10 @@ Design docs: `docs/design/phase*.md` | ADRs: `docs/adr/ADR-*.md`
 ---
 
 ## Notes for Future Agents
+
+### Project Status
+- Phase 19 conversational lessons are complete and merged. The known issue is exercise string matching being too strict (FillBlank/Translate exercises — LLM praises correct answers but badge shows "Not quite").
+- All 24 audit findings (P1 HIGH + P2 MEDIUM + P3 LOW) are resolved.
 
 ### Quick Reference
 - **Personality**: "Hermano" — friendly big brother tutor (see `src/agent/prompts.py`)

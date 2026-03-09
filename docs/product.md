@@ -498,12 +498,13 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 13** | Mobile Responsive | Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Complete |
 | **Phase 14** | Learning Paths | Structured A0→B1 progression with adaptive daily recommendations | ✅ Complete |
 | **Phase 15** | SSE Streaming | Real-time token streaming via Server-Sent Events; POST /chat/stream endpoint, frontend ReadableStream with blinking cursor, feedback sections arrive as server-rendered HTML after response completes; existing POST /chat preserved as fallback | ✅ Complete |
-
-### Next Up
-
-| Phase | Focus | Status |
-|-------|-------|--------|
-| **Phase 17** | Voice Conversation | 🔜 Planned | Speak to Hermano and hear him reply — Deepgram Nova-3 STT + Aura-2 TTS, WebSocket streaming, browser microphone capture |
+| **Phase 16** | ES Module Refactor | 6 ES modules, 186 Vitest tests, mobile hardening, TTS UX improvements | ✅ Complete |
+| **Phase 17** | Voice Conversation | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, browser microphone capture | ✅ Complete |
+| **Phase 18** | JavaScript Testing | Vitest test suite (189 tests, ~90% coverage) | ✅ Complete |
+| **Phase 19** | Conversational Lessons | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete), CEFR teaching adjustments, progress bar, checkpoint-aware inputs | ✅ Complete |
+| **P1 Audit** | Audit Remediation (HIGH) | 7 HIGH severity items — WebSocket auth, CSRF middleware, layer violations, SRP extraction | ✅ Complete |
+| **P2 Audit** | Audit Remediation (MEDIUM) | 10 MEDIUM severity items — CSP nonce, rate limiting, caching, JSON logging | ✅ Complete |
+| **P3 Audit** | Audit Remediation (LOW) | 7 LOW severity items — Cache-Control headers, voice docs, integration tests, cleanup | ✅ Complete |
 
 ### Future Ideas
 

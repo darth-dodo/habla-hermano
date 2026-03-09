@@ -29,6 +29,26 @@
 | Guest Session Persistence | ✅ Pass | Guest lesson completion creates session cookie |
 | Guest Progress View | ✅ Pass | Guest can view their progress without login |
 | Guest Empty State | ✅ Pass | Empty state shown for guests with no session |
+| SSE Token Streaming | 📋 Plan | Chat responses stream tokens via Server-Sent Events |
+| Streaming Cursor | 📋 Plan | Blinking cursor visible during token streaming |
+| Streaming Feedback Events | 📋 Plan | Grammar, pronunciation, scaffold events after stream |
+| Voice Mic Button | 📋 Plan | Microphone button renders when voice is configured |
+| Voice STT Transcription | 📋 Plan | Speech-to-text populates input field |
+| Voice TTS Playback | 📋 Plan | TTS playback button on AI responses |
+| Voice Speed Control | 📋 Plan | Speed selector supports 0.75x, 1x, 1.25x |
+| Learning Path Page | 📋 Plan | Learning paths render with 4 CEFR level sections |
+| Path Progress Indicators | 📋 Plan | Progress bars show completion per level |
+| Continue Path Navigation | 📋 Plan | "Continue Path" navigates to next lesson |
+| Review Warmup Prompt | 📋 Plan | Review session warmup appears in chat |
+| Review Question Types | 📋 Plan | Translate, fill-blank, recognize questions render |
+| SM-2 Scoring Update | 📋 Plan | SM-2 scores update after review completion |
+| Lesson Chat Launch | 📋 Plan | "Learn with Hermano" button opens lesson chat |
+| Lesson Chat Page Load | 📋 Plan | Lesson chat renders with progress bar and header |
+| Lesson Chat Auto-Start | 📋 Plan | Auto-start sends /start triggering Hermano intro |
+| Lesson Teaching Phase | 📋 Plan | Teaching phase delivers batched content steps |
+| Lesson Exercise Interaction | 📋 Plan | Type answer and receive feedback in lesson chat |
+| Lesson Completion Panel | 📋 Plan | Completion shows score, vocab count, next link |
+| Lesson Exit Button | 📋 Plan | "Exit Lesson" returns to lesson catalog |
 
 ---
 
@@ -36,8 +56,8 @@
 
 - **URL**: http://127.0.0.1:8000
 - **Browser**: Chromium (via Playwright MCP)
-- **Date**: 2026-01-28 (Phase 7 + Phase 8)
-- **Previous Dates**: 2026-01-27 (Phase 6), 2025-01-18 (Phase 3), 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
+- **Date**: 2026-03-09 (Phase 19)
+- **Previous Dates**: 2026-01-28 (Phase 7 + Phase 8), 2026-01-27 (Phase 6), 2025-01-18 (Phase 3), 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
 
 ---
 
@@ -701,18 +721,324 @@ Empty State Display:
 
 ---
 
+### 12. SSE Streaming (Phase 15)
+
+**Purpose**: Verify chat responses stream tokens in real-time via Server-Sent Events rather than returning a single block response.
+
+#### 12a. Token Streaming
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/
+2. Select "A1 Beginner" from dropdown
+3. Type: "Hola, ¿cómo estás?"
+4. Click Send
+5. Observe response area during generation
+
+**Expected Behavior**:
+- Response text appears incrementally (token by token)
+- Blinking cursor indicator visible at end of streaming text
+- Cursor disappears when streaming completes
+- Full response is present after stream finishes
+- No page reload or flash during streaming
+
+---
+
+#### 12b. Feedback Events After Stream
+
+**Steps**:
+1. Complete a streaming chat exchange with a grammar error
+2. Wait for `response_complete` SSE event
+3. Verify feedback sections render after stream ends
+
+**Expected Behavior**:
+- `token` events deliver response text incrementally
+- `response_complete` event signals end of AI response
+- Grammar feedback section appears after stream completes (not during)
+- Pronunciation feedback renders if applicable
+- Scaffold section renders for A0-A1 levels after stream completes
+
+---
+
+### 13. Voice Conversation (Phase 17)
+
+**Purpose**: Verify voice input (STT) and output (TTS) features powered by Deepgram via WebSocket proxy.
+
+#### 13a. Microphone Button
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/
+2. Verify microphone button appears near the message input
+
+**Expected Behavior**:
+- Microphone icon button renders next to send button
+- Button is visually distinct and touch-friendly (48px minimum)
+- Tooltip or label indicates "Voice input" or similar
+- Button disabled state when voice is not available
+
+---
+
+#### 13b. Speech-to-Text Transcription
+
+**Steps**:
+1. Click microphone button to start recording
+2. Speak a Spanish phrase (e.g., "Hola, me llamo Maria")
+3. Stop recording
+
+**Expected Behavior**:
+- Microphone button shows active recording state (pulsing animation or color change)
+- Transcribed text populates the message input field
+- User can edit transcribed text before sending
+- Recording stops on button click or silence timeout
+
+---
+
+#### 13c. TTS Playback
+
+**Steps**:
+1. Complete a chat exchange with AI response
+2. Locate playback button on AI response message
+3. Click playback button
+
+**Expected Behavior**:
+- Speaker/play icon button appears on AI response bubbles
+- Clicking plays audio of the AI response via Deepgram TTS
+- Playback button shows active state during audio playback
+- Audio stops when playback completes or button clicked again
+
+---
+
+#### 13d. Speed Control
+
+**Steps**:
+1. Locate speed control selector (near voice controls)
+2. Change speed setting
+
+**Expected Behavior**:
+- Speed selector offers options: 0.75x, 1x, 1.25x
+- Default speed is 1x
+- Changing speed affects subsequent TTS playback
+- Speed preference persists within the session
+
+---
+
+### 14. Learning Paths (Phase 14)
+
+**Purpose**: Verify structured A0-to-B1 learning path page renders with progress tracking and navigation.
+
+#### 14a. Learning Path Page
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/paths/ (or via hamburger menu)
+2. Verify page renders with CEFR level sections
+
+**Expected Behavior**:
+- Page title indicates "Learning Path" or similar
+- 4 CEFR level sections displayed: A0, A1, A2, B1
+- Each section lists lessons in recommended order
+- Lessons show completion status (completed, in-progress, locked)
+- Visual progression from beginner to intermediate
+
+---
+
+#### 14b. Path Progress Indicators
+
+**Steps**:
+1. Complete one or more lessons
+2. Navigate to learning paths page
+3. Verify progress indicators update
+
+**Expected Behavior**:
+- Progress bar per CEFR level shows percentage complete
+- Completed lessons marked with checkmark or filled indicator
+- Current/next recommended lesson highlighted
+- Overall path completion percentage visible
+
+---
+
+#### 14c. Continue Path Navigation
+
+**Steps**:
+1. Complete a lesson and return to paths page
+2. Click "Continue Path" or next recommended lesson
+3. Verify navigation to correct lesson
+
+**Expected Behavior**:
+- "Continue Path" button navigates to the next uncompleted lesson
+- Lesson opens in player or lesson chat (depending on context)
+- Path state updates after lesson completion
+- Navigation respects prerequisite ordering
+
+---
+
+### 15. Spaced Repetition Review (Phase 12)
+
+**Purpose**: Verify SM-2 spaced repetition review sessions with vocabulary recall exercises.
+
+#### 15a. Review Warmup Prompt
+
+**Steps**:
+1. Complete several lessons to build vocabulary
+2. Wait for review interval to trigger (or navigate to review)
+3. Verify review warmup prompt appears in chat
+
+**Expected Behavior**:
+- Chat displays review warmup message from Hermano
+- Message indicates number of words due for review
+- Clear call-to-action to begin review session
+- Review context distinguished from regular chat
+
+---
+
+#### 15b. Review Question Types
+
+**Steps**:
+1. Start a review session
+2. Progress through review questions
+3. Verify different question types render
+
+**Expected Behavior**:
+- Translate questions: show word, ask for translation
+- Fill-blank questions: sentence with missing word to complete
+- Recognize questions: multiple choice word identification
+- Each question type renders with appropriate input controls
+- Feedback provided after each answer (correct/incorrect)
+
+---
+
+#### 15c. SM-2 Scoring Update
+
+**Steps**:
+1. Complete a full review session
+2. Answer mix of correct and incorrect
+3. Verify scoring updates
+
+**Expected Behavior**:
+- Correct answers increase ease factor and extend interval
+- Incorrect answers reduce interval for sooner review
+- Review summary shows performance statistics
+- Next review date calculated based on SM-2 algorithm
+- Vocabulary items updated with new review schedule
+
+---
+
+### 16. Conversational Lesson Mode (Phase 19)
+
+**Purpose**: Verify the conversational lesson chat system where Hermano teaches lessons through a phase machine (intro, teaching, exercise, complete).
+
+#### 16a. Lesson Chat Launch
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/lessons/
+2. Locate a lesson card
+3. Click "Learn with Hermano" button on the card
+
+**Expected Behavior**:
+- "Learn with Hermano" button visible on each lesson card
+- Button navigates to /lessons/{lesson_id}/chat route
+- Lesson chat page loads without errors
+- Distinct from the static lesson player
+
+---
+
+#### 16b. Lesson Chat Page Load
+
+**Steps**:
+1. Navigate to a lesson chat page (e.g., /lessons/es-a0-greetings/chat)
+2. Verify page structure
+
+**Expected Behavior**:
+- Lesson header displays lesson title and level badge
+- Progress bar visible at top showing current phase progress
+- Chat area renders empty (before auto-start)
+- Language and level selectors hidden (lesson determines these)
+- "Exit Lesson" button accessible in header or navigation
+
+---
+
+#### 16c. Auto-Start and Teaching Flow
+
+**Steps**:
+1. Open a lesson chat page
+2. Observe auto-start behavior
+3. Wait for Hermano's introduction
+4. Follow through teaching phase
+
+**Expected Behavior**:
+- Page automatically sends /start message on load
+- Hermano responds with lesson introduction (intro phase)
+- Introduction includes lesson topic and what will be covered
+- Teaching phase delivers vocabulary and grammar in batched steps
+- Content adapts to CEFR level (A0 gets more English, B1 mostly target language)
+- Progress bar advances as teaching steps complete
+
+---
+
+#### 16d. Exercise Interaction
+
+**Steps**:
+1. Progress through teaching phase until exercise phase
+2. Hermano presents an exercise (translate, fill-blank, etc.)
+3. Type an answer in the input field
+4. Submit answer
+
+**Expected Behavior**:
+- Exercise prompt clearly indicates what to do
+- Input field accepts free-text answers
+- Hermano provides feedback on answer (correct/incorrect)
+- Feedback includes explanation and correct answer if wrong
+- Progress bar reflects exercise completion
+
+---
+
+#### 16e. Completion Panel
+
+**Steps**:
+1. Complete all exercises in a lesson chat
+2. Verify completion phase renders
+
+**Expected Behavior**:
+- Completion message from Hermano congratulates the learner
+- Score summary displays (e.g., "3/4 exercises correct")
+- Vocabulary count shows words covered in the lesson
+- "Next Lesson" link navigates to the next lesson in sequence
+- Progress bar shows 100% complete
+- Lesson marked as completed in progress tracking
+
+---
+
+#### 16f. Exit Lesson
+
+**Steps**:
+1. During any phase of a lesson chat
+2. Click "Exit Lesson" button
+
+**Expected Behavior**:
+- Button visible and accessible throughout lesson chat
+- Clicking navigates back to lesson catalog (/lessons/)
+- No unsaved progress warning (lesson state persisted via checkpoint)
+- Lesson catalog page loads correctly
+
+---
+
 ## Next Steps
 
 1. **Automated Test Suite**: Convert manual tests to Playwright test scripts
-2. **Mobile Testing**: Test on 375px viewport
-3. **Error Handling**: Test API failures, network issues
-4. ~~**Conversation Persistence**: Test when checkpointing is added (Phase 4)~~ ✅ Complete
-5. ~~**Grammar Feedback**: Test analyze node when added (Phase 2)~~ ✅ Complete
-6. ~~**Scaffold Node**: Test word bank and scaffolding UI (Phase 3)~~ ✅ Complete
-7. ~~**Micro-Lessons**: Test lesson player and exercises (Phase 6)~~ ✅ Complete
-8. ~~**Hamburger Menu**: Test navigation consolidation~~ ✅ Complete
-9. ~~**Progress Dashboard**: Test dashboard stats and vocabulary (Phase 7)~~ ✅ Complete
-10. ~~**Guest Sessions**: Test session persistence and progress (Phase 8)~~ ✅ Complete
-11. **German/French Lessons**: Test lesson content for additional languages
-12. **Authenticated User Progress**: Test progress sync with Supabase auth
-13. **Progress Data Migration**: Test guest-to-authenticated data transfer
+2. **Error Handling**: Test API failures, network issues
+3. ~~**Conversation Persistence**: Test when checkpointing is added (Phase 4)~~ ✅ Complete
+4. ~~**Grammar Feedback**: Test analyze node when added (Phase 2)~~ ✅ Complete
+5. ~~**Scaffold Node**: Test word bank and scaffolding UI (Phase 3)~~ ✅ Complete
+6. ~~**Micro-Lessons**: Test lesson player and exercises (Phase 6)~~ ✅ Complete
+7. ~~**Hamburger Menu**: Test navigation consolidation~~ ✅ Complete
+8. ~~**Progress Dashboard**: Test dashboard stats and vocabulary (Phase 7)~~ ✅ Complete
+9. ~~**Guest Sessions**: Test session persistence and progress (Phase 8)~~ ✅ Complete
+10. ~~**Spaced Repetition**: Test SM-2 review sessions (Phase 12)~~ ✅ Complete
+11. ~~**Learning Paths**: Test structured A0→B1 progression (Phase 14)~~ ✅ Complete
+12. ~~**SSE Streaming**: Test real-time token streaming (Phase 15)~~ ✅ Complete
+13. ~~**Voice Conversation**: Test Deepgram STT/TTS integration (Phase 17)~~ ✅ Complete
+14. ~~**Conversational Lessons**: Test lesson chat phase machine (Phase 19)~~ ✅ Complete
+15. **Conversational Lesson Resumption**: Test checkpoint recovery for interrupted lesson chats
+16. **Cross-Browser Voice Testing**: Validate STT/TTS across Chrome, Firefox, Safari
+17. **Mobile Viewport E2E Testing**: Test on 375px viewport with safe areas and touch targets
+18. **German/French Lessons**: Test lesson content for additional languages
+19. **Authenticated User Progress**: Test progress sync with Supabase auth
+20. **Progress Data Migration**: Test guest-to-authenticated data transfer

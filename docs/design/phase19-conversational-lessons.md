@@ -378,6 +378,25 @@ done            → {}
 
 ---
 
+## Known Issues
+
+### Exercise String Matching Too Strict
+
+**Status**: Open
+**Severity**: Low (cosmetic mismatch, not a learning blocker)
+
+`FillBlankExercise.check_answer()` and `TranslateExercise.check_answer()` in `src/lessons/models.py` use strict normalized string comparison. This occasionally produces a mismatch where:
+- The LLM correctly praises the answer in its feedback text ("Nice one! That's right!")
+- But the deterministic `is_correct` boolean returns `false`, causing the UI badge to show "Not quite"
+
+**Example**: User types "el mercado" for a fill-blank expecting "mercado" — the article causes a mismatch even though the core word is correct.
+
+**Impact**: The score may undercount correct answers for learners who include articles, pronouns, or minor variations. The LLM feedback is usually more accurate than the badge, which can be confusing.
+
+**Potential fix**: Add fuzzy matching with normalized comparison (strip articles, handle accents, allow minor variations) or switch to LLM-as-judge for final correctness determination.
+
+---
+
 ## Future Work (Bridges 1-3)
 
 This phase focuses exclusively on Bridge 4 (conversational lesson delivery). Three additional bridges are planned as follow-up work:
