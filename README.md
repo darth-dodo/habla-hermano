@@ -38,9 +38,9 @@ Most language apps drill vocabulary in isolation. You memorize words, ace flashc
 ## Talk, Type, or Both
 
 <p align="center">
-  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input with speed controls" width="270"/>
+  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input with chat" width="270"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Light theme with voice" width="270"/>
+  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Voice controls and speed selector" width="270"/>
 </p>
 
 Type your messages or tap the microphone to speak. Hermano understands both.
@@ -172,24 +172,26 @@ Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced 
 
 ---
 
-## Three Beautiful Themes
+## Four Spanish-Inspired Themes
+
+**Azulejo**, **Terracotta**, **Flamenco**, and **Sangria** — warm, culturally-inspired palettes replacing the original Nordic themes. WCAG AA contrast compliance across all four. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-chat-home-voice.png" alt="Dark theme" width="200"/>
+  <img src="docs/screenshots/chat-terracotta-mobile.png" alt="Chat in Terracotta theme" width="200"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Light theme" width="200"/>
+  <img src="docs/screenshots/lessons-sangria-mobile.png" alt="Lessons in Sangria theme" width="200"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Ocean theme" width="200"/>
+  <img src="docs/screenshots/signup-azulejo-mobile.png" alt="Signup in Azulejo light theme" width="200"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/menu-flamenco-mobile.png" alt="Theme menu in Flamenco theme" width="200"/>
 </p>
-
-**Dark**, **Light**, and **Ocean** — all with a clean Nordic Minimal aesthetic. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
 
 ---
 
 ## Guest Access
 
 <p align="center">
-  <img src="docs/screenshots/mobile-login.png" alt="Login screen with guest access" width="270"/>
+  <img src="docs/screenshots/login-flamenco-mobile.png" alt="Login screen with guest access" width="270"/>
 </p>
 
 No sign-up required to start chatting. Try Hermano immediately as a guest — create a free account when you're ready to track lessons, progress, and spaced repetition.
@@ -225,7 +227,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 | **Auth** | Supabase Auth (email/password + guest sessions) |
 | **Database** | PostgreSQL via Supabase |
 | **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
-| **Testing** | pytest + Vitest (2300+ tests, 97% coverage) |
+| **Testing** | pytest (2,150 tests) + Vitest (193 tests), 94% coverage |
 
 ### Architecture Highlights
 
@@ -236,7 +238,7 @@ Open [http://localhost:8000](http://localhost:8000) and start your first convers
 - **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
 - **Voice conversation** — Deepgram STT/TTS via WebSocket proxy with floating stop controls and speed adjustment
 - **Conversational lesson delivery** — Phase machine (intro → teaching → exercise → complete) inside a LangGraph node teaches structured lessons through the chat UI
-- **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (186 tests, ~90% coverage)
+- **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (193 tests)
 
 ---
 

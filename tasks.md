@@ -15,7 +15,7 @@
 
 **Branch**: `feature/phase19-conversational-lessons`
 **Phase**: Phase 19 — Conversational Lesson Delivery
-**Test Coverage**: 2312+ tests passing (2123 Python + 189 JS), 97% coverage
+**Test Coverage**: 2,343 tests passing (2,150 Python + 193 JS)
 **Phase 19**: 2026-03-02 → Conversational lesson delivery via chat UI with phase machine
 **Latest Commits**: CLT pedagogy in README, SECRET_KEY fix, 5 CRITICAL audit findings resolved
 **Last Audit**: 2026-02-26 (multi-dimensional: security, performance, architecture, workspace hygiene)
@@ -38,7 +38,7 @@
 | Progress Dashboard | 7 | Stats, vocabulary, charts |
 | Guest Sessions | 8 | Chat-only access, auth-gated data features |
 | AI-Enhanced Lessons | 9 | LangGraph subgraphs, Hermano personalization |
-| Nordic Minimal Design | 11 | 3 themes (Light/Dark/Ocean), pronunciation tips |
+| Spanish-Inspired Themes | 11+20 | 4 themes (Azulejo/Terracotta/Flamenco/Sangria), pronunciation tips |
 | Spaced Repetition | 12 | SM-2 algorithm, chat weaving, dedicated review mode |
 | Mobile Responsive | 13 | Safe areas, dynamic viewport, touch-optimized |
 | Learning Paths | 14 | Static paths + adaptive daily recommendations |
@@ -49,7 +49,7 @@
 | Layer Architecture | P1 | Canonical modules at src/ level (config, validation, db/client), re-export shims |
 | Lesson Completion Service | P1 | Business logic extracted from lessons.py → src/services/lesson_completion.py |
 | Voice Conversation | 17 | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, graceful degradation |
-| ES Module Architecture | 16 | 6 JS modules, 186 Vitest tests, CI/CD integration |
+| ES Module Architecture | 16 | 6 JS modules, 193 Vitest tests, CI/CD integration |
 | Voice Improvements | 16 | Floating TTS stop bar, concurrent TTS fix, mobile click reliability |
 | CSP Nonce | P2 | Per-request nonce replaces `unsafe-inline` in script-src, all script tags nonced |
 | Voice Rate Limiting | P2 | REST: `@rate_limited` decorator; WebSocket: per-connection sliding window limiter |
@@ -336,12 +336,12 @@ All items resolved as part of Phase 16 ES Module Migration.
 | 8 | Guest Sessions | Session cookies, auth-gated data features |
 | 9 | AI-Enhanced Lessons | LangGraph subgraphs, Hermano personalization |
 | 10 | Content Expansion | 60 lessons (3 lang x 4 levels x 5 categories) |
-| 11 | Nordic Design | 3 themes, pronunciation tips, collapsible UI |
+| 11 | Theme System | Pronunciation tips, collapsible UI (originally Nordic, now Spanish-inspired) |
 | 12 | Spaced Repetition | SM-2 algorithm, review subgraphs, chat weaving |
 | 13 | Mobile Responsive | Safe areas, dynamic viewport, touch-optimized |
 | 14 | Learning Paths | PathService, AdaptiveService, learn routes (99 tests) |
 | 15 | SSE Streaming | Real-time chat via Server-Sent Events |
-| 16 | ES Module Migration | 6 JS modules, 186 Vitest tests, mobile hardening, TTS UX |
+| 16 | ES Module Migration | 6 JS modules, 193 Vitest tests, mobile hardening, TTS UX |
 | 17 | Voice Conversation | Deepgram STT/TTS, WebSocket proxy, graceful degradation |
 | 19 | Conversational Lessons | Phase machine in chat, 5 prompts, exercise eval, 68 tests |
 
