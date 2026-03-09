@@ -74,6 +74,12 @@ class LessonMetadata(BaseModel):
     language: str
     level: LessonLevel
     estimated_minutes: int = 2
+
+    @property
+    def full_id(self) -> str:
+        """Fully qualified ID: {language}/{level}/{id}."""
+        return f"{self.language}/{self.level.value}/{self.id}"
+
     category: str | None = None
     tags: list[str] = Field(default_factory=list)
     prerequisites: list[str] = Field(default_factory=list)

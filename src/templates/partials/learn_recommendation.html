@@ -52,7 +52,7 @@ Variables expected:
 
                 {% if recommendation.next_lesson %}
                 <a
-                    href="/lessons/{{ recommendation.next_lesson.metadata.id }}/play"
+                    href="/lessons/{{ recommendation.next_lesson.metadata.full_id }}/play"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-border text-text hover:bg-surface-overlay rounded-lg transition-colors duration-150 btn-press"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">

@@ -57,7 +57,7 @@ def _resolve_lesson_thread_id(
     return f"lesson:{new_id}:{lesson_id}", None, new_id
 
 
-@router.get("/{lesson_id}", response_class=HTMLResponse)
+@router.get("/{lesson_id:path}", response_class=HTMLResponse)
 async def lesson_chat_page(
     request: Request,
     templates: TemplatesDep,
