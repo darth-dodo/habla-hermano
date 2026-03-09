@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     PORT: int = 8000
 
+    # CORS: comma-separated origins for production (e.g. "https://habla-hermano.onrender.com")
+    # Leave empty for same-origin (server-rendered apps typically don't need cross-origin)
+    CORS_ALLOWED_ORIGINS: str = ""
+
     # Logging format: "text" for human-readable, "json" for structured logging
     LOG_FORMAT: Literal["text", "json"] = "text"
 

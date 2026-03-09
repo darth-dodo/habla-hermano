@@ -926,14 +926,115 @@ VoiceManager.prototype._restTTS = function(btn, text, voice, speed) {
 };
 
 // ============================================
+// Cleanup / Destroy
+// ============================================
+
+/**
+ * Fully tear down the VoiceManager: close WebSockets, release mic,
+ * suspend AudioContext, clear timers, and reset internal state.
+ * Safe to call multiple times — every check is defensive.
+ */
+VoiceManager.prototype.destroy = function() {
+    // 1. Stop any active recording (closes STT WebSocket, releases mic, etc.)
+    if (this.isRecording) {
+        this.stopRecording();
+    }
+
+    // 2. Stop any active TTS playback
+    this._stopAllTTS();
+
+    // 3. Close TTS WebSocket if still open (belt-and-suspenders after _stopAllTTS)
+    if (this._ttsWs) {
+        if (this._ttsWs.readyState === WebSocket.OPEN || this._ttsWs.readyState === WebSocket.CONNECTING) {
+            try { this._ttsWs.close(); } catch (_) {}
+        }
+        this._ttsWs = null;
+    }
+
+    // 4. Close/suspend shared TTS AudioContext
+    if (_sharedTtsCtx && _sharedTtsCtx.state !== 'closed') {
+        _sharedTtsCtx.close().catch(function() {});
+        _sharedTtsCtx = null;
+    }
+
+    // 5. Stop microphone stream tracks (defensive — stopRecording should have done this)
+    if (this._stream) {
+        this._stream.getTracks().forEach(function(t) { t.stop(); });
+        this._stream = null;
+    }
+
+    // 6. Clear pending timeouts
+    if (this._ttsEndFallback) {
+        clearTimeout(this._ttsEndFallback);
+        this._ttsEndFallback = null;
+    }
+    if (this._processingTimeout) {
+        clearTimeout(this._processingTimeout);
+        this._processingTimeout = null;
+    }
+    if (this._errorTimeout) {
+        clearTimeout(this._errorTimeout);
+        this._errorTimeout = null;
+    }
+
+    // 7. Clear any dynamic error timeouts (_errTimeout_*)
+    var self = this;
+    Object.keys(this).forEach(function(key) {
+        if (key.indexOf('_errTimeout_') === 0 && self[key]) {
+            clearTimeout(self[key]);
+            self[key] = null;
+        }
+    });
+
+    // 8. Stop timer and level animation
+    this._stopTimer();
+    this._stopLevelAnimation();
+
+    // 9. Hide stop bar and processing indicator
+    this._hideStopBar();
+    if (this._processingIndicator && this._processingIndicator.parentElement) {
+        this._processingIndicator.remove();
+    }
+    this._processingIndicator = null;
+
+    // 10. Reset internal state
+    this.ws = null;
+    this.isRecording = false;
+    this.currentAudio = null;
+    this.currentBlobUrl = null;
+    this._audioCtx = null;
+    this._ttsPlaying = false;
+    this._ttsGeneration = 0;
+    this._finalTranscript = '';
+    this._sttAudioCtx = null;
+    this._source = null;
+    this._scriptProcessor = null;
+    this._workletNode = null;
+    this._analyser = null;
+};
+
+// ============================================
 // Initialization
 // ============================================
+
+var _beforeUnloadRegistered = false;
+
 function init() {
     // Prevent double-init if script is re-executed (e.g. HTMX swap)
     if (window.voiceManager) return;
     var manager = new VoiceManager();
     manager.init();
     window.voiceManager = manager;
+
+    // Register beforeunload handler exactly once
+    if (!_beforeUnloadRegistered) {
+        _beforeUnloadRegistered = true;
+        window.addEventListener('beforeunload', function() {
+            if (window.voiceManager) {
+                window.voiceManager.destroy();
+            }
+        });
+    }
 }
 
 if (document.readyState === 'loading') {

@@ -1848,4 +1848,175 @@ describe('voice.js — VoiceManager', () => {
             expect(spy).toHaveBeenCalledWith(btn);
         });
     });
+
+    describe('destroy()', () => {
+        it('stops recording if active', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const spy = vi.spyOn(vm, 'stopRecording');
+            vm.isRecording = true;
+
+            vm.destroy();
+
+            expect(spy).toHaveBeenCalledOnce();
+        });
+
+        it('calls _stopAllTTS', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const spy = vi.spyOn(vm, '_stopAllTTS');
+
+            vm.destroy();
+
+            expect(spy).toHaveBeenCalledOnce();
+        });
+
+        it('closes TTS WebSocket if open', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const mockWs = new MockWebSocket('ws://test');
+            mockWs.readyState = MockWebSocket.OPEN;
+            mockWs.close = vi.fn();
+            vm._ttsWs = mockWs;
+
+            vm.destroy();
+
+            expect(mockWs.close).toHaveBeenCalled();
+            expect(vm._ttsWs).toBeNull();
+        });
+
+        it('does not throw if TTS WebSocket is already closed', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const mockWs = new MockWebSocket('ws://test');
+            mockWs.readyState = MockWebSocket.CLOSED;
+            vm._ttsWs = mockWs;
+
+            expect(() => vm.destroy()).not.toThrow();
+            expect(vm._ttsWs).toBeNull();
+        });
+
+        it('stops microphone stream tracks', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const stream = createMockMediaStream();
+            vm._stream = stream;
+
+            vm.destroy();
+
+            expect(stream._track.stop).toHaveBeenCalled();
+            expect(vm._stream).toBeNull();
+        });
+
+        it('clears _ttsEndFallback timeout', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            vm._ttsEndFallback = setTimeout(() => {}, 10000);
+
+            vm.destroy();
+
+            expect(vm._ttsEndFallback).toBeNull();
+        });
+
+        it('clears _processingTimeout', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            vm._processingTimeout = setTimeout(() => {}, 10000);
+
+            vm.destroy();
+
+            expect(vm._processingTimeout).toBeNull();
+        });
+
+        it('clears _errorTimeout', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            vm._errorTimeout = setTimeout(() => {}, 10000);
+
+            vm.destroy();
+
+            expect(vm._errorTimeout).toBeNull();
+        });
+
+        it('clears dynamic _errTimeout_ keys', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            vm['_errTimeout_mic-btn'] = setTimeout(() => {}, 10000);
+            vm['_errTimeout_anon'] = setTimeout(() => {}, 10000);
+
+            vm.destroy();
+
+            expect(vm['_errTimeout_mic-btn']).toBeNull();
+            expect(vm['_errTimeout_anon']).toBeNull();
+        });
+
+        it('resets internal state', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            vm.isRecording = true;
+            vm._ttsPlaying = true;
+            vm._finalTranscript = 'hello';
+            vm._ttsGeneration = 5;
+
+            vm.destroy();
+
+            expect(vm.isRecording).toBe(false);
+            expect(vm._ttsPlaying).toBe(false);
+            expect(vm._finalTranscript).toBe('');
+            expect(vm._ttsGeneration).toBe(0);
+            expect(vm.ws).toBeNull();
+            expect(vm.currentAudio).toBeNull();
+            expect(vm.currentBlobUrl).toBeNull();
+            expect(vm._audioCtx).toBeNull();
+            expect(vm._sttAudioCtx).toBeNull();
+            expect(vm._source).toBeNull();
+            expect(vm._scriptProcessor).toBeNull();
+            expect(vm._workletNode).toBeNull();
+            expect(vm._analyser).toBeNull();
+        });
+
+        it('is safe to call multiple times', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+
+            expect(() => {
+                vm.destroy();
+                vm.destroy();
+                vm.destroy();
+            }).not.toThrow();
+        });
+
+        it('does not throw when no state has been initialized', async () => {
+            setupVoiceDOMWithoutMic();
+            vm = await importVoice();
+
+            expect(() => vm.destroy()).not.toThrow();
+        });
+
+        it('does not call stopRecording when not recording', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const spy = vi.spyOn(vm, 'stopRecording');
+            vm.isRecording = false;
+
+            vm.destroy();
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('beforeunload handler', () => {
+        it('calls destroy on the voiceManager during beforeunload', async () => {
+            setupVoiceDOM();
+            vm = await importVoice();
+            const spy = vi.spyOn(vm, 'destroy');
+
+            window.dispatchEvent(new Event('beforeunload'));
+
+            // The handler may fire multiple times due to module re-imports across
+            // tests (each import registers a new listener). The important thing is
+            // that destroy was called at least once for the current manager.
+            expect(spy).toHaveBeenCalled();
+        });
+    });
 });
