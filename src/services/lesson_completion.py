@@ -30,6 +30,9 @@ from src.services.review import ReviewService
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
 
+    from src.api.auth import AuthenticatedUser
+    from src.lessons.models import AnyExercise
+
 
 def _bare_lesson_id(lesson_id: str) -> str:
     """Extract bare lesson ID from a full path ID.
@@ -39,8 +42,6 @@ def _bare_lesson_id(lesson_id: str) -> str:
     """
     return lesson_id.rsplit("/", 1)[-1] if "/" in lesson_id else lesson_id
 
-    from src.api.auth import AuthenticatedUser
-    from src.lessons.models import AnyExercise
 
 logger = logging.getLogger(__name__)
 

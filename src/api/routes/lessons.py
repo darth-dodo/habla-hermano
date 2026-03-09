@@ -337,7 +337,9 @@ async def get_enhanced_lesson_step(
     )
 
 
-@router.post("/{lesson_id:path}/exercise/{exercise_id}/submit/enhanced", response_class=HTMLResponse)
+@router.post(
+    "/{lesson_id:path}/exercise/{exercise_id}/submit/enhanced", response_class=HTMLResponse
+)
 async def submit_exercise_enhanced(
     request: Request,
     templates: TemplatesDep,

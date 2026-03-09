@@ -586,10 +586,12 @@ VoiceManager.prototype.handleSpeakClick = function(btn) {
         // TTS session ends.  resume() on an already-running context is a no-op
         // on desktop but re-activates the audio pipeline on iOS.
         var ctx = _sharedTtsCtx;
-        var self = this;
-        ctx.resume().then(function() {
-            self._streamTTS(btn, text, voice, speed, ctx);
-        });
+        // Fire resume() for iOS, but start streaming immediately.
+        // On iOS, audio buffers scheduled before resume() completes will
+        // begin playing once the context transitions to 'running'.
+        // On desktop, resume() resolves instantly and is effectively a no-op.
+        ctx.resume();
+        this._streamTTS(btn, text, voice, speed, ctx);
     } else {
         this._restTTS(btn, text, voice, speed);
     }

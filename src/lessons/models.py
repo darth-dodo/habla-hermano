@@ -79,6 +79,7 @@ class LessonMetadata(BaseModel):
     def full_id(self) -> str:
         """Fully qualified ID: {language}/{level}/{id}."""
         return f"{self.language}/{self.level.value}/{self.id}"
+
     category: str | None = None
     tags: list[str] = Field(default_factory=list)
     prerequisites: list[str] = Field(default_factory=list)
