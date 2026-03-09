@@ -1,4 +1,7 @@
 # Habla Hermano
+
+> Learn Spanish, German, or French through conversation.
+
 [![CI](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml/badge.svg)](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -8,9 +11,7 @@
 [![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
 [![Built with Claude](https://img.shields.io/badge/Built%20with-Claude-cc785c?logo=anthropic&logoColor=white)](https://claude.ai)
 
-**Learn Spanish, German, or French through conversation, not flashcards.**
-
-Meet Hermano — your friendly, laid-back language buddy who takes absolute beginners to confident speakers. Start talking from day one with intelligent scaffolding that fades as you improve.
+An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude, featuring real-time voice, adaptive scaffolding, and 60 structured lessons across 4 CEFR levels.
 
 <p align="center">
   <img src="docs/screenshots/mobile-chat-home-voice.png" alt="Chat with voice controls" width="270"/>
@@ -20,71 +21,28 @@ Meet Hermano — your friendly, laid-back language buddy who takes absolute begi
 
 ---
 
-## Why Habla Hermano?
+## The Problem
 
-Most language apps drill vocabulary in isolation. You memorize words, ace flashcards, but freeze when someone actually speaks to you.
+Most language apps optimize for engagement (streaks, XP, leaderboards) while teaching vocabulary in isolation. Users ace flashcards but freeze in real conversations.
 
-**Conversation confidence comes from conversation practice.**
+**Habla Hermano inverts this.** You have real conversations from message one, even as a complete beginner. The AI adapts its language mix from 80% English (A0) to 95%+ target language (B1), with scaffolding that fades as you improve.
 
-- **Talk from day one** — Even complete beginners have real conversations
-- **Your supportive big brother** — Patient, encouraging, like chatting with a friend
-- **Scaffolding that fades** — Word banks and hints for beginners, natural flow for intermediates
-- **Gentle corrections** — Grammar and pronunciation feedback that doesn't interrupt your flow
-- **Voice conversations** — Speak with your voice, hear responses read aloud
-- **No gamification guilt** — No streaks, XP, or leaderboards. Just learning.
+The pedagogical model is [Communicative Language Teaching](docs/product.md#pedagogical-approach): meaning over form, implicit correction over explicit grammar drills, contextual vocabulary over decontextualized memorization.
 
 ---
 
-## Talk, Type, or Both
+## How It Works
 
-<p align="center">
-  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input with chat" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Voice controls and speed selector" width="270"/>
-</p>
+### Conversations That Adapt
 
-Type your messages or tap the microphone to speak. Hermano understands both.
-
-- **Speech-to-text** — Deepgram Nova-3 with code-switching support (mix English and your target language naturally)
-- **Text-to-speech** — Tap the speaker icon on any AI response to hear it read aloud with native pronunciation
-- **Speed control** — 0.75x, 1x, or 1.25x playback speed for comprehension practice
-- **Works everywhere** — Voice UI only appears when configured; text chat always works
-
----
-
-## Pedagogy: Communicative Language Teaching
-
-Habla Hermano is built on **Communicative Language Teaching (CLT)** — you learn by having real conversations, not by memorizing rules.
-
-| CLT Principle | How Hermano Implements It |
-|---------------|--------------------------|
-| **Conversation-first** | You talk from message one, even as a complete beginner |
-| **Meaning over form** | Getting your point across matters more than perfect grammar |
-| **Implicit correction** | Hermano recasts your errors naturally instead of interrupting ("Ah, ¿estás cansado?" not "You used the wrong verb") |
-| **Scaffolding that fades** | Word banks and hints for A0/A1 learners disappear as you level up |
-| **Contextual vocabulary** | Words are learned inside conversations and lessons, never on isolated flashcards |
-| **CEFR-aligned progression** | Language mix shifts from 80% English (A0) to 95%+ target language (B1) |
-
-**What we deliberately avoid**: grammar-translation drills, audio-lingual repetition, gamification (no XP, streaks, or leaderboards), and decontextualized flashcards.
-
-> For the full pedagogical specification, see [Product Vision → Pedagogical Approach](docs/product.md#pedagogical-approach).
-
----
-
-## Conversations That Adapt to You
-
-Hermano adapts his language mix based on your level:
-
-| Level | What You Experience |
-|-------|---------------------|
-| **A0** Complete Beginner | 80% English with target language words introduced one at a time. Hermano celebrates every attempt. |
-| **A1** Beginner | 50/50 mix. Short sentences, translations when needed, natural back-and-forth. |
-| **A2** Elementary | 80% target language. Past tense, longer exchanges, natural rhythm. |
+| Level | Experience |
+|-------|-----------|
+| **A0** Complete Beginner | 80% English, target words introduced one at a time. Hermano celebrates every attempt. |
+| **A1** Beginner | 50/50 mix. Short sentences, translations when needed. |
+| **A2** Elementary | 80% target language. Past tense, longer exchanges. |
 | **B1** Intermediate | 95%+ target language. Idioms, subjunctive, real discussions. |
 
----
-
-## Scaffolding That Helps You Respond
+### Scaffolding That Fades
 
 <p align="center">
   <img src="docs/screenshots/mobile-scaffolding-expanded.png" alt="Word bank, hints, and pronunciation tips" width="270"/>
@@ -92,113 +50,223 @@ Hermano adapts his language mix based on your level:
   <img src="docs/screenshots/mobile-grammar-feedback.png" alt="Grammar correction feedback" width="270"/>
 </p>
 
-Stuck on what to say? Beginners get contextual help:
+Stuck? Beginners get contextual help: **hints**, **word banks** (tap to insert), and **sentence starters**. Made a mistake? Hermano recasts it naturally, then offers expandable grammar and pronunciation tips.
 
-- **Hints** — Simple guidance in English on how to respond
-- **Word Bank** — Clickable vocabulary relevant to the conversation (tap to insert)
-- **Sentence Starters** — Partial sentences to get you going
+For A0, scaffolding appears automatically. By A2, you won't need it.
 
-Made a mistake? Hermano models the correct form naturally in his response, then offers expandable grammar and pronunciation tips:
+### Voice Conversations
+
+Type or tap the microphone to speak. Hermano understands both.
+
+- **Speech-to-text** via Deepgram Nova-3 with code-switching (mix English and target language naturally)
+- **Text-to-speech** - tap the speaker icon on any response to hear native pronunciation
+- **Speed control** - 0.75x, 1x, or 1.25x for comprehension practice
+
+<p align="center">
+  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Voice controls" width="270"/>
+</p>
+
+### 60 Structured Lessons
+
+Beyond freeform chat, bite-sized lessons teach vocabulary and grammar through exercises, or conversationally through the chat interface via "Learn with Hermano."
+
+<p align="center">
+  <img src="docs/screenshots/mobile-lessons-browse.png" alt="Browse lessons" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-lesson-vocabulary.png" alt="Vocabulary step" width="270"/>
+</p>
+
+- 3 languages × 4 CEFR levels × 5 lessons each
+- Multiple choice, fill-in-the-blank, and translation exercises
+- Conversational lesson mode: AI teaches through dialogue with real-time progress tracking
+
+### Learning Paths & Spaced Repetition
+
+<p align="center">
+  <img src="docs/screenshots/mobile-learning-path.png" alt="Learning path" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete" width="270"/>
+</p>
+
+Structured paths guide you from beginner to intermediate. The SM-2 spaced repetition algorithm weaves vocabulary back into conversations at optimal intervals.
+
+### Guest Access & Themes
+
+No sign-up required. Start chatting immediately. Four Spanish culture-inspired themes (Azulejo, Terracotta, Flamenco, Sangria) with WCAG AA contrast.
+
+<p align="center">
+  <img src="docs/screenshots/chat-terracotta-mobile.png" alt="Terracotta" width="200"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/lessons-sangria-mobile.png" alt="Sangria" width="200"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/signup-azulejo-mobile.png" alt="Azulejo" width="200"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/menu-flamenco-mobile.png" alt="Flamenco" width="200"/>
+</p>
+
+---
+
+## For Developers
+
+<details>
+<summary><strong>Tech Stack & Architecture</strong></summary>
+
+### Tech Stack
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Backend** | FastAPI | Async SSE streaming, Pydantic validation, WebSocket support |
+| **Agent** | LangGraph | Stateful conversation graphs with conditional routing and checkpointing |
+| **LLM** | Claude (Haiku 4.5) | Strong multilingual understanding, structured output for exercises |
+| **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 6 ES modules |
+| **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
+| **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
+| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time WebSocket streaming, code-switching support |
+| **Lessons** | 60 YAML files | 3 languages × 4 CEFR levels × 5 lessons, ~6,300 lines of content |
+| **Testing** | pytest + Vitest | 2,357 tests, strict mypy, ruff linting |
+
+### System Overview
 
 ```
-You:     "Yo soy cansado"
-Hermano: "¿Estás cansado? Yo también después del trabajo."
-
-         Grammar tip: Use "estar" for temporary feelings like tired.
-         Pronunciation: /ehs-TAHS/ — stress the second syllable
+Browser (HTMX + Alpine.js + ES Modules)
+    │
+    ├── SSE POST /chat/stream ──────────► FastAPI ──► LangGraph Pipeline ──► Claude API
+    │
+    ├── WebSocket /ws/transcribe ───────► WS Proxy ──► Deepgram Nova-3 STT
+    │
+    ├── WebSocket /ws/speak ────────────► WS Proxy ──► Deepgram Aura-2 TTS
+    │
+    └── HTMX requests ─────────────────► Jinja2 SSR ──► Supabase (PostgreSQL)
 ```
 
-For A0 learners, scaffolding appears automatically. A1 learners can expand it when needed. By A2, you won't need it anymore.
+### LangGraph Conversation Engine
 
----
+The core is a **stateful LangGraph pipeline** with conditional routing. Each user message traverses a graph that decides what feedback to generate:
 
-## 60 Structured Micro-Lessons
+```
+User Message
+    │
+    ▼
+[respond] ── Generate conversational AI response (Claude Haiku)
+    │
+    ▼
+[should_scaffold?] ── Conditional edge based on CEFR level + message analysis
+    │
+    ├── yes ──► [scaffold] ── Generate word bank, hints, sentence starters
+    │
+    ▼
+[should_analyze?] ── Conditional edge: did the user make errors?
+    │
+    ├── yes ──► [analyze] ── Grammar corrections + pronunciation tips
+    │
+    ▼
+[should_weave_review?] ── SM-2 spaced repetition check
+    │
+    ├── yes ──► [weave] ── Insert due vocabulary into conversation naturally
+    │
+    ▼
+END ── Stream all outputs via SSE
+```
 
-Beyond freeform conversation, Hermano offers bite-sized lessons that teach vocabulary and grammar through interactive exercises.
+**Key design decisions**:
+- **Conditional edges over sequential chains**: Scaffolding and analysis only run when needed, reducing latency and API costs for advanced learners
+- **State as TypedDict with reducers**: `add_messages` reducer for conversation history, explicit fields for `grammar_feedback`, `scaffolding`, `new_vocabulary`
+- **Separate lesson subgraph**: Conversational lessons use a dedicated LangGraph with a 5-phase state machine (intro → teaching → exercise_ask → exercise_eval → complete) rather than overloading the freeform chat graph
+- **Checkpointing**: PostgreSQL-backed `PostgresSaver` in production, `MemorySaver` for local dev
 
-<p align="center">
-  <img src="docs/screenshots/mobile-lessons-browse.png" alt="Browse 60 lessons" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-vocabulary.png" alt="Vocabulary step with translations" width="270"/>
-</p>
+### Streaming Architecture
 
-Each lesson includes:
-- **Vocabulary steps** with translations and example sentences
-- **Exercises** — multiple choice, fill-in-the-blank, and translation
-- **Completion tracking** with score and vocabulary count
-- **Chat handoff** — finish a lesson and jump into conversation to practice what you learned
+Responses stream token-by-token via **Server-Sent Events** (POST to `/chat/stream`):
 
-| Language | A0 | A1 | A2 | B1 | Total |
-|----------|----|----|----|----|-------|
-| Spanish | 5 | 5 | 5 | 5 | 20 |
-| German | 5 | 5 | 5 | 5 | 20 |
-| French | 5 | 5 | 5 | 5 | 20 |
+| SSE Event | Payload | Client Action |
+|-----------|---------|---------------|
+| `token` | `{content}` | Append to bubble, throttled scroll (every 3 tokens) |
+| `response_complete` | `{content}` | Finalize bubble, add TTS speaker button |
+| `scaffolding` | `{html}` | Insert collapsible help section |
+| `grammar` | `{html}` | Insert grammar correction panel |
+| `lesson_progress` | `{progress, phase}` | Update progress bar and phase badge |
+| `done` | `{}` | Re-enable input |
 
-### Conversational Lesson Mode
+### Voice Pipeline
 
-Prefer learning through conversation? Hermano can teach any lesson through the chat interface — no static player needed.
+Voice is optional. The app degrades gracefully without Deepgram keys.
 
-Click **"Learn with Hermano"** on any lesson card, and Hermano walks you through the content conversationally:
+**STT**: Browser captures audio via `AudioWorklet` (PCM16 at 16kHz), streams over WebSocket to a FastAPI proxy forwarding to Deepgram Nova-3 with interim results and endpoint detection.
 
-1. **Introduction** — Hermano welcomes you and previews what you'll learn
-2. **Teaching** — Vocabulary, grammar, and examples delivered in natural dialogue (batched in groups of 3)
-3. **Exercises** — Multiple choice, fill-in-the-blank, and translation exercises evaluated in real-time
-4. **Completion** — Score, vocabulary count, and links to continue your learning path
+**TTS**: Speaker icon opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit).
 
-The conversational approach uses the same SSE streaming as freeform chat, so responses feel natural and immediate.
+**iOS Safari**: `AudioContext.state` can report `'running'` while silently refusing output. Fix: always call `resume()` on every gesture, plus a generation counter to prevent stale WebSocket `onclose` handlers from corrupting active sessions.
 
----
+### Frontend Modules
 
-## Learning Paths
+Server-rendered HTML (Jinja2 + HTMX) with 6 ES modules:
 
-<p align="center">
-  <img src="docs/screenshots/mobile-learning-path.png" alt="Spanish learning path" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete screen" width="270"/>
-</p>
+| Module | Responsibility |
+|--------|---------------|
+| `stream.js` | SSE client, streaming bubble management, lesson progress events |
+| `voice.js` | `VoiceManager` class: mic capture, STT WebSocket, TTS playback, speed control |
+| `dom.js` | Scroll management, focus, message rendering, HTML escaping |
+| `scaffold.js` | Click-to-insert word bank, collapsible help sections |
+| `shortcuts.js` | Keyboard shortcuts (`/` to focus, `Shift+Enter` for newline) |
+| `htmx-handlers.js` | HTMX lifecycle hooks (afterSwap scroll, error display) |
 
-Don't know where to start? Each language has a structured path that guides you from absolute beginner to intermediate — 4 levels, 5 lessons each, 20 lessons total.
+### Project Structure
 
-- **Visual timeline** — See your entire path with progress at a glance
-- **Smart recommendations** — Daily suggestions based on where you left off
-- **Continue flow** — Complete a lesson and jump straight to the next one
-- **No rigid lock-in** — Follow the path or browse freely, your choice
+```
+src/
+├── agent/           LangGraph graphs, nodes, prompts (freeform + lesson subgraphs)
+├── api/             FastAPI routes, auth, middleware, streaming, rate limiting
+├── db/              Supabase client, repository pattern, models
+├── services/        Business logic (review/SM-2, lesson completion, adaptive paths)
+├── lessons/         Lesson models and YAML loader
+├── templates/       Jinja2 with HTMX partials
+└── static/js/       6 ES modules + AudioWorklet processor
 
----
+data/lessons/        60 YAML lesson files (es/, de/, fr/)
+tests/               2,150 pytest + 207 Vitest tests
+docs/                Architecture, API reference, design docs, ADRs
+```
 
-## Spaced Repetition
+</details>
 
-Vocabulary you learn doesn't just disappear. Habla Hermano uses the SM-2 spaced repetition algorithm to weave words back into your conversations at optimal intervals — plus a dedicated review mode when you want focused practice.
+<details>
+<summary><strong>Security</strong></summary>
 
----
+| Layer | Implementation |
+|-------|---------------|
+| **CSP** | Nonce-based `script-src`, no `'unsafe-inline'` |
+| **CSRF** | Custom-header pattern (`X-Requested-With` / `HX-Request`) via middleware |
+| **WebSocket Auth** | JWT validated from cookies before `accept()`, reject with 1008 |
+| **Rate Limiting** | Decorator-based for REST, sliding-window per-connection for WebSocket |
+| **XSS** | `nh3` sanitization + `markupsafe.escape()` for all user content |
+| **Cookies** | Signed with `itsdangerous`, environment-aware `Secure` flag |
+| **Headers** | HSTS, X-Frame-Options, X-Content-Type-Options, Cache-Control |
 
-## Four Spanish-Inspired Themes
+See [Architecture → Security](docs/architecture.md) for the full threat model.
 
-**Azulejo**, **Terracotta**, **Flamenco**, and **Sangria** — warm, culturally-inspired palettes replacing the original Nordic themes. WCAG AA contrast compliance across all four. Fully responsive on phone, tablet, and desktop with safe areas for notched phones, dynamic viewport for mobile browsers, and touch-optimized controls.
+</details>
 
-<p align="center">
-  <img src="docs/screenshots/chat-terracotta-mobile.png" alt="Chat in Terracotta theme" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/lessons-sangria-mobile.png" alt="Lessons in Sangria theme" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/signup-azulejo-mobile.png" alt="Signup in Azulejo light theme" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/menu-flamenco-mobile.png" alt="Theme menu in Flamenco theme" width="200"/>
-</p>
+<details>
+<summary><strong>Testing</strong></summary>
 
----
+**2,150 Python tests** (pytest) + **207 JavaScript tests** (Vitest) with CI on every push.
 
-## Guest Access
+| Domain | What's Tested |
+|--------|---------------|
+| Agent | LangGraph node behavior, conditional routing, state mutations, prompt injection |
+| API | Every route (chat, lessons, auth, voice, progress), CSRF, rate limiting |
+| Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
+| Database | Repository pattern, Supabase query builder mocks, model validation |
+| JavaScript | All 6 ES modules: DOM, streaming, scaffolding, shortcuts, HTMX handlers, voice |
+| Security | CSP nonce injection, WebSocket auth rejection, header verification |
+| Integration | Voice WebSocket transport, SSE streaming end-to-end |
 
-<p align="center">
-  <img src="docs/screenshots/login-flamenco-mobile.png" alt="Login screen with guest access" width="270"/>
-</p>
+</details>
 
-No sign-up required to start chatting. Try Hermano immediately as a guest — create a free account when you're ready to track lessons, progress, and spaced repetition.
-
----
-
-## Quick Start
+<details>
+<summary><strong>Quick Start</strong></summary>
 
 ```bash
 git clone https://github.com/darth-dodo/habla-hermano.git
@@ -207,65 +275,43 @@ make install
 
 cp .env.example .env
 # Add your ANTHROPIC_API_KEY to .env
-# Optional: Add DEEPGRAM_API_KEY for voice features
+# Optional: DEEPGRAM_API_KEY for voice, SUPABASE_URL + keys for auth/persistence
 
 make dev
 ```
 
-Open [http://localhost:8000](http://localhost:8000) and start your first conversation.
+Open [http://localhost:8000](http://localhost:8000). No account required. Guest sessions work out of the box.
 
-**Requirements:** Python 3.11+, [uv](https://docs.astral.sh/uv/) or pip, Anthropic API key
+**Requirements**: Python 3.11+, [uv](https://docs.astral.sh/uv/)
 
----
+**Development commands**: `make dev` | `make test` | `make check` (lint + typecheck) | `make clean`
 
-## Tech Stack
+</details>
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | FastAPI, LangGraph, Claude API (Anthropic) |
-| **Frontend** | HTMX, Alpine.js, Tailwind CSS, ES Modules |
-| **Auth** | Supabase Auth (email/password + guest sessions) |
-| **Database** | PostgreSQL via Supabase |
-| **Voice** | Deepgram (STT Nova-3, TTS Aura-2) |
-| **Testing** | pytest (2,150 tests) + Vitest (193 tests), 94% coverage |
+<details>
+<summary><strong>Documentation</strong></summary>
 
-### Architecture Highlights
+| Doc | Content |
+|-----|---------|
+| [Architecture](docs/architecture.md) | LangGraph pipeline, data flow, security model, voice architecture |
+| [Product Vision](docs/product.md) | Pedagogical approach, CEFR progression, personality system |
+| [API Reference](docs/api.md) | All endpoints, WebSocket protocols, SSE event spec |
+| [Testing](docs/testing.md) | Test strategy, mock patterns, coverage targets |
+| [Codebase Summary](docs/codebase-summary.md) | Onboarding guide for the full codebase |
+| [Changelog](CHANGELOG.md) | Release history across 20 phases |
 
-- **LangGraph conversation engine** — Stateful graph with conditional routing for scaffolding, grammar feedback, pronunciation tips, and spaced repetition weaving
-- **Server-rendered with HTMX** — No SPA complexity. Jinja2 templates with HTMX for dynamic updates and Alpine.js for client-side interactivity
-- **Real-time streaming** — SSE-based token streaming for instant AI responses
-- **AI-enhanced lessons** — LangGraph subgraphs generate contextual exercises and vocabulary steps
-- **SM-2 spaced repetition** — Intelligent review scheduling with chat weaving and dedicated review mode
-- **Voice conversation** — Deepgram STT/TTS via WebSocket proxy with floating stop controls and speed adjustment
-- **Conversational lesson delivery** — Phase machine (intro → teaching → exercise → complete) inside a LangGraph node teaches structured lessons through the chat UI
-- **ES Modules** — Modular JavaScript architecture (6 modules) with Vitest test suite (193 tests)
+#### Design Documents
 
----
+| Phase | Design |
+|-------|--------|
+| Micro-Lessons | [Phase 6](docs/design/phase6-micro-lessons.md) |
+| Spaced Repetition | [Phase 12](docs/design/phase12-spaced-repetition.md) |
+| Mobile Responsive | [Phase 13](docs/design/phase13-mobile-responsive.md) |
+| Learning Paths | [Phase 14](docs/design/phase14-learning-paths.md) |
+| SSE Streaming | [Phase 15](docs/design/phase15-sse-streaming.md) |
+| ES Module Refactor | [Phase 16](docs/design/phase16-esm-refactor.md) |
+| Voice Conversation | [Phase 17](docs/design/phase17-voice-deepgram.md) |
+| Conversational Lessons | [Phase 19](docs/design/phase19-conversational-lessons.md) |
+| Spanish Themes | [Phase 20](docs/design/phase20-spanish-themes.md) |
 
-## Documentation
-
-| Doc | Description |
-|-----|-------------|
-| [Product Vision](docs/product.md) | Pedagogy and feature philosophy |
-| [Architecture](docs/architecture.md) | Technical design and LangGraph implementation |
-| [API Reference](docs/api.md) | Endpoints and data structures |
-| [Testing](docs/testing.md) | Test strategy and coverage details |
-| [Codebase Summary](docs/codebase-summary.md) | Full crash course for onboarding |
-| [Changelog](CHANGELOG.md) | Release history |
-
-### Design Documents
-
-- [Phase 6: Micro-Lessons](docs/design/phase6-micro-lessons.md)
-- [Phase 12: Spaced Repetition](docs/design/phase12-spaced-repetition.md)
-- [Phase 13: Mobile Responsive](docs/design/phase13-mobile-responsive.md)
-- [Phase 14: Learning Paths](docs/design/phase14-learning-paths.md)
-- [Phase 15: SSE Streaming](docs/design/phase15-sse-streaming.md)
-- [Phase 16: ES Module Refactor](docs/design/phase16-esm-refactor.md)
-- [Phase 17: Voice Conversation](docs/design/phase17-voice-deepgram.md)
-- [Phase 19: Conversational Lessons](docs/design/phase19-conversational-lessons.md)
-
----
-
-<p align="center">
-  <strong>Start speaking today, not someday.</strong>
-</p>
+</details>
