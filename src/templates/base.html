@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Habla Hermano - Your AI Spanish Language Tutor">
     <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <title>{% block title %}Habla Hermano{% endblock %}</title>
 
     <!-- Tailwind CSS CDN (development) -->
@@ -132,8 +133,8 @@
            Four themes inspired by Spanish heritage
            ============================================ */
 
-        /* Terracotta Theme (default) - Andalusian Earth: Warm clay, parchment cream */
-        :root, [data-theme="terracotta"] {
+        /* Terracotta Theme - Andalusian Earth: Warm clay, parchment cream */
+        [data-theme="terracotta"] {
             --surface: #1C1410;
             --surface-elevated: #2A1F18;
             --surface-overlay: #362A21;
@@ -219,8 +220,8 @@
             --paper-texture: none;
         }
 
-        /* Azulejo Theme - Ceramic Tiles: Cobalt blue, whitewashed walls */
-        [data-theme="azulejo"] {
+        /* Azulejo Theme (default) - Ceramic Tiles: Cobalt blue, whitewashed walls */
+        :root, [data-theme="azulejo"] {
             --surface: #FBF8F4;
             --surface-elevated: #FFFFFF;
             --surface-overlay: #F0EDE7;
@@ -767,7 +768,7 @@
     {% block head %}{% endblock %}
 </head>
 <body class="h-full antialiased font-sans" x-data="{
-    theme: localStorage.getItem('hermano-theme') || 'terracotta',
+    theme: localStorage.getItem('hermano-theme') || 'azulejo',
     setTheme(newTheme) {
         this.theme = newTheme;
         localStorage.setItem('hermano-theme', newTheme);

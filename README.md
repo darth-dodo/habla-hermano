@@ -120,54 +120,48 @@ No sign-up required. Start chatting immediately. Four Spanish culture-inspired t
 | **Backend** | FastAPI | Async SSE streaming, Pydantic validation, WebSocket support |
 | **Agent** | LangGraph | Stateful conversation graphs with conditional routing and checkpointing |
 | **LLM** | Claude (Haiku 4.5) | Strong multilingual understanding, structured output for exercises |
-| **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 6 ES modules |
+| **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 10 ES modules |
 | **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
-| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time WebSocket streaming, code-switching support |
+| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Lessons** | 60 YAML files | 3 languages × 4 CEFR levels × 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,357 tests, strict mypy, ruff linting |
+| **Testing** | pytest + Vitest | 2,377 tests, strict mypy, ruff linting |
 
 ### System Overview
 
-```
-Browser (HTMX + Alpine.js + ES Modules)
-    │
-    ├── SSE POST /chat/stream ──────────► FastAPI ──► LangGraph Pipeline ──► Claude API
-    │
-    ├── WebSocket /ws/transcribe ───────► WS Proxy ──► Deepgram Nova-3 STT
-    │
-    ├── WebSocket /ws/speak ────────────► WS Proxy ──► Deepgram Aura-2 TTS
-    │
-    └── HTMX requests ─────────────────► Jinja2 SSR ──► Supabase (PostgreSQL)
+```mermaid
+graph LR
+    B["Browser<br/>(HTMX + Alpine.js + ES Modules)"]
+    F["FastAPI"]
+    LG["LangGraph Pipeline"]
+    C["Claude API"]
+    DG_STT["Deepgram Nova-3 STT"]
+    DG_TTS["Deepgram Aura-2 TTS"]
+    DB["Supabase (PostgreSQL)"]
+
+    B -- "SSE POST /chat/stream" --> F --> LG --> C
+    B -- "WebSocket /ws/transcribe" --> F -- "WS Proxy" --> DG_STT
+    B -- "WebSocket /ws/speak" --> F -- "WS Proxy" --> DG_TTS
+    B -- "HTMX requests" --> F -- "Jinja2 SSR" --> DB
 ```
 
 ### LangGraph Conversation Engine
 
 The core is a **stateful LangGraph pipeline** with conditional routing. Each user message traverses a graph that decides what feedback to generate:
 
-```
-User Message
-    │
-    ▼
-[respond] ── Generate conversational AI response (Claude Haiku)
-    │
-    ▼
-[should_scaffold?] ── Conditional edge based on CEFR level + message analysis
-    │
-    ├── yes ──► [scaffold] ── Generate word bank, hints, sentence starters
-    │
-    ▼
-[should_analyze?] ── Conditional edge: did the user make errors?
-    │
-    ├── yes ──► [analyze] ── Grammar corrections + pronunciation tips
-    │
-    ▼
-[should_weave_review?] ── SM-2 spaced repetition check
-    │
-    ├── yes ──► [weave] ── Insert due vocabulary into conversation naturally
-    │
-    ▼
-END ── Stream all outputs via SSE
+```mermaid
+graph TD
+    A["User Message"] --> R["respond<br/>Generate AI response (Claude Haiku)"]
+    R --> S{"should_scaffold?<br/>CEFR level + message analysis"}
+    S -- yes --> SC["scaffold<br/>Word bank, hints, sentence starters"]
+    S -- no --> AN
+    SC --> AN{"should_analyze?<br/>Did the user make errors?"}
+    AN -- yes --> AZ["analyze<br/>Grammar corrections + pronunciation tips"]
+    AN -- no --> W
+    AZ --> W{"should_weave_review?<br/>SM-2 spaced repetition check"}
+    W -- yes --> WV["weave<br/>Insert due vocabulary naturally"]
+    W -- no --> E["END<br/>Stream all outputs via SSE"]
+    WV --> E
 ```
 
 **Key design decisions**:
@@ -197,16 +191,21 @@ Voice is optional. The app degrades gracefully without Deepgram keys.
 
 **TTS**: Speaker icon opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit).
 
-**iOS Safari**: `AudioContext.state` can report `'running'` while silently refusing output. Fix: always call `resume()` on every gesture, plus a generation counter to prevent stale WebSocket `onclose` handlers from corrupting active sessions.
+**iOS Safari**: `AudioContext.state` can report `'running'` while silently refusing output. Fix: always call `resume()` on every gesture, plus `AbortController` per session to prevent stale WebSocket handlers from corrupting active sessions.
 
 ### Frontend Modules
 
-Server-rendered HTML (Jinja2 + HTMX) with 6 ES modules:
+Server-rendered HTML (Jinja2 + HTMX) with 10 ES modules:
 
 | Module | Responsibility |
 |--------|---------------|
 | `stream.js` | SSE client, streaming bubble management, lesson progress events |
-| `voice.js` | `VoiceManager` class: mic capture, STT WebSocket, TTS playback, speed control |
+| `voice.js` | Voice orchestrator: wires FSM services, owns mutable state, public API |
+| `voice-constants.js` | Voice config: sample rates, Deepgram voice IDs, SVG icons, audio utilities |
+| `voice-stt.js` | STT state machine, mic capture via AudioWorklet, WebSocket transcript streaming |
+| `voice-tts.js` | TTS state machine, WebSocket PCM streaming, REST fallback, AudioContext playback |
+| `voice-ui.js` | Stateless voice UI helpers: recording indicators, timers, tooltips, stop bar |
+| `fsm.js` | Generic finite state machine: `createMachine` + `interpret` with onChange listeners |
 | `dom.js` | Scroll management, focus, message rendering, HTML escaping |
 | `scaffold.js` | Click-to-insert word bank, collapsible help sections |
 | `shortcuts.js` | Keyboard shortcuts (`/` to focus, `Shift+Enter` for newline) |
@@ -222,7 +221,7 @@ src/
 ├── services/        Business logic (review/SM-2, lesson completion, adaptive paths)
 ├── lessons/         Lesson models and YAML loader
 ├── templates/       Jinja2 with HTMX partials
-└── static/js/       6 ES modules + AudioWorklet processor
+└── static/js/       10 ES modules + AudioWorklet processor
 
 data/lessons/        60 YAML lesson files (es/, de/, fr/)
 tests/               2,150 pytest + 207 Vitest tests
@@ -259,7 +258,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 | API | Every route (chat, lessons, auth, voice, progress), CSRF, rate limiting |
 | Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
 | Database | Repository pattern, Supabase query builder mocks, model validation |
-| JavaScript | All 6 ES modules: DOM, streaming, scaffolding, shortcuts, HTMX handlers, voice |
+| JavaScript | All 10 ES modules: DOM, streaming, scaffolding, shortcuts, HTMX handlers, voice (FSM + sub-modules) |
 | Security | CSP nonce injection, WebSocket auth rejection, header verification |
 | Integration | Voice WebSocket transport, SSE streaming end-to-end |
 
@@ -298,7 +297,7 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | [API Reference](docs/api.md) | All endpoints, WebSocket protocols, SSE event spec |
 | [Testing](docs/testing.md) | Test strategy, mock patterns, coverage targets |
 | [Codebase Summary](docs/codebase-summary.md) | Onboarding guide for the full codebase |
-| [Changelog](CHANGELOG.md) | Release history across 20 phases |
+| [Changelog](CHANGELOG.md) | Release history across 21 phases |
 
 #### Design Documents
 
@@ -313,5 +312,6 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | Voice Conversation | [Phase 17](docs/design/phase17-voice-deepgram.md) |
 | Conversational Lessons | [Phase 19](docs/design/phase19-conversational-lessons.md) |
 | Spanish Themes | [Phase 20](docs/design/phase20-spanish-themes.md) |
+| Voice FSM Refactor | [Phase 21](docs/design/phase21-voice-fsm-refactor.md) |
 
 </details>
