@@ -1005,8 +1005,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var pcm = new Int16Array([1000]);
                 ws.onmessage({ data: pcm.buffer });
 
-                // Playing icon has cross lines (x1/x2/y1/y2)
-                expect(btn.innerHTML).toContain('line');
+                // Button should have voice-playing class (icon is CSS-driven)
+                expect(btn.classList.contains('voice-playing')).toBe(true);
             });
         });
 
@@ -1059,7 +1059,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 // Last buffer finishes
                 sources[1].onended();
                 expect(btn.classList.contains('voice-playing')).toBe(false);
-                expect(btn.innerHTML).toContain('polygon'); // speaker icon restored
+                expect(btn.classList.contains('voice-loading')).toBe(false); // all TTS classes removed
             });
 
             it('hides stop bar when playback ends', async () => {

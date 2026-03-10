@@ -15,7 +15,7 @@
 import { interpret } from './fsm.js';
 import {
     VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
-    SPEAKER_ICON, SPEAKER_PLAYING_ICON,
+    SPEAKER_ICON,
     MIC_ICON, STOP_SQUARE_ICON, SPINNER_HTML,
 } from './voice-constants.js';
 import {
@@ -33,6 +33,9 @@ import {
 import {
     ttsMachine, streamTTS, restTTS, cleanupTtsResources,
 } from './voice-tts.js';
+import {
+    createWaveformPlayer, destroyWaveformPlayer,
+} from './voice-waveform.js';
 
 // ============================================
 // Module State
@@ -55,8 +58,11 @@ var micWrapper = null;
 // Shared TTS AudioContext (Safari limits to 4 instances)
 var sharedTtsCtx = null;
 
-// TTS active button reference
+// TTS active button reference (now the .voice-waveform-container element)
 var ttsActiveBtn = null;
+
+// Active waveform player handle (from voice-waveform.js)
+var activeWfPlayer = null;
 
 // UI state handles (returned by voice-ui.js functions)
 var timerHandle = null;
@@ -255,7 +261,6 @@ function onTtsChange(state, prev) {
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading');
             ttsActiveBtn.classList.add('voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_PLAYING_ICON;
         }
         stopBar = createStopBar(function() { stopAllTTS(); });
     }
@@ -266,9 +271,9 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_ICON;
         }
         removeStopBar(stopBar); stopBar = null;
+        activeWfPlayer = null;
         ttsActiveBtn = null;
     }
 
@@ -278,9 +283,9 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_ICON;
         }
         removeStopBar(stopBar); stopBar = null;
+        activeWfPlayer = null;
         ttsActiveBtn = null;
     }
 }
