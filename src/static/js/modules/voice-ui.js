@@ -6,7 +6,7 @@
  */
 
 import {
-    MIC_ICON, LEVEL_BARS_HTML, SPINNER_HTML,
+    MIC_ICON, LEVEL_BARS_HTML, SPINNER_HTML, SEND_ICON,
 } from './voice-constants.js';
 
 /**
@@ -208,4 +208,29 @@ export function createStopBar(onStop) {
  */
 export function removeStopBar(bar) {
     if (bar) bar.remove();
+}
+
+/**
+ * Set up mic/send button swap based on textarea content.
+ * When the textarea is empty, show mic and hide send.
+ * When the textarea has text, show send and hide mic.
+ * @param {HTMLElement} micButton
+ * @param {HTMLElement} sendButton
+ * @param {HTMLTextAreaElement} chatInput
+ * @returns {function(): void} update function (for testing)
+ */
+export function setupButtonSwap(micButton, sendButton, chatInput) {
+    function update() {
+        var hasText = chatInput.value.trim().length > 0;
+        if (hasText) {
+            micButton.classList.add('hidden');
+            sendButton.classList.remove('hidden');
+        } else {
+            micButton.classList.remove('hidden');
+            sendButton.classList.add('hidden');
+        }
+    }
+    chatInput.addEventListener('input', update);
+    update(); // initial state
+    return update;
 }

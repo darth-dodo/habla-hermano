@@ -21,7 +21,7 @@ import {
     showMicRecording, restoreMicIcon, setSendEnabled,
     showTooltipError, startTimer, stopTimer,
     startLevelAnimation, showProcessing, hideProcessing,
-    createStopBar, removeStopBar,
+    createStopBar, removeStopBar, setupButtonSwap,
 } from './voice-ui.js';
 import {
     sttMachine, startRecordingSession,
@@ -233,13 +233,13 @@ export function initVoice() {
 
     if (!micButton) return; // Voice not enabled
 
-    // Wrap mic button for floating indicators (timer, processing pill)
-    if (micButton.parentNode) {
-        var wrapper = document.createElement('div');
-        wrapper.className = 'flex-shrink-0 relative';
-        micButton.parentNode.insertBefore(wrapper, micButton);
-        wrapper.appendChild(micButton);
-        micWrapper = wrapper;
+    // Use mic button's parent as wrapper for floating indicators (timer, processing pill).
+    // The template already provides a positioned container around mic + send.
+    micWrapper = micButton.parentNode;
+
+    // Mic/send button swap: show mic when input is empty, send when has text
+    if (sendButton && chatInput) {
+        setupButtonSwap(micButton, sendButton, chatInput);
     }
 
     // Create FSM services

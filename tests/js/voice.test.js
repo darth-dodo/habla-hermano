@@ -124,11 +124,13 @@ class MockAudio {
 function setupVoiceDOM() {
     document.body.innerHTML = `
         <div class="flex items-end gap-2">
-            <button id="mic-btn" type="button" aria-label="Record voice message">
-                <svg class="w-5 h-5"></svg>
-            </button>
             <textarea id="message-input"></textarea>
-            <button id="send-btn" type="submit">Send</button>
+            <div class="flex-shrink-0 relative">
+                <button id="mic-btn" type="button" aria-label="Record voice message">
+                    <svg class="w-5 h-5"></svg>
+                </button>
+                <button id="send-btn" type="submit" class="hidden">Send</button>
+            </div>
         </div>
         <footer></footer>
     `;
@@ -2099,6 +2101,83 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(src.start).toHaveBeenCalled();
                 expect(src.connect).toHaveBeenCalled();
             });
+        });
+    });
+
+    // ============================================
+    // Mic/Send Button Swap
+    // ============================================
+
+    describe('mic/send button swap', () => {
+
+        it('should hide send and show mic on init with empty input', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should show send and hide mic when input has text', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            input.value = 'Hola';
+            input.dispatchEvent(new Event('input'));
+
+            expect(mic.classList.contains('hidden')).toBe(true);
+            expect(send.classList.contains('hidden')).toBe(false);
+        });
+
+        it('should swap back to mic when input is cleared', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            // Type text
+            input.value = 'Hola';
+            input.dispatchEvent(new Event('input'));
+            expect(mic.classList.contains('hidden')).toBe(true);
+
+            // Clear text
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should treat whitespace-only input as empty', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            input.value = '   ';
+            input.dispatchEvent(new Event('input'));
+
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should not set up swap when voice is not enabled (no mic button)', async () => {
+            setupVoiceDOMWithoutMic();
+            await importVoice();
+
+            var send = document.getElementById('send-btn');
+            // Send button should remain visible (no hidden class) when no mic
+            expect(send.classList.contains('hidden')).toBe(false);
         });
     });
 });

@@ -32,6 +32,11 @@ export var LEVEL_BARS_HTML = '<div class="voice-level-bars" aria-hidden="true">'
 
 export var SPINNER_HTML = '<div class="voice-spinner" aria-hidden="true"></div>';
 
+export var SEND_ICON = '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<line x1="22" y1="2" x2="11" y2="13"></line>'
+    + '<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>'
+    + '</svg>';
+
 export var SPEAKER_ICON = '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
     + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
     + '<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />'
