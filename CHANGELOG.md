@@ -7,10 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-03-10
+
+### Added - Phase 21: Voice FSM Refactor
+- **Finite state machine module** (`src/static/js/modules/fsm.js`): Generic `createMachine` + `interpret` pattern with `onChange` listeners, used for both STT and TTS state management
+- **Voice sub-module split**: Monolithic `voice.js` (1,237 lines) split into 5 focused modules:
+  - `voice-constants.js` — Sample rates, Deepgram voice IDs, SVG icons, audio utilities
+  - `voice-stt.js` — STT state machine (`idle → connecting → recording → processing → idle`), mic capture, WebSocket streaming
+  - `voice-tts.js` — TTS state machine (`idle → loading → playing → idle`), WebSocket PCM streaming, REST fallback
+  - `voice-ui.js` — Stateless UI helpers: recording indicators, timers, level animation, tooltips, stop bar
+  - `voice.js` — Orchestrator: owns mutable state, wires FSM services, exposes public API
+- **AbortController per session**: Each STT/TTS session gets its own `AbortController`; all async callbacks check `signal.aborted` before acting
+- **Design doc**: `docs/design/phase21-voice-fsm-refactor.md`
+
 ### Fixed
-- **iOS TTS fails after first playback**: Always call `AudioContext.resume()` on every user gesture regardless of reported state — iOS Safari can report `state='running'` but silently refuse to produce audio after a TTS session ends
-- **TTS race condition**: Added generation counter to prevent stale cleanup closures from corrupting active TTS sessions when WebSocket `onclose` fires asynchronously
-- **TTS WebSocket leak on iOS**: `_stopTTS()` now closes WebSockets in `CONNECTING` state (iOS has slower connections, so WS stays in CONNECTING longer)
+- **TTS stop bar not disappearing**: Detect Deepgram `Flushed`/`metadata` messages to set `wsDone = true`, enabling proper `ALL_ENDED` transition
+- **iOS TTS fails after first playback**: Always call `AudioContext.resume()` on every user gesture — iOS Safari can silently refuse audio even when reporting `state='running'`
+- **TTS race conditions**: `AbortController` per session replaces generation counters, preventing stale WebSocket handlers from corrupting active sessions
+- **TTS WebSocket premature close**: Removed `{"type":"close"}` from `ws.onopen` which was killing the server-side audio forwarding task before audio arrived
+
+### Changed
+- **Voice module count**: 6 → 10 ES modules (added fsm.js + 4 voice sub-modules)
+- **README.md**: Updated module table, project structure, test counts, Phase 21 design doc, mermaid diagrams
 
 ## [0.20.0] - 2026-03-09
 

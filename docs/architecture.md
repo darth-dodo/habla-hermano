@@ -26,8 +26,9 @@
 | **Phase 16** | ES Module Migration - JavaScript restructured into 6 ES modules with Vitest testing | ✅ Completed |
 | **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
 | **Phase 19** | Conversational Lesson Delivery - Phase machine teaches lessons through chat UI | ✅ Completed |
+| **Phase 21** | Voice FSM Refactor - FSM + AbortController, split into 5 sub-modules | ✅ Completed |
 
-**Test Coverage**: 2312+ tests (2123 Python + 189 JavaScript, 97% coverage) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2,377+ tests (2,150 Python + 207 JavaScript) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -272,11 +273,16 @@ habla-hermano/
 │           ├── pcm-processor.js   # [Implemented] AudioWorklet PCM processor for mobile STT
 │           └── modules/
 │               ├── dom.js         # [Implemented] DOM utilities, scroll, focus, escapeHtml
+│               ├── fsm.js         # [Implemented] Generic finite state machine: createMachine + interpret
 │               ├── htmx-handlers.js # [Implemented] HTMX event handlers (afterSwap, scroll, errors)
 │               ├── scaffold.js    # [Implemented] Click-to-insert word bank handler
 │               ├── shortcuts.js   # [Implemented] Keyboard shortcuts (/, Shift+Enter)
 │               ├── stream.js      # [Implemented] SSE streaming client with TTS speaker buttons
-│               └── voice.js       # [Implemented] Deepgram STT/TTS: mic capture, WebSocket proxy, playback
+│               ├── voice.js       # [Implemented] Voice orchestrator: FSM services, state ownership, public API
+│               ├── voice-constants.js # [Implemented] Voice config: sample rates, voice IDs, SVG icons, audio utils
+│               ├── voice-stt.js   # [Implemented] STT state machine, mic capture, WebSocket transcript streaming
+│               ├── voice-tts.js   # [Implemented] TTS state machine, WebSocket PCM streaming, REST fallback
+│               └── voice-ui.js    # [Implemented] Stateless voice UI helpers: indicators, timers, tooltips
 │
 ├── tests/
 ├── data/
@@ -2230,7 +2236,7 @@ This refactoring ensures the route handler focuses on HTTP concerns (request par
 
 ---
 
-## Voice Architecture (Phase 17)
+## Voice Architecture (Phases 17 + 21)
 
 Phase 17 adds speech-to-text (STT) and text-to-speech (TTS) to the chat experience using Deepgram's Nova-3 and Aura-2 models. Voice is a progressive enhancement layered on top of the existing text chat -- all voice features degrade gracefully when the Deepgram API key is not configured, and the LangGraph pipeline is completely unaffected.
 
@@ -2253,47 +2259,25 @@ All Deepgram API calls are proxied through FastAPI. The browser never communicat
 
 When the user taps the microphone button, the browser captures audio from the microphone, converts it to linear16 PCM, and streams it over a WebSocket to the server. The server proxies the audio to Deepgram's real-time STT WebSocket and relays transcript events back to the browser. Transcribed text populates the chat input field for review before the user submits.
 
-```
-Browser                          FastAPI                        Deepgram
-───────                          ───────                        ────────
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant F as FastAPI
+    participant D as Deepgram Nova-3
 
-getUserMedia()
-  │
-AudioContext + AudioWorklet
-  │ (Float32 → Int16 PCM,
-  │  downsample to 16kHz)
-  │
-  audio bytes ──WebSocket──────► /ws/transcribe
-  │                                │
-  │                          _authenticate_websocket()
-  │                          Validate JWT or session cookie
-  │                          Accept connection
-  │                                │
-  │                          audio bytes ──WebSocket──────► Nova-3 STT
-  │                                │                           │
-  │                                │                   transcript event
-  │                                │                           │
-  │                                ◄───────────────────────────
-  │                                │
-  ◄──WebSocket── {"transcript":    │
-  │               "Hola, como",    │
-  │               "is_final":      │
-  │               false}           │
-  │                                │
-  Show interim in chat input       │
-  │                                │
-  ... more audio chunks ...        │
-  │                                │
-  ◄──WebSocket── {"transcript":    │
-  │               "Hola, como      │
-  │               estas?",         │
-  │               "is_final":      │
-  │               true}            │
-  │                                │
-  Show final in chat input         │
-  User taps Send                   │
-  │                                │
-  POST /chat/stream ──────────────►│  (existing SSE flow, unchanged)
+    B->>B: getUserMedia()
+    B->>B: AudioContext + AudioWorklet<br/>(Float32 → Int16, downsample 16kHz)
+    B->>F: WebSocket /ws/transcribe (audio bytes)
+    F->>F: _authenticate_websocket()<br/>Validate JWT or session cookie
+    F->>D: WebSocket (audio bytes)
+    D-->>F: transcript event
+    F-->>B: {"transcript": "Hola, como", "is_final": false}
+    B->>B: Show interim in chat input
+    Note over B,D: ... more audio chunks ...
+    D-->>F: transcript event (final)
+    F-->>B: {"transcript": "Hola, como estas?", "is_final": true}
+    B->>B: Show final in chat input
+    B->>F: POST /chat/stream (existing SSE flow)
 ```
 
 ### TTS Data Flow
@@ -2302,113 +2286,85 @@ TTS has two paths: a WebSocket streaming path (primary, low latency) and a REST 
 
 **WebSocket streaming TTS** (primary): The browser opens a WebSocket to `/ws/speak`, sends the text as JSON, and receives binary PCM audio chunks for immediate playback via AudioContext. This achieves approximately 300ms time-to-first-audio.
 
-```
-Browser                          FastAPI                        Deepgram
-───────                          ───────                        ────────
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant F as FastAPI
+    participant D as Deepgram Aura-2
 
-User taps speaker icon
-  │
-AudioContext.resume()
-  │ (user gesture satisfies
-  │  mobile autoplay policy)
-  │
-  WebSocket open ────────────────► /ws/speak?voice=aura-2-nestor-es
-  │                                │
-  │                          _authenticate_websocket()
-  │                          Validate JWT or session cookie
-  │                          Accept connection
-  │                                │
-  │                          wss://api.deepgram.com/v1/speak ──► Aura-2 TTS
-  │                                │                                │
-  {"text": "Hola amigo"} ────────►│                                │
-  │                          {"type":"Speak","text":"..."} ───────►│
-  │                          {"type":"Flush"} ────────────────────►│
-  │                                │                                │
-  │                                │              binary audio chunks
-  │                                │              (linear16, 24kHz)  │
-  │                                │                                │
-  │                                ◄────────────────────────────────
-  │                                │
-  ◄── binary PCM chunks ──────────│
-  │                                │
-  Int16 → Float32                  │
-  AudioBufferSource.start()        │
-  (gapless scheduled playback)     │
-  │                                │
-  ... more chunks ...              │
-  │                                │
-  ◄── {"type":"Flushed"} ─────────│  (all audio sent)
-  │                                │
-  Playback continues until         │
-  all buffers finish                │
+    B->>B: User taps speaker icon
+    B->>B: AudioContext.resume()<br/>(user gesture for autoplay)
+    B->>F: WebSocket /ws/speak?voice=aura-2-nestor-es
+    F->>F: _authenticate_websocket()
+    F->>D: wss://api.deepgram.com/v1/speak
+    B->>F: {"text": "Hola amigo"}
+    F->>D: {"type":"Speak","text":"..."}
+    F->>D: {"type":"Flush"}
+    D-->>F: binary audio chunks (linear16, 24kHz)
+    F-->>B: binary PCM chunks
+    B->>B: Int16 → Float32<br/>AudioBufferSource.start()<br/>(gapless scheduled playback)
+    Note over B,D: ... more chunks ...
+    D-->>F: {"type":"Flushed"}
+    F-->>B: {"type":"Flushed"} (all audio sent)
+    B->>B: Playback continues until<br/>all buffers finish
 ```
 
 **REST fallback TTS**: For browsers without AudioContext support, the browser sends a POST to `/api/speak` and receives a complete MP3 audio stream, played via the native `Audio()` element. Higher latency but universally compatible.
 
-```
-Browser                          FastAPI                        Deepgram
-───────                          ───────                        ────────
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant F as FastAPI
+    participant D as Deepgram Aura-2
 
-POST /api/speak ─────────────────► /api/speak
-  {text, voice}                    │
-  │                          POST ────────────────────────────► Aura-2 TTS
-  │                                │                                │
-  │                                │                   audio chunks (mp3)
-  │                                │                                │
-  │                                ◄────────────────────────────────
-  │                                │
-  ◄── StreamingResponse ──────────│
-       audio/mpeg                  │
-  │                                │
-  new Audio(blobURL).play()        │
+    B->>F: POST /api/speak {text, voice}
+    F->>D: POST (TTS request)
+    D-->>F: audio chunks (mp3)
+    F-->>B: StreamingResponse audio/mpeg
+    B->>B: new Audio(blobURL).play()
 ```
 
 ### Client-Side Architecture
 
-Voice functionality lives in two client-side modules:
+Voice functionality lives in 6 client-side modules, orchestrated by `voice.js`:
 
-**`src/static/js/modules/voice.js`** -- The `VoiceManager` handles all voice interaction:
+**`src/static/js/modules/voice.js`** -- The orchestrator owns all mutable state and wires together:
 
-| Responsibility | Implementation |
-|----------------|----------------|
-| Microphone capture | `getUserMedia()` with track lifecycle management |
-| Audio processing | AudioWorklet (primary) or ScriptProcessor (fallback) for PCM conversion |
-| STT streaming | WebSocket to `/ws/transcribe`, interim/final transcript handling |
-| TTS playback | WebSocket streaming via AudioContext (primary) or REST via `Audio()` (fallback) |
-| UI state | Mic button states (idle/recording/processing), speaker button states (ready/loading/playing) |
-| Error handling | Tooltip errors for mic permission, connection failures, service unavailability |
-| Mobile handling | Visibility change detection (stops recording when backgrounded), track ended events |
+| Sub-module | Responsibility |
+|------------|----------------|
+| `voice-constants.js` | Sample rates, Deepgram voice IDs, SVG icon HTML, audio utilities (downsample, floatTo16BitPCM) |
+| `voice-stt.js` | STT state machine (`idle → connecting → recording → processing → idle`), mic capture via AudioWorklet, WebSocket transcript streaming |
+| `voice-tts.js` | TTS state machine (`idle → loading → playing → idle`), WebSocket PCM streaming, REST fallback, Flushed/metadata detection |
+| `voice-ui.js` | Stateless UI helpers: recording indicators, timers, level animation, tooltips, stop bar |
+| `fsm.js` | Generic finite state machine: `createMachine` (definition) + `interpret` (running service with onChange listeners) |
+
+Each STT/TTS session gets its own `AbortController`. All async callbacks check `signal.aborted` before acting, preventing stale handlers from corrupting active sessions.
 
 **`src/static/js/pcm-processor.js`** -- An AudioWorklet processor that runs on the audio rendering thread:
 
-```
-Audio rendering thread (AudioWorklet)     Main thread (VoiceManager)
-────────────────────────────────────      ──────────────────────────
+```mermaid
+sequenceDiagram
+    participant AT as Audio Thread (AudioWorklet)
+    participant MT as Main Thread (voice-stt.js)
+    participant WS as /ws/transcribe
 
-MediaStream (mic input)
-  │
-  ▼
-PCMProcessor.process(inputs)
-  │ Copy Float32 channel data
-  │
-  port.postMessage(Float32Array) ────────► onmessage handler
-                                            │ downsample to 16kHz
-                                            │ floatTo16BitPCM()
-                                            │
-                                            ws.send(Int16 ArrayBuffer)
-                                            ────► /ws/transcribe
+    Note over AT: MediaStream (mic input)
+    AT->>AT: PCMProcessor.process(inputs)<br/>Copy Float32 channel data
+    AT->>MT: port.postMessage(Float32Array)
+    MT->>MT: downsample to 16kHz<br/>floatTo16BitPCM()
+    MT->>WS: ws.send(Int16 ArrayBuffer)
 ```
 
 The AudioWorklet is preferred over the deprecated ScriptProcessorNode because it runs on a dedicated audio thread, immune to main-thread garbage collection pauses that cause audio dropouts on mobile devices. The ScriptProcessor is retained as a fallback for browsers without AudioWorklet support.
 
 **Audio format pipeline**:
 
-```
-Microphone (48kHz Float32)
-  → downsample to 16kHz Float32
-  → convert to Int16 (linear16)
-  → send as binary over WebSocket
-  → Deepgram Nova-3 decodes linear16 @ 16kHz
+```mermaid
+graph LR
+    A["Microphone<br/>48kHz Float32"] --> B["Downsample<br/>16kHz Float32"]
+    B --> C["Convert<br/>Int16 linear16"]
+    C --> D["WebSocket<br/>binary send"]
+    D --> E["Deepgram Nova-3<br/>decodes linear16 @ 16kHz"]
 ```
 
 ### Server-Side Architecture
@@ -2454,23 +2410,16 @@ Microphone (48kHz Float32)
 
 Both WebSocket endpoints (`/ws/transcribe` and `/ws/speak`) enforce authentication before accepting the connection. The `_authenticate_websocket()` helper extracts identity from cookies sent with the WebSocket handshake:
 
-```
-Client connects to /ws/transcribe or /ws/speak
-  │
-  ▼
-_authenticate_websocket(websocket)
-  │
-  ├─ Check sb-access-token cookie (JWT)
-  │    → Decode JWT, extract "sub" claim
-  │    → If valid: return user_id
-  │
-  ├─ Check session_id cookie (guest session)
-  │    → Validate as UUID v4
-  │    → If valid: return session_id
-  │
-  └─ Neither found:
-       → Close WebSocket (code 1008, "Authentication required")
-       → No Deepgram connection established
+```mermaid
+flowchart TD
+    A["Client connects to<br/>/ws/transcribe or /ws/speak"] --> B["_authenticate_websocket()"]
+    B --> C{"sb-access-token<br/>cookie?"}
+    C -->|Yes| D["Decode JWT, extract sub claim"]
+    D --> E["Return user_id"]
+    C -->|No| F{"session_id<br/>cookie?"}
+    F -->|Yes| G["Validate as UUID v4"]
+    G --> H["Return session_id"]
+    F -->|No| I["Close WebSocket<br/>code 1008: Authentication required"]
 ```
 
 ### Rate Limiting
@@ -2516,14 +2465,12 @@ Voice features are designed to never interfere with core text chat functionality
 
 **Browser compatibility fallbacks**:
 
-```
-AudioWorklet available?
-  ├─ Yes → PCMProcessor on audio thread (preferred)
-  └─ No  → ScriptProcessorNode on main thread (deprecated but functional)
-
-AudioContext available?
-  ├─ Yes → WebSocket streaming TTS with gapless PCM playback
-  └─ No  → REST TTS with MP3 via Audio() element
+```mermaid
+flowchart TD
+    A{"AudioWorklet<br/>available?"} -->|Yes| B["PCMProcessor on audio thread<br/>(preferred)"]
+    A -->|No| C["ScriptProcessorNode on main thread<br/>(deprecated but functional)"]
+    D{"AudioContext<br/>available?"} -->|Yes| E["WebSocket streaming TTS<br/>with gapless PCM playback"]
+    D -->|No| F["REST TTS with MP3<br/>via Audio() element"]
 ```
 
 ---

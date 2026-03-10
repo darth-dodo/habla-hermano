@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 2.0 | **Tests**: 2312+ | **Coverage**: 97% | **Date**: February 2026
+**Version**: 2.1 | **Tests**: 2,377+ | **Coverage**: 97% | **Date**: March 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -17,7 +17,7 @@ block-beta
     columns 1
     block:stack["HABLA HERMANO"]
         columns 2
-        A["Frontend"] B["HTMX + Jinja2 + Tailwind (3 themes)"]
+        A["Frontend"] B["HTMX + Jinja2 + Tailwind (4 themes)"]
         C["Backend"] D["FastAPI with dependency injection"]
         E["AI System"] F["LangGraph with 3 nodes, conditional routing"]
         G["LLM"] H["Claude Haiku 4.5 (conversational + analysis)"]
@@ -28,7 +28,7 @@ block-beta
         Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
         S["UI"] T["Hamburger menu, lesson player, step navigation"]
         U["Voice"] V["Deepgram STT (Nova-3) + TTS (Aura-2)"]
-        W["JS Testing"] X["Vitest + jsdom (186 tests, ~90% coverage)"]
+        W["JS Testing"] X["Vitest + jsdom (207 tests, ~90% coverage)"]
         Y["Lesson Chat"] Z["Phase machine: intro→teaching→exercise→complete"]
     end
 ```
@@ -43,8 +43,8 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2312+ tests (Python + JS) with 97% coverage, strict typing
-- ✅ Nordic Minimal design with 3 themes: Light, Dark, Ocean
+- ✅ 2,377+ tests (Python + JS) with 97% coverage, strict typing
+- ✅ 4 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
 - ✅ Micro-lessons system: 60 lessons across all languages and levels
@@ -57,10 +57,11 @@ block-beta
 - ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
 - ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
 - ✅ Voice conversation: Deepgram STT/TTS via WebSocket proxy with graceful degradation
-- ✅ ES Module architecture: 6 JavaScript modules with Vitest test suite (186 tests)
+- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (207 tests)
 - ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
 - ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
 - ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
+- ✅ Voice FSM refactor: FSM + AbortController, 5 sub-modules, race condition fixes (Phase 21)
 
 ---
 
@@ -286,7 +287,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 2312+ tests (Python + JS), 97% coverage
+├── tests/                            # 2,377+ tests (Python + JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -806,7 +807,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2312+ tests: Python + JS)
+### Coverage: 97% (2,377+ tests: Python + JS)
 
 ### Test Categories
 
@@ -966,4 +967,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v2.0 — Habla Hermano (2312+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Collapsible Pronunciation Tips + Mobile Responsive + Learning Paths & Adaptive Recommendations + Voice Conversation + ES Module Architecture + Conversational Lessons)*
+*Crash Course v2.1 — Habla Hermano (2,377+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons)*
