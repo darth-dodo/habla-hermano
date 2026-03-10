@@ -1085,6 +1085,9 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 // The onended of the sole source fires -- use fallback timeout
                 vi.advanceTimersByTime(1000);
 
+                // removeStopBar animates out with 600ms fallback
+                vi.advanceTimersByTime(600);
+
                 expect(document.querySelector('.voice-stop-bar')).toBeNull();
             });
 
@@ -1827,6 +1830,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
                 // TTS should be stopped
                 expect(btn.classList.contains('voice-playing')).toBe(false);
+                // removeStopBar animates out with 600ms fallback
+                vi.advanceTimersByTime(600);
                 expect(document.querySelector('.voice-stop-bar')).toBeNull();
             });
         });
@@ -1944,6 +1949,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             mod.destroyVoice();
 
+            // removeStopBar animates out with 600ms fallback
+            vi.advanceTimersByTime(600);
             expect(document.querySelector('.voice-stop-bar')).toBeNull();
         });
     });

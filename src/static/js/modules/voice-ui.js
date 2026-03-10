@@ -184,7 +184,7 @@ export function hideProcessing(handle) {
  */
 export function createStopBar(onStop) {
     var bar = document.createElement('div');
-    bar.className = 'voice-stop-bar';
+    bar.className = 'voice-stop-bar animate__animated animate__fadeInUp animate__faster';
     bar.innerHTML = '<button type="button" class="voice-stop-btn" aria-label="Stop audio playback">'
         + '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
         + '<rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" />'
@@ -208,7 +208,16 @@ export function createStopBar(onStop) {
  * @param {HTMLElement | null} bar
  */
 export function removeStopBar(bar) {
-    if (bar) bar.remove();
+    if (!bar || !bar.parentNode) return;
+    bar.classList.remove('animate__fadeInUp');
+    bar.classList.add('animate__fadeOutDown');
+    bar.addEventListener('animationend', function() {
+        if (bar.parentNode) bar.parentNode.removeChild(bar);
+    }, { once: true });
+    // Fallback: remove after 600ms if animationend doesn't fire (jsdom)
+    setTimeout(function() {
+        if (bar.parentNode) bar.parentNode.removeChild(bar);
+    }, 600);
 }
 
 /**
