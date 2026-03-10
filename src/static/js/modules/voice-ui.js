@@ -7,6 +7,7 @@
 
 import {
     MIC_ICON, LEVEL_BARS_HTML, SPINNER_HTML, SEND_ICON,
+    CANCEL_X_ICON,
 } from './voice-constants.js';
 
 /**
@@ -208,6 +209,157 @@ export function createStopBar(onStop) {
  */
 export function removeStopBar(bar) {
     if (bar) bar.remove();
+}
+
+/**
+ * Create the inline recording bar that replaces the input area during recording.
+ * @param {HTMLElement} inputContainer - The parent element holding textarea + buttons
+ * @param {function(): void} onCancel - Callback when cancel button is clicked
+ * @returns {{ element: HTMLElement, timerEl: HTMLElement, waveformEl: HTMLElement, cancel: function(): void }}
+ */
+export function createRecordingBar(inputContainer, onCancel) {
+    if (!inputContainer) return null;
+
+    // Hide all existing children
+    var children = inputContainer.children;
+    for (var i = 0; i < children.length; i++) {
+        children[i].style.display = 'none';
+        children[i].setAttribute('data-voice-hidden', '');
+    }
+
+    // Build the recording bar
+    var bar = document.createElement('div');
+    bar.className = 'voice-recording-bar animate__animated animate__fadeIn animate__faster';
+
+    // Cancel button
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'voice-cancel-btn';
+    cancelBtn.setAttribute('aria-label', 'Cancel recording');
+    cancelBtn.innerHTML = CANCEL_X_ICON;
+    cancelBtn.addEventListener('click', function() {
+        if (onCancel) onCancel();
+    });
+    bar.appendChild(cancelBtn);
+
+    // Red dot
+    var dot = document.createElement('span');
+    dot.className = 'voice-rec-dot';
+    dot.setAttribute('aria-hidden', 'true');
+    bar.appendChild(dot);
+
+    // Timer
+    var timerEl = document.createElement('span');
+    timerEl.className = 'voice-rec-timer';
+    timerEl.textContent = '0:00';
+    timerEl.setAttribute('aria-hidden', 'true');
+    bar.appendChild(timerEl);
+
+    // Waveform container with 30 bars
+    var waveformEl = document.createElement('div');
+    waveformEl.className = 'voice-rec-waveform';
+    waveformEl.setAttribute('aria-hidden', 'true');
+    for (var j = 0; j < 30; j++) {
+        var b = document.createElement('span');
+        b.className = 'voice-rec-bar';
+        waveformEl.appendChild(b);
+    }
+    bar.appendChild(waveformEl);
+
+    inputContainer.appendChild(bar);
+
+    // Timer interval
+    var startTime = Date.now();
+    var interval = setInterval(function() {
+        var elapsed = Math.floor((Date.now() - startTime) / 1000);
+        var min = Math.floor(elapsed / 60);
+        var sec = elapsed % 60;
+        timerEl.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+    }, 1000);
+
+    return {
+        element: bar,
+        timerEl: timerEl,
+        waveformEl: waveformEl,
+        cancel: function() {
+            clearInterval(interval);
+        },
+    };
+}
+
+/**
+ * Remove the recording bar and restore hidden input children.
+ * @param {{ element: HTMLElement, cancel: function(): void } | null} handle
+ * @param {HTMLElement} inputContainer
+ * @param {string} [animationOut] - Optional animate.css class (e.g. 'slideOutLeft', 'fadeOut')
+ */
+export function removeRecordingBar(handle, inputContainer, animationOut) {
+    if (!handle) return;
+    handle.cancel();
+
+    function restoreAndRemove() {
+        if (handle.element && handle.element.parentElement) {
+            handle.element.remove();
+        }
+        // Restore hidden children
+        if (inputContainer) {
+            var hidden = inputContainer.querySelectorAll('[data-voice-hidden]');
+            for (var i = 0; i < hidden.length; i++) {
+                hidden[i].style.display = '';
+                hidden[i].removeAttribute('data-voice-hidden');
+            }
+        }
+    }
+
+    if (animationOut && handle.element) {
+        // Remove fadeIn classes, add the exit animation
+        handle.element.classList.remove('animate__fadeIn', 'animate__faster');
+        handle.element.classList.add('animate__' + animationOut);
+        handle.element.addEventListener('animationend', restoreAndRemove, { once: true });
+    } else {
+        restoreAndRemove();
+    }
+}
+
+/**
+ * Animate the recording waveform bars from an AnalyserNode.
+ * @param {AnalyserNode} analyser
+ * @param {HTMLElement} waveformEl
+ * @param {function(): boolean} isRecordingFn
+ * @returns {{ stop: function(): void } | null}
+ */
+export function animateRecordingWaveform(analyser, waveformEl, isRecordingFn) {
+    if (!analyser || !waveformEl) return null;
+    var dataArray = new Uint8Array(analyser.frequencyBinCount);
+    var bars = waveformEl.querySelectorAll('.voice-rec-bar');
+    var barCount = bars.length;
+
+    // Respect prefers-reduced-motion
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return null;
+    }
+
+    var animFrame = null;
+    function animate() {
+        if (!isRecordingFn()) return;
+        analyser.getByteFrequencyData(dataArray);
+
+        var binCount = analyser.frequencyBinCount;
+        for (var i = 0; i < barCount; i++) {
+            var binIndex = Math.floor((i / barCount) * binCount);
+            var val = dataArray[binIndex] || 0;
+            var height = Math.max(4, (val / 255) * 28);
+            bars[i].style.height = height + 'px';
+        }
+        animFrame = requestAnimationFrame(animate);
+    }
+    animFrame = requestAnimationFrame(animate);
+
+    return {
+        stop: function() {
+            if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+        },
+    };
 }
 
 /**
