@@ -123,15 +123,17 @@ class MockAudio {
 
 function setupVoiceDOM() {
     document.body.innerHTML = `
-        <div class="flex items-end gap-2">
-            <textarea id="message-input"></textarea>
+        <form id="chat-form" class="flex items-end gap-2">
+            <div class="flex-1 relative">
+                <textarea id="message-input"></textarea>
+            </div>
             <div class="flex-shrink-0 relative">
                 <button id="mic-btn" type="button" aria-label="Record voice message">
                     <svg class="w-5 h-5"></svg>
                 </button>
                 <button id="send-btn" type="submit" class="hidden">Send</button>
             </div>
-        </div>
+        </form>
         <footer></footer>
     `;
 }
@@ -356,7 +358,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
         });
 
         describe('connecting -> recording (CONNECTED)', () => {
-            it('disables send, shows level bars and timer on WS open', async () => {
+            it('disables send, shows recording bar and stop button on WS open', async () => {
                 var { ws } = await startRecordingSession();
 
                 var sendBtn = document.getElementById('send-btn');
@@ -365,21 +367,23 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
                 expect(sendBtn.disabled).toBe(true);
                 expect(chatInput.readOnly).toBe(true);
-                expect(micBtn.classList.contains('voice-recording')).toBe(true);
+                // Mic button morphs to stop square
+                expect(micBtn.classList.contains('voice-stop-square')).toBe(true);
                 expect(micBtn.getAttribute('aria-label')).toBe('Stop recording');
-                expect(micBtn.innerHTML).toContain('voice-level-bars');
+                // Recording bar appears
+                expect(document.querySelector('.voice-recording-bar')).not.toBeNull();
             });
 
-            it('creates timer element', async () => {
+            it('creates recording bar with timer element', async () => {
                 await startRecordingSession();
-                var timer = document.querySelector('.voice-timer');
+                var timer = document.querySelector('.voice-rec-timer');
                 expect(timer).not.toBeNull();
                 expect(timer.textContent).toBe('0:00');
             });
 
-            it('updates timer each second', async () => {
+            it('updates recording bar timer each second', async () => {
                 await startRecordingSession();
-                var timer = document.querySelector('.voice-timer');
+                var timer = document.querySelector('.voice-rec-timer');
 
                 vi.advanceTimersByTime(1000);
                 expect(timer.textContent).toBe('0:01');
@@ -395,24 +399,23 @@ describe('voice.js -- FSM-based Voice Module', () => {
         });
 
         describe('recording -> processing (STOP)', () => {
-            it('tears down audio and shows processing on second toggle', async () => {
+            it('tears down audio and shows spinner in recording bar on second toggle', async () => {
                 var { mod } = await startRecordingSession();
 
                 mod.toggleRecording(); // recording -> processing
 
-                var micBtn = document.getElementById('mic-btn');
-                expect(micBtn.innerHTML).toContain('voice-spinner');
-                expect(micBtn.getAttribute('aria-label')).toContain('Processing');
-                expect(micBtn.classList.contains('voice-recording')).toBe(false);
+                // Recording bar should still be visible with spinner replacing waveform
+                var bar = document.querySelector('.voice-recording-bar');
+                expect(bar).not.toBeNull();
+                expect(bar.querySelector('.voice-spinner')).not.toBeNull();
             });
 
-            it('shows processing indicator pill', async () => {
+            it('keeps recording bar visible during processing', async () => {
                 var { mod } = await startRecordingSession();
                 mod.toggleRecording();
 
-                var pill = document.querySelector('.voice-processing-indicator');
-                expect(pill).not.toBeNull();
-                expect(pill.textContent).toContain('Processing');
+                var bar = document.querySelector('.voice-recording-bar');
+                expect(bar).not.toBeNull();
             });
 
             it('removes voice-interim class from chat input', async () => {
@@ -430,11 +433,13 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var { mod } = await startRecordingSession();
                 mod.toggleRecording(); // -> processing
 
-                expect(document.querySelector('.voice-processing-indicator')).not.toBeNull();
+                // Recording bar stays visible with spinner in waveform area
+                var bar = document.querySelector('.voice-recording-bar');
+                expect(bar).not.toBeNull();
+                expect(bar.querySelector('.voice-spinner')).not.toBeNull();
 
                 vi.advanceTimersByTime(2000);
 
-                expect(document.querySelector('.voice-processing-indicator')).toBeNull();
                 var micBtn = document.getElementById('mic-btn');
                 expect(micBtn.innerHTML).toContain('svg');
                 expect(micBtn.getAttribute('aria-label')).toBe('Record voice message');
@@ -706,8 +711,10 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 // Toggle again during processing -- should be ignored
                 mod.toggleRecording();
 
-                // Mic should still show spinner
-                expect(document.getElementById('mic-btn').innerHTML).toContain('voice-spinner');
+                // Recording bar should still show spinner in waveform area
+                var bar = document.querySelector('.voice-recording-bar');
+                expect(bar).not.toBeNull();
+                expect(bar.querySelector('.voice-spinner')).not.toBeNull();
             });
         });
     });
@@ -777,11 +784,12 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             // Now stop recording -> processing
             mod.toggleRecording(); // -> processing
-            expect(document.querySelector('.voice-processing-indicator')).not.toBeNull();
+            var bar = document.querySelector('.voice-recording-bar');
+            expect(bar).not.toBeNull();
+            expect(bar.querySelector('.voice-spinner')).not.toBeNull();
 
             // Processing auto-dismisses after 2s timeout
             vi.advanceTimersByTime(2000);
-            expect(document.querySelector('.voice-processing-indicator')).toBeNull();
         });
     });
 
@@ -1867,13 +1875,13 @@ describe('voice.js -- FSM-based Voice Module', () => {
         it('cancels active STT and TTS sessions', async () => {
             var { mod, ws } = await startRecordingSession();
 
-            // Should be recording
-            expect(document.getElementById('mic-btn').classList.contains('voice-recording')).toBe(true);
+            // Should be recording (mic shows stop square)
+            expect(document.getElementById('mic-btn').classList.contains('voice-stop-square')).toBe(true);
 
             mod.destroyVoice();
 
             // Should restore mic icon
-            expect(document.getElementById('mic-btn').classList.contains('voice-recording')).toBe(false);
+            expect(document.getElementById('mic-btn').classList.contains('voice-stop-square')).toBe(false);
         });
 
         it('stops FSM services so further sends are no-ops', async () => {
@@ -2178,6 +2186,176 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var send = document.getElementById('send-btn');
             // Send button should remain visible (no hidden class) when no mic
             expect(send.classList.contains('hidden')).toBe(false);
+        });
+    });
+
+    // ============================================
+    // 10. Recording Bar
+    // ============================================
+
+    describe('Recording Bar', () => {
+        it('should show recording bar when entering recording state', async () => {
+            var { mod } = await startRecordingSession();
+
+            var bar = document.querySelector('.voice-recording-bar');
+            expect(bar).not.toBeNull();
+            expect(bar.querySelector('.voice-cancel-btn')).not.toBeNull();
+            expect(bar.querySelector('.voice-rec-dot')).not.toBeNull();
+            expect(bar.querySelector('.voice-rec-timer')).not.toBeNull();
+            expect(bar.querySelector('.voice-rec-waveform')).not.toBeNull();
+        });
+
+        it('should create 30 waveform bars', async () => {
+            await startRecordingSession();
+
+            var bars = document.querySelectorAll('.voice-rec-bar');
+            expect(bars.length).toBe(30);
+        });
+
+        it('should hide input children when recording bar appears', async () => {
+            await startRecordingSession();
+
+            var form = document.getElementById('chat-form');
+            var hiddenChildren = form.querySelectorAll('[data-voice-hidden]');
+            // The form has 2 original children (textarea wrapper + button wrapper)
+            expect(hiddenChildren.length).toBeGreaterThanOrEqual(2);
+            hiddenChildren.forEach(function(child) {
+                expect(child.style.display).toBe('none');
+            });
+        });
+
+        it('should morph mic button to stop square during recording', async () => {
+            await startRecordingSession();
+
+            var mic = document.getElementById('mic-btn');
+            expect(mic.classList.contains('voice-stop-square')).toBe(true);
+            expect(mic.innerHTML).toContain('rect');
+            expect(mic.getAttribute('aria-label')).toBe('Stop recording');
+        });
+
+        it('should increment timer every second', async () => {
+            await startRecordingSession();
+
+            var timer = document.querySelector('.voice-rec-timer');
+            expect(timer.textContent).toBe('0:00');
+
+            vi.advanceTimersByTime(1000);
+            expect(timer.textContent).toBe('0:01');
+
+            vi.advanceTimersByTime(2000);
+            expect(timer.textContent).toBe('0:03');
+
+            vi.advanceTimersByTime(57000);
+            expect(timer.textContent).toBe('1:00');
+        });
+
+        it('should remove recording bar on cancel (idle from recording)', async () => {
+            var { mod } = await startRecordingSession();
+
+            // Click cancel
+            var cancelBtn = document.querySelector('.voice-cancel-btn');
+            cancelBtn.click();
+
+            // Bar should still exist (animating out with slideOutLeft)
+            var bar = document.querySelector('.voice-recording-bar');
+            expect(bar).not.toBeNull();
+            expect(bar.classList.contains('animate__slideOutLeft')).toBe(true);
+
+            // Fire animationend to complete removal
+            bar.dispatchEvent(new Event('animationend'));
+
+            expect(document.querySelector('.voice-recording-bar')).toBeNull();
+        });
+
+        it('should restore input children after cancel', async () => {
+            await startRecordingSession();
+
+            var cancelBtn = document.querySelector('.voice-cancel-btn');
+            cancelBtn.click();
+
+            // Fire animationend
+            var bar = document.querySelector('.voice-recording-bar');
+            bar.dispatchEvent(new Event('animationend'));
+
+            var form = document.getElementById('chat-form');
+            var hiddenChildren = form.querySelectorAll('[data-voice-hidden]');
+            expect(hiddenChildren.length).toBe(0);
+
+            // Children should be visible again
+            var textarea = document.getElementById('message-input');
+            expect(textarea.style.display).not.toBe('none');
+        });
+
+        it('should restore mic button icon after cancel', async () => {
+            await startRecordingSession();
+
+            var cancelBtn = document.querySelector('.voice-cancel-btn');
+            cancelBtn.click();
+
+            var mic = document.getElementById('mic-btn');
+            expect(mic.classList.contains('voice-stop-square')).toBe(false);
+            expect(mic.getAttribute('aria-label')).toBe('Record voice message');
+        });
+
+        it('should show spinner in recording bar during processing', async () => {
+            var { mod } = await startRecordingSession();
+
+            mod.toggleRecording(); // recording -> processing (STOP)
+
+            var spinner = document.querySelector('.voice-recording-bar .voice-spinner');
+            expect(spinner).not.toBeNull();
+        });
+
+        it('should remove recording bar with fadeOut after processing completes', async () => {
+            var { mod } = await startRecordingSession();
+
+            mod.toggleRecording(); // recording -> processing
+
+            // Advance past the 2s processing timeout
+            vi.advanceTimersByTime(2000);
+
+            var bar = document.querySelector('.voice-recording-bar');
+            expect(bar).not.toBeNull();
+            expect(bar.classList.contains('animate__fadeOut')).toBe(true);
+
+            // Fire animationend
+            bar.dispatchEvent(new Event('animationend'));
+            expect(document.querySelector('.voice-recording-bar')).toBeNull();
+        });
+
+        it('should restore mic button after processing completes', async () => {
+            var { mod } = await startRecordingSession();
+
+            mod.toggleRecording(); // recording -> processing
+            vi.advanceTimersByTime(2000); // PROCESSED
+
+            var mic = document.getElementById('mic-btn');
+            expect(mic.classList.contains('voice-stop-square')).toBe(false);
+            expect(mic.getAttribute('aria-label')).toBe('Record voice message');
+        });
+
+        it('should re-enable send button and textarea after recording ends', async () => {
+            var { mod } = await startRecordingSession();
+
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            // During recording, send is disabled
+            expect(send.disabled).toBe(true);
+
+            mod.toggleRecording(); // -> processing
+            vi.advanceTimersByTime(2000); // -> idle
+
+            expect(send.disabled).toBe(false);
+            expect(input.readOnly).toBe(false);
+        });
+
+        it('should clean up recording bar on destroy', async () => {
+            var { mod } = await startRecordingSession();
+
+            mod.destroyVoice();
+
+            expect(document.querySelector('.voice-recording-bar')).toBeNull();
         });
     });
 });

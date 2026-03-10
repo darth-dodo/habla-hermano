@@ -16,12 +16,14 @@ import { interpret } from './fsm.js';
 import {
     VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
     SPEAKER_ICON, SPEAKER_PLAYING_ICON,
+    MIC_ICON, STOP_SQUARE_ICON, SPINNER_HTML,
 } from './voice-constants.js';
 import {
     showMicRecording, restoreMicIcon, setSendEnabled,
     showTooltipError, startTimer, stopTimer,
     startLevelAnimation, showProcessing, hideProcessing,
     createStopBar, removeStopBar, setupButtonSwap,
+    createRecordingBar, removeRecordingBar, animateRecordingWaveform,
 } from './voice-ui.js';
 import {
     sttMachine, startRecordingSession,
@@ -63,6 +65,10 @@ var processingHandle = null;
 var processingTimeout = null;
 var stopBar = null;
 
+// Recording bar handles (Task 3)
+var recordingBarHandle = null;
+var waveformAnimHandle = null;
+
 // Error tooltip timeouts (shared mutable map)
 var errorTimeouts = {};
 
@@ -95,11 +101,24 @@ function onSttChange(state, prev) {
     // --- entering recording (from connecting) ---
     if (state === 'recording' && prev === 'connecting') {
         setSendEnabled(sendButton, chatInput, false);
-        showMicRecording(micButton);
-        timerHandle = startTimer(micWrapper);
-        levelHandle = startLevelAnimation(
+
+        // Create recording bar inside the form / input container
+        var inputContainer = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
+        recordingBarHandle = createRecordingBar(inputContainer, function() {
+            sttService.send('CANCEL');
+        });
+
+        // Morph mic button to stop square
+        if (micButton) {
+            micButton.classList.add('voice-stop-square');
+            micButton.innerHTML = STOP_SQUARE_ICON;
+            micButton.setAttribute('aria-label', 'Stop recording');
+        }
+
+        // Start waveform animation
+        waveformAnimHandle = animateRecordingWaveform(
             getAnalyser(),
-            micButton,
+            recordingBarHandle ? recordingBarHandle.waveformEl : null,
             function() { return sttService && sttService.matches('recording'); }
         );
     }
@@ -109,7 +128,19 @@ function onSttChange(state, prev) {
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-        doShowProcessing();
+
+        // Stop waveform animation
+        if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
+
+        // Show spinner inside the recording bar (replace waveform)
+        if (recordingBarHandle && recordingBarHandle.waveformEl) {
+            recordingBarHandle.waveformEl.innerHTML = SPINNER_HTML;
+        }
+
+        // Auto-dismiss after 2 seconds
+        processingTimeout = setTimeout(function() {
+            sttService.send('PROCESSED');
+        }, 2000);
     }
 
     // --- entering idle (from connecting on ERROR/CANCEL) ---
@@ -118,27 +149,62 @@ function onSttChange(state, prev) {
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-        restoreMicIcon(micButton);
+
+        // Remove recording bar if it exists (edge case: rapid cancel)
+        if (recordingBarHandle) {
+            var container = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
+            removeRecordingBar(recordingBarHandle, container);
+            recordingBarHandle = null;
+        }
+
+        doRestoreMicButton();
         setSendEnabled(sendButton, chatInput, true);
     }
 
     // --- entering idle (from recording on ERROR/CANCEL) ---
     if (state === 'idle' && prev === 'recording') {
         if (sttAbort) { sttAbort.abort(); sttAbort = null; }
-        stopTimer(timerHandle); timerHandle = null;
-        if (levelHandle) { levelHandle.stop(); levelHandle = null; }
+        if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-        restoreMicIcon(micButton);
+
+        // Remove recording bar with slideOutLeft animation
+        var containerRec = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
+        removeRecordingBar(recordingBarHandle, containerRec, 'slideOutLeft');
+        recordingBarHandle = null;
+
+        doRestoreMicButton();
         setSendEnabled(sendButton, chatInput, true);
     }
 
     // --- entering idle (from processing) ---
     if (state === 'idle' && prev === 'processing') {
         if (sttAbort) { sttAbort.abort(); sttAbort = null; }
-        doHideProcessing();
+
+        if (processingTimeout) {
+            clearTimeout(processingTimeout);
+            processingTimeout = null;
+        }
+
+        // Remove recording bar with fadeOut animation
+        var containerProc = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
+        removeRecordingBar(recordingBarHandle, containerProc, 'fadeOut');
+        recordingBarHandle = null;
+
+        doRestoreMicButton();
+        setSendEnabled(sendButton, chatInput, true);
     }
+}
+
+/**
+ * Restore the mic button to its default idle icon and classes.
+ */
+function doRestoreMicButton() {
+    if (!micButton) return;
+    micButton.classList.remove('voice-stop-square');
+    micButton.innerHTML = MIC_ICON;
+    micButton.setAttribute('aria-label', 'Record voice message');
 }
 
 /**
@@ -272,6 +338,11 @@ export function initVoice() {
  * Tear down voice module. Called on beforeunload.
  */
 export function destroyVoice() {
+    // 0. Capture recording bar element before CANCEL nullifies the handle
+    //    (CANCEL triggers onSttChange which calls removeRecordingBar with animation,
+    //     but jsdom/real browsers may not fire animationend synchronously)
+    var pendingBarEl = recordingBarHandle ? recordingBarHandle.element : null;
+
     // 1. Stop any active recording
     if (sttService && !sttService.matches('idle')) {
         sttService.send('CANCEL');
@@ -316,7 +387,28 @@ export function destroyVoice() {
     removeStopBar(stopBar); stopBar = null;
     hideProcessing(processingHandle); processingHandle = null;
 
-    // 9. Null out DOM refs
+    // 9. Clean up recording bar
+    if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
+    if (recordingBarHandle) {
+        recordingBarHandle.cancel();
+        if (recordingBarHandle.element && recordingBarHandle.element.parentElement) {
+            recordingBarHandle.element.remove();
+        }
+        recordingBarHandle = null;
+    }
+    // Force-remove bar element if CANCEL left it in the DOM (animation pending)
+    if (pendingBarEl && pendingBarEl.parentElement) {
+        var parentContainer = pendingBarEl.parentElement;
+        pendingBarEl.remove();
+        // Restore any children hidden by the recording bar
+        var hidden = parentContainer.querySelectorAll('[data-voice-hidden]');
+        for (var i = 0; i < hidden.length; i++) {
+            hidden[i].style.display = '';
+            hidden[i].removeAttribute('data-voice-hidden');
+        }
+    }
+
+    // 10. Null out DOM refs
     micButton = null;
     chatInput = null;
     sendButton = null;
