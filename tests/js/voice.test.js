@@ -1301,45 +1301,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
     // ============================================
 
     describe('TTS Speed', () => {
-        it('uses speed from tts-speed-picker dataset', async () => {
-            setupVoiceDOM();
-            var picker = document.createElement('div');
-            picker.id = 'tts-speed-picker';
-            picker.dataset.ttsSpeed = '0.75';
-            document.body.appendChild(picker);
-
-            var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var btn = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn);
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            expect(sources[0].playbackRate.value).toBe(0.75);
-        });
-
         it('uses speed from button data-speed attribute', async () => {
             setupVoiceDOM();
             var mod = await importVoice();
@@ -1442,44 +1403,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(sources[0].playbackRate.value).toBe(0.25);
         });
 
-        it('picker speed takes priority over button data-speed', async () => {
-            setupVoiceDOM();
-            var picker = document.createElement('div');
-            picker.id = 'tts-speed-picker';
-            picker.dataset.ttsSpeed = '0.5';
-            document.body.appendChild(picker);
-
-            var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var btn = createSpeakButton('Hola', 'es', { speed: 1.5 });
-            mod.handleSpeakClick(btn);
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            expect(sources[0].playbackRate.value).toBe(0.5);
-        });
     });
 
     // ============================================
@@ -1858,7 +1781,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(btn3.classList.contains('voice-speak-btn')).toBe(true);
         });
 
-        it('restores speaker icon on cleaned-up buttons', async () => {
+        it('does not alter innerHTML of cleaned-up buttons', async () => {
             setupVoiceDOM();
             var mod = await importVoice();
 
@@ -1867,8 +1790,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             mod.stopAllTTS();
 
-            // Should have speaker SVG restored
-            expect(btn.innerHTML).toContain('polygon');
+            // innerHTML should remain unchanged (waveform player manages its own icons)
+            expect(btn.innerHTML).toContain('custom');
         });
     });
 

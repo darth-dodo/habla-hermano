@@ -6,29 +6,8 @@
  */
 
 import {
-    MIC_ICON, LEVEL_BARS_HTML, SPINNER_HTML, SEND_ICON,
-    CANCEL_X_ICON,
+    SPINNER_HTML, CANCEL_X_ICON,
 } from './voice-constants.js';
-
-/**
- * Show mic button in recording state (level bars).
- */
-export function showMicRecording(micButton) {
-    if (!micButton) return;
-    micButton.classList.add('voice-recording');
-    micButton.setAttribute('aria-label', 'Stop recording');
-    micButton.innerHTML = LEVEL_BARS_HTML;
-}
-
-/**
- * Restore mic button to default idle state.
- */
-export function restoreMicIcon(micButton) {
-    if (!micButton) return;
-    micButton.classList.remove('voice-recording');
-    micButton.setAttribute('aria-label', 'Record voice message');
-    micButton.innerHTML = MIC_ICON;
-}
 
 /**
  * Enable or disable the send button and textarea.
@@ -66,115 +45,6 @@ export function showTooltipError(anchor, message, errorTimeouts) {
         if (tooltip.parentElement) tooltip.remove();
         delete errorTimeouts[timeoutKey];
     }, 4000);
-}
-
-/**
- * Create and start a recording timer. Returns handle for stopTimer().
- * @param {HTMLElement} micWrapper
- * @returns {{ element: HTMLElement, interval: number } | null}
- */
-export function startTimer(micWrapper) {
-    if (!micWrapper) return null;
-    var startTime = Date.now();
-
-    var timer = document.createElement('div');
-    timer.className = 'voice-timer';
-    timer.textContent = '0:00';
-    timer.setAttribute('aria-hidden', 'true');
-    micWrapper.appendChild(timer);
-
-    var interval = setInterval(function() {
-        var elapsed = Math.floor((Date.now() - startTime) / 1000);
-        var min = Math.floor(elapsed / 60);
-        var sec = elapsed % 60;
-        timer.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
-    }, 1000);
-
-    return { element: timer, interval: interval };
-}
-
-/**
- * Stop and remove a recording timer.
- * @param {{ element: HTMLElement, interval: number } | null} handle
- */
-export function stopTimer(handle) {
-    if (!handle) return;
-    if (handle.interval) clearInterval(handle.interval);
-    if (handle.element && handle.element.parentElement) handle.element.remove();
-}
-
-/**
- * Start audio level bar animation. Returns handle with stop() method.
- * @param {AnalyserNode} analyser
- * @param {HTMLElement} micButton
- * @param {function(): boolean} isRecording - check if still recording
- * @returns {{ stop: function(): void } | null}
- */
-export function startLevelAnimation(analyser, micButton, isRecording) {
-    if (!analyser) return null;
-    var dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Respect prefers-reduced-motion: skip animation loop (CSS gives static height)
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        return null;
-    }
-
-    var animFrame = null;
-    function animate() {
-        if (!isRecording()) return;
-        analyser.getByteFrequencyData(dataArray);
-
-        var bars = micButton ? micButton.querySelectorAll('.voice-bar') : [];
-        var bins = [1, 3, 6, 10]; // Voice-frequency bins
-        for (var i = 0; i < bars.length; i++) {
-            var val = dataArray[bins[i]] || 0;
-            var height = Math.max(3, (val / 255) * 18);
-            bars[i].style.height = height + 'px';
-        }
-        animFrame = requestAnimationFrame(animate);
-    }
-    animFrame = requestAnimationFrame(animate);
-
-    return {
-        stop: function() {
-            if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
-        },
-    };
-}
-
-/**
- * Show processing spinner and pill. Returns handle for hideProcessing().
- * @param {HTMLElement} micButton
- * @param {HTMLElement} micWrapper
- * @returns {{ indicator: HTMLElement | null } | null}
- */
-export function showProcessing(micButton, micWrapper) {
-    if (!micButton) return null;
-
-    micButton.classList.remove('voice-recording');
-    micButton.innerHTML = SPINNER_HTML;
-    micButton.setAttribute('aria-label', 'Processing speech\u2026');
-
-    var indicator = null;
-    if (micWrapper) {
-        indicator = document.createElement('div');
-        indicator.className = 'voice-processing-indicator';
-        indicator.textContent = 'Processing\u2026';
-        micWrapper.appendChild(indicator);
-    }
-
-    return { indicator: indicator };
-}
-
-/**
- * Hide processing indicator.
- * @param {{ indicator: HTMLElement | null } | null} handle
- */
-export function hideProcessing(handle) {
-    if (!handle) return;
-    if (handle.indicator && handle.indicator.parentElement) {
-        handle.indicator.remove();
-    }
 }
 
 /**

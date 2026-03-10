@@ -350,32 +350,6 @@
                 <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
                 {% endif %}
 
-                <!-- TTS Speed Picker (Phase 17) -->
-                {% if voice_enabled %}
-                <div class="flex-shrink-0 flex items-center" x-data="{ ttsSpeed: '1.0' }">
-                    <div
-                        class="flex flex-col gap-0.5"
-                        id="tts-speed-picker"
-                        :data-tts-speed="ttsSpeed"
-                        aria-label="Voice playback speed"
-                    >
-                        <template x-for="s in [['0.75', '.75×'], ['1.0', '1×'], ['1.25', '1.25×']]" :key="s[0]">
-                            <button
-                                type="button"
-                                @click="ttsSpeed = s[0]"
-                                :aria-pressed="ttsSpeed === s[0]"
-                                :class="ttsSpeed === s[0]
-                                    ? 'bg-accent/15 text-accent font-semibold'
-                                    : 'text-text-subtle hover:text-text hover:bg-surface-overlay'"
-                                class="text-[10px] leading-none px-1 py-0.5 rounded transition-all duration-100"
-                                :aria-label="s[1] + ' speed'"
-                                x-text="s[1]"
-                            ></button>
-                        </template>
-                    </div>
-                </div>
-                {% endif %}
-
                 <!-- Message Input - Minimal -->
                 <div class="flex-1 relative">
                     <textarea

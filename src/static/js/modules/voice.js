@@ -15,13 +15,10 @@
 import { interpret } from './fsm.js';
 import {
     VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
-    SPEAKER_ICON,
     MIC_ICON, STOP_SQUARE_ICON, SPINNER_HTML,
 } from './voice-constants.js';
 import {
-    showMicRecording, restoreMicIcon, setSendEnabled,
-    showTooltipError, startTimer, stopTimer,
-    startLevelAnimation, showProcessing, hideProcessing,
+    setSendEnabled, showTooltipError,
     createStopBar, removeStopBar, setupButtonSwap,
     createRecordingBar, removeRecordingBar, animateRecordingWaveform,
 } from './voice-ui.js';
@@ -64,10 +61,7 @@ var ttsActiveBtn = null;
 // Active waveform player handle (from voice-waveform.js)
 var activeWfPlayer = null;
 
-// UI state handles (returned by voice-ui.js functions)
-var timerHandle = null;
-var levelHandle = null;
-var processingHandle = null;
+// UI state handles
 var processingTimeout = null;
 var stopBar = null;
 
@@ -99,7 +93,11 @@ function onSttChange(state, prev) {
             },
             function onFinalTranscript() {
                 // Dismiss processing state early on final transcript
-                if (processingTimeout) doHideProcessing();
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                    sttService.send('PROCESSED');
+                }
             }
         );
     }
@@ -211,36 +209,6 @@ function doRestoreMicButton() {
     micButton.classList.remove('voice-stop-square');
     micButton.innerHTML = MIC_ICON;
     micButton.setAttribute('aria-label', 'Record voice message');
-}
-
-/**
- * Show the processing state with auto-dismiss timeout.
- */
-function doShowProcessing() {
-    processingHandle = showProcessing(micButton, micWrapper);
-
-    // Auto-dismiss after 2 seconds
-    processingTimeout = setTimeout(function() {
-        sttService.send('PROCESSED');
-    }, 2000);
-}
-
-/**
- * Hide processing state and restore mic button.
- */
-function doHideProcessing() {
-    if (processingTimeout) {
-        clearTimeout(processingTimeout);
-        processingTimeout = null;
-    }
-    hideProcessing(processingHandle);
-    processingHandle = null;
-
-    // Safety: ensure timer is fully stopped
-    stopTimer(timerHandle); timerHandle = null;
-
-    restoreMicIcon(micButton);
-    setSendEnabled(sendButton, chatInput, true);
 }
 
 // ============================================
@@ -384,15 +352,10 @@ export function destroyVoice() {
     });
     errorTimeouts = {};
 
-    // 7. Stop timer and level animation
-    stopTimer(timerHandle); timerHandle = null;
-    if (levelHandle) { levelHandle.stop(); levelHandle = null; }
-
-    // 8. Hide stop bar and processing indicator
+    // 7. Hide stop bar
     removeStopBar(stopBar); stopBar = null;
-    hideProcessing(processingHandle); processingHandle = null;
 
-    // 9. Clean up recording bar
+    // 8. Clean up recording bar
     if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
     if (recordingBarHandle) {
         recordingBarHandle.cancel();
@@ -439,9 +402,8 @@ export function toggleRecording() {
 export function handleSpeakClick(btn) {
     var text = btn.dataset.text;
     var language = btn.dataset.language || 'es';
-    // Read live speed from picker; fall back to button's data-speed, then default
-    var picker = document.getElementById('tts-speed-picker');
-    var speed = parseFloat((picker && picker.dataset.ttsSpeed) || btn.dataset.speed) || DEFAULT_TTS_SPEED;
+    // Speed is now per-waveform; fall back to button's data-speed, then default
+    var speed = parseFloat(btn.dataset.speed) || DEFAULT_TTS_SPEED;
 
     // Clamp speed to safe range (0.25x to 2.0x)
     speed = Math.max(0.25, Math.min(2.0, speed));
@@ -502,7 +464,6 @@ export function stopAllTTS() {
     var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
     activeBtns.forEach(function(b) {
         b.classList.remove('voice-playing', 'voice-loading');
-        b.innerHTML = SPEAKER_ICON;
     });
 
     if (!ttsService.matches('idle')) {
