@@ -122,10 +122,11 @@ async def stream_chat_events(  # noqa: PLR0912
                         result.full_response = accumulated_response
                         rendered = render_markdown(accumulated_response)
                         yield _make_sse_event(
-                            "response_complete", {
+                            "response_complete",
+                            {
                                 "content": accumulated_response,
                                 "rendered_html": rendered,
-                            }
+                            },
                         )
 
                         # Capture review words offered

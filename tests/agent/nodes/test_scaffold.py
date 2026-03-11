@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import anthropic
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
-from src.agent.nodes.scaffold import scaffold_node
+from src.agent.nodes.scaffold import _parse_scaffold_response, scaffold_node
 from src.agent.state import ScaffoldingConfig
 
 if TYPE_CHECKING:
@@ -623,3 +624,191 @@ class TestScaffoldNodeIntegration:
         # Should have all expected keys
         expected_keys = {"enabled", "word_bank"}
         assert expected_keys.issubset(set(scaffolding.keys()))
+
+
+# =============================================================================
+# Unit Tests: _parse_scaffold_response — parsing edge cases
+# =============================================================================
+
+
+class TestParseScaffoldResponse:
+    """Tests for _parse_scaffold_response handling malformed LLM output."""
+
+    def test_non_list_word_bank_defaults_to_empty(self) -> None:
+        """word_bank that is not a list (e.g. a number) should become []."""
+        content = json.dumps({"word_bank": 42, "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.word_bank == []
+
+    def test_dict_word_bank_defaults_to_empty(self) -> None:
+        """word_bank that is a dict should become []."""
+        content = json.dumps({"word_bank": {"a": 1}, "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.word_bank == []
+
+    def test_string_word_bank_defaults_to_empty(self) -> None:
+        """word_bank that is a plain string should become []."""
+        content = json.dumps({"word_bank": "hola", "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.word_bank == []
+
+    def test_whitespace_only_sentence_starter_becomes_none(self) -> None:
+        """A sentence_starter that is only whitespace should become None."""
+        content = json.dumps({"word_bank": ["hola"], "sentence_starter": "   "})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.sentence_starter is None
+
+    def test_empty_string_sentence_starter_becomes_none(self) -> None:
+        """A sentence_starter that is an empty string should become None."""
+        content = json.dumps({"word_bank": ["hola"], "sentence_starter": ""})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.sentence_starter is None
+
+    def test_invalid_json_returns_default_config(self) -> None:
+        """Completely invalid JSON should return default scaffolding config."""
+        config = _parse_scaffold_response("not json at all", "A0")
+        assert config.enabled is True
+        assert config.word_bank == []
+        assert config.hint_text == "Try responding to what the tutor said."
+        assert config.sentence_starter is None
+        assert config.auto_expand is True  # A0 gets auto_expand
+
+    def test_invalid_json_a1_auto_expand_false(self) -> None:
+        """Invalid JSON for A1 level should return auto_expand=False."""
+        config = _parse_scaffold_response("{{bad json}}", "A1")
+        assert config.auto_expand is False
+
+    def test_valid_json_a0_auto_expand_true(self) -> None:
+        """Valid JSON for A0 level should set auto_expand=True."""
+        content = json.dumps({"word_bank": ["hola"], "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.auto_expand is True
+
+    def test_valid_json_a1_auto_expand_false(self) -> None:
+        """Valid JSON for A1 level should set auto_expand=False."""
+        content = json.dumps({"word_bank": ["hola"], "hint": "test"})
+        config = _parse_scaffold_response(content, "A1")
+        assert config.auto_expand is False
+
+    def test_word_bank_filters_empty_entries(self) -> None:
+        """Empty entries in word_bank should be filtered out."""
+        content = json.dumps({"word_bank": ["hola", "", None, "adios"], "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert config.word_bank == ["hola", "adios"]
+
+    def test_word_bank_entries_converted_to_strings(self) -> None:
+        """Non-string entries in word_bank should be converted to strings."""
+        content = json.dumps({"word_bank": [123, True, "hola"], "hint": "test"})
+        config = _parse_scaffold_response(content, "A0")
+        assert "123" in config.word_bank
+        assert "True" in config.word_bank
+        assert "hola" in config.word_bank
+
+
+# =============================================================================
+# Unit Tests: scaffold_node with mocked LLM — non-string content and API errors
+# =============================================================================
+
+
+class TestScaffoldNodeLLMEdgeCases:
+    """Tests for scaffold_node when LLM returns non-string content or raises errors."""
+
+    @pytest.fixture
+    def base_state(self) -> ConversationState:
+        """Base conversation state with an AI message for scaffolding."""
+        return {
+            "messages": [
+                HumanMessage(content="Hello"),
+                AIMessage(content="Hola! Como te llamas?"),
+            ],
+            "level": "A0",
+            "language": "es",
+        }
+
+    @pytest.mark.asyncio
+    async def test_non_string_content_returns_enabled_config(
+        self, base_state: ConversationState
+    ) -> None:
+        """When LLM returns non-string content (list), scaffold_node should return enabled config."""
+        mock_response = MagicMock()
+        # Simulate content being a list (e.g., multi-part response)
+        mock_response.content = [{"type": "text", "text": '{"word_bank": ["hola"]}'}]
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
+        with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+            result = await scaffold_node(base_state)
+
+        scaffolding = result["scaffolding"]
+        assert scaffolding["enabled"] is True
+        # Non-string path uses default ScaffoldingConfig with auto_expand based on level
+        assert scaffolding["auto_expand"] is True  # A0 level
+
+    @pytest.mark.asyncio
+    async def test_api_error_returns_default_config(
+        self, base_state: ConversationState
+    ) -> None:
+        """When LLM raises anthropic.APIError, scaffold_node should return default config."""
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(
+            side_effect=anthropic.APIError(
+                message="Service unavailable",
+                request=MagicMock(),
+                body=None,
+            )
+        )
+
+        with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+            result = await scaffold_node(base_state)
+
+        scaffolding = result["scaffolding"]
+        assert scaffolding["enabled"] is True
+        assert scaffolding["word_bank"] == []
+        assert scaffolding["hint_text"] == "Try responding to what the tutor said."
+        assert scaffolding["sentence_starter"] is None
+
+    @pytest.mark.asyncio
+    async def test_api_connection_error_returns_default_config(
+        self, base_state: ConversationState
+    ) -> None:
+        """When LLM raises anthropic.APIConnectionError, scaffold_node should return default config."""
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(
+            side_effect=anthropic.APIConnectionError(request=MagicMock())
+        )
+
+        with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+            result = await scaffold_node(base_state)
+
+        scaffolding = result["scaffolding"]
+        assert scaffolding["enabled"] is True
+        assert scaffolding["word_bank"] == []
+        assert scaffolding["hint_text"] == "Try responding to what the tutor said."
+
+    @pytest.mark.asyncio
+    async def test_a1_level_api_error_auto_expand_false(
+        self,
+    ) -> None:
+        """API error for A1 level should set auto_expand=False in default config."""
+        state: ConversationState = {
+            "messages": [
+                HumanMessage(content="Hello"),
+                AIMessage(content="Hola!"),
+            ],
+            "level": "A1",
+            "language": "es",
+        }
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(
+            side_effect=anthropic.APIError(
+                message="error",
+                request=MagicMock(),
+                body=None,
+            )
+        )
+
+        with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+            result = await scaffold_node(state)
+
+        assert result["scaffolding"]["auto_expand"] is False
