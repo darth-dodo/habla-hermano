@@ -767,14 +767,16 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(() => ws.onmessage({ data: 'not json{{{' })).not.toThrow();
         });
 
-        it('calls window.autoResizeInput when available', async () => {
-            window.autoResizeInput = vi.fn();
+        it('dispatches input event on transcript to trigger auto-resize', async () => {
             var { ws } = await startRecordingSession();
+            var chatInput = document.getElementById('message-input');
+            var inputSpy = vi.fn();
+            chatInput.addEventListener('input', inputSpy);
 
             ws.onmessage({ data: JSON.stringify({ transcript: 'Hola', is_final: true }) });
-            expect(window.autoResizeInput).toHaveBeenCalled();
+            expect(inputSpy).toHaveBeenCalled();
 
-            delete window.autoResizeInput;
+            chatInput.removeEventListener('input', inputSpy);
         });
 
         it('dismisses processing early when final transcript arrives during recording before stop', async () => {
