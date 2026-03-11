@@ -35,7 +35,7 @@ var currentAudio = null;
 var currentBlobUrl = null;
 
 /**
- * Assemble Float32 PCM chunks into a WAV Blob for wavesurfer.
+ * Assemble Float32 PCM chunks into a WAV Blob.
  *
  * @param {Float32Array[]} chunks - array of Float32Array PCM chunks
  * @param {number} sampleRate - audio sample rate
@@ -257,12 +257,11 @@ export function restTTS(btn, text, voice, speed, signal, ttsService, showError, 
     }).then(function(audioBlob) {
         if (signal.aborted || !audioBlob) return;
 
-        // Deliver blob to waveform before playing
+        // Deliver blob before playing
         if (onAudioReady) onAudioReady(audioBlob);
 
         var audioUrl = URL.createObjectURL(audioBlob);
         var audio = new Audio(audioUrl);
-
         audio.playbackRate = speed;
         currentAudio = audio;
         currentBlobUrl = audioUrl;
@@ -353,18 +352,3 @@ export function cleanupTtsResources(ttsAbort) {
     }
 }
 
-/**
- * Change playback speed on all currently active TTS sources.
- * Works for both WebSocket (BufferSource) and REST (<audio>) playback.
- * @param {number} speed - new playback rate (e.g. 0.75, 1, 1.25, 1.5)
- */
-export function setTtsSpeed(speed) {
-    if (ttsSources && ttsSources.length > 0) {
-        ttsSources.forEach(function(source) {
-            try { source.playbackRate.value = speed; } catch (_) {}
-        });
-    }
-    if (currentAudio) {
-        currentAudio.playbackRate = speed;
-    }
-}

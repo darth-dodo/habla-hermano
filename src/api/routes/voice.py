@@ -247,6 +247,7 @@ async def transcribe_stream(  # noqa: PLR0915
             vad_events="true",
             encoding="linear16",
             sample_rate="16000",
+            mip_opt_out="true",
         ) as dg_ws:
             # Forward transcripts from Deepgram to browser
             # v6 SDK passes typed Pydantic models, not raw JSON dicts
@@ -339,7 +340,7 @@ async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResp
             httpx.AsyncClient() as client,
             client.stream(
                 "POST",
-                f"https://api.deepgram.com/v1/speak?model={request.voice}&encoding=mp3",
+                f"https://api.deepgram.com/v1/speak?model={request.voice}&encoding=mp3&mip_opt_out=true",
                 headers={
                     "Authorization": f"Token {api_key}",
                     "Content-Type": "application/json",
@@ -453,7 +454,7 @@ async def speak_stream(
         import websockets
 
         dg_url = (
-            f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&sample_rate=24000"
+            f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&sample_rate=24000&mip_opt_out=true"
         )
         dg_headers = {"Authorization": f"Token {api_key}"}
 

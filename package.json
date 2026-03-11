@@ -10,8 +10,5 @@
     "@vitest/coverage-v8": "3.2.4",
     "jsdom": "25.0.1",
     "vitest": "3.2.4"
-  },
-  "dependencies": {
-    "wavesurfer.js": "7.12.1"
   }
 }

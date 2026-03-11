@@ -1356,6 +1356,25 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(sources[0].playbackRate.value).toBe(0.25);
         });
 
+        it('blocks speed chip clicks during playback (frozen state)', async () => {
+            setupVoiceDOM();
+            var mod = await importVoice();
+
+            // Create a speak button row with speed chip
+            var row = createSpeakButton('Hola', 'es', { speed: 1 });
+            var chip = row.querySelector('.voice-tts-speed');
+
+            // Simulate frozen state (during playback)
+            chip.classList.add('voice-tts-speed-frozen');
+
+            // Click the frozen speed chip
+            chip.click();
+
+            // Speed should NOT have changed
+            expect(row.dataset.speed).toBe('1');
+            expect(chip.textContent).toBe('1\u00d7');
+        });
+
     });
 
     // ============================================

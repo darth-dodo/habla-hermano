@@ -29,7 +29,7 @@ import {
     getAnalyser, resetTranscript, getStream,
 } from './voice-stt.js';
 import {
-    ttsMachine, streamTTS, restTTS, cleanupTtsResources, setTtsSpeed,
+    ttsMachine, streamTTS, restTTS, cleanupTtsResources,
 } from './voice-tts.js';
 
 
@@ -265,6 +265,8 @@ export function initVoice() {
         // Speed chip: cycle through speed options
         var speedChip = e.target.closest('.voice-tts-speed');
         if (speedChip) {
+            // Speed is set server-side at stream start; block changes during playback
+            if (speedChip.classList.contains('voice-tts-speed-frozen')) return;
             var cont = speedChip.closest('.voice-tts-row');
             if (cont) {
                 var currentSpeed = parseFloat(cont.dataset.speed) || 1;
@@ -273,10 +275,6 @@ export function initVoice() {
                 var newSpeed = WF_SPEED_OPTIONS[nextIdx];
                 cont.dataset.speed = String(newSpeed);
                 speedChip.textContent = newSpeed + '\u00d7';
-                // Apply mid-stream if this row is currently playing
-                if (cont.classList.contains('voice-playing') || cont.classList.contains('voice-loading')) {
-                    setTtsSpeed(newSpeed);
-                }
             }
             return; // Don't trigger play
         }
@@ -370,7 +368,7 @@ export function toggleRecording() {
 export function handleSpeakClick(btn) {
     var text = btn.dataset.text;
     var language = btn.dataset.language || 'es';
-    // Speed is now per-waveform; fall back to button's data-speed, then default
+    // Speed from button's data-speed attribute, or default
     var speed = parseFloat(btn.dataset.speed) || DEFAULT_TTS_SPEED;
 
     // Clamp speed to safe range (0.25x to 2.0x)
