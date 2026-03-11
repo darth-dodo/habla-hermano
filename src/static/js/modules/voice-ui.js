@@ -177,35 +177,26 @@ export function hideProcessing(handle) {
 }
 
 /**
- * Create a floating stop bar above the input area. Returns the bar element.
- * @param {function(): void} onStop - callback when stop is clicked
- * @returns {HTMLElement}
+ * Set up mic/send button swap based on textarea content.
+ * When the textarea is empty, show mic and hide send.
+ * When the textarea has text, show send and hide mic.
+ * @param {HTMLElement} micButton
+ * @param {HTMLElement} sendButton
+ * @param {HTMLTextAreaElement} chatInput
+ * @returns {function(): void} update function (for testing)
  */
-export function createStopBar(onStop) {
-    var bar = document.createElement('div');
-    bar.className = 'voice-stop-bar';
-    bar.innerHTML = '<button type="button" class="voice-stop-btn" aria-label="Stop audio playback">'
-        + '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
-        + '<rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" />'
-        + '</svg>'
-        + '<span>Stop</span>'
-        + '</button>';
-
-    bar.querySelector('.voice-stop-btn').addEventListener('click', onStop);
-
-    var footer = document.querySelector('footer');
-    if (footer && footer.parentNode) {
-        footer.parentNode.insertBefore(bar, footer);
-    } else {
-        document.body.appendChild(bar);
+export function setupButtonSwap(micButton, sendButton, chatInput) {
+    function update() {
+        var hasText = chatInput.value.trim().length > 0;
+        if (hasText) {
+            micButton.classList.add('hidden');
+            sendButton.classList.remove('hidden');
+        } else {
+            micButton.classList.remove('hidden');
+            sendButton.classList.add('hidden');
+        }
     }
-    return bar;
-}
-
-/**
- * Remove a stop bar from the DOM.
- * @param {HTMLElement | null} bar
- */
-export function removeStopBar(bar) {
-    if (bar) bar.remove();
+    chatInput.addEventListener('input', update);
+    update(); // initial state
+    return update;
 }

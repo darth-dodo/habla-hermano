@@ -8,6 +8,9 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <title>{% block title %}Habla Hermano{% endblock %}</title>
 
+    <!-- Animate.css CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
     <!-- Tailwind CSS CDN (development) -->
     <script nonce="{{ request.state.csp_nonce }}" src="https://cdn.tailwindcss.com"></script>
     <script nonce="{{ request.state.csp_nonce }}">
@@ -570,17 +573,6 @@
                 animation: none !important;
                 box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5) !important;
             }
-            .voice-bar {
-                transition: none !important;
-                height: 10px !important;
-            }
-            .voice-timer,
-            .voice-processing-indicator {
-                animation: none !important;
-            }
-            .voice-timer::before {
-                animation: none !important;
-            }
             .voice-spinner {
                 animation-duration: 0.01ms !important;
             }
@@ -592,15 +584,44 @@
             font-style: italic;
         }
 
-        /* Speaker button states */
-        .voice-speak-btn.voice-loading {
-            opacity: 0.5;
-            cursor: wait;
+        /* TTS row: simple play + speed */
+        .voice-tts-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .voice-speak-btn.voice-playing {
-            color: var(--accent);
+        .voice-tts-play {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: none;
+            color: var(--text-subtle);
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
         }
+        .voice-tts-play:hover { color: var(--accent); background-color: var(--surface-overlay); }
+
+        .voice-tts-row.voice-loading .voice-tts-play { opacity: 0.5; cursor: wait; }
+        .voice-tts-row.voice-playing .voice-tts-play { color: var(--accent); }
+
+        .voice-tts-speed {
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-subtle);
+            background: var(--surface-overlay);
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+        .voice-tts-speed:hover { color: var(--accent); background-color: color-mix(in srgb, var(--accent) 12%, var(--surface-overlay)); }
+        .voice-tts-speed-frozen { opacity: 0.4; pointer-events: none; }
 
         /* Voice error tooltip */
         .voice-error-tooltip {
@@ -637,57 +658,6 @@
             100% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        /* Audio level bars (replaces stop icon during recording) */
-        .voice-level-bars {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 2px;
-            width: 20px;
-            height: 20px;
-        }
-
-        .voice-bar {
-            width: 3px;
-            min-height: 3px;
-            height: 3px;
-            border-radius: 9999px;
-            background-color: currentColor;
-            transition: height 0.1s ease-out;
-        }
-
-        /* Recording timer pill */
-        .voice-timer {
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--error, #ef4444);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.675rem;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-            z-index: 50;
-            pointer-events: none;
-            line-height: 1.2;
-            animation: tooltipFadeIn 0.2s ease-out;
-        }
-
-        .voice-timer::before {
-            content: '';
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: white;
-            margin-right: 4px;
-            vertical-align: middle;
-            animation: voicePulse 1.5s ease-in-out infinite;
-        }
-
         /* Processing spinner (replaces icon after recording stops) */
         .voice-spinner {
             display: inline-block;
@@ -703,7 +673,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Processing text indicator */
+        /* Processing text indicator (pill above mic during STT processing) */
         .voice-processing-indicator {
             position: absolute;
             bottom: calc(100% + 6px);
@@ -721,40 +691,6 @@
             animation: tooltipFadeIn 0.2s ease-out;
         }
 
-        /* Floating TTS stop bar */
-        .voice-stop-bar {
-            display: flex;
-            justify-content: center;
-            padding: 8px 16px;
-            background-color: var(--surface-elevated);
-            border-top: 1px solid var(--border);
-            animation: tooltipFadeIn 0.15s ease-out;
-            flex-shrink: 0;
-        }
-
-        .voice-stop-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
-            background-color: var(--error-muted);
-            color: var(--error);
-            border: 1px solid var(--error);
-            border-radius: 999px;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease, transform 0.1s ease;
-        }
-
-        .voice-stop-btn:hover {
-            background-color: var(--error);
-            color: white;
-        }
-
-        .voice-stop-btn:active {
-            transform: scale(0.97);
-        }
 
         /* High contrast mode support */
         @media (prefers-contrast: high) {

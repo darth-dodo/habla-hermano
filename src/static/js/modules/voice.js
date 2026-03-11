@@ -15,13 +15,13 @@
 import { interpret } from './fsm.js';
 import {
     VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
-    SPEAKER_ICON, SPEAKER_PLAYING_ICON,
+    WF_PLAY_ICON, WF_STOP_ICON, WF_SPEED_OPTIONS,
 } from './voice-constants.js';
 import {
     showMicRecording, restoreMicIcon, setSendEnabled,
     showTooltipError, startTimer, stopTimer,
     startLevelAnimation, showProcessing, hideProcessing,
-    createStopBar, removeStopBar,
+    setupButtonSwap,
 } from './voice-ui.js';
 import {
     sttMachine, startRecordingSession,
@@ -31,6 +31,7 @@ import {
 import {
     ttsMachine, streamTTS, restTTS, cleanupTtsResources,
 } from './voice-tts.js';
+
 
 // ============================================
 // Module State
@@ -53,7 +54,7 @@ var micWrapper = null;
 // Shared TTS AudioContext (Safari limits to 4 instances)
 var sharedTtsCtx = null;
 
-// TTS active button reference
+// TTS active button reference (the .voice-tts-row element)
 var ttsActiveBtn = null;
 
 // UI state handles (returned by voice-ui.js functions)
@@ -61,7 +62,6 @@ var timerHandle = null;
 var levelHandle = null;
 var processingHandle = null;
 var processingTimeout = null;
-var stopBar = null;
 
 // Error tooltip timeouts (shared mutable map)
 var errorTimeouts = {};
@@ -132,29 +132,35 @@ function onSttChange(state, prev) {
         if (chatInput) chatInput.classList.remove('voice-interim');
         restoreMicIcon(micButton);
         setSendEnabled(sendButton, chatInput, true);
+        // Trigger mic/send button swap (transcript was set programmatically)
+        if (chatInput) chatInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // --- entering idle (from processing) ---
     if (state === 'idle' && prev === 'processing') {
         if (sttAbort) { sttAbort.abort(); sttAbort = null; }
         doHideProcessing();
+        restoreMicIcon(micButton);
+        setSendEnabled(sendButton, chatInput, true);
+        // Trigger mic/send button swap (transcript was set programmatically)
+        if (chatInput) chatInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 }
 
 /**
- * Show the processing state with auto-dismiss timeout.
+ * Show processing UI (spinner + pill) with auto-dismiss timeout.
  */
 function doShowProcessing() {
+    stopTimer(timerHandle); timerHandle = null;
+    if (levelHandle) { levelHandle.stop(); levelHandle = null; }
     processingHandle = showProcessing(micButton, micWrapper);
-
-    // Auto-dismiss after 2 seconds
     processingTimeout = setTimeout(function() {
         sttService.send('PROCESSED');
     }, 2000);
 }
 
 /**
- * Hide processing state and restore mic button.
+ * Hide processing UI and clear timeout.
  */
 function doHideProcessing() {
     if (processingTimeout) {
@@ -163,12 +169,7 @@ function doHideProcessing() {
     }
     hideProcessing(processingHandle);
     processingHandle = null;
-
-    // Safety: ensure timer is fully stopped
-    stopTimer(timerHandle); timerHandle = null;
-
-    restoreMicIcon(micButton);
-    setSendEnabled(sendButton, chatInput, true);
+    sttService.send('PROCESSED');
 }
 
 // ============================================
@@ -189,9 +190,13 @@ function onTtsChange(state, prev) {
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading');
             ttsActiveBtn.classList.add('voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_PLAYING_ICON;
+            // Swap play icon to stop
+            var playEl = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl) playEl.innerHTML = WF_STOP_ICON;
+            // Freeze speed chip
+            var chip = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip) chip.classList.add('voice-tts-speed-frozen');
         }
-        stopBar = createStopBar(function() { stopAllTTS(); });
     }
 
     // --- entering idle (from loading on ERROR/CANCEL/ALL_ENDED) ---
@@ -200,9 +205,11 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_ICON;
+            var playEl1 = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl1) playEl1.innerHTML = WF_PLAY_ICON;
+            var chip1 = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip1) chip1.classList.remove('voice-tts-speed-frozen');
         }
-        removeStopBar(stopBar); stopBar = null;
         ttsActiveBtn = null;
     }
 
@@ -212,9 +219,11 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            ttsActiveBtn.innerHTML = SPEAKER_ICON;
+            var playEl2 = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl2) playEl2.innerHTML = WF_PLAY_ICON;
+            var chip2 = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip2) chip2.classList.remove('voice-tts-speed-frozen');
         }
-        removeStopBar(stopBar); stopBar = null;
         ttsActiveBtn = null;
     }
 }
@@ -233,13 +242,13 @@ export function initVoice() {
 
     if (!micButton) return; // Voice not enabled
 
-    // Wrap mic button for floating indicators (timer, processing pill)
-    if (micButton.parentNode) {
-        var wrapper = document.createElement('div');
-        wrapper.className = 'flex-shrink-0 relative';
-        micButton.parentNode.insertBefore(wrapper, micButton);
-        wrapper.appendChild(micButton);
-        micWrapper = wrapper;
+    // Use mic button's parent as wrapper for floating indicators (timer, processing pill).
+    // The template already provides a positioned container around mic + send.
+    micWrapper = micButton.parentNode;
+
+    // Mic/send button swap: show mic when input is empty, send when has text
+    if (sendButton && chatInput) {
+        setupButtonSwap(micButton, sendButton, chatInput);
     }
 
     // Create FSM services
@@ -251,10 +260,30 @@ export function initVoice() {
         toggleRecording();
     });
 
-    // Delegate speaker icon clicks
+    // Delegate TTS play/speed clicks
     document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.voice-speak-btn');
-        if (btn) handleSpeakClick(btn);
+        // Speed chip: cycle through speed options
+        var speedChip = e.target.closest('.voice-tts-speed');
+        if (speedChip) {
+            // Speed is set server-side at stream start; block changes during playback
+            if (speedChip.classList.contains('voice-tts-speed-frozen')) return;
+            var cont = speedChip.closest('.voice-tts-row');
+            if (cont) {
+                var currentSpeed = parseFloat(cont.dataset.speed) || 1;
+                var idx = WF_SPEED_OPTIONS.indexOf(currentSpeed);
+                var nextIdx = (idx + 1) % WF_SPEED_OPTIONS.length;
+                var newSpeed = WF_SPEED_OPTIONS[nextIdx];
+                cont.dataset.speed = String(newSpeed);
+                speedChip.textContent = newSpeed + '\u00d7';
+            }
+            return; // Don't trigger play
+        }
+
+        var playBtn = e.target.closest('.voice-tts-play');
+        if (playBtn) {
+            var row = playBtn.closest('.voice-tts-row');
+            if (row) handleSpeakClick(row);
+        }
     });
 
     // Handle page visibility changes (background/foreground)
@@ -308,15 +337,12 @@ export function destroyVoice() {
     });
     errorTimeouts = {};
 
-    // 7. Stop timer and level animation
+    // 7. Clean up STT UI handles
     stopTimer(timerHandle); timerHandle = null;
     if (levelHandle) { levelHandle.stop(); levelHandle = null; }
-
-    // 8. Hide stop bar and processing indicator
-    removeStopBar(stopBar); stopBar = null;
     hideProcessing(processingHandle); processingHandle = null;
 
-    // 9. Null out DOM refs
+    // 8. Null out DOM refs
     micButton = null;
     chatInput = null;
     sendButton = null;
@@ -342,9 +368,8 @@ export function toggleRecording() {
 export function handleSpeakClick(btn) {
     var text = btn.dataset.text;
     var language = btn.dataset.language || 'es';
-    // Read live speed from picker; fall back to button's data-speed, then default
-    var picker = document.getElementById('tts-speed-picker');
-    var speed = parseFloat((picker && picker.dataset.ttsSpeed) || btn.dataset.speed) || DEFAULT_TTS_SPEED;
+    // Speed from button's data-speed attribute, or default
+    var speed = parseFloat(btn.dataset.speed) || DEFAULT_TTS_SPEED;
 
     // Clamp speed to safe range (0.25x to 2.0x)
     speed = Math.max(0.25, Math.min(2.0, speed));
@@ -360,7 +385,6 @@ export function handleSpeakClick(btn) {
     }
 
     // Stop any currently active TTS before starting a new one
-    // Race condition fix: abort current session first, then start new
     if (ttsService && !ttsService.matches('idle')) {
         ttsService.send('CANCEL');
     }
@@ -401,11 +425,10 @@ export function handleSpeakClick(btn) {
  */
 export function stopAllTTS() {
     if (!ttsService) return;
-    // Also clean up any buttons that have stale classes
-    var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
+    // Also clean up any rows that have stale classes
+    var activeBtns = document.querySelectorAll('.voice-tts-row.voice-playing, .voice-tts-row.voice-loading');
     activeBtns.forEach(function(b) {
         b.classList.remove('voice-playing', 'voice-loading');
-        b.innerHTML = SPEAKER_ICON;
     });
 
     if (!ttsService.matches('idle')) {

@@ -32,17 +32,24 @@ export var LEVEL_BARS_HTML = '<div class="voice-level-bars" aria-hidden="true">'
 
 export var SPINNER_HTML = '<div class="voice-spinner" aria-hidden="true"></div>';
 
-export var SPEAKER_ICON = '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
-    + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
-    + '<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />'
-    + '<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />'
+export var SEND_ICON = '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<line x1="22" y1="2" x2="11" y2="13"></line>'
+    + '<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>'
     + '</svg>';
 
-export var SPEAKER_PLAYING_ICON = '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
-    + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
-    + '<line x1="23" y1="9" x2="17" y2="15" />'
-    + '<line x1="17" y1="9" x2="23" y2="15" />'
+export var STOP_SQUARE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">'
+    + '<rect x="6" y="6" width="12" height="12" rx="2"></rect>'
     + '</svg>';
+
+export var CANCEL_X_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + '<line x1="18" y1="6" x2="6" y2="18"></line>'
+    + '<line x1="6" y1="6" x2="18" y2="18"></line>'
+    + '</svg>';
+
+export var WF_PLAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+export var WF_STOP_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>';
+
+export var WF_SPEED_OPTIONS = [0.75, 1, 1.25, 1.5];
 
 // ============================================
 // Audio Utility Functions

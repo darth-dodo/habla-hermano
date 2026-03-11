@@ -575,6 +575,8 @@ Phase 17 introduces voice conversation capabilities powered by Deepgram. The ser
 
 **Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie or a `session_id` guest cookie. If neither is present or valid, the WebSocket connection is rejected before acceptance with close code `4001` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
 
+**Privacy**: All Deepgram API calls (STT and TTS) are sent with `mip_opt_out=true`, which prevents user audio and text data from being used in Deepgram's Model Improvement Program.
+
 **Rate Limiting**: Voice endpoints are rate-limited to prevent API budget abuse:
 
 | Endpoint | Type | Limit | Scope |

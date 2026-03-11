@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-03-11
+
+### Added - Phase 22: Voice UX Redesign
+- **Mic/send button swap**: Mic button shows when input is empty, send button when text is present; swap is instant and bidirectional (`voice-ui.js:setupButtonSwap`)
+- **TTS play row per message**: Each AI message now has a `.voice-tts-row` with a play/stop toggle button and a speed chip, replacing the old standalone speaker icon
+- **Per-message speed chip**: Tap to cycle through 0.75×/1×/1.25×/1.5× speeds; CEFR-aware defaults (A0=0.75×, A1=0.85×, A2/B1=1×) set from the template via `data-speed`
+- **Frozen speed chip**: Speed chip gets `voice-tts-speed-frozen` class during playback, blocking clicks (speed is applied at stream start, mid-stream changes are not possible)
+- **TTS play/stop icon toggle**: Play icon swaps to stop icon during playback, restores on completion or cancel
+- **Design docs**: `docs/design/phase22-voice-ux-redesign.md` and `docs/design/phase22-voice-ux-implementation-plan.md`
+- **Deepgram MIP opt-out**: All Deepgram API calls (STT WebSocket, TTS REST, TTS WebSocket) send `mip_opt_out=true` to prevent user data from being used in Deepgram's Model Improvement Program
+
+### Fixed
+- **TTS speed chip "funky" audio**: Mid-stream speed changes via `setTtsSpeed()` broke AudioBufferSource chunk scheduling (start times computed for original speed caused overlapping/gapped audio). Removed `setTtsSpeed()`; speed chip frozen during playback, speed applied correctly at stream start via `playbackRate`
+- **Mic/send swap after programmatic input**: `voice-interim` class and dispatched `input` events ensure swap triggers after STT fills the textarea
+
+### Changed
+- **Chat input layout**: Input area restructured — textarea first, then mic/send button container on the right (was mic+speed picker on left, textarea on right)
+- **TTS speaker button → TTS row**: Old `voice-speak-btn` button replaced with `.voice-tts-row` div containing `.voice-tts-play` and `.voice-tts-speed` in both `message.html` and `message_pair.html`
+- **SSE stream TTS integration**: `stream.js` now creates `.voice-tts-row` elements for streamed AI messages (replacing old `voice-speak-btn` creation)
+
+### Removed
+- **Global speed picker**: Alpine.js `x-data` speed picker with 3 buttons (0.75×/1×/1.25×) removed from `chat.html` header — speed is now per-message
+- **Stop bar**: Animated stop bar UI during TTS playback removed (CSS keyframes, JS, DOM elements)
+- **Audio level bars**: `.voice-level-bars` and `.voice-bar` CSS removed from reduced-motion and main styles
+- **Recording timer pill**: `.voice-timer` CSS removed (timer functionality retained in JS)
+- **`setTtsSpeed()` function**: Removed from `voice-tts.js` — mid-stream speed changes caused audio glitches
+- **wavesurfer.js dependency**: Deleted npm package and vitest CDN alias — sole consumer (`voice-waveform.js`) was already removed
+
 ## [0.21.0] - 2026-03-10
 
 ### Added - Phase 21: Voice FSM Refactor

@@ -124,11 +124,13 @@ class MockAudio {
 function setupVoiceDOM() {
     document.body.innerHTML = `
         <div class="flex items-end gap-2">
-            <button id="mic-btn" type="button" aria-label="Record voice message">
-                <svg class="w-5 h-5"></svg>
-            </button>
             <textarea id="message-input"></textarea>
-            <button id="send-btn" type="submit">Send</button>
+            <div class="flex-shrink-0 relative">
+                <button id="mic-btn" type="button" aria-label="Record voice message">
+                    <svg class="w-5 h-5"></svg>
+                </button>
+                <button id="send-btn" type="submit" class="hidden">Send</button>
+            </div>
         </div>
         <footer></footer>
     `;
@@ -143,18 +145,27 @@ function setupVoiceDOMWithoutMic() {
 }
 
 /**
- * Create a speaker button with data attributes for TTS testing.
+ * Create a TTS row element with play button and speed chip for TTS testing.
+ * Returns the .voice-tts-row element (which is passed to handleSpeakClick).
  */
 function createSpeakButton(text, language, opts) {
-    var btn = document.createElement('button');
-    btn.className = 'voice-speak-btn';
-    if (text) btn.dataset.text = text;
-    if (language) btn.dataset.language = language;
-    if (opts && opts.speed) btn.dataset.speed = String(opts.speed);
-    if (opts && opts.playing) btn.classList.add('voice-playing');
-    if (opts && opts.loading) btn.classList.add('voice-loading');
-    document.body.appendChild(btn);
-    return btn;
+    var row = document.createElement('div');
+    row.className = 'voice-tts-row';
+    if (text) row.dataset.text = text;
+    if (language) row.dataset.language = language;
+    if (opts && opts.speed) row.dataset.speed = String(opts.speed);
+    if (opts && opts.playing) row.classList.add('voice-playing');
+    if (opts && opts.loading) row.classList.add('voice-loading');
+    var playBtn = document.createElement('button');
+    playBtn.className = 'voice-tts-play';
+    playBtn.innerHTML = '<svg><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+    row.appendChild(playBtn);
+    var speedChip = document.createElement('button');
+    speedChip.className = 'voice-tts-speed';
+    speedChip.textContent = (opts && opts.speed ? opts.speed : '1') + '\u00d7';
+    row.appendChild(speedChip);
+    document.body.appendChild(row);
+    return row;
 }
 
 // ============================================
@@ -322,13 +333,13 @@ describe('voice.js -- FSM-based Voice Module', () => {
             setupVoiceDOM();
             await importVoice();
 
-            var btn = createSpeakButton('Hola', 'es');
+            var row = createSpeakButton('Hola', 'es');
 
-            // Click the speak button -- delegation should fire handleSpeakClick
-            btn.click();
+            // Click the play button child -- delegation should fire handleSpeakClick
+            row.querySelector('.voice-tts-play').click();
 
-            // Should add voice-loading class
-            expect(btn.classList.contains('voice-loading')).toBe(true);
+            // Should add voice-loading class to the row
+            expect(row.classList.contains('voice-loading')).toBe(true);
         });
     });
 
@@ -961,26 +972,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(btn.classList.contains('voice-playing')).toBe(true);
             });
 
-            it('shows stop bar when playing starts', async () => {
-                setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                var pcm = new Int16Array([1000, -1000]);
-                ws.onmessage({ data: pcm.buffer });
-
-                var stopBar = document.querySelector('.voice-stop-bar');
-                expect(stopBar).not.toBeNull();
-            });
-
-            it('changes button icon to playing (X) icon', async () => {
+            it('adds voice-playing class when audio starts', async () => {
                 setupVoiceDOM();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
@@ -995,8 +987,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var pcm = new Int16Array([1000]);
                 ws.onmessage({ data: pcm.buffer });
 
-                // Playing icon has cross lines (x1/x2/y1/y2)
-                expect(btn.innerHTML).toContain('line');
+                // Button should have voice-playing class
+                expect(btn.classList.contains('voice-playing')).toBe(true);
             });
         });
 
@@ -1049,33 +1041,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 // Last buffer finishes
                 sources[1].onended();
                 expect(btn.classList.contains('voice-playing')).toBe(false);
-                expect(btn.innerHTML).toContain('polygon'); // speaker icon restored
-            });
-
-            it('hides stop bar when playback ends', async () => {
-                setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                var pcm = new Int16Array([100]);
-                ws.onmessage({ data: pcm.buffer });
-
-                expect(document.querySelector('.voice-stop-bar')).not.toBeNull();
-
-                // WS closes and no more scheduled buffers
-                ws.onclose({ code: 1000, reason: '' });
-
-                // The onended of the sole source fires -- use fallback timeout
-                vi.advanceTimersByTime(1000);
-
-                expect(document.querySelector('.voice-stop-bar')).toBeNull();
+                expect(btn.classList.contains('voice-loading')).toBe(false); // all TTS classes removed
             });
 
             it('cleans up immediately on WS close when no buffers scheduled', async () => {
@@ -1288,45 +1254,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
     // ============================================
 
     describe('TTS Speed', () => {
-        it('uses speed from tts-speed-picker dataset', async () => {
-            setupVoiceDOM();
-            var picker = document.createElement('div');
-            picker.id = 'tts-speed-picker';
-            picker.dataset.ttsSpeed = '0.75';
-            document.body.appendChild(picker);
-
-            var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var btn = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn);
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            expect(sources[0].playbackRate.value).toBe(0.75);
-        });
-
         it('uses speed from button data-speed attribute', async () => {
             setupVoiceDOM();
             var mod = await importVoice();
@@ -1429,44 +1356,25 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(sources[0].playbackRate.value).toBe(0.25);
         });
 
-        it('picker speed takes priority over button data-speed', async () => {
+        it('blocks speed chip clicks during playback (frozen state)', async () => {
             setupVoiceDOM();
-            var picker = document.createElement('div');
-            picker.id = 'tts-speed-picker';
-            picker.dataset.ttsSpeed = '0.5';
-            document.body.appendChild(picker);
-
             var mod = await importVoice();
 
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
+            // Create a speak button row with speed chip
+            var row = createSpeakButton('Hola', 'es', { speed: 1 });
+            var chip = row.querySelector('.voice-tts-speed');
 
-            var btn = createSpeakButton('Hola', 'es', { speed: 1.5 });
-            mod.handleSpeakClick(btn);
+            // Simulate frozen state (during playback)
+            chip.classList.add('voice-tts-speed-frozen');
 
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
+            // Click the frozen speed chip
+            chip.click();
 
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            expect(sources[0].playbackRate.value).toBe(0.5);
+            // Speed should NOT have changed
+            expect(row.dataset.speed).toBe('1');
+            expect(chip.textContent).toBe('1\u00d7');
         });
+
     });
 
     // ============================================
@@ -1795,31 +1703,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             });
         });
 
-        describe('Stop bar', () => {
-            it('stop bar button calls stopAllTTS on click', async () => {
-                setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                ws.onmessage({ data: new Int16Array([100]).buffer });
-
-                var stopBtn = document.querySelector('.voice-stop-btn');
-                expect(stopBtn).not.toBeNull();
-
-                stopBtn.click();
-
-                // TTS should be stopped
-                expect(btn.classList.contains('voice-playing')).toBe(false);
-                expect(document.querySelector('.voice-stop-bar')).toBeNull();
-            });
-        });
     });
 
     // ============================================
@@ -1840,10 +1723,10 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(btn1.classList.contains('voice-playing')).toBe(false);
             expect(btn2.classList.contains('voice-loading')).toBe(false);
             // btn3 should be unaffected
-            expect(btn3.classList.contains('voice-speak-btn')).toBe(true);
+            expect(btn3.classList.contains('voice-tts-row')).toBe(true);
         });
 
-        it('restores speaker icon on cleaned-up buttons', async () => {
+        it('does not alter innerHTML of cleaned-up buttons', async () => {
             setupVoiceDOM();
             var mod = await importVoice();
 
@@ -1852,8 +1735,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             mod.stopAllTTS();
 
-            // Should have speaker SVG restored
-            expect(btn.innerHTML).toContain('polygon');
+            // innerHTML should remain unchanged (waveform player manages its own icons)
+            expect(btn.innerHTML).toContain('custom');
         });
     });
 
@@ -1916,25 +1799,17 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(mockStream._track.stop).toHaveBeenCalled();
         });
 
-        it('hides stop bar and processing indicator', async () => {
-            setupVoiceDOM();
-            var mod = await importVoice();
+        it('cleans up processing indicator on destroy', async () => {
+            var { mod } = await startRecordingSession();
 
-            // Start TTS to get a stop bar
-            var btn = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn);
+            // Go to processing state
+            mod.toggleRecording(); // recording -> processing
 
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-            ws.onmessage({ data: new Int16Array([100]).buffer });
-
-            expect(document.querySelector('.voice-stop-bar')).not.toBeNull();
+            expect(document.querySelector('.voice-processing-indicator')).not.toBeNull();
 
             mod.destroyVoice();
 
-            expect(document.querySelector('.voice-stop-bar')).toBeNull();
+            expect(document.querySelector('.voice-processing-indicator')).toBeNull();
         });
     });
 
@@ -2099,6 +1974,83 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(src.start).toHaveBeenCalled();
                 expect(src.connect).toHaveBeenCalled();
             });
+        });
+    });
+
+    // ============================================
+    // Mic/Send Button Swap
+    // ============================================
+
+    describe('mic/send button swap', () => {
+
+        it('should hide send and show mic on init with empty input', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should show send and hide mic when input has text', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            input.value = 'Hola';
+            input.dispatchEvent(new Event('input'));
+
+            expect(mic.classList.contains('hidden')).toBe(true);
+            expect(send.classList.contains('hidden')).toBe(false);
+        });
+
+        it('should swap back to mic when input is cleared', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            // Type text
+            input.value = 'Hola';
+            input.dispatchEvent(new Event('input'));
+            expect(mic.classList.contains('hidden')).toBe(true);
+
+            // Clear text
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should treat whitespace-only input as empty', async () => {
+            setupVoiceDOM();
+            await importVoice();
+
+            var mic = document.getElementById('mic-btn');
+            var send = document.getElementById('send-btn');
+            var input = document.getElementById('message-input');
+
+            input.value = '   ';
+            input.dispatchEvent(new Event('input'));
+
+            expect(mic.classList.contains('hidden')).toBe(false);
+            expect(send.classList.contains('hidden')).toBe(true);
+        });
+
+        it('should not set up swap when voice is not enabled (no mic button)', async () => {
+            setupVoiceDOMWithoutMic();
+            await importVoice();
+
+            var send = document.getElementById('send-btn');
+            // Send button should remain visible (no hidden class) when no mic
+            expect(send.classList.contains('hidden')).toBe(false);
         });
     });
 });

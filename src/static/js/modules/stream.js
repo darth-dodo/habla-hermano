@@ -150,19 +150,16 @@ function addSpeakerButton(bubbleId, text) {
     const languageInput = document.querySelector('input[name="language"]');
     const language = languageInput ? languageInput.value : 'es';
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'voice-speak-btn mt-2 p-2 text-text-subtle hover:text-accent transition-colors duration-150 rounded-lg hover:bg-surface-overlay';
-    btn.setAttribute('data-text', text);
-    btn.setAttribute('data-language', language);
-    btn.setAttribute('aria-label', 'Listen to response');
-    btn.innerHTML = '<svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
-        + '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />'
-        + '<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />'
-        + '<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />'
-        + '</svg>';
+    const row = document.createElement('div');
+    row.className = 'voice-tts-row mt-2';
+    row.setAttribute('data-text', text);
+    row.setAttribute('data-language', language);
+    row.innerHTML = '<button type="button" class="voice-tts-play" aria-label="Play audio">'
+        + '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>'
+        + '</button>'
+        + '<button type="button" class="voice-tts-speed" aria-label="Playback speed">1×</button>';
 
-    bubble.appendChild(btn);
+    bubble.appendChild(row);
 }
 
 /**
