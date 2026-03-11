@@ -746,9 +746,7 @@ class TestScaffoldNodeLLMEdgeCases:
         assert scaffolding["auto_expand"] is True  # A0 level
 
     @pytest.mark.asyncio
-    async def test_api_error_returns_default_config(
-        self, base_state: ConversationState
-    ) -> None:
+    async def test_api_error_returns_default_config(self, base_state: ConversationState) -> None:
         """When LLM raises anthropic.APIError, scaffold_node should return default config."""
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
@@ -774,9 +772,7 @@ class TestScaffoldNodeLLMEdgeCases:
     ) -> None:
         """When LLM raises anthropic.APIConnectionError, scaffold_node should return default config."""
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(
-            side_effect=anthropic.APIConnectionError(request=MagicMock())
-        )
+        mock_llm.ainvoke = AsyncMock(side_effect=anthropic.APIConnectionError(request=MagicMock()))
 
         with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
             result = await scaffold_node(base_state)
