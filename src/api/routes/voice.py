@@ -453,9 +453,7 @@ async def speak_stream(
     try:
         import websockets
 
-        dg_url = (
-            f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&sample_rate=24000&mip_opt_out=true"
-        )
+        dg_url = f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&sample_rate=24000&mip_opt_out=true"
         dg_headers = {"Authorization": f"Token {api_key}"}
 
         async with websockets.connect(dg_url, additional_headers=dg_headers) as dg_ws:
