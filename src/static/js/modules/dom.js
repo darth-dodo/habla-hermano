@@ -67,15 +67,32 @@ export function focusInputExplicit() {
 }
 
 /**
- * Clear the message input field
+ * Clear the message input field and reset its height.
  */
 export function clearInput() {
     const messageInput = getMessageInput();
     if (!messageInput) return;
 
     messageInput.value = '';
-    // Dispatch input event so listeners (e.g. mic/send button swap) react
+    messageInput.style.height = 'auto';
+    // Dispatch input event so listeners (e.g. mic/send button swap, auto-resize) react
     messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/**
+ * Auto-resize textarea to fit its content, capped at ~6 rows.
+ * Call on 'input' events to grow/shrink dynamically.
+ * @param {HTMLTextAreaElement} textarea
+ */
+export function autoResizeTextarea(textarea) {
+    if (!textarea) return;
+    // Reset to auto to get the correct scrollHeight for shrinking
+    textarea.style.height = 'auto';
+    // Cap at roughly 6 lines (6 * line-height ~1.5 * 16px = 144px)
+    const maxHeight = 144;
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+    // Show scrollbar only when at max height
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
 }
 
 /**

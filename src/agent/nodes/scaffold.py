@@ -132,11 +132,8 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
     Returns:
         Dictionary with scaffolding config as a dict (from model_dump()).
     """
-    # Debug logging
-    logger.info("scaffold_node called with level=%s", state.get("level"))
-    logger.info("scaffold_node messages count: %d", len(state.get("messages", [])))
-    for i, msg in enumerate(state.get("messages", [])):
-        logger.info("  msg[%d]: %s = %s...", i, type(msg).__name__, str(msg.content)[:50])
+    logger.debug("scaffold_node called with level=%s", state.get("level"))
+    logger.debug("scaffold_node messages count: %d", len(state.get("messages", [])))
 
     # Get the AI's last response
     ai_response = _get_ai_response(state)

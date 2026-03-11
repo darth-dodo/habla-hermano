@@ -187,6 +187,8 @@ export function hideProcessing(handle) {
  */
 export function setupButtonSwap(micButton, sendButton, chatInput) {
     function update() {
+        // Don't swap to send while STT is active (mic is recording/processing)
+        if (micButton.classList.contains('voice-recording')) return;
         var hasText = chatInput.value.trim().length > 0;
         if (hasText) {
             micButton.classList.add('hidden');

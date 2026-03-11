@@ -36,8 +36,9 @@ dependencies = [
     # SSE streaming
     "sse-starlette>=2.0.0",
 
-    # HTML sanitization
+    # HTML sanitization & Markdown rendering
     "nh3>=0.3.3",
+    "markdown>=3.7",
 
     # Cookie signing
     "itsdangerous>=2.1.0",
@@ -159,6 +160,7 @@ module = [
     "itsdangerous.*",
     "deepgram.*",
     "websockets.*",
+    "markdown.*",
 ]
 ignore_missing_imports = true
 

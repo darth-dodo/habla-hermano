@@ -20,7 +20,7 @@ Variables expected:
     <div class="bg-ai rounded-2xl rounded-bl-md px-5 py-4 max-w-[85%]" style="box-shadow: 0 2px 8px var(--shadow-color);">
         <div class="text-ai-text leading-relaxed">
             {% if ai_response %}
-                {{ ai_response | sanitize }}
+                {{ ai_response | markdown }}
             {% else %}
                 <p class="text-text-muted font-display italic">No response received.</p>
             {% endif %}

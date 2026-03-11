@@ -767,14 +767,16 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(() => ws.onmessage({ data: 'not json{{{' })).not.toThrow();
         });
 
-        it('calls window.autoResizeInput when available', async () => {
-            window.autoResizeInput = vi.fn();
+        it('dispatches input event on transcript to trigger auto-resize', async () => {
             var { ws } = await startRecordingSession();
+            var chatInput = document.getElementById('message-input');
+            var inputSpy = vi.fn();
+            chatInput.addEventListener('input', inputSpy);
 
             ws.onmessage({ data: JSON.stringify({ transcript: 'Hola', is_final: true }) });
-            expect(window.autoResizeInput).toHaveBeenCalled();
+            expect(inputSpy).toHaveBeenCalled();
 
-            delete window.autoResizeInput;
+            chatInput.removeEventListener('input', inputSpy);
         });
 
         it('dismisses processing early when final transcript arrives during recording before stop', async () => {
@@ -2051,6 +2053,111 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var send = document.getElementById('send-btn');
             // Send button should remain visible (no hidden class) when no mic
             expect(send.classList.contains('hidden')).toBe(false);
+        });
+    });
+});
+
+// ============================================
+// chunkTextForTTS (pure utility — direct import)
+// ============================================
+
+describe('chunkTextForTTS', () => {
+    let chunkTextForTTS;
+    let MAX_TTS_CHUNK_LENGTH;
+
+    beforeEach(async () => {
+        var mod = await import('../../src/static/js/modules/voice-constants.js');
+        chunkTextForTTS = mod.chunkTextForTTS;
+        MAX_TTS_CHUNK_LENGTH = mod.MAX_TTS_CHUNK_LENGTH;
+    });
+
+    it('returns single-element array for short text', () => {
+        var result = chunkTextForTTS('Hello world.');
+        expect(result).toEqual(['Hello world.']);
+    });
+
+    it('returns input as-is for empty or falsy text', () => {
+        expect(chunkTextForTTS('')).toEqual(['']);
+        expect(chunkTextForTTS(null)).toEqual([null]);
+    });
+
+    it('returns single-element array for text at exactly maxLen', () => {
+        var text = 'a'.repeat(MAX_TTS_CHUNK_LENGTH);
+        var result = chunkTextForTTS(text);
+        expect(result).toEqual([text]);
+    });
+
+    it('splits at sentence boundaries for text exceeding maxLen', () => {
+        var sentence1 = 'A'.repeat(1000) + '. ';
+        var sentence2 = 'B'.repeat(1000) + '. ';
+        var sentence3 = 'C'.repeat(500) + '.';
+        var text = sentence1 + sentence2 + sentence3;
+
+        var result = chunkTextForTTS(text);
+
+        expect(result.length).toBeGreaterThan(1);
+        result.forEach(function(chunk) {
+            expect(chunk.length).toBeLessThanOrEqual(MAX_TTS_CHUNK_LENGTH);
+        });
+        // Reconstructed text should match (minus potential whitespace trimming)
+        expect(result.join(' ')).toContain('A');
+        expect(result.join(' ')).toContain('B');
+        expect(result.join(' ')).toContain('C');
+    });
+
+    it('splits at word boundaries when a single sentence exceeds maxLen', () => {
+        // A single "sentence" with no periods that exceeds the limit
+        var longSentence = Array.from({ length: 300 }, (_, i) => 'word' + i).join(' ');
+        expect(longSentence.length).toBeGreaterThan(MAX_TTS_CHUNK_LENGTH);
+
+        var result = chunkTextForTTS(longSentence);
+
+        expect(result.length).toBeGreaterThan(1);
+        result.forEach(function(chunk) {
+            expect(chunk.length).toBeLessThanOrEqual(MAX_TTS_CHUNK_LENGTH);
+        });
+    });
+
+    it('respects custom maxLen parameter', () => {
+        var text = 'Hello world. How are you. Fine thanks.';
+        var result = chunkTextForTTS(text, 20);
+
+        expect(result.length).toBeGreaterThan(1);
+        result.forEach(function(chunk) {
+            expect(chunk.length).toBeLessThanOrEqual(20);
+        });
+    });
+
+    it('handles text with ! and ? sentence delimiters', () => {
+        var s1 = 'A'.repeat(1500) + '! ';
+        var s2 = 'B'.repeat(1500) + '? ';
+        var text = s1 + s2;
+
+        var result = chunkTextForTTS(text);
+
+        expect(result.length).toBe(2);
+        expect(result[0]).toContain('!');
+        expect(result[1]).toContain('?');
+    });
+
+    it('handles text ending without sentence punctuation', () => {
+        var s1 = 'A'.repeat(1500) + '. ';
+        var s2 = 'B'.repeat(600); // No trailing punctuation, total > 2000
+        var text = s1 + s2;
+
+        var result = chunkTextForTTS(text);
+
+        expect(result.length).toBe(2);
+        // The trailing text without punctuation should be in the last chunk
+        expect(result[1]).toContain('B');
+    });
+
+    it('produces no empty chunks', () => {
+        var text = 'Hello. World. This is a test. Of chunking. For TTS.';
+        var result = chunkTextForTTS(text, 20);
+
+        result.forEach(function(chunk) {
+            expect(chunk.trim().length).toBeGreaterThan(0);
         });
     });
 });

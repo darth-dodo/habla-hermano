@@ -179,7 +179,8 @@ export function startRecordingSession(signal, sttService, chatInput, showError, 
                     chatInput.value = prefix + data.transcript;
                     chatInput.classList.add('voice-interim');
                 }
-                if (window.autoResizeInput) window.autoResizeInput();
+                // Trigger auto-resize (input event listener in main.js)
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         };
 

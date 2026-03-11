@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-03-11
+
+### Added
+- **Markdown rendering for AI responses**: Server-side pipeline (`markdown` lib → `nh3` sanitization → Jinja2 `| markdown` filter) renders AI chat responses as rich HTML with headings, lists, code blocks, tables, and blockquotes
+- **LLM markdown preprocessor**: `_ensure_list_blank_lines()` in `sanitize.py` inserts blank lines before list blocks that LLMs commonly omit, fixing broken list rendering
+- **TTS text chunking**: Long AI responses (>2000 chars) are split at sentence boundaries and sent as multiple chunks over the same WebSocket connection, enabling TTS for arbitrarily long messages
+- **Textarea auto-resize**: Message input grows/shrinks dynamically (up to ~6 lines) as the user types or voice transcription fills the field
+- **Markdown CSS**: Styles for headings, lists, code blocks, blockquotes, tables, and links inside AI message bubbles (`base.html`)
+- **Design doc**: `docs/design/2026-03-11-markdown-chat-design.md`
+
+### Fixed
+- **TTS silent failure on long messages**: Messages exceeding `MAX_TTS_TEXT_LENGTH` (2000 chars) were silently skipped by the WebSocket handler; now chunked client-side at sentence boundaries
+- **Textarea not resizing during STT**: Voice transcription set `chatInput.value` without dispatching `input` events; now fires `input` event on each transcript update to trigger auto-resize
+- **Mic→send button swap during recording**: Button swap now checks for `voice-recording` class, keeping the mic button visible while STT is active
+- **Noisy scaffold logging**: `scaffold_node` debug logs downgraded from `info` to `debug`; per-message content dump removed
+
+### Changed
+- **AI message rendering**: Template partials (`message.html`, `message_pair.html`) use `| markdown` filter instead of `| sanitize` for AI responses
+- **SSE `response_complete` event**: Now includes `rendered_html` field with server-rendered markdown HTML, replacing plain-text bubble content on stream completion
+- **REST TTS fallback**: `restTTS()` fetches audio for each chunk sequentially and concatenates blobs before playback
+
+
 ## [0.22.0] - 2026-03-11
 
 ### Added - Phase 22: Voice UX Redesign

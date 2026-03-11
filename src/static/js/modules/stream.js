@@ -221,6 +221,13 @@ function handleStreamEvent(event, dataStr, bubbleId) {
 
         case 'response_complete':
             finalizeBubble(bubbleId);
+            // Replace plain-text streamed content with server-rendered markdown HTML
+            if (data.rendered_html) {
+                const textEl = document.getElementById(bubbleId + '-text');
+                if (textEl) {
+                    textEl.innerHTML = data.rendered_html;
+                }
+            }
             addSpeakerButton(bubbleId, data.content || '');
             scrollToBottom();
             break;

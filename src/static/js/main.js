@@ -3,7 +3,7 @@
  * Phase 16: ES module entry point. Imports all modules and initializes the app.
  */
 
-import { scrollToBottom, focusInput } from './modules/dom.js';
+import { scrollToBottom, focusInput, getMessageInput, autoResizeTextarea } from './modules/dom.js';
 import { initStreamingForm } from './modules/stream.js';
 import { initKeyboardShortcuts } from './modules/shortcuts.js';
 import { initScaffoldDelegation } from './modules/scaffold.js';
@@ -17,6 +17,12 @@ function init() {
     initStreamingForm();
     initKeyboardShortcuts();
     initScaffoldDelegation();
+
+    // Auto-resize textarea on input
+    const messageInput = getMessageInput();
+    if (messageInput) {
+        messageInput.addEventListener('input', () => autoResizeTextarea(messageInput));
+    }
 
     // Initial state
     scrollToBottom(false);

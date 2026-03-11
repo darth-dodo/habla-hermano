@@ -1,4 +1,7 @@
-"""Tests for src/api/config.py - Settings class and get_settings function."""
+"""Tests for src/api/config.py - Settings class and get_settings function.
+
+Also covers get_deepgram_api_key from src/api/dependencies.
+"""
 
 import os
 from pathlib import Path
@@ -8,6 +11,7 @@ import pytest
 from pydantic import ValidationError
 
 from src.api.config import Settings, get_settings
+from src.api.dependencies import get_deepgram_api_key
 
 
 class TestSettingsClass:
@@ -382,3 +386,45 @@ class TestSettingsValidation:
             APP_NAME="Habla Hermano Espanol",
         )
         assert settings.APP_NAME == "Habla Hermano Espanol"
+
+
+# =============================================================================
+# Unit Tests: get_deepgram_api_key — dependency function
+# =============================================================================
+
+
+class TestGetDeepgramApiKey:
+    """Tests for get_deepgram_api_key from src/api/dependencies."""
+
+    def _make_settings(self, deepgram_key: str = "") -> Settings:
+        """Create test settings with a given DEEPGRAM_API_KEY."""
+        return Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test-secret",  # pragma: allowlist secret
+            DEEPGRAM_API_KEY=deepgram_key,
+            DEBUG=True,
+        )
+
+    def test_empty_deepgram_key_raises_runtime_error(self) -> None:
+        """get_deepgram_api_key should raise RuntimeError when key is empty."""
+        settings = self._make_settings(deepgram_key="")
+        with patch("src.api.dependencies.get_settings", return_value=settings):
+            with pytest.raises(RuntimeError, match="DEEPGRAM_API_KEY not configured"):
+                get_deepgram_api_key()
+
+    def test_none_deepgram_key_raises_runtime_error(self) -> None:
+        """get_deepgram_api_key should raise RuntimeError when key is None-like."""
+        settings = self._make_settings(deepgram_key="")
+        # Manually set to None to simulate missing config
+        object.__setattr__(settings, "DEEPGRAM_API_KEY", None)
+        with patch("src.api.dependencies.get_settings", return_value=settings):
+            with pytest.raises(RuntimeError, match="DEEPGRAM_API_KEY not configured"):
+                get_deepgram_api_key()
+
+    def test_valid_deepgram_key_returned(self) -> None:
+        """get_deepgram_api_key should return the key when configured."""
+        settings = self._make_settings(deepgram_key="dg-test-key-abc123")
+        with patch("src.api.dependencies.get_settings", return_value=settings):
+            result = get_deepgram_api_key()
+            assert result == "dg-test-key-abc123"
