@@ -359,11 +359,10 @@ describe('stream.js — initStreamingForm', () => {
             { event: 'done', data: {} },
         ], { includeMicBtn: true, includeLanguageInput: true });
 
-        const speakerBtn = document.querySelector('.voice-speak-btn');
-        expect(speakerBtn).not.toBeNull();
-        expect(speakerBtn.getAttribute('data-text')).toBe('Guten Tag');
-        expect(speakerBtn.getAttribute('data-language')).toBe('de');
-        expect(speakerBtn.getAttribute('aria-label')).toBe('Listen to response');
+        const wfContainer = document.querySelector('.voice-tts-row');
+        expect(wfContainer).not.toBeNull();
+        expect(wfContainer.getAttribute('data-text')).toBe('Guten Tag');
+        expect(wfContainer.getAttribute('data-language')).toBe('de');
     });
 
     it('does NOT add speaker button when mic-btn is absent', async () => {
@@ -373,8 +372,8 @@ describe('stream.js — initStreamingForm', () => {
             { event: 'done', data: {} },
         ], { includeMicBtn: false });
 
-        const speakerBtn = document.querySelector('.voice-speak-btn');
-        expect(speakerBtn).toBeNull();
+        const wfContainer = document.querySelector('.voice-tts-row');
+        expect(wfContainer).toBeNull();
     });
 
     it('does NOT add speaker button when response text is empty', async () => {
@@ -383,8 +382,8 @@ describe('stream.js — initStreamingForm', () => {
             { event: 'done', data: {} },
         ], { includeMicBtn: true });
 
-        const speakerBtn = document.querySelector('.voice-speak-btn');
-        expect(speakerBtn).toBeNull();
+        const wfContainer = document.querySelector('.voice-tts-row');
+        expect(wfContainer).toBeNull();
     });
 
     // ------------------------------------------------------------------
@@ -582,9 +581,9 @@ describe('stream.js — initStreamingForm', () => {
             { event: 'done', data: {} },
         ], { includeMicBtn: true, includeLanguageInput: false });
 
-        const speakerBtn = document.querySelector('.voice-speak-btn');
-        expect(speakerBtn).not.toBeNull();
-        expect(speakerBtn.getAttribute('data-language')).toBe('es');
+        const wfContainer = document.querySelector('.voice-tts-row');
+        expect(wfContainer).not.toBeNull();
+        expect(wfContainer.getAttribute('data-language')).toBe('es');
     });
 
     // ------------------------------------------------------------------

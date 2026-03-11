@@ -584,15 +584,44 @@
             font-style: italic;
         }
 
-        /* Speaker button states */
-        .voice-speak-btn.voice-loading {
-            opacity: 0.5;
-            cursor: wait;
+        /* TTS row: simple play + speed */
+        .voice-tts-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .voice-speak-btn.voice-playing {
-            color: var(--accent);
+        .voice-tts-play {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: none;
+            color: var(--text-subtle);
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
         }
+        .voice-tts-play:hover { color: var(--accent); background-color: var(--surface-overlay); }
+
+        .voice-tts-row.voice-loading .voice-tts-play { opacity: 0.5; cursor: wait; }
+        .voice-tts-row.voice-playing .voice-tts-play { color: var(--accent); }
+
+        .voice-tts-speed {
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-subtle);
+            background: var(--surface-overlay);
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+        .voice-tts-speed:hover { color: var(--accent); background-color: color-mix(in srgb, var(--accent) 12%, var(--surface-overlay)); }
+        .voice-tts-speed-frozen { opacity: 0.4; pointer-events: none; }
 
         /* Voice error tooltip */
         .voice-error-tooltip {
@@ -644,192 +673,24 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Floating TTS stop bar */
-        .voice-stop-bar {
-            display: flex;
-            justify-content: center;
-            padding: 8px 16px;
-            background-color: var(--surface-elevated);
-            border-top: 1px solid var(--border);
-            animation: tooltipFadeIn 0.15s ease-out;
-            flex-shrink: 0;
-        }
-
-        .voice-stop-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
-            background-color: var(--error-muted);
-            color: var(--error);
-            border: 1px solid var(--error);
+        /* Processing text indicator (pill above mic during STT processing) */
+        .voice-processing-indicator {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--surface-elevated, #374151);
+            color: var(--text-muted, #9ca3af);
+            border: 1px solid var(--border, #4b5563);
+            padding: 2px 10px;
             border-radius: 999px;
-            font-size: 0.8125rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease, transform 0.1s ease;
+            font-size: 0.675rem;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+            animation: tooltipFadeIn 0.2s ease-out;
         }
 
-        .voice-stop-btn:hover {
-            background-color: var(--error);
-            color: white;
-        }
-
-        .voice-stop-btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Recording bar (inline replacement for input during STT) */
-        .voice-recording-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background-color: color-mix(in srgb, var(--error) 8%, var(--surface));
-            border: 1px solid color-mix(in srgb, var(--error) 30%, var(--border));
-            border-radius: 12px;
-            width: 100%;
-        }
-        .voice-cancel-btn {
-            flex-shrink: 0;
-            padding: 6px;
-            color: var(--text-subtle);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: color 0.15s ease, background-color 0.15s ease;
-            background: none;
-            border: none;
-        }
-        .voice-cancel-btn:hover {
-            color: var(--error);
-            background-color: color-mix(in srgb, var(--error) 10%, transparent);
-        }
-        .voice-rec-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--error);
-            animation: voicePulse 1.5s ease-in-out infinite;
-            flex-shrink: 0;
-        }
-        .voice-rec-timer {
-            font-size: 0.8125rem;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            color: var(--text-primary, var(--text));
-            min-width: 36px;
-            flex-shrink: 0;
-        }
-        .voice-rec-waveform {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            height: 28px;
-            overflow: hidden;
-        }
-        .voice-rec-bar {
-            width: 3px;
-            min-height: 4px;
-            border-radius: 9999px;
-            background-color: var(--error);
-            transition: height 0.08s ease-out;
-            opacity: 0.7;
-        }
-        .voice-stop-square {
-            background-color: var(--error) !important;
-            color: white !important;
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .voice-rec-dot { animation: none; opacity: 0.8; }
-            .voice-rec-bar { height: 12px !important; }
-        }
-
-        /* Waveform player on AI messages */
-        .voice-wf-player {
-            padding: 8px 12px;
-            background-color: var(--surface-overlay);
-            border: 1px solid var(--border);
-            border-radius: 12px 12px 0 0;
-            border-bottom: none;
-        }
-        .voice-wf-top {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .voice-wf-play {
-            flex-shrink: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: none;
-            border: none;
-            color: var(--accent);
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-        .voice-wf-play:hover {
-            background-color: color-mix(in srgb, var(--accent) 10%, transparent);
-        }
-        .voice-wf-wave {
-            flex: 1;
-            height: 32px;
-            min-width: 0;
-        }
-        .voice-wf-speed {
-            flex-shrink: 0;
-            padding: 2px 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-subtle);
-            background-color: var(--surface-elevated);
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            cursor: pointer;
-            transition: color 0.15s ease, border-color 0.15s ease;
-            font-variant-numeric: tabular-nums;
-        }
-        .voice-wf-speed:hover {
-            color: var(--accent);
-            border-color: var(--accent);
-        }
-        .voice-wf-time {
-            font-size: 0.6875rem;
-            color: var(--text-subtle);
-            text-align: right;
-            padding-top: 4px;
-            font-variant-numeric: tabular-nums;
-        }
-        .voice-wf-loading {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            height: 32px;
-            padding: 0 4px;
-        }
-        .voice-wf-loading-dot {
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background-color: var(--text-subtle);
-            opacity: 0.3;
-            animation: wfShimmer 1.4s ease-in-out infinite;
-        }
-        .voice-wf-loading-dot:nth-child(2) { animation-delay: 0.2s; }
-        .voice-wf-loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        .voice-wf-loading-dot:nth-child(4) { animation-delay: 0.6s; }
-        .voice-wf-loading-dot:nth-child(5) { animation-delay: 0.8s; }
-        @keyframes wfShimmer {
-            0%, 100% { opacity: 0.3; transform: scaleY(1); }
-            50% { opacity: 0.8; transform: scaleY(2.5); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .voice-wf-loading-dot { animation: none; opacity: 0.5; }
-        }
 
         /* High contrast mode support */
         @media (prefers-contrast: high) {

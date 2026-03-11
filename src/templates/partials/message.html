@@ -26,27 +26,13 @@ Variables expected:
             {% endif %}
         </div>
         {% if voice_enabled and ai_response %}
-        <div class="voice-waveform-container animate__animated animate__fadeIn animate__faster"
+        <div class="voice-tts-row mt-2"
              data-text="{{ ai_response | e }}"
              data-language="{{ language }}">
-            <div class="voice-wf-player">
-                <div class="voice-wf-top">
-                    <button type="button" class="voice-wf-play" aria-label="Play audio">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    </button>
-                    <div class="voice-wf-wave">
-                        <div class="voice-wf-loading" aria-hidden="true">
-                            <span class="voice-wf-loading-dot"></span>
-                            <span class="voice-wf-loading-dot"></span>
-                            <span class="voice-wf-loading-dot"></span>
-                            <span class="voice-wf-loading-dot"></span>
-                            <span class="voice-wf-loading-dot"></span>
-                        </div>
-                    </div>
-                    <button type="button" class="voice-wf-speed" aria-label="Playback speed">1×</button>
-                </div>
-                <div class="voice-wf-time">0:00</div>
-            </div>
+            <button type="button" class="voice-tts-play" aria-label="Play audio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </button>
+            <button type="button" class="voice-tts-speed" aria-label="Playback speed">1×</button>
         </div>
         {% endif %}
 

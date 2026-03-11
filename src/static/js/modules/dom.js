@@ -74,6 +74,8 @@ export function clearInput() {
     if (!messageInput) return;
 
     messageInput.value = '';
+    // Dispatch input event so listeners (e.g. mic/send button swap) react
+    messageInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**

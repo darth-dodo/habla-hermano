@@ -15,12 +15,13 @@
 import { interpret } from './fsm.js';
 import {
     VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
-    MIC_ICON, STOP_SQUARE_ICON, SPINNER_HTML,
+    WF_PLAY_ICON, WF_STOP_ICON, WF_SPEED_OPTIONS,
 } from './voice-constants.js';
 import {
-    setSendEnabled, showTooltipError,
-    createStopBar, removeStopBar, setupButtonSwap,
-    createRecordingBar, removeRecordingBar, animateRecordingWaveform,
+    showMicRecording, restoreMicIcon, setSendEnabled,
+    showTooltipError, startTimer, stopTimer,
+    startLevelAnimation, showProcessing, hideProcessing,
+    setupButtonSwap,
 } from './voice-ui.js';
 import {
     sttMachine, startRecordingSession,
@@ -28,11 +29,9 @@ import {
     getAnalyser, resetTranscript, getStream,
 } from './voice-stt.js';
 import {
-    ttsMachine, streamTTS, restTTS, cleanupTtsResources,
+    ttsMachine, streamTTS, restTTS, cleanupTtsResources, setTtsSpeed,
 } from './voice-tts.js';
-import {
-    createWaveformPlayer, destroyWaveformPlayer,
-} from './voice-waveform.js';
+
 
 // ============================================
 // Module State
@@ -55,19 +54,14 @@ var micWrapper = null;
 // Shared TTS AudioContext (Safari limits to 4 instances)
 var sharedTtsCtx = null;
 
-// TTS active button reference (now the .voice-waveform-container element)
+// TTS active button reference (the .voice-tts-row element)
 var ttsActiveBtn = null;
 
-// Active waveform player handle (from voice-waveform.js)
-var activeWfPlayer = null;
-
-// UI state handles
+// UI state handles (returned by voice-ui.js functions)
+var timerHandle = null;
+var levelHandle = null;
+var processingHandle = null;
 var processingTimeout = null;
-var stopBar = null;
-
-// Recording bar handles (Task 3)
-var recordingBarHandle = null;
-var waveformAnimHandle = null;
 
 // Error tooltip timeouts (shared mutable map)
 var errorTimeouts = {};
@@ -93,11 +87,7 @@ function onSttChange(state, prev) {
             },
             function onFinalTranscript() {
                 // Dismiss processing state early on final transcript
-                if (processingTimeout) {
-                    clearTimeout(processingTimeout);
-                    processingTimeout = null;
-                    sttService.send('PROCESSED');
-                }
+                if (processingTimeout) doHideProcessing();
             }
         );
     }
@@ -105,24 +95,11 @@ function onSttChange(state, prev) {
     // --- entering recording (from connecting) ---
     if (state === 'recording' && prev === 'connecting') {
         setSendEnabled(sendButton, chatInput, false);
-
-        // Create recording bar inside the form / input container
-        var inputContainer = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
-        recordingBarHandle = createRecordingBar(inputContainer, function() {
-            sttService.send('CANCEL');
-        });
-
-        // Morph mic button to stop square
-        if (micButton) {
-            micButton.classList.add('voice-stop-square');
-            micButton.innerHTML = STOP_SQUARE_ICON;
-            micButton.setAttribute('aria-label', 'Stop recording');
-        }
-
-        // Start waveform animation
-        waveformAnimHandle = animateRecordingWaveform(
+        showMicRecording(micButton);
+        timerHandle = startTimer(micWrapper);
+        levelHandle = startLevelAnimation(
             getAnalyser(),
-            recordingBarHandle ? recordingBarHandle.waveformEl : null,
+            micButton,
             function() { return sttService && sttService.matches('recording'); }
         );
     }
@@ -132,19 +109,7 @@ function onSttChange(state, prev) {
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-
-        // Stop waveform animation
-        if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
-
-        // Show spinner inside the recording bar (replace waveform)
-        if (recordingBarHandle && recordingBarHandle.waveformEl) {
-            recordingBarHandle.waveformEl.innerHTML = SPINNER_HTML;
-        }
-
-        // Auto-dismiss after 2 seconds
-        processingTimeout = setTimeout(function() {
-            sttService.send('PROCESSED');
-        }, 2000);
+        doShowProcessing();
     }
 
     // --- entering idle (from connecting on ERROR/CANCEL) ---
@@ -153,62 +118,58 @@ function onSttChange(state, prev) {
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-
-        // Remove recording bar if it exists (edge case: rapid cancel)
-        if (recordingBarHandle) {
-            var container = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
-            removeRecordingBar(recordingBarHandle, container);
-            recordingBarHandle = null;
-        }
-
-        doRestoreMicButton();
+        restoreMicIcon(micButton);
         setSendEnabled(sendButton, chatInput, true);
     }
 
     // --- entering idle (from recording on ERROR/CANCEL) ---
     if (state === 'idle' && prev === 'recording') {
         if (sttAbort) { sttAbort.abort(); sttAbort = null; }
-        if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
+        stopTimer(timerHandle); timerHandle = null;
+        if (levelHandle) { levelHandle.stop(); levelHandle = null; }
         teardownSttAudio();
         closeSttWs();
         if (chatInput) chatInput.classList.remove('voice-interim');
-
-        // Remove recording bar with slideOutLeft animation
-        var containerRec = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
-        removeRecordingBar(recordingBarHandle, containerRec, 'slideOutLeft');
-        recordingBarHandle = null;
-
-        doRestoreMicButton();
+        restoreMicIcon(micButton);
         setSendEnabled(sendButton, chatInput, true);
+        // Trigger mic/send button swap (transcript was set programmatically)
+        if (chatInput) chatInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // --- entering idle (from processing) ---
     if (state === 'idle' && prev === 'processing') {
         if (sttAbort) { sttAbort.abort(); sttAbort = null; }
-
-        if (processingTimeout) {
-            clearTimeout(processingTimeout);
-            processingTimeout = null;
-        }
-
-        // Remove recording bar with fadeOut animation
-        var containerProc = chatInput ? chatInput.closest('form') || chatInput.parentElement.parentElement : null;
-        removeRecordingBar(recordingBarHandle, containerProc, 'fadeOut');
-        recordingBarHandle = null;
-
-        doRestoreMicButton();
+        doHideProcessing();
+        restoreMicIcon(micButton);
         setSendEnabled(sendButton, chatInput, true);
+        // Trigger mic/send button swap (transcript was set programmatically)
+        if (chatInput) chatInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 }
 
 /**
- * Restore the mic button to its default idle icon and classes.
+ * Show processing UI (spinner + pill) with auto-dismiss timeout.
  */
-function doRestoreMicButton() {
-    if (!micButton) return;
-    micButton.classList.remove('voice-stop-square');
-    micButton.innerHTML = MIC_ICON;
-    micButton.setAttribute('aria-label', 'Record voice message');
+function doShowProcessing() {
+    stopTimer(timerHandle); timerHandle = null;
+    if (levelHandle) { levelHandle.stop(); levelHandle = null; }
+    processingHandle = showProcessing(micButton, micWrapper);
+    processingTimeout = setTimeout(function() {
+        sttService.send('PROCESSED');
+    }, 2000);
+}
+
+/**
+ * Hide processing UI and clear timeout.
+ */
+function doHideProcessing() {
+    if (processingTimeout) {
+        clearTimeout(processingTimeout);
+        processingTimeout = null;
+    }
+    hideProcessing(processingHandle);
+    processingHandle = null;
+    sttService.send('PROCESSED');
 }
 
 // ============================================
@@ -229,8 +190,13 @@ function onTtsChange(state, prev) {
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading');
             ttsActiveBtn.classList.add('voice-playing');
+            // Swap play icon to stop
+            var playEl = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl) playEl.innerHTML = WF_STOP_ICON;
+            // Freeze speed chip
+            var chip = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip) chip.classList.add('voice-tts-speed-frozen');
         }
-        stopBar = createStopBar(function() { stopAllTTS(); });
     }
 
     // --- entering idle (from loading on ERROR/CANCEL/ALL_ENDED) ---
@@ -239,9 +205,11 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
+            var playEl1 = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl1) playEl1.innerHTML = WF_PLAY_ICON;
+            var chip1 = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip1) chip1.classList.remove('voice-tts-speed-frozen');
         }
-        removeStopBar(stopBar); stopBar = null;
-        activeWfPlayer = null;
         ttsActiveBtn = null;
     }
 
@@ -251,9 +219,11 @@ function onTtsChange(state, prev) {
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
+            var playEl2 = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playEl2) playEl2.innerHTML = WF_PLAY_ICON;
+            var chip2 = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (chip2) chip2.classList.remove('voice-tts-speed-frozen');
         }
-        removeStopBar(stopBar); stopBar = null;
-        activeWfPlayer = null;
         ttsActiveBtn = null;
     }
 }
@@ -290,10 +260,32 @@ export function initVoice() {
         toggleRecording();
     });
 
-    // Delegate speaker icon clicks
+    // Delegate TTS play/speed clicks
     document.addEventListener('click', function(e) {
-        var btn = e.target.closest('.voice-speak-btn');
-        if (btn) handleSpeakClick(btn);
+        // Speed chip: cycle through speed options
+        var speedChip = e.target.closest('.voice-tts-speed');
+        if (speedChip) {
+            var cont = speedChip.closest('.voice-tts-row');
+            if (cont) {
+                var currentSpeed = parseFloat(cont.dataset.speed) || 1;
+                var idx = WF_SPEED_OPTIONS.indexOf(currentSpeed);
+                var nextIdx = (idx + 1) % WF_SPEED_OPTIONS.length;
+                var newSpeed = WF_SPEED_OPTIONS[nextIdx];
+                cont.dataset.speed = String(newSpeed);
+                speedChip.textContent = newSpeed + '\u00d7';
+                // Apply mid-stream if this row is currently playing
+                if (cont.classList.contains('voice-playing') || cont.classList.contains('voice-loading')) {
+                    setTtsSpeed(newSpeed);
+                }
+            }
+            return; // Don't trigger play
+        }
+
+        var playBtn = e.target.closest('.voice-tts-play');
+        if (playBtn) {
+            var row = playBtn.closest('.voice-tts-row');
+            if (row) handleSpeakClick(row);
+        }
     });
 
     // Handle page visibility changes (background/foreground)
@@ -311,11 +303,6 @@ export function initVoice() {
  * Tear down voice module. Called on beforeunload.
  */
 export function destroyVoice() {
-    // 0. Capture recording bar element before CANCEL nullifies the handle
-    //    (CANCEL triggers onSttChange which calls removeRecordingBar with animation,
-    //     but jsdom/real browsers may not fire animationend synchronously)
-    var pendingBarEl = recordingBarHandle ? recordingBarHandle.element : null;
-
     // 1. Stop any active recording
     if (sttService && !sttService.matches('idle')) {
         sttService.send('CANCEL');
@@ -352,31 +339,12 @@ export function destroyVoice() {
     });
     errorTimeouts = {};
 
-    // 7. Hide stop bar
-    removeStopBar(stopBar); stopBar = null;
+    // 7. Clean up STT UI handles
+    stopTimer(timerHandle); timerHandle = null;
+    if (levelHandle) { levelHandle.stop(); levelHandle = null; }
+    hideProcessing(processingHandle); processingHandle = null;
 
-    // 8. Clean up recording bar
-    if (waveformAnimHandle) { waveformAnimHandle.stop(); waveformAnimHandle = null; }
-    if (recordingBarHandle) {
-        recordingBarHandle.cancel();
-        if (recordingBarHandle.element && recordingBarHandle.element.parentElement) {
-            recordingBarHandle.element.remove();
-        }
-        recordingBarHandle = null;
-    }
-    // Force-remove bar element if CANCEL left it in the DOM (animation pending)
-    if (pendingBarEl && pendingBarEl.parentElement) {
-        var parentContainer = pendingBarEl.parentElement;
-        pendingBarEl.remove();
-        // Restore any children hidden by the recording bar
-        var hidden = parentContainer.querySelectorAll('[data-voice-hidden]');
-        for (var i = 0; i < hidden.length; i++) {
-            hidden[i].style.display = '';
-            hidden[i].removeAttribute('data-voice-hidden');
-        }
-    }
-
-    // 10. Null out DOM refs
+    // 8. Null out DOM refs
     micButton = null;
     chatInput = null;
     sendButton = null;
@@ -419,7 +387,6 @@ export function handleSpeakClick(btn) {
     }
 
     // Stop any currently active TTS before starting a new one
-    // Race condition fix: abort current session first, then start new
     if (ttsService && !ttsService.matches('idle')) {
         ttsService.send('CANCEL');
     }
@@ -460,8 +427,8 @@ export function handleSpeakClick(btn) {
  */
 export function stopAllTTS() {
     if (!ttsService) return;
-    // Also clean up any buttons that have stale classes
-    var activeBtns = document.querySelectorAll('.voice-speak-btn.voice-playing, .voice-speak-btn.voice-loading');
+    // Also clean up any rows that have stale classes
+    var activeBtns = document.querySelectorAll('.voice-tts-row.voice-playing, .voice-tts-row.voice-loading');
     activeBtns.forEach(function(b) {
         b.classList.remove('voice-playing', 'voice-loading');
     });

@@ -352,3 +352,19 @@ export function cleanupTtsResources(ttsAbort) {
         currentBlobUrl = null;
     }
 }
+
+/**
+ * Change playback speed on all currently active TTS sources.
+ * Works for both WebSocket (BufferSource) and REST (<audio>) playback.
+ * @param {number} speed - new playback rate (e.g. 0.75, 1, 1.25, 1.5)
+ */
+export function setTtsSpeed(speed) {
+    if (ttsSources && ttsSources.length > 0) {
+        ttsSources.forEach(function(source) {
+            try { source.playbackRate.value = speed; } catch (_) {}
+        });
+    }
+    if (currentAudio) {
+        currentAudio.playbackRate = speed;
+    }
+}

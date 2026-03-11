@@ -25,6 +25,11 @@ export var STOP_ICON = '<svg class="w-5 h-5" fill="none" stroke="currentColor" v
     + '<rect x="6" y="6" width="12" height="12" rx="2" stroke-linecap="round" stroke-linejoin="round" />'
     + '</svg>';
 
+export var LEVEL_BARS_HTML = '<div class="voice-level-bars" aria-hidden="true">'
+    + '<span class="voice-bar"></span><span class="voice-bar"></span>'
+    + '<span class="voice-bar"></span><span class="voice-bar"></span>'
+    + '</div>';
+
 export var SPINNER_HTML = '<div class="voice-spinner" aria-hidden="true"></div>';
 
 export var SEND_ICON = '<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
@@ -40,6 +45,11 @@ export var CANCEL_X_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" h
     + '<line x1="18" y1="6" x2="6" y2="18"></line>'
     + '<line x1="6" y1="6" x2="18" y2="18"></line>'
     + '</svg>';
+
+export var WF_PLAY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+export var WF_STOP_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>';
+
+export var WF_SPEED_OPTIONS = [0.75, 1, 1.25, 1.5];
 
 // ============================================
 // Audio Utility Functions
