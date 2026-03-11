@@ -14,7 +14,7 @@ from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates
 
 from src.api.config import Settings, get_settings
-from src.api.sanitize import sanitize_html
+from src.api.sanitize import render_markdown, sanitize_html
 from src.api.session import get_thread_id as _get_thread_id
 from src.lessons.service import LessonService, get_lesson_service
 
@@ -34,6 +34,22 @@ def _sanitize_filter(value: str) -> markupsafe.Markup:
     return markupsafe.Markup(sanitize_html(value))  # nosec B704 - input sanitized by nh3
 
 
+def _markdown_filter(value: str) -> markupsafe.Markup:
+    """Jinja2 filter that renders Markdown to sanitized HTML.
+
+    Converts Markdown to HTML with fenced_code and tables extensions,
+    sanitizes through nh3, then wraps in Markup so Jinja2 does not
+    double-escape the output.
+
+    Args:
+        value: Raw Markdown string.
+
+    Returns:
+        markupsafe.Markup: Sanitized HTML that Jinja2 treats as safe.
+    """
+    return markupsafe.Markup(render_markdown(value))  # nosec B704 - input sanitized by nh3
+
+
 def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
     """Register custom Jinja2 filters on a templates instance.
 
@@ -44,6 +60,7 @@ def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
         Jinja2Templates: Same instance with filters registered.
     """
     templates.env.filters["sanitize"] = _sanitize_filter
+    templates.env.filters["markdown"] = _markdown_filter
     return templates
 
 

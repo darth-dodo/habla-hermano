@@ -39,6 +39,9 @@ else:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
+# Silence noisy third-party loggers
+logging.getLogger("MARKDOWN").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 

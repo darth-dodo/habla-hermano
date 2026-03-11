@@ -7,7 +7,7 @@
  */
 
 import { createMachine } from './fsm.js';
-import { TTS_SAMPLE_RATE } from './voice-constants.js';
+import { TTS_SAMPLE_RATE, chunkTextForTTS } from './voice-constants.js';
 
 // ============================================
 // TTS State Machine Definition
@@ -95,6 +95,11 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
     var wsDone = false;
     var pcmChunks = [];
 
+    // Chunk text for the server's MAX_TTS_TEXT_LENGTH limit
+    var textChunks = chunkTextForTTS(text);
+    var totalChunks = textChunks.length;
+    var flushedCount = 0;
+
     var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     var ws = new WebSocket(
         wsProtocol + '//' + location.host + '/ws/speak?voice=' + encodeURIComponent(voice)
@@ -114,11 +119,10 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
             ws.close(1000, 'Cancelled');
             return;
         }
-        ws.send(JSON.stringify({ text: text }));
-        // NOTE: Do NOT send close here. The server cancels the audio forwarding
-        // task when _handle_browser_tts_messages returns, so sending close
-        // before audio arrives would kill the stream. Instead, we detect
-        // completion via Flushed/metadata messages from Deepgram.
+        // Send all chunks; server forwards each as Speak+Flush to Deepgram
+        for (var i = 0; i < textChunks.length; i++) {
+            ws.send(JSON.stringify({ text: textChunks[i] }));
+        }
     };
 
     ws.onmessage = function(event) {
@@ -177,12 +181,14 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
             try {
                 var msg = JSON.parse(event.data);
                 if (msg.type === 'Flushed' || msg.type === 'metadata') {
-                    // All audio for this text has been sent by Deepgram.
-                    // Defense-in-depth: mark done even before ws.onclose fires.
-                    wsDone = true;
-                    if (totalScheduled <= 0) {
-                        deliverBlob();
-                        ttsService.send('ALL_ENDED');
+                    flushedCount++;
+                    // Only mark done when all chunks have been flushed
+                    if (flushedCount >= totalChunks) {
+                        wsDone = true;
+                        if (totalScheduled <= 0) {
+                            deliverBlob();
+                            ttsService.send('ALL_ENDED');
+                        }
                     }
                 }
             } catch (_) {}
@@ -242,22 +248,49 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
  * @param {function(Blob): void} [onAudioReady] - callback with audio blob when available
  */
 export function restTTS(btn, text, voice, speed, signal, ttsService, showError, onAudioReady) {
-    fetch('/api/speak', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({ text: text, voice: voice }),
-        signal: signal,
-    }).then(function(response) {
-        if (signal.aborted) return;
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.blob();
-    }).then(function(audioBlob) {
-        if (signal.aborted || !audioBlob) return;
+    var textChunks = chunkTextForTTS(text);
+    var allBlobs = [];
 
-        // Deliver blob before playing
+    // Fetch audio for all chunks sequentially, then concatenate and play
+    function fetchChunk(index) {
+        if (signal.aborted) return;
+        if (index >= textChunks.length) {
+            // All chunks fetched — combine and play
+            var combinedBlob = new Blob(allBlobs, { type: allBlobs[0].type });
+            playRestAudio(combinedBlob);
+            return;
+        }
+
+        fetch('/api/speak', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ text: textChunks[index], voice: voice }),
+            signal: signal,
+        }).then(function(response) {
+            if (signal.aborted) return;
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.blob();
+        }).then(function(audioBlob) {
+            if (signal.aborted || !audioBlob) return;
+            allBlobs.push(audioBlob);
+            fetchChunk(index + 1);
+        }).catch(function(err) {
+            if (signal.aborted) return;
+            if (err.name === 'AbortError') return;
+            var msg = (err && err.message && err.message.indexOf('503') !== -1)
+                ? 'Speech service not configured'
+                : 'Could not play audio';
+            showError(btn, msg);
+            ttsService.send('ERROR');
+        });
+    }
+
+    function playRestAudio(audioBlob) {
+        if (signal.aborted) return;
+
         if (onAudioReady) onAudioReady(audioBlob);
 
         var audioUrl = URL.createObjectURL(audioBlob);
@@ -266,7 +299,6 @@ export function restTTS(btn, text, voice, speed, signal, ttsService, showError, 
         currentAudio = audio;
         currentBlobUrl = audioUrl;
 
-        // Transition to playing (REST buffers full response, so go straight to playing)
         ttsService.send('STREAMING');
 
         audio.onended = function() {
@@ -294,15 +326,9 @@ export function restTTS(btn, text, voice, speed, signal, ttsService, showError, 
             showError(btn, 'Could not play audio');
             ttsService.send('ERROR');
         });
-    }).catch(function(err) {
-        if (signal.aborted) return;
-        if (err.name === 'AbortError') return;
-        var msg = (err && err.message && err.message.indexOf('503') !== -1)
-            ? 'Speech service not configured'
-            : 'Could not play audio';
-        showError(btn, msg);
-        ttsService.send('ERROR');
-    });
+    }
+
+    fetchChunk(0);
 }
 
 /**

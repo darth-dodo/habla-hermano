@@ -23,7 +23,7 @@ Variables expected:
 <div class="message-enter flex justify-start mb-6">
     <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
         <div class="text-ai-text leading-relaxed">
-            {{ ai_response | sanitize }}
+            {{ ai_response | markdown }}
         </div>
         {% if voice_enabled %}
         <div class="voice-tts-row mt-2"

@@ -15,6 +15,8 @@ from typing import Any
 
 from starlette.templating import Jinja2Templates
 
+from src.api.sanitize import render_markdown
+
 logger = logging.getLogger(__name__)
 
 
@@ -118,8 +120,12 @@ async def stream_chat_events(  # noqa: PLR0912
                 for node_name, node_output in chunk.items():
                     if node_name == "respond":
                         result.full_response = accumulated_response
+                        rendered = render_markdown(accumulated_response)
                         yield _make_sse_event(
-                            "response_complete", {"content": accumulated_response}
+                            "response_complete", {
+                                "content": accumulated_response,
+                                "rendered_html": rendered,
+                            }
                         )
 
                         # Capture review words offered
