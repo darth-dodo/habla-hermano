@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SSE `response_complete` event**: Now includes `rendered_html` field with server-rendered markdown HTML, replacing plain-text bubble content on stream completion
 - **REST TTS fallback**: `restTTS()` fetches audio for each chunk sequentially and concatenates blobs before playback
 
+
 ## [0.22.0] - 2026-03-11
 
 ### Added - Phase 22: Voice UX Redesign
