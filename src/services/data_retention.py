@@ -43,20 +43,21 @@ async def purge_old_conversations(retention_days: int | None = None) -> dict[str
 
         # Delete old learning sessions
         result = await asyncio.to_thread(
-            lambda: client.table("learning_sessions")
-            .delete()
-            .lt("started_at", cutoff_iso)
-            .execute()
+            lambda: (
+                client.table("learning_sessions").delete().lt("started_at", cutoff_iso).execute()
+            )
         )
         counts["learning_sessions"] = len(result.data) if result.data else 0
 
         # Delete old vocabulary where both review timestamps are past cutoff
         result = await asyncio.to_thread(
-            lambda: client.table("vocabulary")
-            .delete()
-            .lt("last_reviewed_at", cutoff_iso)
-            .lt("next_review_at", cutoff_iso)
-            .execute()
+            lambda: (
+                client.table("vocabulary")
+                .delete()
+                .lt("last_reviewed_at", cutoff_iso)
+                .lt("next_review_at", cutoff_iso)
+                .execute()
+            )
         )
         counts["vocabulary"] = len(result.data) if result.data else 0
 

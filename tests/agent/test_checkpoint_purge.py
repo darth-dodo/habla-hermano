@@ -51,9 +51,7 @@ class TestPurgeDisabled:
         assert result == 0
 
     @pytest.mark.asyncio
-    async def test_logs_info_when_disabled(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_logs_info_when_disabled(self, caplog: pytest.LogCaptureFixture) -> None:
         """Should log that purging is disabled."""
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
@@ -85,9 +83,7 @@ class TestPurgeWithPostgresSaver:
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
 
         assert result == 5 * len(_CHECKPOINT_TABLES)
@@ -120,9 +116,7 @@ class TestPurgeWithPostgresSaver:
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=7)
 
         assert result == 20
@@ -146,9 +140,7 @@ class TestPurgeWithPostgresSaver:
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             await purge_old_checkpoints(retention_days=14)
 
         # retention_days is now a parameterised value, not in the SQL string
@@ -219,38 +211,28 @@ class TestPurgeErrorHandling:
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
         mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(
-            side_effect=RuntimeError("connection failed")
-        )
+        mock_pool.connection = MagicMock(side_effect=RuntimeError("connection failed"))
 
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
 
         assert result == 0
 
     @pytest.mark.asyncio
-    async def test_logs_error_on_failure(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    async def test_logs_error_on_failure(self, caplog: pytest.LogCaptureFixture) -> None:
         """Should log the exception details when purge fails."""
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
         mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(
-            side_effect=RuntimeError("connection failed")
-        )
+        mock_pool.connection = MagicMock(side_effect=RuntimeError("connection failed"))
 
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             with caplog.at_level(logging.ERROR):
                 await purge_old_checkpoints(retention_days=30)
 
@@ -275,9 +257,7 @@ class TestPurgeErrorHandling:
         mock_saver = MagicMock()
         mock_saver.conn = mock_pool
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
 
         assert result == 0
@@ -291,12 +271,8 @@ class TestCustomRetentionOverride:
         """Passing retention_days explicitly should bypass settings lookup."""
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
-        with patch(
-            "src.agent.checkpoint_purge._state", {"postgres_saver": None}
-        ):
+        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": None}):
             # Should not call get_settings() since we pass the arg
-            with patch(
-                "src.agent.checkpoint_purge.get_settings"
-            ) as mock_get_settings:
+            with patch("src.agent.checkpoint_purge.get_settings") as mock_get_settings:
                 await purge_old_checkpoints(retention_days=7)
                 mock_get_settings.assert_not_called()

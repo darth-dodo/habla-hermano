@@ -39,10 +39,7 @@ async def purge_old_checkpoints(retention_days: int | None = None) -> int:
 
     saver = _state.get("postgres_saver")
     if saver is None:
-        logger.info(
-            "No Postgres checkpointer active (MemorySaver mode); "
-            "skipping checkpoint purge"
-        )
+        logger.info("No Postgres checkpointer active (MemorySaver mode); skipping checkpoint purge")
         return 0
 
     try:
