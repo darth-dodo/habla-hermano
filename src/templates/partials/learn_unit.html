@@ -126,7 +126,7 @@ Variables expected:
                         {% endif %}
 
                         <a
-                            href="/lessons/{{ li.lesson.metadata.full_id }}/play"
+                            href="/chat?lesson={{ li.lesson.metadata.full_id }}"
                             class="group flex items-center gap-3 py-3 {{ 'border-t border-border/50' if not loop.first else '' }} transition-colors duration-150 rounded-lg -mx-1 px-1
                                 {{ 'hover:bg-accent-muted/50' if is_next_lesson else 'hover:bg-surface-overlay/50' }}"
                             role="listitem"
