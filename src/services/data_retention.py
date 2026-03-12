@@ -6,7 +6,7 @@ based on configurable retention periods.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from src.config import get_settings
 from src.db.client import get_supabase
@@ -33,7 +33,7 @@ async def purge_old_conversations(retention_days: int | None = None) -> dict[str
     if retention_days <= 0:
         return {"learning_sessions": 0, "vocabulary": 0}
 
-    cutoff = datetime.now(tz=timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(tz=UTC) - timedelta(days=retention_days)
     cutoff_iso = cutoff.isoformat()
 
     counts: dict[str, int] = {"learning_sessions": 0, "vocabulary": 0}

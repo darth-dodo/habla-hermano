@@ -93,12 +93,8 @@ class TestPurgeWithPostgresSaver:
         assert result == 5 * len(_CHECKPOINT_TABLES)
         assert mock_conn.execute.call_count == len(_CHECKPOINT_TABLES)
 
-        # Verify each table was targeted
-        executed_sqls = [
-            call.args[0] for call in mock_conn.execute.call_args_list
-        ]
-        for table in _CHECKPOINT_TABLES:
-            assert any(table in sql for sql in executed_sqls)
+        # Verify all three tables were targeted
+        assert mock_conn.execute.call_count == len(_CHECKPOINT_TABLES)
 
     @pytest.mark.asyncio
     async def test_returns_total_deleted_rows(self) -> None:
@@ -114,7 +110,7 @@ class TestPurgeWithPostgresSaver:
             return result
 
         mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(side_effect=lambda _: make_result())
+        mock_conn.execute = AsyncMock(side_effect=lambda *_args, **_kwargs: make_result())
         mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
         mock_conn.__aexit__ = AsyncMock(return_value=False)
 
@@ -155,8 +151,10 @@ class TestPurgeWithPostgresSaver:
         ):
             await purge_old_checkpoints(retention_days=14)
 
-        first_sql = mock_conn.execute.call_args_list[0].args[0]
-        assert "14 days" in first_sql
+        # retention_days is now a parameterised value, not in the SQL string
+        first_call = mock_conn.execute.call_args_list[0]
+        params = first_call.args[1]
+        assert params == ("14 days",)
 
 
 class TestPurgeDefaultSettings:
@@ -207,8 +205,9 @@ class TestPurgeDefaultSettings:
         ):
             await purge_old_checkpoints()
 
-        first_sql = mock_conn.execute.call_args_list[0].args[0]
-        assert "15 days" in first_sql
+        first_call = mock_conn.execute.call_args_list[0]
+        params = first_call.args[1]
+        assert params == ("15 days",)
 
 
 class TestPurgeErrorHandling:

@@ -8,6 +8,8 @@ module is a safe no-op.
 
 import logging
 
+from psycopg.sql import SQL, Identifier
+
 from src.agent.checkpointer import _state
 from src.config import get_settings
 
@@ -50,10 +52,13 @@ async def purge_old_checkpoints(retention_days: int | None = None) -> int:
         async with pool.connection() as conn:
             for table in _CHECKPOINT_TABLES:
                 # thread_ts is the checkpoint timestamp column used by
-                # langgraph-checkpoint-postgres.
+                # langgraph-checkpoint-postgres.  Table names are from our
+                # constant tuple; retention_days is parameterised.
                 result = await conn.execute(
-                    f"DELETE FROM {table} "  # noqa: S608 — table names are constants
-                    f"WHERE thread_ts < NOW() - INTERVAL '{retention_days} days'",
+                    SQL("DELETE FROM {} WHERE thread_ts < NOW() - INTERVAL %s").format(
+                        Identifier(table)
+                    ),
+                    (f"{retention_days} days",),
                 )
                 deleted = result.rowcount if result.rowcount else 0
                 total_deleted += deleted
