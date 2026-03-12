@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Secret key for signing cookies (review sessions, etc.)
     SECRET_KEY: str = "change-me-to-a-random-string"
 
+    # Salt for deriving the encryption key from SECRET_KEY (PBKDF2)
+    ENCRYPTION_SALT: str = "habla-hermano-encryption-v1"
+
     # Voice features (Phase 17) - Deepgram STT/TTS
     DEEPGRAM_API_KEY: str = ""
 
@@ -71,6 +74,15 @@ class Settings(BaseSettings):
 
     # Logging format: "text" for human-readable, "json" for structured logging
     LOG_FORMAT: Literal["text", "json"] = "text"
+
+    # Privacy: request Anthropic to not store input/output
+    ANTHROPIC_ZERO_RETENTION: bool = False
+
+    # Auto-delete conversation data older than N days (0 = disabled)
+    CONVERSATION_RETENTION_DAYS: int = 0
+
+    # Checkpoint retention: auto-purge checkpoints older than this many days (0 = disabled)
+    CHECKPOINT_RETENTION_DAYS: int = 30
 
     # Paths (computed relative to project root)
     @property

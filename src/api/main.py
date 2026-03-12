@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
+from src.agent.checkpoint_purge import purge_old_checkpoints
 from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
 from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
@@ -67,6 +68,12 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialise persistent Postgres checkpointer (connection pool + DDL once)
     await init_checkpointer()
+
+    # Purge stale checkpoints (best-effort; failures do not block startup)
+    try:
+        await purge_old_checkpoints()
+    except Exception:
+        logger.exception("Checkpoint purge failed during startup — continuing")
 
     yield
 

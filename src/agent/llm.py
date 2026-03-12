@@ -66,12 +66,17 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
         temperature_override if temperature_override is not None else settings.LLM_TEMPERATURE
     )
 
-    return ChatAnthropic(
-        model=settings.LLM_MODEL,  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
-        temperature=temperature,
-        max_tokens=max_tokens,  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
-        api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[arg-type]  # SecretStr vs str mismatch in stubs
-    )
+    kwargs: dict[str, Any] = {
+        "model": settings.LLM_MODEL,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "api_key": settings.ANTHROPIC_API_KEY,
+    }
+
+    if settings.ANTHROPIC_ZERO_RETENTION:
+        kwargs["default_headers"] = {"x-no-store": "true"}
+
+    return ChatAnthropic(**kwargs)  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
 
 
 def clear_llm_cache() -> None:
