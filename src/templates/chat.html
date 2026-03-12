@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="flex flex-col h-full" x-data="{ level: '{{ current_level or lesson_level or 'A1' }}', language: '{{ current_language or lesson_language or 'es' }}', menuOpen: false, reviewMode: {{ 'true' if review_mode else 'false' }} }"
-    {% if lesson_mode %}data-lesson-mode="true"{% endif %}
     {% if is_resuming %}data-resuming="true"{% endif %}>
     <!-- Header - Nordic Minimal -->
     <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 safe-top safe-x">
