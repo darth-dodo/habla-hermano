@@ -1,0 +1,199 @@
+id: likes-dislikes-001
+level: A1
+category: likes-dislikes
+icon: "\u26BD"
+tags:
+  - preferences
+  - hobbies
+  - gustar
+  - opinions
+estimated_minutes: 4
+title: Likes and Dislikes
+description: Express what you like and dislike and ask about others' preferences
+
+languages:
+  es:
+    instruction: "You're getting to know your new flatmate in Buenos Aires. '¿Te gusta el fútbol?' they ask eagerly. Expressing likes and dislikes is key to building friendships in any language."
+    vocabulary:
+      - word: "Me gusta..."
+        translation: "I like..."
+      - word: "No me gusta..."
+        translation: "I don't like..."
+      - word: "Me encanta..."
+        translation: "I love..."
+      - word: "¿Te gusta...?"
+        translation: "Do you like...?"
+      - word: "Me gusta mucho"
+        translation: "I like it a lot"
+      - word: "Prefiero..."
+        translation: "I prefer..."
+      - word: "Me gusta el fútbol"
+        translation: "I like soccer"
+      - word: "Me gusta leer"
+        translation: "I like to read"
+    examples:
+      - content: "— ¿Te gusta el fútbol?\n— ¡Me encanta! ¿Y a ti?\n— Sí, me gusta mucho. Soy del Boca."
+        translation: "— Do you like soccer?\n— I love it! And you?\n— Yes, I like it a lot. I support Boca."
+      - content: "— ¿Qué te gusta hacer los fines de semana?\n— Me gusta leer y cocinar. No me gusta ir de compras.\n— Yo prefiero salir con amigos."
+        translation: "— What do you like to do on weekends?\n— I like reading and cooking. I don't like shopping.\n— I prefer going out with friends."
+    tips:
+      - "'Gustar' works differently from English — literally it means 'to please'. So 'Me gusta el café' = 'Coffee pleases me' = 'I like coffee'. The subject is the thing you like!"
+      - "Use 'Me encanta' to express strong liking (I love it), 'Me gusta mucho' for strong liking, 'Me gusta' for liking, and 'No me gusta nada' for strong dislike."
+    exercises:
+      - id: ex-mc-likes-es-001
+        type: multiple_choice
+        question: "How do you say 'I love chocolate' in Spanish?"
+        options:
+          - "Me gusta el chocolate"
+          - "Me encanta el chocolate"
+          - "No me gusta el chocolate"
+          - "Prefiero el chocolate"
+        correct_index: 1
+        explanation: "'Me encanta' expresses strong liking — 'I love.' 'Me gusta' is just 'I like.'"
+      - id: ex-mc-likes-es-002
+        type: multiple_choice
+        question: "Someone asks '¿Te gusta cocinar?' What are they asking?"
+        options:
+          - "Can you cook?"
+          - "Do you like cooking?"
+          - "What do you cook?"
+          - "Do you cook often?"
+        correct_index: 1
+        explanation: "'¿Te gusta cocinar?' means 'Do you like cooking?'"
+      - id: ex-fb-likes-es-001
+        type: fill_blank
+        sentence_template: "No _____ gusta la lluvia."
+        correct_answer: "me"
+        hint: "The pronoun that goes with 'gusta' when talking about yourself"
+        accept_alternatives: []
+      - id: ex-fb-likes-es-002
+        type: fill_blank
+        sentence_template: "Me _____ mucho la música."
+        correct_answer: "gusta"
+        hint: "The verb for 'to like' (singular form)"
+        accept_alternatives:
+          - "encanta"
+
+  de:
+    instruction: "You're at a WG-Party (flat share party) in Berlin, chatting with your new housemate. 'Magst du Fußball?' they ask. Expressing what you like and don't like is the fastest way to connect with people in German."
+    vocabulary:
+      - word: "Ich mag..."
+        translation: "I like..."
+      - word: "Ich mag... nicht"
+        translation: "I don't like..."
+      - word: "Ich liebe..."
+        translation: "I love..."
+      - word: "Magst du...?"
+        translation: "Do you like...?"
+      - word: "Das gefällt mir sehr"
+        translation: "I like that a lot"
+      - word: "Ich bevorzuge..."
+        translation: "I prefer..."
+      - word: "Ich spiele gern Fußball"
+        translation: "I like playing soccer"
+      - word: "Ich lese gern"
+        translation: "I like to read"
+    examples:
+      - content: "— Magst du Fußball?\n— Ich liebe Fußball! Und du?\n— Ja, sehr! Ich bin Bayern-Fan."
+        translation: "— Do you like soccer?\n— I love soccer! And you?\n— Yes, very much! I'm a Bayern fan."
+      - content: "— Was machst du gern am Wochenende?\n— Ich lese gern und koche gern. Ich gehe nicht gern einkaufen.\n— Ich gehe lieber mit Freunden aus."
+        translation: "— What do you like to do on weekends?\n— I like reading and cooking. I don't like shopping.\n— I prefer going out with friends."
+    tips:
+      - "German has two main ways to express liking: 'mögen' (Ich mag Schokolade = I like chocolate) for nouns, and 'gern/gerne' after a verb for activities (Ich lese gern = I like reading)."
+      - "The intensity scale in German: 'Ich hasse...' (I hate) → 'Ich mag... nicht' (I don't like) → 'Ich mag...' (I like) → 'Ich mag... sehr' (I really like) → 'Ich liebe...' (I love)."
+    exercises:
+      - id: ex-mc-likes-de-001
+        type: multiple_choice
+        question: "How do you say 'I love chocolate' in German?"
+        options:
+          - "Ich mag Schokolade"
+          - "Ich liebe Schokolade"
+          - "Ich mag Schokolade nicht"
+          - "Ich bevorzuge Schokolade"
+        correct_index: 1
+        explanation: "'Ich liebe' expresses strong liking — 'I love.' 'Ich mag' is just 'I like.'"
+      - id: ex-mc-likes-de-002
+        type: multiple_choice
+        question: "Someone asks 'Kochst du gern?' What are they asking?"
+        options:
+          - "Can you cook?"
+          - "Do you like cooking?"
+          - "What do you cook?"
+          - "Do you cook often?"
+        correct_index: 1
+        explanation: "'Kochst du gern?' means 'Do you like cooking?' The word 'gern' signals enjoyment."
+      - id: ex-fb-likes-de-001
+        type: fill_blank
+        sentence_template: "Ich _____ Schokolade nicht."
+        correct_answer: "mag"
+        hint: "The verb for 'to like' — ich form"
+        accept_alternatives: []
+      - id: ex-fb-likes-de-002
+        type: fill_blank
+        sentence_template: "Ich lese _____."
+        correct_answer: "gern"
+        hint: "The word that means 'gladly' — added to verbs to express enjoyment"
+        accept_alternatives:
+          - "gerne"
+
+  fr:
+    instruction: "You're at an apéro (pre-dinner drinks) in Marseille with new acquaintances. 'Tu aimes le football ?' someone asks. Expressing your tastes is the key to making friends in France — let's learn how."
+    vocabulary:
+      - word: "J'aime..."
+        translation: "I like..."
+      - word: "Je n'aime pas..."
+        translation: "I don't like..."
+      - word: "J'adore..."
+        translation: "I love..."
+      - word: "Tu aimes... ?"
+        translation: "Do you like...?"
+      - word: "J'aime beaucoup"
+        translation: "I like it a lot"
+      - word: "Je préfère..."
+        translation: "I prefer..."
+      - word: "J'aime le football"
+        translation: "I like soccer"
+      - word: "J'aime lire"
+        translation: "I like to read"
+    examples:
+      - content: "— Tu aimes le football ?\n— J'adore ! Et toi ?\n— Oui, j'aime beaucoup. Je suis supporter de l'OM."
+        translation: "— Do you like soccer?\n— I love it! And you?\n— Yes, I like it a lot. I support Olympique de Marseille."
+      - content: "— Qu'est-ce que tu aimes faire le week-end ?\n— J'aime lire et cuisiner. Je n'aime pas faire les courses.\n— Moi, je préfère sortir avec des amis."
+        translation: "— What do you like to do on weekends?\n— I like reading and cooking. I don't like shopping.\n— I prefer going out with friends."
+    tips:
+      - "The French scale of liking: 'Je déteste' (I hate) → 'Je n'aime pas' (I don't like) → 'J'aime bien' (I quite like) → 'J'aime' (I like) → 'J'aime beaucoup' (I really like) → 'J'adore' (I love)."
+      - "Be careful: 'J'aime bien' is WEAKER than 'J'aime'. When talking about people, 'Je t'aime bien' means 'I like you (as a friend)' while 'Je t'aime' means 'I love you'. Big difference!"
+    exercises:
+      - id: ex-mc-likes-fr-001
+        type: multiple_choice
+        question: "How do you say 'I love chocolate' in French?"
+        options:
+          - "J'aime le chocolat"
+          - "J'adore le chocolat"
+          - "Je n'aime pas le chocolat"
+          - "Je préfère le chocolat"
+        correct_index: 1
+        explanation: "'J'adore' expresses strong liking — 'I love.' 'J'aime' is just 'I like.'"
+      - id: ex-mc-likes-fr-002
+        type: multiple_choice
+        question: "Someone asks 'Tu aimes cuisiner ?' What are they asking?"
+        options:
+          - "Can you cook?"
+          - "Do you like cooking?"
+          - "What do you cook?"
+          - "Do you cook often?"
+        correct_index: 1
+        explanation: "'Tu aimes cuisiner ?' means 'Do you like cooking?'"
+      - id: ex-fb-likes-fr-001
+        type: fill_blank
+        sentence_template: "Je _____ pas la pluie."
+        correct_answer: "n'aime"
+        hint: "The negative form of 'aimer' (to like) — first person"
+        accept_alternatives: []
+      - id: ex-fb-likes-fr-002
+        type: fill_blank
+        sentence_template: "J'aime _____ la musique."
+        correct_answer: "beaucoup"
+        hint: "The word meaning 'a lot' in French"
+        accept_alternatives:
+          - "bien"

@@ -134,13 +134,8 @@ async def chat_page(
         context["lesson_level"] = str(lesson_data.metadata.level)
         context["lesson_language"] = lesson_data.metadata.language
         context["current_language"] = lesson_data.metadata.language
-
-        # Check for existing checkpoint to support lesson resumption
-        effective_user_id = user.id if user else None
-        thread_id, _, _ = _resolve_lesson_thread_id(
-            effective_user_id, session_id, lesson
-        )
-        await _check_lesson_resume(context, thread_id)
+        # Fresh session UUID so each page load starts a clean checkpoint
+        context["lesson_session"] = str(uuid.uuid4())
 
     # Review features only for authenticated users (skip in lesson mode)
     if user and not lesson:
@@ -215,52 +210,26 @@ def _resolve_lesson_thread_id(
     user_id: str | None,
     session_id: str | None,
     lesson_id: str,
+    lesson_session: str | None = None,
 ) -> tuple[str, str | None, str | None]:
     """Build a lesson-scoped thread ID.
 
-    Format: lesson:{user_or_session_id}:{lesson_id}
+    Format: lesson:{user_or_session_id}:{lesson_id}:{lesson_session}
+
+    Each page load generates a fresh ``lesson_session`` UUID so that every
+    lesson attempt gets a clean checkpoint (no stale conversation history).
 
     Returns:
         Tuple of (thread_id, effective_user_id, new_session_id).
     """
+    suffix = lesson_session or str(uuid.uuid4())
     if user_id:
-        return f"lesson:{user_id}:{lesson_id}", user_id, None
+        return f"lesson:{user_id}:{lesson_id}:{suffix}", user_id, None
     if session_id:
-        return f"lesson:{session_id}:{lesson_id}", None, None
+        return f"lesson:{session_id}:{lesson_id}:{suffix}", None, None
     new_id = str(uuid.uuid4())
-    return f"lesson:{new_id}:{lesson_id}", None, new_id
+    return f"lesson:{new_id}:{lesson_id}:{suffix}", None, new_id
 
-
-async def _check_lesson_resume(context: dict[str, Any], thread_id: str) -> None:
-    """Check for an existing lesson checkpoint and populate resume context.
-
-    If a checkpoint exists for the given thread_id with a lesson_phase,
-    extracts previous messages and sets ``is_resuming`` and
-    ``resume_messages`` in the context dict.
-
-    Args:
-        context: Template context dict to mutate in-place.
-        thread_id: The lesson-scoped thread ID to check.
-    """
-    try:
-        async with get_checkpointer() as checkpointer:
-            graph = build_lesson_chat_graph(checkpointer=checkpointer)
-            existing = await graph.aget_state(
-                RunnableConfig(configurable={"thread_id": thread_id})
-            )
-            if existing and existing.values.get("lesson_phase"):
-                context["is_resuming"] = True
-                # Extract displayable messages from checkpoint
-                messages = existing.values.get("messages", [])
-                resume_messages = []
-                for msg in messages:
-                    if isinstance(msg, HumanMessage):
-                        resume_messages.append({"role": "user", "content": str(msg.content)})
-                    elif isinstance(msg, AIMessage):
-                        resume_messages.append({"role": "ai", "content": str(msg.content)})
-                context["resume_messages"] = resume_messages
-    except Exception:
-        logger.debug("Could not check lesson checkpoint for thread %s", thread_id, exc_info=True)
 
 
 @router.post("/chat", response_class=HTMLResponse)
@@ -414,6 +383,7 @@ async def stream_message(  # noqa: PLR0915
     level: Annotated[str, Form()] = "A1",
     language: Annotated[str, Form()] = "es",
     lesson_id: Annotated[str | None, Form()] = None,
+    lesson_session: Annotated[str | None, Form()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     conversation_version: Annotated[str | None, Cookie()] = None,
@@ -506,7 +476,7 @@ async def stream_message(  # noqa: PLR0915
     if lesson_id:
         effective_user_id = user.id if user else None
         thread_id, effective_user_id, new_session_id = _resolve_lesson_thread_id(
-            effective_user_id, session_id, lesson_id
+            effective_user_id, session_id, lesson_id, lesson_session
         )
     else:
         thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
@@ -527,7 +497,10 @@ async def stream_message(  # noqa: PLR0915
                 # --- Lesson mode ---
                 graph = build_lesson_chat_graph(checkpointer=checkpointer)
 
-                # Check for existing checkpoint — only init lesson state on first message
+                # Check for existing checkpoint — only send full init on first message
+                # Each page load uses a fresh lesson_session UUID, so the first
+                # message always creates a new thread.  Subsequent messages within
+                # the same page session reuse the same thread_id and skip re-init.
                 existing = await graph.aget_state(
                     RunnableConfig(configurable={"thread_id": thread_id})
                 )

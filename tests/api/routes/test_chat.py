@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
 from src.api.dependencies import get_lesson_service
-from src.api.routes.chat import _check_lesson_resume, _resolve_chat_identity, _resolve_lesson_thread_id
+from src.api.routes.chat import _resolve_chat_identity, _resolve_lesson_thread_id
 from src.lessons.models import (
     Lesson,
     LessonContent,
@@ -909,33 +909,46 @@ class TestChatPageLessonMode:
 class TestResolveLessonThreadId:
     """Tests for _resolve_lesson_thread_id helper."""
 
-    def test_authenticated_user(self) -> None:
-        """Authenticated user gets lesson-scoped thread_id."""
+    def test_authenticated_user_with_session(self) -> None:
+        """Authenticated user gets lesson-scoped thread_id with lesson_session suffix."""
         thread_id, user_id, new_session = _resolve_lesson_thread_id(
-            "user-abc", None, "es_a1_greetings_01"
+            "user-abc", None, "es_a1_greetings_01", "sess-uuid-1"
         )
-        assert thread_id == "lesson:user-abc:es_a1_greetings_01"
+        assert thread_id == "lesson:user-abc:es_a1_greetings_01:sess-uuid-1"
         assert user_id == "user-abc"
         assert new_session is None
 
     def test_guest_with_session(self) -> None:
         """Guest with existing session gets lesson-scoped thread_id."""
         thread_id, user_id, new_session = _resolve_lesson_thread_id(
-            None, "session-123", "es_a1_greetings_01"
+            None, "session-123", "es_a1_greetings_01", "sess-uuid-2"
         )
-        assert thread_id == "lesson:session-123:es_a1_greetings_01"
+        assert thread_id == "lesson:session-123:es_a1_greetings_01:sess-uuid-2"
         assert user_id is None
         assert new_session is None
 
     def test_first_time_guest(self) -> None:
         """First-time guest gets new session and lesson-scoped thread_id."""
         thread_id, user_id, new_session = _resolve_lesson_thread_id(
-            None, None, "es_a1_greetings_01"
+            None, None, "es_a1_greetings_01", "sess-uuid-3"
         )
         assert thread_id.startswith("lesson:")
-        assert thread_id.endswith(":es_a1_greetings_01")
+        assert ":es_a1_greetings_01:sess-uuid-3" in thread_id
         assert user_id is None
         assert new_session is not None
+
+    def test_missing_lesson_session_generates_uuid(self) -> None:
+        """When lesson_session is None, a UUID suffix is auto-generated."""
+        thread_id, user_id, _ = _resolve_lesson_thread_id(
+            "user-abc", None, "es_a1_greetings_01"
+        )
+        # Format: lesson:user-abc:es_a1_greetings_01:<auto-uuid>
+        parts = thread_id.split(":")
+        assert len(parts) == 4
+        assert parts[0] == "lesson"
+        assert parts[1] == "user-abc"
+        assert parts[2] == "es_a1_greetings_01"
+        assert len(parts[3]) > 0  # auto-generated UUID
 
 
 class TestStreamMessageLessonMode:
@@ -1099,49 +1112,12 @@ class TestLessonResume:
             ),
         )
 
-    def test_lesson_resume_shows_previous_messages(
+    def test_lesson_always_starts_fresh(
         self,
         app_with_mocked_graph: FastAPI,
         sample_lesson: Lesson,
     ) -> None:
-        """GET /?lesson=X with existing checkpoint should show resume indicator and messages."""
-        mock_svc = MagicMock()
-        mock_svc.get_lesson.return_value = sample_lesson
-        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
-
-        # Configure mock graph aget_state to return a state with lesson_phase and messages
-        mock_state = MagicMock()
-        mock_state.values = {
-            "lesson_phase": "teaching",
-            "messages": [
-                HumanMessage(content="Start the lesson"),
-                AIMessage(content="Welcome to Basic Greetings!"),
-            ],
-        }
-
-        with (
-            patch(
-                "src.api.routes.chat.build_lesson_chat_graph"
-            ) as mock_build,
-            TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client,
-        ):
-            mock_graph = MagicMock()
-            mock_graph.aget_state = AsyncMock(return_value=mock_state)
-            mock_build.return_value = mock_graph
-
-            response = client.get("/?lesson=es_a1_greetings_01")
-
-        assert response.status_code == 200
-        assert "Resuming your lesson" in response.text
-        assert "Welcome to Basic Greetings!" in response.text
-        assert 'data-resuming="true"' in response.text
-
-    def test_lesson_no_checkpoint_does_not_resume(
-        self,
-        app_with_mocked_graph: FastAPI,
-        sample_lesson: Lesson,
-    ) -> None:
-        """GET /?lesson=X without checkpoint should not show resume indicator."""
+        """GET /?lesson=X should always start a fresh lesson (no resume)."""
         mock_svc = MagicMock()
         mock_svc.get_lesson.return_value = sample_lesson
         app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
@@ -1150,60 +1126,24 @@ class TestLessonResume:
             response = client.get("/?lesson=es_a1_greetings_01")
 
         assert response.status_code == 200
+        # No resume indicator — lessons always start fresh
         assert "Resuming your lesson" not in response.text
         assert "data-resuming" not in response.text
+        # Fresh lesson_session UUID is included
+        assert 'name="lesson_session"' in response.text
 
-    @pytest.mark.asyncio
-    async def test_check_lesson_resume_populates_context(self) -> None:
-        """_check_lesson_resume should set is_resuming and resume_messages."""
-        mock_state = MagicMock()
-        mock_state.values = {
-            "lesson_phase": "exercise_ask",
-            "messages": [
-                HumanMessage(content="Start the lesson"),
-                AIMessage(content="Let's practice greetings!"),
-                HumanMessage(content="Hola"),
-                AIMessage(content="Muy bien!"),
-            ],
-        }
-        mock_graph = MagicMock()
-        mock_graph.aget_state = AsyncMock(return_value=mock_state)
+    def test_lesson_session_uuid_in_context(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """Lesson page should include a fresh lesson_session UUID in context."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
 
-        context: dict[str, Any] = {}
-        with (
-            patch("src.api.routes.chat.build_lesson_chat_graph", return_value=mock_graph),
-            patch("src.api.routes.chat.get_checkpointer") as mock_cp,
-        ):
-            # Make get_checkpointer an async context manager
-            mock_checkpointer = MagicMock()
-            mock_cp.return_value.__aenter__ = AsyncMock(return_value=mock_checkpointer)
-            mock_cp.return_value.__aexit__ = AsyncMock(return_value=None)
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
 
-            await _check_lesson_resume(context, "lesson:user-abc:es_a1_greetings_01")
-
-        assert context["is_resuming"] is True
-        assert len(context["resume_messages"]) == 4
-        assert context["resume_messages"][0] == {"role": "user", "content": "Start the lesson"}
-        assert context["resume_messages"][1] == {"role": "ai", "content": "Let's practice greetings!"}
-
-    @pytest.mark.asyncio
-    async def test_check_lesson_resume_no_checkpoint(self) -> None:
-        """_check_lesson_resume with no checkpoint should not set is_resuming."""
-        mock_state = MagicMock()
-        mock_state.values = {}
-        mock_graph = MagicMock()
-        mock_graph.aget_state = AsyncMock(return_value=mock_state)
-
-        context: dict[str, Any] = {}
-        with (
-            patch("src.api.routes.chat.build_lesson_chat_graph", return_value=mock_graph),
-            patch("src.api.routes.chat.get_checkpointer") as mock_cp,
-        ):
-            mock_checkpointer = MagicMock()
-            mock_cp.return_value.__aenter__ = AsyncMock(return_value=mock_checkpointer)
-            mock_cp.return_value.__aexit__ = AsyncMock(return_value=None)
-
-            await _check_lesson_resume(context, "lesson:user-abc:es_a1_greetings_01")
-
-        assert "is_resuming" not in context
-        assert "resume_messages" not in context
+        assert response.status_code == 200
+        assert 'name="lesson_session"' in response.text

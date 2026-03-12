@@ -470,15 +470,11 @@ function showLessonComplete(data) {
 /**
  * In lesson mode, auto-send a "start" message to kick off the lesson.
  * The auto-sent user bubble is hidden from the chat display.
- * When resuming (data-resuming="true"), skip auto-start — the conversation
- * is already in progress and the user just types their next response.
+ * Each page load uses a fresh lesson_session UUID, so lessons always
+ * start from scratch with a clean checkpoint.
  */
 function autoStartLesson() {
     if (!isLessonMode()) return;
-
-    // Skip auto-start when resuming an existing lesson checkpoint
-    const container = document.querySelector('[data-resuming="true"]');
-    if (container) return;
 
     const form = document.getElementById('chat-form');
     if (!form) return;

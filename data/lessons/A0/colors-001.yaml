@@ -1,0 +1,190 @@
+id: colors-001
+level: A0
+category: colors
+icon: "\U0001F3A8"
+tags:
+  - colors
+  - describing
+  - adjectives
+  - basics
+estimated_minutes: 3
+title: Describing by Color
+description: Name basic colors and use them to describe objects in everyday situations
+
+languages:
+  es:
+    instruction: "You're shopping for a gift and trying to describe what you want — 'the blue one, not the green one!' Colors help you identify things, describe preferences, and navigate everyday situations."
+    vocabulary:
+      - word: "Rojo / roja"
+        translation: "Red"
+      - word: "Azul"
+        translation: "Blue"
+      - word: "Verde"
+        translation: "Green"
+      - word: "Amarillo / amarilla"
+        translation: "Yellow"
+      - word: "Blanco / blanca"
+        translation: "White"
+      - word: "Negro / negra"
+        translation: "Black"
+      - word: "La camiseta roja"
+        translation: "The red t-shirt"
+      - word: "¿De qué color es?"
+        translation: "What color is it?"
+    examples:
+      - content: "— Me gusta la camiseta azul.\n— ¿Esta? ¿La azul?\n— Sí, la azul. ¿Cuánto cuesta?"
+        translation: "— I like the blue t-shirt.\n— This one? The blue one?\n— Yes, the blue one. How much is it?"
+      - content: "— ¿De qué color es tu coche?\n— Es blanco.\n— El mío es negro."
+        translation: "— What color is your car?\n— It's white.\n— Mine is black."
+    tips:
+      - "Most Spanish colors change to match the noun: 'el gato negro' (the black cat) but 'la casa negra' (the black house). Azul and verde stay the same for both."
+      - "When shopping, you can simply say 'el/la + color' to point things out: '¿La roja?' (The red one?) — very natural and common."
+    exercises:
+      - id: ex-mc-color-es-001
+        type: multiple_choice
+        question: "You want the green bag. What do you say?"
+        options:
+          - "La bolsa roja"
+          - "La bolsa azul"
+          - "La bolsa verde"
+          - "La bolsa blanca"
+        correct_index: 2
+        explanation: "'Verde' means green. 'La bolsa verde' = the green bag."
+      - id: ex-mc-color-es-002
+        type: multiple_choice
+        question: "What does 'amarillo' mean?"
+        options:
+          - "Blue"
+          - "Red"
+          - "Yellow"
+          - "Green"
+        correct_index: 2
+        explanation: "'Amarillo' means yellow."
+      - id: ex-mc-color-es-003
+        type: multiple_choice
+        question: "Someone asks '¿De qué color es?' — what do they want to know?"
+        options:
+          - "How much is it?"
+          - "What color is it?"
+          - "Where is it?"
+          - "Do you like it?"
+        correct_index: 1
+        explanation: "'¿De qué color es?' means 'What color is it?'"
+
+  de:
+    instruction: "You're in a clothing store on the Kurfürstendamm in Berlin, trying to find a gift. 'Die blaue, nicht die grüne!' — you need to describe what you want by color. Let's learn the essential German colors."
+    vocabulary:
+      - word: "Rot"
+        translation: "Red"
+      - word: "Blau"
+        translation: "Blue"
+      - word: "Grün"
+        translation: "Green"
+      - word: "Gelb"
+        translation: "Yellow"
+      - word: "Weiß"
+        translation: "White"
+      - word: "Schwarz"
+        translation: "Black"
+      - word: "Das rote T-Shirt"
+        translation: "The red t-shirt"
+      - word: "Welche Farbe hat das?"
+        translation: "What color is that?"
+    examples:
+      - content: "— Mir gefällt das blaue T-Shirt.\n— Dieses? Das blaue?\n— Ja, das blaue. Was kostet es?"
+        translation: "— I like the blue t-shirt.\n— This one? The blue one?\n— Yes, the blue one. How much is it?"
+      - content: "— Welche Farbe hat dein Auto?\n— Es ist weiß.\n— Meins ist schwarz."
+        translation: "— What color is your car?\n— It's white.\n— Mine is black."
+    tips:
+      - "German color adjectives change their endings depending on the article and case. For now, just learn the base forms — 'rot', 'blau', 'grün' — and don't worry about endings yet."
+      - "'Schwarz-Rot-Gold' (black, red, gold) are the colors of the German flag. You'll see them everywhere during football season!"
+    exercises:
+      - id: ex-mc-color-de-001
+        type: multiple_choice
+        question: "You want the green bag. What do you say?"
+        options:
+          - "Die rote Tasche"
+          - "Die blaue Tasche"
+          - "Die grüne Tasche"
+          - "Die weiße Tasche"
+        correct_index: 2
+        explanation: "'Grün' means green. 'Die grüne Tasche' = the green bag."
+      - id: ex-mc-color-de-002
+        type: multiple_choice
+        question: "What does 'gelb' mean?"
+        options:
+          - "Blue"
+          - "Red"
+          - "Yellow"
+          - "Green"
+        correct_index: 2
+        explanation: "'Gelb' means yellow."
+      - id: ex-mc-color-de-003
+        type: multiple_choice
+        question: "Someone asks 'Welche Farbe hat das?' — what do they want to know?"
+        options:
+          - "How much is it?"
+          - "What color is it?"
+          - "Where is it?"
+          - "Do you like it?"
+        correct_index: 1
+        explanation: "'Welche Farbe hat das?' literally means 'What color does that have?' — i.e., 'What color is it?'"
+
+  fr:
+    instruction: "You're browsing a boutique in the Marais district of Paris, looking for the perfect scarf. 'Le bleu, pas le vert !' — describing things by color is essential for shopping and daily life in France."
+    vocabulary:
+      - word: "Rouge"
+        translation: "Red"
+      - word: "Bleu / bleue"
+        translation: "Blue"
+      - word: "Vert / verte"
+        translation: "Green"
+      - word: "Jaune"
+        translation: "Yellow"
+      - word: "Blanc / blanche"
+        translation: "White"
+      - word: "Noir / noire"
+        translation: "Black"
+      - word: "Le t-shirt rouge"
+        translation: "The red t-shirt"
+      - word: "De quelle couleur est-ce ?"
+        translation: "What color is it?"
+    examples:
+      - content: "— J'aime le t-shirt bleu.\n— Celui-ci ? Le bleu ?\n— Oui, le bleu. Combien ça coûte ?"
+        translation: "— I like the blue t-shirt.\n— This one? The blue one?\n— Yes, the blue one. How much is it?"
+      - content: "— De quelle couleur est ta voiture ?\n— Elle est blanche.\n— La mienne est noire."
+        translation: "— What color is your car?\n— It's white.\n— Mine is black."
+    tips:
+      - "Most French colors agree with the noun: 'le chat noir' (the black cat, masculine) but 'la maison noire' (the black house, feminine). Some colors like 'orange' and 'marron' never change."
+      - "'Bleu, blanc, rouge' (blue, white, red) are the colors of the French flag — le tricolore. Knowing this is a nice cultural touch!"
+    exercises:
+      - id: ex-mc-color-fr-001
+        type: multiple_choice
+        question: "You want the green bag. What do you say?"
+        options:
+          - "Le sac rouge"
+          - "Le sac bleu"
+          - "Le sac vert"
+          - "Le sac blanc"
+        correct_index: 2
+        explanation: "'Vert' means green. 'Le sac vert' = the green bag."
+      - id: ex-mc-color-fr-002
+        type: multiple_choice
+        question: "What does 'jaune' mean?"
+        options:
+          - "Blue"
+          - "Red"
+          - "Yellow"
+          - "Green"
+        correct_index: 2
+        explanation: "'Jaune' means yellow."
+      - id: ex-mc-color-fr-003
+        type: multiple_choice
+        question: "Someone asks 'De quelle couleur est-ce ?' — what do they want to know?"
+        options:
+          - "How much is it?"
+          - "What color is it?"
+          - "Where is it?"
+          - "Do you like it?"
+        correct_index: 1
+        explanation: "'De quelle couleur est-ce ?' means 'What color is it?'"

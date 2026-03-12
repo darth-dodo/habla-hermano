@@ -77,8 +77,8 @@ class LessonService:
         # Walk through all YAML files in subdirectories
         for yaml_file in self.lessons_dir.rglob("*.yaml"):
             try:
-                lesson = self._load_lesson_file(yaml_file)
-                if lesson:
+                lessons = self._load_lesson_file(yaml_file)
+                for lesson in lessons:
                     key = self._get_lesson_key(lesson)
                     self._lessons[key] = lesson
             except (yaml.YAMLError, ValidationError, OSError) as e:
@@ -88,29 +88,58 @@ class LessonService:
         # Also check for .yml extension
         for yaml_file in self.lessons_dir.rglob("*.yml"):
             try:
-                lesson = self._load_lesson_file(yaml_file)
-                if lesson:
+                lessons = self._load_lesson_file(yaml_file)
+                for lesson in lessons:
                     key = self._get_lesson_key(lesson)
                     self._lessons[key] = lesson
             except (yaml.YAMLError, ValidationError, OSError) as e:
                 print(f"Warning: Failed to load lesson from {yaml_file}: {e}")
 
-    def _load_lesson_file(self, path: Path) -> Lesson | None:
-        """Load a single lesson from a YAML file.
+    def _load_lesson_file(self, path: Path) -> list[Lesson]:
+        """Load lesson(s) from a YAML file.
+
+        Supports two formats:
+        - New topic-based format: one file with a ``languages`` key produces
+          one Lesson per language.
+        - Legacy format: one file per language (no ``languages`` key) produces
+          a single Lesson.
 
         Args:
             path: Path to the YAML file.
 
         Returns:
-            Lesson object or None if parsing fails.
+            List of Lesson objects (may be empty if the file is blank).
         """
         with path.open(encoding="utf-8") as f:
             data: dict[str, Any] = yaml.safe_load(f)
 
         if not data:
-            return None
+            return []
 
-        # Parse metadata
+        # --- New multi-language format ---
+        if "languages" in data:
+            return self._parse_multi_language_file(data, path)
+
+        # --- Legacy single-language format ---
+        lesson = self._parse_single_language_file(data, path)
+        return [lesson] if lesson else []
+
+    # ------------------------------------------------------------------
+    # Private helpers for the two YAML layouts
+    # ------------------------------------------------------------------
+
+    def _parse_single_language_file(
+        self, data: dict[str, Any], path: Path
+    ) -> Lesson | None:
+        """Parse the legacy single-language YAML layout.
+
+        Args:
+            data: Parsed YAML dictionary.
+            path: Source file path (used as fallback for id).
+
+        Returns:
+            A single Lesson or None.
+        """
         metadata = LessonMetadata(
             id=data.get("id", path.stem),
             title=data.get("title", "Untitled"),
@@ -125,7 +154,6 @@ class LessonService:
             icon=data.get("icon", "📚"),
         )
 
-        # Parse steps
         steps: list[LessonStep] = []
         for step_data in data.get("steps", []):
             step = LessonStep(
@@ -140,7 +168,6 @@ class LessonService:
             )
             steps.append(step)
 
-        # Parse exercises
         exercises: list[AnyExercise] = []
         for ex_data in data.get("exercises", []):
             exercise = self._parse_exercise(ex_data)
@@ -149,6 +176,125 @@ class LessonService:
 
         content = LessonContent(steps=steps, exercises=exercises)
         return Lesson(metadata=metadata, content=content)
+
+    def _parse_multi_language_file(
+        self, data: dict[str, Any], path: Path
+    ) -> list[Lesson]:
+        """Parse the new topic-based multi-language YAML layout.
+
+        One file produces one ``Lesson`` per language entry under the
+        ``languages`` key.
+
+        Args:
+            data: Parsed YAML dictionary (must contain ``languages``).
+            path: Source file path (used as fallback for id).
+
+        Returns:
+            List of Lesson objects (one per language).
+        """
+        # Shared metadata
+        shared_id = data.get("id", path.stem)
+        shared_level = LessonLevel(data.get("level", "A0"))
+        shared_category = data.get("category")
+        shared_icon = data.get("icon", "📚")
+        shared_tags = data.get("tags", [])
+        shared_est = data.get("estimated_minutes", 2)
+        shared_title = data.get("title", "Untitled")
+        shared_description = data.get("description", "")
+        shared_prerequisites = data.get("prerequisites", [])
+
+        lessons: list[Lesson] = []
+        for language, lang_data in data["languages"].items():
+            if not isinstance(lang_data, dict):
+                continue
+
+            metadata = LessonMetadata(
+                id=shared_id,
+                title=lang_data.get("title", shared_title),
+                description=lang_data.get("description", shared_description),
+                language=language,
+                level=shared_level,
+                estimated_minutes=shared_est,
+                category=shared_category,
+                tags=shared_tags,
+                prerequisites=shared_prerequisites,
+                vocabulary_count=len(lang_data.get("vocabulary", [])),
+                icon=shared_icon,
+            )
+
+            # Build steps from per-language content
+            steps: list[LessonStep] = []
+            order = 1
+
+            # Instruction step
+            if "instruction" in lang_data:
+                steps.append(
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content=lang_data["instruction"],
+                        order=order,
+                    )
+                )
+                order += 1
+
+            # Vocabulary step
+            if lang_data.get("vocabulary"):
+                steps.append(
+                    LessonStep(
+                        type=LessonStepType.VOCABULARY,
+                        content="Key phrases for this situation:",
+                        vocabulary=lang_data["vocabulary"],
+                        order=order,
+                    )
+                )
+                order += 1
+
+            # Example steps
+            for ex in lang_data.get("examples", []):
+                steps.append(
+                    LessonStep(
+                        type=LessonStepType.EXAMPLE,
+                        content=ex["content"],
+                        translation=ex.get("translation"),
+                        order=order,
+                    )
+                )
+                order += 1
+
+            # Tip steps
+            for tip in lang_data.get("tips", []):
+                steps.append(
+                    LessonStep(
+                        type=LessonStepType.TIP,
+                        content=tip,
+                        order=order,
+                    )
+                )
+                order += 1
+
+            # Practice step (linking to first exercise)
+            exercises_data = lang_data.get("exercises", [])
+            if exercises_data:
+                steps.append(
+                    LessonStep(
+                        type=LessonStepType.PRACTICE,
+                        content="Put your skills to the test!",
+                        exercise_id=exercises_data[0].get("id", ""),
+                        order=order,
+                    )
+                )
+
+            # Parse exercises
+            exercises: list[AnyExercise] = []
+            for ex_data in exercises_data:
+                exercise = self._parse_exercise(ex_data)
+                if exercise:
+                    exercises.append(exercise)
+
+            content = LessonContent(steps=steps, exercises=exercises)
+            lessons.append(Lesson(metadata=metadata, content=content))
+
+        return lessons
 
     def _parse_exercise(self, data: dict[str, Any]) -> AnyExercise | None:
         """Parse exercise data into the appropriate exercise type.

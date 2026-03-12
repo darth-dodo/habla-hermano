@@ -12,7 +12,7 @@
         if (this.$refs.languageInput) this.$refs.languageInput.value = lang;
     }
 }"
-    {% if is_resuming %}data-resuming="true"{% endif %}>
+>
     {% set page_name = 'chat' %}
     {% include "partials/app_header.html" %}
 
@@ -32,28 +32,7 @@
                 <!-- Normal Chat Mode -->
 
                 {% if lesson_mode %}
-                <!-- Lesson Mode -->
-                {% if is_resuming and resume_messages %}
-                <!-- Resume indicator -->
-                <div class="text-center text-xs text-text-muted my-2">Resuming your lesson — pick up where you left off</div>
-                <!-- Previous messages from checkpoint -->
-                {% for msg in resume_messages %}
-                {% if msg.role == 'user' %}
-                <div class="flex justify-end mb-6">
-                    <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm border border-border">
-                        <p class="text-user-text leading-relaxed">{{ msg.content }}</p>
-                    </div>
-                </div>
-                {% elif msg.role == 'ai' %}
-                <div class="flex justify-start mb-6">
-                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm border border-border">
-                        <div class="text-ai-text leading-relaxed">{{ msg.content }}</div>
-                    </div>
-                </div>
-                {% endif %}
-                {% endfor %}
-                {% endif %}
-                <!-- Auto-start message sent by JS (skipped when resuming) -->
+                <!-- Lesson Mode — auto-start message sent by JS -->
                 {% else %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->
@@ -122,6 +101,7 @@
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
                 {% if lesson_id %}
                 <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
+                <input type="hidden" name="lesson_session" value="{{ lesson_session }}">
                 {% endif %}
 
                 <!-- Message Input - Minimal -->
