@@ -36,7 +36,7 @@ For a language learning app where the core interaction is a conversation with an
 ### Success Criteria
 
 - [x] Chat messages send and appear without page reload
-- [x] Lesson steps advance inline via HTMX swaps
+- [x] Lesson chat streams responses via SSE in the unified chat interface
 - [x] Grammar, scaffold, and pronunciation cards expand/collapse with Alpine.js
 - [x] Theme toggle persists to localStorage via Alpine.js
 - [x] Word bank entries are clickable and insert into the chat input
@@ -81,7 +81,7 @@ Alpine.js    Tailwind CSS
 **Functional Requirements**:
 
 - Chat message submission and display without page reload
-- Lesson step navigation (next/previous) with inline content swap
+- Lesson chat mode in unified chat UI with streaming responses via `/chat/stream`
 - Lazy loading of recommendation cards on the learn page
 - Collapsible detail cards (grammar feedback, scaffold text, pronunciation guide)
 - Theme selection with localStorage persistence
@@ -336,11 +336,13 @@ Habla Hermano is fundamentally a server-driven application. The AI tutor, lesson
 </form>
 ```
 
-**Lesson Step Navigation**:
+**Lesson Chat Streaming** (lessons use the unified chat with `lesson_id`):
 ```html
-<button hx-get="/lessons/{id}/step/next" hx-target="#lesson-content" hx-swap="innerHTML">
-  Next Step
-</button>
+<form hx-post="/chat/stream" hx-target="#messages" hx-swap="beforeend">
+  <input type="hidden" name="lesson_id" value="{lesson_id}" />
+  <input type="text" name="message" />
+  <button type="submit">Send</button>
+</form>
 ```
 
 **Lazy Loading Recommendations**:
@@ -408,7 +410,7 @@ Habla Hermano is fundamentally a server-driven application. The AI tutor, lesson
 
 - **Tasks**:
   - [x] Build `chat.html` with HTMX message submission
-  - [x] Build `lesson_player.html` with HTMX step navigation
+  - [x] Build lesson chat mode in unified `chat.html` (replaced former `lesson_player.html`)
   - [x] Build `learn.html` with lazy-loaded recommendation cards
   - [x] Build `progress.html` with vocabulary display
   - [x] Add Alpine.js expand/collapse to feedback cards
@@ -429,7 +431,7 @@ Habla Hermano is fundamentally a server-driven application. The AI tutor, lesson
 | ---- | ------- |
 | `src/templates/base.html` | Root layout: CDN imports, nav, responsive meta, safe area CSS |
 | `src/templates/chat.html` | Chat interface: HTMX message send/receive, Alpine.js cards |
-| `src/templates/lesson_player.html` | Lesson UI: HTMX step navigation, exercise validation |
+| `src/templates/chat.html` | Unified chat UI: freeform chat + lesson mode with header and progress bar |
 | `src/templates/learn.html` | Learning hub: HTMX lazy loading, recommendation cards |
 | `src/static/js/app.js` | Custom JS: scroll behavior, event listeners, theme init |
 | `src/static/css/input.css` | Tailwind source: `@apply` rules, custom CSS, safe area styles |
@@ -468,7 +470,7 @@ Habla Hermano is fundamentally a server-driven application. The AI tutor, lesson
 **Validation Tests**:
 
 - [x] Chat messages appear without page reload
-- [x] Lesson steps advance via HTMX swap
+- [x] Lesson chat streams via SSE in unified chat interface
 - [x] Collapsible cards expand/collapse with Alpine.js
 - [x] Theme persists across page navigation via localStorage
 - [x] Layout renders correctly on mobile with safe area insets
@@ -512,7 +514,7 @@ Habla Hermano is fundamentally a server-driven application. The AI tutor, lesson
 
 - `src/templates/base.html` - Root layout with CDN imports and responsive configuration
 - `src/templates/chat.html` - Primary HTMX interaction surface (chat send/receive)
-- `src/templates/lesson_player.html` - HTMX step navigation and exercise validation
+- `src/templates/chat.html` - Unified chat with lesson mode (header, progress bar, `/chat/stream` with `lesson_id`)
 - `src/templates/learn.html` - HTMX lazy loading pattern for recommendation cards
 - `src/static/js/app.js` - Custom JavaScript for behaviors beyond HTMX/Alpine.js
 - `src/static/css/input.css` - Tailwind source with custom CSS and safe area styles

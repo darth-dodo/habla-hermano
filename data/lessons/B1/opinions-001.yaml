@@ -1,0 +1,237 @@
+id: opinions-001
+level: B1
+category: opinions
+icon: "\U0001F4AC"
+tags:
+  - opinions
+  - debate
+  - agreeing
+  - disagreeing
+estimated_minutes: 8
+title: Sharing Your Views
+description: Express and defend opinions, agree and disagree politely in discussions
+
+languages:
+  es:
+    instruction: "You're at a dinner party in Madrid and the conversation turns to whether remote work is better than working in an office. Everyone has opinions — and they want to hear yours! Let's learn how to join the debate."
+    vocabulary:
+      - word: "En mi opinión..."
+        translation: "In my opinion..."
+      - word: "Estoy de acuerdo"
+        translation: "I agree"
+      - word: "No estoy de acuerdo"
+        translation: "I disagree"
+      - word: "Creo que..."
+        translation: "I think that..."
+      - word: "Tienes razón"
+        translation: "You're right"
+      - word: "Depende de..."
+        translation: "It depends on..."
+      - word: "Por un lado... por otro lado..."
+        translation: "On one hand... on the other hand..."
+      - word: "Es verdad, pero..."
+        translation: "That's true, but..."
+      - word: "No lo veo así"
+        translation: "I don't see it that way"
+      - word: "Me parece que..."
+        translation: "It seems to me that..."
+    examples:
+      - content: "— Creo que el teletrabajo es mejor para la productividad.\n— No estoy de acuerdo. En mi opinión, la oficina facilita la comunicación.\n— Es verdad, pero también se puede comunicar bien online.\n— Depende del tipo de trabajo, ¿no?"
+        translation: "— I think remote work is better for productivity.\n— I disagree. In my opinion, the office facilitates communication.\n— That's true, but you can also communicate well online.\n— It depends on the type of work, doesn't it?"
+      - content: "— Me parece que las redes sociales son peligrosas para los jóvenes.\n— Tienes razón en parte. Por un lado, pueden ser adictivas. Por otro lado, también conectan a la gente.\n— No lo veo así. Creo que hacen más daño que bien."
+        translation: "— It seems to me that social media is dangerous for young people.\n— You're partly right. On one hand, they can be addictive. On the other hand, they also connect people.\n— I don't see it that way. I think they do more harm than good."
+    tips:
+      - "'Es verdad, pero...' (That's true, but...) is the most elegant way to disagree in Spanish — you acknowledge the other person's point before presenting your own."
+      - "Spanish conversations can be lively and overlap. It's normal for people to talk at the same time — it's a sign of engagement, not rudeness!"
+    exercises:
+      - id: ex-mc-opin-es-001
+        type: multiple_choice
+        question: "You agree with someone's point. What do you say?"
+        options:
+          - "No lo veo así"
+          - "Estoy de acuerdo"
+          - "Depende"
+          - "Es verdad, pero..."
+        correct_index: 1
+        explanation: "'Estoy de acuerdo' means 'I agree' — direct and clear."
+      - id: ex-fb-opin-es-001
+        type: fill_blank
+        sentence_template: "En mi _____, el transporte público es más sostenible."
+        correct_answer: "opinión"
+        hint: "The word for 'opinion'"
+        accept_alternatives: []
+      - id: ex-tr-opin-es-001
+        type: translate
+        source_text: "I think that traveling is the best education."
+        source_language: en
+        target_language: es
+        correct_translation: "Creo que viajar es la mejor educación."
+        accept_alternatives:
+          - "Pienso que viajar es la mejor educación."
+          - "Me parece que viajar es la mejor educación."
+      - id: ex-tr-opin-es-002
+        type: translate
+        source_text: "That's true, but it depends on the situation."
+        source_language: en
+        target_language: es
+        correct_translation: "Es verdad, pero depende de la situación."
+        accept_alternatives:
+          - "Es cierto, pero depende de la situación."
+          - "Tienes razón, pero depende de la situación."
+      - id: ex-tr-opin-es-003
+        type: translate
+        source_text: "On one hand it's cheaper, on the other hand it takes more time."
+        source_language: en
+        target_language: es
+        correct_translation: "Por un lado es más barato, por otro lado lleva más tiempo."
+        accept_alternatives:
+          - "Por una parte es más barato, por otra parte toma más tiempo."
+
+  de:
+    instruction: "You're at a Stammtisch (regulars' table) in a Munich pub and the conversation turns to whether home office is better than working at the office. Germans love a good debate — time to share your Meinung!"
+    vocabulary:
+      - word: "Meiner Meinung nach..."
+        translation: "In my opinion..."
+      - word: "Ich bin einverstanden"
+        translation: "I agree"
+      - word: "Ich bin nicht einverstanden"
+        translation: "I disagree"
+      - word: "Ich glaube, dass..."
+        translation: "I think that..."
+      - word: "Du hast Recht"
+        translation: "You're right"
+      - word: "Das kommt darauf an..."
+        translation: "It depends on..."
+      - word: "Einerseits... andererseits..."
+        translation: "On one hand... on the other hand..."
+      - word: "Das stimmt, aber..."
+        translation: "That's true, but..."
+      - word: "Das sehe ich anders"
+        translation: "I see it differently"
+      - word: "Ich finde, dass..."
+        translation: "I find/think that..."
+    examples:
+      - content: "— Ich glaube, dass Homeoffice besser für die Produktivität ist.\n— Ich bin nicht einverstanden. Meiner Meinung nach erleichtert das Büro die Kommunikation.\n— Das stimmt, aber man kann auch online gut kommunizieren.\n— Das kommt auf die Art der Arbeit an, oder?"
+        translation: "— I think that home office is better for productivity.\n— I disagree. In my opinion, the office facilitates communication.\n— That's true, but you can also communicate well online.\n— It depends on the type of work, doesn't it?"
+      - content: "— Ich finde, dass soziale Medien gefährlich für Jugendliche sind.\n— Du hast teilweise Recht. Einerseits können sie süchtig machen. Andererseits verbinden sie auch Menschen.\n— Das sehe ich anders. Ich glaube, sie richten mehr Schaden an als Nutzen."
+        translation: "— I think social media is dangerous for young people.\n— You're partly right. On one hand, they can be addictive. On the other hand, they also connect people.\n— I see it differently. I think they do more harm than good."
+    tips:
+      - "'Das stimmt, aber...' (That's true, but...) is the polite German way to disagree — you validate the other person's point before countering. Germans appreciate structured argumentation."
+      - "Germans value direct communication but distinguish between 'du' (informal) and 'Sie' (formal) debates. At a Stammtisch with friends, use 'du'. In professional settings, stick with 'Sie' unless invited to switch."
+    exercises:
+      - id: ex-mc-opin-de-001
+        type: multiple_choice
+        question: "You agree with someone's point. What do you say?"
+        options:
+          - "Das sehe ich anders"
+          - "Ich bin einverstanden"
+          - "Das kommt darauf an"
+          - "Das stimmt, aber..."
+        correct_index: 1
+        explanation: "'Ich bin einverstanden' means 'I agree.'"
+      - id: ex-fb-opin-de-001
+        type: fill_blank
+        sentence_template: "Meiner _____ nach ist öffentlicher Verkehr nachhaltiger."
+        correct_answer: "Meinung"
+        hint: "The word for 'opinion'"
+        accept_alternatives: []
+      - id: ex-tr-opin-de-001
+        type: translate
+        source_text: "I think that traveling is the best education."
+        source_language: en
+        target_language: de
+        correct_translation: "Ich glaube, dass Reisen die beste Bildung ist."
+        accept_alternatives:
+          - "Ich finde, dass Reisen die beste Bildung ist."
+          - "Meiner Meinung nach ist Reisen die beste Bildung."
+      - id: ex-tr-opin-de-002
+        type: translate
+        source_text: "That's true, but it depends on the situation."
+        source_language: en
+        target_language: de
+        correct_translation: "Das stimmt, aber es kommt auf die Situation an."
+        accept_alternatives:
+          - "Das ist wahr, aber es hängt von der Situation ab."
+      - id: ex-tr-opin-de-003
+        type: translate
+        source_text: "On one hand it's cheaper, on the other hand it takes more time."
+        source_language: en
+        target_language: de
+        correct_translation: "Einerseits ist es billiger, andererseits dauert es länger."
+        accept_alternatives:
+          - "Einerseits ist es günstiger, andererseits braucht es mehr Zeit."
+
+  fr:
+    instruction: "You're at a dinner party in Paris and the conversation turns to whether remote work is better than office life. The French love a spirited debate — it's time to express your opinion en français!"
+    vocabulary:
+      - word: "À mon avis..."
+        translation: "In my opinion..."
+      - word: "Je suis d'accord"
+        translation: "I agree"
+      - word: "Je ne suis pas d'accord"
+        translation: "I disagree"
+      - word: "Je pense que..."
+        translation: "I think that..."
+      - word: "Tu as raison"
+        translation: "You're right"
+      - word: "Ça dépend de..."
+        translation: "It depends on..."
+      - word: "D'un côté... de l'autre côté..."
+        translation: "On one hand... on the other hand..."
+      - word: "C'est vrai, mais..."
+        translation: "That's true, but..."
+      - word: "Je ne vois pas les choses comme ça"
+        translation: "I don't see it that way"
+      - word: "Il me semble que..."
+        translation: "It seems to me that..."
+    examples:
+      - content: "— Je pense que le télétravail est meilleur pour la productivité.\n— Je ne suis pas d'accord. À mon avis, le bureau facilite la communication.\n— C'est vrai, mais on peut aussi bien communiquer en ligne.\n— Ça dépend du type de travail, non ?"
+        translation: "— I think remote work is better for productivity.\n— I disagree. In my opinion, the office facilitates communication.\n— That's true, but you can also communicate well online.\n— It depends on the type of work, doesn't it?"
+      - content: "— Il me semble que les réseaux sociaux sont dangereux pour les jeunes.\n— Tu as raison en partie. D'un côté, ils peuvent être addictifs. De l'autre côté, ils connectent aussi les gens.\n— Je ne vois pas les choses comme ça. Je pense qu'ils font plus de mal que de bien."
+        translation: "— It seems to me that social media is dangerous for young people.\n— You're partly right. On one hand, they can be addictive. On the other hand, they also connect people.\n— I don't see it that way. I think they do more harm than good."
+    tips:
+      - "'C'est vrai, mais...' (That's true, but...) is the elegant French way to disagree. The French appreciate nuanced discussion — acknowledging the other side before presenting yours shows intellectual sophistication."
+      - "French dinner conversations can last for hours and cover politics, philosophy, and culture. Passionate disagreement is normal and even expected — it's called 'l'art de la conversation'."
+    exercises:
+      - id: ex-mc-opin-fr-001
+        type: multiple_choice
+        question: "You agree with someone's point. What do you say?"
+        options:
+          - "Je ne vois pas les choses comme ça"
+          - "Je suis d'accord"
+          - "Ça dépend"
+          - "C'est vrai, mais..."
+        correct_index: 1
+        explanation: "'Je suis d'accord' means 'I agree.'"
+      - id: ex-fb-opin-fr-001
+        type: fill_blank
+        sentence_template: "À mon _____, les transports en commun sont plus durables."
+        correct_answer: "avis"
+        hint: "The word for 'opinion' in 'à mon...'"
+        accept_alternatives: []
+      - id: ex-tr-opin-fr-001
+        type: translate
+        source_text: "I think that traveling is the best education."
+        source_language: en
+        target_language: fr
+        correct_translation: "Je pense que voyager est la meilleure éducation."
+        accept_alternatives:
+          - "Je crois que voyager est la meilleure éducation."
+          - "À mon avis, voyager est la meilleure éducation."
+      - id: ex-tr-opin-fr-002
+        type: translate
+        source_text: "That's true, but it depends on the situation."
+        source_language: en
+        target_language: fr
+        correct_translation: "C'est vrai, mais ça dépend de la situation."
+        accept_alternatives:
+          - "C'est vrai, mais cela dépend de la situation."
+          - "Tu as raison, mais ça dépend de la situation."
+      - id: ex-tr-opin-fr-003
+        type: translate
+        source_text: "On one hand it's cheaper, on the other hand it takes more time."
+        source_language: en
+        target_language: fr
+        correct_translation: "D'un côté c'est moins cher, de l'autre côté ça prend plus de temps."
+        accept_alternatives:
+          - "D'une part c'est moins cher, d'autre part ça prend plus de temps."

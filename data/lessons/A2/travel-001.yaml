@@ -1,0 +1,215 @@
+id: travel-001
+level: A2
+category: travel
+icon: "\u2708\uFE0F"
+tags:
+  - travel
+  - airport
+  - hotel
+  - transport
+estimated_minutes: 6
+title: At the Airport and Hotel
+description: Navigate airports, check into hotels, and handle travel situations
+
+languages:
+  es:
+    instruction: "You've just landed at the airport in Bogotá. You need to find your gate, get through customs, find a taxi, and check into your hotel. These phrases will get you through every step."
+    vocabulary:
+      - word: "Tengo una reserva"
+        translation: "I have a reservation"
+      - word: "¿A qué hora sale el vuelo?"
+        translation: "What time does the flight leave?"
+      - word: "La puerta de embarque"
+        translation: "The boarding gate"
+      - word: "Quisiera hacer el check-in"
+        translation: "I'd like to check in"
+      - word: "Una habitación doble"
+        translation: "A double room"
+      - word: "¿Tiene wifi?"
+        translation: "Do you have wifi?"
+      - word: "¿Dónde puedo tomar un taxi?"
+        translation: "Where can I get a taxi?"
+      - word: "Mi equipaje"
+        translation: "My luggage"
+      - word: "El pasaporte"
+        translation: "The passport"
+      - word: "La tarjeta de embarque"
+        translation: "The boarding pass"
+    examples:
+      - content: "— Buenos días. Quisiera hacer el check-in.\n— Su pasaporte, por favor. ¿Lleva equipaje?\n— Sí, una maleta.\n— Perfecto. Su puerta de embarque es la 14B."
+        translation: "— Good morning. I'd like to check in.\n— Your passport, please. Do you have luggage?\n— Yes, one suitcase.\n— Perfect. Your boarding gate is 14B."
+      - content: "— Buenas noches. Tengo una reserva a nombre de García.\n— Sí, una habitación doble para tres noches. Aquí tiene la llave.\n— ¿Tiene wifi?\n— Sí, la contraseña está en la tarjeta."
+        translation: "— Good evening. I have a reservation under García.\n— Yes, a double room for three nights. Here's the key.\n— Do you have wifi?\n— Yes, the password is on the card."
+    tips:
+      - "In Latin America, 'Quisiera' (I would like) sounds more polite than 'Quiero' (I want). It's the travel phrase that makes everything smoother."
+      - "Many Latin American airports have a taxi booth where you pay in advance — 'taxi autorizado'. It's safer and avoids price negotiations."
+    exercises:
+      - id: ex-mc-travel-es-001
+        type: multiple_choice
+        question: "You're at a hotel. What does 'Tengo una reserva' mean?"
+        options:
+          - "I need a room"
+          - "I have a reservation"
+          - "I'd like to check out"
+          - "I lost my key"
+        correct_index: 1
+        explanation: "'Tengo una reserva' means 'I have a reservation.'"
+      - id: ex-fb-travel-es-001
+        type: fill_blank
+        sentence_template: "Quisiera una _____ doble para dos noches."
+        correct_answer: "habitación"
+        hint: "The word for 'room' in a hotel"
+        accept_alternatives: []
+      - id: ex-tr-travel-es-001
+        type: translate
+        source_text: "What time does the flight leave?"
+        source_language: en
+        target_language: es
+        correct_translation: "¿A qué hora sale el vuelo?"
+        accept_alternatives:
+          - "¿A qué hora es el vuelo?"
+          - "¿Cuándo sale el vuelo?"
+      - id: ex-tr-travel-es-002
+        type: translate
+        source_text: "Where can I get a taxi?"
+        source_language: en
+        target_language: es
+        correct_translation: "¿Dónde puedo tomar un taxi?"
+        accept_alternatives:
+          - "¿Dónde puedo coger un taxi?"
+          - "¿Dónde hay taxis?"
+
+  de:
+    instruction: "You've just arrived at Frankfurt Flughafen and need to navigate the airport, catch a train to the city, and check into your hotel. German efficiency awaits — let's make sure you keep up!"
+    vocabulary:
+      - word: "Ich habe eine Reservierung"
+        translation: "I have a reservation"
+      - word: "Wann geht der Flug?"
+        translation: "When does the flight leave?"
+      - word: "Das Gate / Der Flugsteig"
+        translation: "The boarding gate"
+      - word: "Ich möchte einchecken"
+        translation: "I'd like to check in"
+      - word: "Ein Doppelzimmer"
+        translation: "A double room"
+      - word: "Haben Sie WLAN?"
+        translation: "Do you have wifi?"
+      - word: "Wo finde ich ein Taxi?"
+        translation: "Where can I find a taxi?"
+      - word: "Mein Gepäck"
+        translation: "My luggage"
+      - word: "Der Reisepass"
+        translation: "The passport"
+      - word: "Die Bordkarte"
+        translation: "The boarding pass"
+    examples:
+      - content: "— Guten Tag. Ich möchte einchecken.\n— Ihren Reisepass, bitte. Haben Sie Gepäck?\n— Ja, einen Koffer.\n— Gut. Ihr Flugsteig ist 14B."
+        translation: "— Good day. I'd like to check in.\n— Your passport, please. Do you have luggage?\n— Yes, one suitcase.\n— Good. Your gate is 14B."
+      - content: "— Guten Abend. Ich habe eine Reservierung auf den Namen Müller.\n— Ja, ein Doppelzimmer für drei Nächte. Hier ist Ihr Schlüssel.\n— Haben Sie WLAN?\n— Ja, das Passwort steht auf der Karte."
+        translation: "— Good evening. I have a reservation under Müller.\n— Yes, a double room for three nights. Here is your key.\n— Do you have wifi?\n— Yes, the password is on the card."
+    tips:
+      - "'Ich möchte' (I would like) is the polite standard in German. 'Ich will' (I want) sounds blunt and demanding — avoid it with strangers."
+      - "German airports and train stations are extremely well-signposted. Look for 'Ausgang' (exit), 'Ankunft' (arrivals), 'Abflug' (departures), and 'Gepäckausgabe' (baggage claim)."
+    exercises:
+      - id: ex-mc-travel-de-001
+        type: multiple_choice
+        question: "You're at a hotel. What does 'Ich habe eine Reservierung' mean?"
+        options:
+          - "I need a room"
+          - "I have a reservation"
+          - "I'd like to check out"
+          - "I lost my key"
+        correct_index: 1
+        explanation: "'Ich habe eine Reservierung' means 'I have a reservation.'"
+      - id: ex-fb-travel-de-001
+        type: fill_blank
+        sentence_template: "Ich möchte ein _____ für zwei Nächte."
+        correct_answer: "Doppelzimmer"
+        hint: "The word for 'double room'"
+        accept_alternatives:
+          - "Einzelzimmer"
+      - id: ex-tr-travel-de-001
+        type: translate
+        source_text: "When does the flight leave?"
+        source_language: en
+        target_language: de
+        correct_translation: "Wann geht der Flug?"
+        accept_alternatives:
+          - "Wann fliegt das Flugzeug ab?"
+          - "Um wie viel Uhr geht der Flug?"
+      - id: ex-tr-travel-de-002
+        type: translate
+        source_text: "Where can I find a taxi?"
+        source_language: en
+        target_language: de
+        correct_translation: "Wo finde ich ein Taxi?"
+        accept_alternatives:
+          - "Wo kann ich ein Taxi nehmen?"
+          - "Wo gibt es Taxis?"
+
+  fr:
+    instruction: "You've just landed at Paris Charles de Gaulle and need to find your way through the terminal, take the RER train into the city, and check into your hotel near the Seine. Bienvenue en France!"
+    vocabulary:
+      - word: "J'ai une réservation"
+        translation: "I have a reservation"
+      - word: "À quelle heure part le vol ?"
+        translation: "What time does the flight leave?"
+      - word: "La porte d'embarquement"
+        translation: "The boarding gate"
+      - word: "Je voudrais faire l'enregistrement"
+        translation: "I'd like to check in"
+      - word: "Une chambre double"
+        translation: "A double room"
+      - word: "Vous avez le wifi ?"
+        translation: "Do you have wifi?"
+      - word: "Où puis-je prendre un taxi ?"
+        translation: "Where can I get a taxi?"
+      - word: "Mes bagages"
+        translation: "My luggage"
+      - word: "Le passeport"
+        translation: "The passport"
+      - word: "La carte d'embarquement"
+        translation: "The boarding pass"
+    examples:
+      - content: "— Bonjour. Je voudrais faire l'enregistrement.\n— Votre passeport, s'il vous plaît. Vous avez des bagages ?\n— Oui, une valise.\n— Très bien. Votre porte d'embarquement est la 14B."
+        translation: "— Good morning. I'd like to check in.\n— Your passport, please. Do you have luggage?\n— Yes, one suitcase.\n— Very well. Your boarding gate is 14B."
+      - content: "— Bonsoir. J'ai une réservation au nom de Dupont.\n— Oui, une chambre double pour trois nuits. Voici votre clé.\n— Vous avez le wifi ?\n— Oui, le mot de passe est sur la carte."
+        translation: "— Good evening. I have a reservation under Dupont.\n— Yes, a double room for three nights. Here is your key.\n— Do you have wifi?\n— Yes, the password is on the card."
+    tips:
+      - "'Je voudrais' (I would like) is the gold standard for politeness in French. Never use 'Je veux' (I want) with strangers — it sounds rude."
+      - "In French airports, always start with 'Bonjour' before asking anything. Skipping the greeting is considered very impolite and may get you a cold response."
+    exercises:
+      - id: ex-mc-travel-fr-001
+        type: multiple_choice
+        question: "You're at a hotel. What does 'J'ai une réservation' mean?"
+        options:
+          - "I need a room"
+          - "I have a reservation"
+          - "I'd like to check out"
+          - "I lost my key"
+        correct_index: 1
+        explanation: "'J'ai une réservation' means 'I have a reservation.'"
+      - id: ex-fb-travel-fr-001
+        type: fill_blank
+        sentence_template: "Je voudrais une _____ double pour deux nuits."
+        correct_answer: "chambre"
+        hint: "The word for 'room' in a hotel"
+        accept_alternatives: []
+      - id: ex-tr-travel-fr-001
+        type: translate
+        source_text: "What time does the flight leave?"
+        source_language: en
+        target_language: fr
+        correct_translation: "À quelle heure part le vol ?"
+        accept_alternatives:
+          - "Le vol part à quelle heure ?"
+          - "À quelle heure est le vol ?"
+      - id: ex-tr-travel-fr-002
+        type: translate
+        source_text: "Where can I get a taxi?"
+        source_language: en
+        target_language: fr
+        correct_translation: "Où puis-je prendre un taxi ?"
+        accept_alternatives:
+          - "Où est-ce que je peux prendre un taxi ?"
+          - "Où je peux trouver un taxi ?"

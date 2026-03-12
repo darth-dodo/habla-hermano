@@ -1,0 +1,210 @@
+id: making-plans-001
+level: A2
+category: making-plans
+icon: "\U0001F4C5"
+tags:
+  - plans
+  - invitations
+  - social
+  - future
+estimated_minutes: 6
+title: Making Plans with Friends
+description: Invite people, accept or decline plans, and arrange to meet
+
+languages:
+  es:
+    instruction: "It's Friday and your Spanish friends are making weekend plans in the group chat. They're inviting you to a movie, a tapas bar, maybe the beach. Let's learn how to make, accept, and politely decline plans."
+    vocabulary:
+      - word: "¿Quieres ir a...?"
+        translation: "Do you want to go to...?"
+      - word: "¿Quedamos a las...?"
+        translation: "Shall we meet at...?"
+      - word: "¡Buena idea!"
+        translation: "Good idea!"
+      - word: "Lo siento, no puedo"
+        translation: "I'm sorry, I can't"
+      - word: "¿Qué tal el sábado?"
+        translation: "How about Saturday?"
+      - word: "Nos vemos a las ocho"
+        translation: "See you at eight"
+      - word: "¿Dónde quedamos?"
+        translation: "Where shall we meet?"
+      - word: "En la puerta del cine"
+        translation: "At the cinema entrance"
+      - word: "Me apetece..."
+        translation: "I feel like... / I fancy..."
+      - word: "Tengo otros planes"
+        translation: "I have other plans"
+    examples:
+      - content: "— ¿Quieres ir al cine el sábado?\n— ¡Buena idea! ¿A qué hora?\n— ¿Quedamos a las siete?\n— Perfecto. ¿Dónde quedamos?\n— En la puerta del cine. Nos vemos."
+        translation: "— Do you want to go to the movies on Saturday?\n— Good idea! What time?\n— Shall we meet at seven?\n— Perfect. Where shall we meet?\n— At the cinema entrance. See you there."
+      - content: "— ¿Te apetece ir a la playa mañana?\n— Lo siento, no puedo. Tengo otros planes.\n— ¿Y el domingo?\n— ¡El domingo sí! Me apetece mucho."
+        translation: "— Do you feel like going to the beach tomorrow?\n— I'm sorry, I can't. I have other plans.\n— And Sunday?\n— Sunday yes! I'd love to."
+    tips:
+      - "'Quedar' is THE verb for making plans in Spain. '¿Quedamos?' (Shall we meet?), '¿Dónde quedamos?' (Where?), 'Quedamos a las 8' (Let's meet at 8). It's used constantly."
+      - "In Spain, plans often happen late. Don't be surprised by dinner invitations at 10 PM or movie plans at 9 PM. In Latin America, times are a bit earlier."
+    exercises:
+      - id: ex-mc-plans-es-001
+        type: multiple_choice
+        question: "Your friend asks '¿Quieres ir a cenar?' and you want to accept. What do you say?"
+        options:
+          - "Lo siento, no puedo"
+          - "¡Buena idea!"
+          - "Tengo otros planes"
+          - "No me gusta"
+        correct_index: 1
+        explanation: "'¡Buena idea!' is a positive, enthusiastic way to accept an invitation."
+      - id: ex-fb-plans-es-001
+        type: fill_blank
+        sentence_template: "Lo siento, no _____. Tengo otros planes."
+        correct_answer: "puedo"
+        hint: "The verb 'can' — yo form"
+        accept_alternatives: []
+      - id: ex-tr-plans-es-001
+        type: translate
+        source_text: "Do you want to go to the beach on Saturday?"
+        source_language: en
+        target_language: es
+        correct_translation: "¿Quieres ir a la playa el sábado?"
+        accept_alternatives:
+          - "¿Te apetece ir a la playa el sábado?"
+      - id: ex-tr-plans-es-002
+        type: translate
+        source_text: "Let's meet at seven at the restaurant."
+        source_language: en
+        target_language: es
+        correct_translation: "Quedamos a las siete en el restaurante."
+        accept_alternatives:
+          - "Nos vemos a las siete en el restaurante."
+
+  de:
+    instruction: "It's Friday evening and your German flatmates are planning the weekend. A trip to the Biergarten? A hike in the Alps? Let's learn how to make plans, accept invitations, and politely say no auf Deutsch."
+    vocabulary:
+      - word: "Hast du Lust auf...?"
+        translation: "Do you feel like...?"
+      - word: "Wollen wir uns um... treffen?"
+        translation: "Shall we meet at...?"
+      - word: "Gute Idee!"
+        translation: "Good idea!"
+      - word: "Tut mir leid, ich kann nicht"
+        translation: "I'm sorry, I can't"
+      - word: "Wie wäre es mit Samstag?"
+        translation: "How about Saturday?"
+      - word: "Wir sehen uns um acht"
+        translation: "See you at eight"
+      - word: "Wo treffen wir uns?"
+        translation: "Where shall we meet?"
+      - word: "Am Eingang vom Kino"
+        translation: "At the cinema entrance"
+      - word: "Ich hätte Lust auf..."
+        translation: "I'd fancy... / I'd be up for..."
+      - word: "Ich habe schon etwas vor"
+        translation: "I already have plans"
+    examples:
+      - content: "— Hast du Lust, am Samstag ins Kino zu gehen?\n— Gute Idee! Um wie viel Uhr?\n— Wollen wir uns um sieben treffen?\n— Perfekt. Wo treffen wir uns?\n— Am Eingang vom Kino. Bis dann!"
+        translation: "— Do you feel like going to the cinema on Saturday?\n— Good idea! What time?\n— Shall we meet at seven?\n— Perfect. Where shall we meet?\n— At the cinema entrance. See you then!"
+      - content: "— Hast du Lust auf einen Ausflug morgen?\n— Tut mir leid, ich kann nicht. Ich habe schon etwas vor.\n— Und am Sonntag?\n— Am Sonntag gerne! Da hätte ich Lust."
+        translation: "— Do you feel like a trip tomorrow?\n— I'm sorry, I can't. I already have plans.\n— And on Sunday?\n— Sunday, gladly! I'd be up for that."
+    tips:
+      - "'Hast du Lust auf...?' (Do you feel like...?) is the most natural way to suggest plans among friends in German. Add 'auf + noun' or 'zu + infinitive'."
+      - "Germans tend to be punctual for social plans. If you say 'um sieben' (at seven), arrive at seven — not 7:15. Being late without notice is considered disrespectful."
+    exercises:
+      - id: ex-mc-plans-de-001
+        type: multiple_choice
+        question: "Your friend asks 'Hast du Lust, essen zu gehen?' and you want to accept. What do you say?"
+        options:
+          - "Tut mir leid, ich kann nicht"
+          - "Gute Idee!"
+          - "Ich habe schon etwas vor"
+          - "Das gefällt mir nicht"
+        correct_index: 1
+        explanation: "'Gute Idee!' is a positive, enthusiastic way to accept an invitation."
+      - id: ex-fb-plans-de-001
+        type: fill_blank
+        sentence_template: "Tut mir leid, ich _____ nicht. Ich habe schon etwas vor."
+        correct_answer: "kann"
+        hint: "The verb 'can' — ich form"
+        accept_alternatives: []
+      - id: ex-tr-plans-de-001
+        type: translate
+        source_text: "Do you feel like going to the beach on Saturday?"
+        source_language: en
+        target_language: de
+        correct_translation: "Hast du Lust, am Samstag an den Strand zu gehen?"
+        accept_alternatives:
+          - "Hast du Lust auf Strand am Samstag?"
+      - id: ex-tr-plans-de-002
+        type: translate
+        source_text: "Let's meet at seven at the restaurant."
+        source_language: en
+        target_language: de
+        correct_translation: "Treffen wir uns um sieben im Restaurant."
+        accept_alternatives:
+          - "Wir treffen uns um sieben im Restaurant."
+          - "Lass uns um sieben im Restaurant treffen."
+
+  fr:
+    instruction: "It's Friday and your French friends are buzzing in the group chat about the weekend. An apéro at someone's place? A picnic by the Seine? Let's learn how to make plans, say yes, and gracefully decline en français."
+    vocabulary:
+      - word: "Tu veux aller à... ?"
+        translation: "Do you want to go to...?"
+      - word: "On se retrouve à... ?"
+        translation: "Shall we meet at...?"
+      - word: "Bonne idée !"
+        translation: "Good idea!"
+      - word: "Désolé(e), je ne peux pas"
+        translation: "Sorry, I can't"
+      - word: "Et samedi, ça te dit ?"
+        translation: "How about Saturday?"
+      - word: "On se voit à vingt heures"
+        translation: "See you at eight"
+      - word: "On se retrouve où ?"
+        translation: "Where shall we meet?"
+      - word: "Devant le cinéma"
+        translation: "In front of the cinema"
+      - word: "Ça me dit bien"
+        translation: "I'd be up for that"
+      - word: "J'ai déjà quelque chose de prévu"
+        translation: "I already have something planned"
+    examples:
+      - content: "— Tu veux aller au ciné samedi ?\n— Bonne idée ! À quelle heure ?\n— On se retrouve à dix-neuf heures ?\n— Parfait. On se retrouve où ?\n— Devant le cinéma. À samedi !"
+        translation: "— Do you want to go to the movies on Saturday?\n— Good idea! What time?\n— Shall we meet at seven?\n— Perfect. Where shall we meet?\n— In front of the cinema. See you Saturday!"
+      - content: "— Ça te dit d'aller à la plage demain ?\n— Désolé, je ne peux pas. J'ai déjà quelque chose de prévu.\n— Et dimanche ?\n— Dimanche, oui ! Ça me dit bien."
+        translation: "— Do you feel like going to the beach tomorrow?\n— Sorry, I can't. I already have something planned.\n— And Sunday?\n— Sunday, yes! I'd be up for that."
+    tips:
+      - "'Ça te dit ?' (Does that appeal to you? / Are you up for it?) is the casual, everyday way French friends suggest plans. It's more natural than 'Tu veux...?' among close friends."
+      - "The 'apéro' (apéritif) is sacred in French social life. An invitation to 'prendre un apéro' means casual drinks and snacks, usually around 7 PM. It's the most common way to socialize."
+    exercises:
+      - id: ex-mc-plans-fr-001
+        type: multiple_choice
+        question: "Your friend asks 'Ça te dit d'aller dîner ?' and you want to accept. What do you say?"
+        options:
+          - "Désolé, je ne peux pas"
+          - "Bonne idée !"
+          - "J'ai déjà quelque chose de prévu"
+          - "Ça ne me plaît pas"
+        correct_index: 1
+        explanation: "'Bonne idée !' is a positive, enthusiastic way to accept an invitation."
+      - id: ex-fb-plans-fr-001
+        type: fill_blank
+        sentence_template: "Désolé, je ne _____ pas. J'ai déjà quelque chose de prévu."
+        correct_answer: "peux"
+        hint: "The verb 'can' — je form"
+        accept_alternatives: []
+      - id: ex-tr-plans-fr-001
+        type: translate
+        source_text: "Do you want to go to the beach on Saturday?"
+        source_language: en
+        target_language: fr
+        correct_translation: "Tu veux aller à la plage samedi ?"
+        accept_alternatives:
+          - "Ça te dit d'aller à la plage samedi ?"
+      - id: ex-tr-plans-fr-002
+        type: translate
+        source_text: "Let's meet at seven at the restaurant."
+        source_language: en
+        target_language: fr
+        correct_translation: "On se retrouve à dix-neuf heures au restaurant."
+        accept_alternatives:
+          - "Retrouvons-nous à sept heures au restaurant."
+          - "On se voit à sept heures au restaurant."

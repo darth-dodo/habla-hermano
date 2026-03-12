@@ -1,0 +1,214 @@
+id: shopping-001
+level: A2
+category: shopping
+icon: "\U0001F6CD\uFE0F"
+tags:
+  - shopping
+  - clothes
+  - prices
+  - sizes
+estimated_minutes: 6
+title: Shopping for Clothes
+description: Ask about sizes, colors, and prices when shopping for clothes
+
+languages:
+  es:
+    instruction: "You're shopping in a boutique in Buenos Aires. You spot a beautiful jacket but need a different size and want to try it on. Here's how to have a complete shopping conversation."
+    vocabulary:
+      - word: "¿Tiene una talla más grande?"
+        translation: "Do you have a bigger size?"
+      - word: "Me queda bien / mal"
+        translation: "It fits well / badly"
+      - word: "¿Puedo probármelo?"
+        translation: "Can I try it on?"
+      - word: "¿Cuánto cuesta?"
+        translation: "How much does it cost?"
+      - word: "Es demasiado caro"
+        translation: "It's too expensive"
+      - word: "¿Tiene descuento?"
+        translation: "Is there a discount?"
+      - word: "Me lo llevo"
+        translation: "I'll take it"
+      - word: "¿Aceptan tarjeta?"
+        translation: "Do you accept cards?"
+      - word: "El probador"
+        translation: "The fitting room"
+      - word: "¿Lo tiene en otro color?"
+        translation: "Do you have it in another color?"
+    examples:
+      - content: "— Hola, ¿puedo probármelo?\n— Sí, el probador está al fondo.\n— ... Me queda un poco grande. ¿Tiene una talla más pequeña?\n— Sí, aquí tiene la talla M."
+        translation: "— Hi, can I try it on?\n— Yes, the fitting room is in the back.\n— ... It's a bit big on me. Do you have a smaller size?\n— Yes, here's the size M."
+      - content: "— ¿Cuánto cuesta esta chaqueta?\n— Cien euros.\n— Es un poco cara. ¿Tiene descuento?\n— Hay un diez por ciento si paga en efectivo.\n— Perfecto, me la llevo."
+        translation: "— How much is this jacket?\n— One hundred euros.\n— It's a bit expensive. Is there a discount?\n— There's ten percent off if you pay cash.\n— Perfect, I'll take it."
+    tips:
+      - "'Me lo llevo' (masculine) or 'Me la llevo' (feminine) is how you say 'I'll take it'. The pronoun matches the item: 'la chaqueta' → 'Me la llevo'."
+      - "In many Latin American countries, bargaining is common in markets but not in stores. In Spain, prices are generally fixed. Always ask '¿Tiene descuento?' politely — you might get lucky!"
+    exercises:
+      - id: ex-mc-shop-es-001
+        type: multiple_choice
+        question: "You want to try on a shirt. What do you say?"
+        options:
+          - "Me lo llevo"
+          - "¿Cuánto cuesta?"
+          - "¿Puedo probármelo?"
+          - "Es demasiado caro"
+        correct_index: 2
+        explanation: "'¿Puedo probármelo?' means 'Can I try it on?' — always ask before using the fitting room."
+      - id: ex-fb-shop-es-001
+        type: fill_blank
+        sentence_template: "Me queda un poco _____. ¿Tiene una talla más grande?"
+        correct_answer: "pequeño"
+        hint: "The opposite of 'grande'"
+        accept_alternatives:
+          - "pequeña"
+          - "chico"
+          - "chica"
+      - id: ex-tr-shop-es-001
+        type: translate
+        source_text: "How much does this dress cost?"
+        source_language: en
+        target_language: es
+        correct_translation: "¿Cuánto cuesta este vestido?"
+        accept_alternatives:
+          - "¿Cuánto vale este vestido?"
+      - id: ex-tr-shop-es-002
+        type: translate
+        source_text: "Do you have it in blue?"
+        source_language: en
+        target_language: es
+        correct_translation: "¿Lo tiene en azul?"
+        accept_alternatives:
+          - "¿Tiene uno en azul?"
+          - "¿Lo hay en azul?"
+
+  de:
+    instruction: "You're browsing a clothing shop on the Kurfürstendamm in Berlin. You've found a great coat but need a different size. Let's learn how to handle a shopping conversation auf Deutsch!"
+    vocabulary:
+      - word: "Haben Sie eine größere Größe?"
+        translation: "Do you have a bigger size?"
+      - word: "Es passt gut / schlecht"
+        translation: "It fits well / badly"
+      - word: "Kann ich es anprobieren?"
+        translation: "Can I try it on?"
+      - word: "Wie viel kostet das?"
+        translation: "How much does it cost?"
+      - word: "Das ist zu teuer"
+        translation: "It's too expensive"
+      - word: "Gibt es einen Rabatt?"
+        translation: "Is there a discount?"
+      - word: "Ich nehme es"
+        translation: "I'll take it"
+      - word: "Kann ich mit Karte zahlen?"
+        translation: "Can I pay by card?"
+      - word: "Die Umkleidekabine"
+        translation: "The fitting room"
+      - word: "Haben Sie das in einer anderen Farbe?"
+        translation: "Do you have it in another color?"
+    examples:
+      - content: "— Hallo, kann ich das anprobieren?\n— Ja, die Umkleidekabine ist hinten.\n— ... Es ist ein bisschen groß. Haben Sie eine kleinere Größe?\n— Ja, hier ist Größe M."
+        translation: "— Hello, can I try it on?\n— Yes, the fitting room is in the back.\n— ... It's a bit big. Do you have a smaller size?\n— Yes, here is size M."
+      - content: "— Wie viel kostet diese Jacke?\n— Hundert Euro.\n— Das ist ein bisschen teuer. Gibt es einen Rabatt?\n— Zehn Prozent, wenn Sie bar bezahlen.\n— Gut, ich nehme sie."
+        translation: "— How much is this jacket?\n— One hundred euros.\n— That's a bit expensive. Is there a discount?\n— Ten percent if you pay cash.\n— Good, I'll take it."
+    tips:
+      - "Many smaller shops in Germany still prefer cash (Bargeld). Always carry some euros, especially outside major cities. The phrase 'Kann ich mit Karte zahlen?' will save you from awkward moments."
+      - "German sizes run differently from US/UK sizes. A German 38 is roughly a US 8 or UK 10. Ask 'Welche Größe ist das in...?' if unsure."
+    exercises:
+      - id: ex-mc-shop-de-001
+        type: multiple_choice
+        question: "You want to try on a shirt. What do you say?"
+        options:
+          - "Ich nehme es"
+          - "Wie viel kostet das?"
+          - "Kann ich es anprobieren?"
+          - "Das ist zu teuer"
+        correct_index: 2
+        explanation: "'Kann ich es anprobieren?' means 'Can I try it on?'"
+      - id: ex-fb-shop-de-001
+        type: fill_blank
+        sentence_template: "Es ist ein bisschen _____. Haben Sie eine größere Größe?"
+        correct_answer: "klein"
+        hint: "The opposite of 'groß'"
+        accept_alternatives: []
+      - id: ex-tr-shop-de-001
+        type: translate
+        source_text: "How much does this dress cost?"
+        source_language: en
+        target_language: de
+        correct_translation: "Wie viel kostet dieses Kleid?"
+        accept_alternatives:
+          - "Was kostet dieses Kleid?"
+      - id: ex-tr-shop-de-002
+        type: translate
+        source_text: "Do you have it in blue?"
+        source_language: en
+        target_language: de
+        correct_translation: "Haben Sie das in Blau?"
+        accept_alternatives:
+          - "Gibt es das in Blau?"
+
+  fr:
+    instruction: "You're browsing the boutiques in Le Marais, Paris. You've spotted a gorgeous dress in the window but need to ask about sizes and prices. Let's master shopping en français!"
+    vocabulary:
+      - word: "Vous avez une taille plus grande ?"
+        translation: "Do you have a bigger size?"
+      - word: "Ça me va bien / mal"
+        translation: "It fits me well / badly"
+      - word: "Je peux l'essayer ?"
+        translation: "Can I try it on?"
+      - word: "Ça coûte combien ?"
+        translation: "How much does it cost?"
+      - word: "C'est trop cher"
+        translation: "It's too expensive"
+      - word: "Il y a une réduction ?"
+        translation: "Is there a discount?"
+      - word: "Je le prends"
+        translation: "I'll take it"
+      - word: "Vous acceptez la carte ?"
+        translation: "Do you accept cards?"
+      - word: "La cabine d'essayage"
+        translation: "The fitting room"
+      - word: "Vous l'avez dans une autre couleur ?"
+        translation: "Do you have it in another color?"
+    examples:
+      - content: "— Bonjour, je peux l'essayer ?\n— Oui, la cabine d'essayage est au fond.\n— ... C'est un peu grand. Vous avez une taille plus petite ?\n— Oui, voici la taille M."
+        translation: "— Hello, can I try it on?\n— Yes, the fitting room is in the back.\n— ... It's a bit big. Do you have a smaller size?\n— Yes, here is size M."
+      - content: "— Ça coûte combien, cette veste ?\n— Cent euros.\n— C'est un peu cher. Il y a une réduction ?\n— Dix pour cent si vous payez en espèces.\n— Parfait, je la prends."
+        translation: "— How much is this jacket?\n— One hundred euros.\n— It's a bit expensive. Is there a discount?\n— Ten percent if you pay cash.\n— Perfect, I'll take it."
+    tips:
+      - "'Je le prends' (masculine) or 'Je la prends' (feminine) is how you say 'I'll take it'. Match the pronoun to the item: 'la veste' → 'Je la prends', 'le pantalon' → 'Je le prends'."
+      - "In France, the sales periods (les soldes) are regulated by the government and happen twice a year — January and July. Outside these periods, discounts are rare in boutiques."
+    exercises:
+      - id: ex-mc-shop-fr-001
+        type: multiple_choice
+        question: "You want to try on a shirt. What do you say?"
+        options:
+          - "Je le prends"
+          - "Ça coûte combien ?"
+          - "Je peux l'essayer ?"
+          - "C'est trop cher"
+        correct_index: 2
+        explanation: "'Je peux l'essayer ?' means 'Can I try it on?'"
+      - id: ex-fb-shop-fr-001
+        type: fill_blank
+        sentence_template: "C'est un peu _____. Vous avez une taille plus grande ?"
+        correct_answer: "petit"
+        hint: "The opposite of 'grand'"
+        accept_alternatives:
+          - "petite"
+      - id: ex-tr-shop-fr-001
+        type: translate
+        source_text: "How much does this dress cost?"
+        source_language: en
+        target_language: fr
+        correct_translation: "Combien coûte cette robe ?"
+        accept_alternatives:
+          - "Ça coûte combien, cette robe ?"
+          - "C'est combien, cette robe ?"
+      - id: ex-tr-shop-fr-002
+        type: translate
+        source_text: "Do you have it in blue?"
+        source_language: en
+        target_language: fr
+        correct_translation: "Vous l'avez en bleu ?"
+        accept_alternatives:
+          - "Est-ce que vous l'avez en bleu ?"

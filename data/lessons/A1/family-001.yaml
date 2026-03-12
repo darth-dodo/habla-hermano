@@ -1,0 +1,208 @@
+id: family-001
+level: A1
+category: family
+icon: "\U0001F468\u200D\U0001F469\u200D\U0001F467\u200D\U0001F466"
+tags:
+  - family
+  - relationships
+  - describing-people
+  - daily-life
+estimated_minutes: 4
+title: Talking About Family
+description: Describe your family members and ask about someone else's family
+
+languages:
+  es:
+    instruction: "You're having coffee with a new friend in Mexico City. They show you photos on their phone — 'Mira, mi familia!' Let's learn how to talk about the people closest to you."
+    vocabulary:
+      - word: "Mi madre / Mi padre"
+        translation: "My mother / My father"
+      - word: "Mi hermano / Mi hermana"
+        translation: "My brother / My sister"
+      - word: "Mis abuelos"
+        translation: "My grandparents"
+      - word: "Mi hijo / Mi hija"
+        translation: "My son / My daughter"
+      - word: "¿Tienes hermanos?"
+        translation: "Do you have siblings?"
+      - word: "Somos cuatro en mi familia"
+        translation: "There are four of us in my family"
+      - word: "Mi hermano mayor"
+        translation: "My older brother"
+      - word: "Mi hermana menor"
+        translation: "My younger sister"
+    examples:
+      - content: "— ¿Tienes hermanos?\n— Sí, tengo un hermano mayor y una hermana menor. ¿Y tú?\n— Soy hijo único."
+        translation: "— Do you have siblings?\n— Yes, I have an older brother and a younger sister. And you?\n— I'm an only child."
+      - content: "— ¿Cómo se llama tu madre?\n— Se llama Carmen. Es profesora.\n— ¡Qué bien! Mi madre también es profesora."
+        translation: "— What's your mother's name?\n— Her name is Carmen. She's a teacher.\n— How nice! My mother is also a teacher."
+    tips:
+      - "In Spanish-speaking cultures, family is central to social life. Don't be surprised if new friends quickly ask about your family — it's a sign of interest, not nosiness."
+      - "'Hijo único' (only son) or 'hija única' (only daughter) is how you say 'only child'. Families in Latin America tend to be close-knit, with extended family often living nearby."
+    exercises:
+      - id: ex-mc-family-es-001
+        type: multiple_choice
+        question: "Someone asks '¿Tienes hermanos?' What are they asking?"
+        options:
+          - "Do you have children?"
+          - "Do you have siblings?"
+          - "Do you have pets?"
+          - "Do you have friends?"
+        correct_index: 1
+        explanation: "'Hermanos' means siblings (brothers and sisters). '¿Tienes hermanos?' = Do you have siblings?"
+      - id: ex-mc-family-es-002
+        type: multiple_choice
+        question: "How do you say 'my grandparents' in Spanish?"
+        options:
+          - "Mis padres"
+          - "Mis hijos"
+          - "Mis abuelos"
+          - "Mis hermanos"
+        correct_index: 2
+        explanation: "'Abuelos' means grandparents. 'Abuelo' = grandfather, 'abuela' = grandmother."
+      - id: ex-fb-family-es-001
+        type: fill_blank
+        sentence_template: "Tengo una hermana _____."
+        correct_answer: "menor"
+        hint: "The opposite of 'mayor' (older)"
+        accept_alternatives:
+          - "pequeña"
+      - id: ex-fb-family-es-002
+        type: fill_blank
+        sentence_template: "Somos _____ en mi familia."
+        correct_answer: "cuatro"
+        hint: "The number 4 in Spanish"
+        accept_alternatives:
+          - "tres"
+          - "cinco"
+          - "seis"
+
+  de:
+    instruction: "You're at a Kaffee und Kuchen gathering in Vienna. Your host pulls out a family photo album — 'Schau mal, meine Familie!' Let's learn how to talk about the people closest to you in German."
+    vocabulary:
+      - word: "Meine Mutter / Mein Vater"
+        translation: "My mother / My father"
+      - word: "Mein Bruder / Meine Schwester"
+        translation: "My brother / My sister"
+      - word: "Meine Großeltern"
+        translation: "My grandparents"
+      - word: "Mein Sohn / Meine Tochter"
+        translation: "My son / My daughter"
+      - word: "Hast du Geschwister?"
+        translation: "Do you have siblings?"
+      - word: "Wir sind vier in meiner Familie"
+        translation: "There are four of us in my family"
+      - word: "Mein älterer Bruder"
+        translation: "My older brother"
+      - word: "Meine jüngere Schwester"
+        translation: "My younger sister"
+    examples:
+      - content: "— Hast du Geschwister?\n— Ja, ich habe einen älteren Bruder und eine jüngere Schwester. Und du?\n— Ich bin Einzelkind."
+        translation: "— Do you have siblings?\n— Yes, I have an older brother and a younger sister. And you?\n— I'm an only child."
+      - content: "— Wie heißt deine Mutter?\n— Sie heißt Ingrid. Sie ist Lehrerin.\n— Toll! Meine Mutter ist auch Lehrerin."
+        translation: "— What's your mother's name?\n— Her name is Ingrid. She's a teacher.\n— Great! My mother is also a teacher."
+    tips:
+      - "In German, possessive pronouns change with gender: 'mein Bruder' (my brother, masculine) but 'meine Schwester' (my sister, feminine). 'Mein' for masculine/neuter, 'meine' for feminine/plural."
+      - "'Einzelkind' (only child) literally means 'single child'. German families tend to be smaller than in many other cultures — one or two children is the norm."
+    exercises:
+      - id: ex-mc-family-de-001
+        type: multiple_choice
+        question: "Someone asks 'Hast du Geschwister?' What are they asking?"
+        options:
+          - "Do you have children?"
+          - "Do you have siblings?"
+          - "Do you have pets?"
+          - "Do you have friends?"
+        correct_index: 1
+        explanation: "'Geschwister' means siblings (brothers and sisters). 'Hast du Geschwister?' = Do you have siblings?"
+      - id: ex-mc-family-de-002
+        type: multiple_choice
+        question: "How do you say 'my grandparents' in German?"
+        options:
+          - "Meine Eltern"
+          - "Meine Kinder"
+          - "Meine Großeltern"
+          - "Meine Geschwister"
+        correct_index: 2
+        explanation: "'Großeltern' means grandparents. 'Großvater' = grandfather, 'Großmutter' = grandmother."
+      - id: ex-fb-family-de-001
+        type: fill_blank
+        sentence_template: "Mein _____ heißt Thomas."
+        correct_answer: "Bruder"
+        hint: "Male sibling"
+        accept_alternatives:
+          - "bruder"
+      - id: ex-fb-family-de-002
+        type: fill_blank
+        sentence_template: "Wir sind _____ in meiner Familie."
+        correct_answer: "vier"
+        hint: "The number 4 in German"
+        accept_alternatives:
+          - "drei"
+          - "fünf"
+          - "sechs"
+
+  fr:
+    instruction: "You're enjoying a long Sunday déjeuner with a French family in Bordeaux. Your host turns to you — 'Et votre famille ?' Family is a favorite topic in France. Let's learn how to talk about yours."
+    vocabulary:
+      - word: "Ma mère / Mon père"
+        translation: "My mother / My father"
+      - word: "Mon frère / Ma sœur"
+        translation: "My brother / My sister"
+      - word: "Mes grands-parents"
+        translation: "My grandparents"
+      - word: "Mon fils / Ma fille"
+        translation: "My son / My daughter"
+      - word: "Tu as des frères et sœurs ?"
+        translation: "Do you have brothers and sisters?"
+      - word: "Nous sommes quatre dans ma famille"
+        translation: "There are four of us in my family"
+      - word: "Mon frère aîné"
+        translation: "My older brother"
+      - word: "Ma petite sœur"
+        translation: "My younger sister"
+    examples:
+      - content: "— Tu as des frères et sœurs ?\n— Oui, j'ai un frère aîné et une petite sœur. Et toi ?\n— Je suis enfant unique."
+        translation: "— Do you have brothers and sisters?\n— Yes, I have an older brother and a younger sister. And you?\n— I'm an only child."
+      - content: "— Comment s'appelle ta mère ?\n— Elle s'appelle Marie. Elle est professeure.\n— C'est bien ! Ma mère aussi est professeure."
+        translation: "— What's your mother's name?\n— Her name is Marie. She's a teacher.\n— That's nice! My mother is also a teacher."
+    tips:
+      - "In France, the Sunday family meal (le déjeuner dominical) is a cherished tradition that can last for hours. Asking about family shows genuine interest and is a great conversation starter."
+      - "'Enfant unique' means 'only child' in French. French possessives agree with the thing possessed, not the owner: 'mon frère' (my brother) even if you're female, because 'frère' is masculine."
+    exercises:
+      - id: ex-mc-family-fr-001
+        type: multiple_choice
+        question: "Someone asks 'Tu as des frères et sœurs ?' What are they asking?"
+        options:
+          - "Do you have children?"
+          - "Do you have siblings?"
+          - "Do you have pets?"
+          - "Do you have friends?"
+        correct_index: 1
+        explanation: "'Frères et sœurs' means brothers and sisters (siblings). 'Tu as des frères et sœurs ?' = Do you have siblings?"
+      - id: ex-mc-family-fr-002
+        type: multiple_choice
+        question: "How do you say 'my grandparents' in French?"
+        options:
+          - "Mes parents"
+          - "Mes enfants"
+          - "Mes grands-parents"
+          - "Mes frères"
+        correct_index: 2
+        explanation: "'Grands-parents' means grandparents. 'Grand-père' = grandfather, 'grand-mère' = grandmother."
+      - id: ex-fb-family-fr-001
+        type: fill_blank
+        sentence_template: "Mon _____ s'appelle Pierre."
+        correct_answer: "frère"
+        hint: "Male sibling"
+        accept_alternatives:
+          - "père"
+      - id: ex-fb-family-fr-002
+        type: fill_blank
+        sentence_template: "Nous sommes _____ dans ma famille."
+        correct_answer: "quatre"
+        hint: "The number 4 in French"
+        accept_alternatives:
+          - "trois"
+          - "cinq"
+          - "six"

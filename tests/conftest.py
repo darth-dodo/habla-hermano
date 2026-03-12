@@ -17,7 +17,7 @@ from src.agent.graph import clear_graph_cache
 from src.agent.llm import clear_llm_cache
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
-from src.api.dependencies import get_cached_templates
+from src.api.dependencies import get_cached_templates, get_lesson_service
 from src.api.rate_limit import reset_rate_limits
 
 # =============================================================================
@@ -341,6 +341,12 @@ def mock_compiled_graph(mock_graph_result: dict[str, Any], sample_ai_response: s
         )
 
     mock_graph.astream = mock_astream
+
+    # Phase 23: aget_state mock for lesson checkpoint awareness
+    mock_state = MagicMock()
+    mock_state.values = {}
+    mock_graph.aget_state = AsyncMock(return_value=mock_state)
+
     return mock_graph
 
 
@@ -443,6 +449,7 @@ def app_with_mocked_graph(
 
     with (
         patch("src.api.routes.chat.build_graph", mock_build_graph),
+        patch("src.api.routes.chat.build_lesson_chat_graph", mock_build_graph),
         patch("src.api.routes.chat.get_checkpointer", mock_get_checkpointer),
         patch("src.db.repository.get_supabase", return_value=mock_supabase),
         patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_supabase),
@@ -460,11 +467,18 @@ def app_with_mocked_graph(
         app.dependency_overrides[get_current_user] = mock_get_current_user
         app.dependency_overrides[get_current_user_optional] = mock_get_current_user_optional
 
+        # Override lesson service with a mock that returns None by default
+        # (freeform chat doesn't use it; lesson-mode tests override per-test)
+        mock_lesson_svc = MagicMock()
+        mock_lesson_svc.get_lesson.return_value = None
+        app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_svc
+
         yield app
 
         # Clean up dependency overrides
         app.dependency_overrides.pop(get_current_user, None)
         app.dependency_overrides.pop(get_current_user_optional, None)
+        app.dependency_overrides.pop(get_lesson_service, None)
 
 
 @pytest.fixture

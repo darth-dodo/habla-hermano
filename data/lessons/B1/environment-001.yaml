@@ -1,0 +1,240 @@
+id: environment-001
+level: B1
+category: environment
+icon: "\U0001F30D"
+tags:
+  - environment
+  - sustainability
+  - nature
+  - current-issues
+estimated_minutes: 8
+title: Talking About the Environment
+description: Discuss environmental issues, sustainability, and nature
+
+languages:
+  es:
+    instruction: "Your university class in Barcelona is debating climate change solutions. Everyone has ideas about what should be done. Environmental topics are increasingly common in everyday conversations — let's prepare you."
+    vocabulary:
+      - word: "El medio ambiente"
+        translation: "The environment"
+      - word: "El cambio climático"
+        translation: "Climate change"
+      - word: "Reciclar"
+        translation: "To recycle"
+      - word: "La contaminación"
+        translation: "Pollution"
+      - word: "Las energías renovables"
+        translation: "Renewable energy"
+      - word: "Deberíamos..."
+        translation: "We should..."
+      - word: "Es necesario que..."
+        translation: "It's necessary that..."
+      - word: "Reducir el consumo"
+        translation: "To reduce consumption"
+      - word: "Proteger la naturaleza"
+        translation: "To protect nature"
+      - word: "El desarrollo sostenible"
+        translation: "Sustainable development"
+    examples:
+      - content: "— Creo que deberíamos usar más transporte público.\n— Estoy de acuerdo. La contaminación del aire es un problema grave en las ciudades.\n— Es necesario que los gobiernos inviertan en energías renovables.\n— Sí, pero también es importante que cada persona recicle y reduzca su consumo."
+        translation: "— I think we should use more public transport.\n— I agree. Air pollution is a serious problem in cities.\n— It's necessary that governments invest in renewable energy.\n— Yes, but it's also important that each person recycles and reduces their consumption."
+      - content: "— ¿Tú reciclas en casa?\n— Sí, separo el plástico, el papel y el vidrio. ¿Y tú?\n— Intento hacerlo, pero no siempre es fácil. En mi barrio no hay suficientes contenedores.\n— Deberíamos pedir más al ayuntamiento."
+        translation: "— Do you recycle at home?\n— Yes, I separate plastic, paper, and glass. And you?\n— I try, but it's not always easy. In my neighborhood there aren't enough bins.\n— We should ask the city council for more."
+    tips:
+      - "'Deberíamos' (We should) + infinitive is the go-to structure for suggesting solutions: 'Deberíamos contaminar menos' (We should pollute less)."
+      - "'Es necesario que' triggers the subjunctive in Spanish: 'Es necesario que reciclemos' (It's necessary that we recycle). This is one of the most common subjunctive triggers — master it and you'll sound very natural."
+    exercises:
+      - id: ex-mc-env-es-001
+        type: multiple_choice
+        question: "What does 'el cambio climático' mean?"
+        options:
+          - "Climate change"
+          - "Climate control"
+          - "Weather forecast"
+          - "Seasonal change"
+        correct_index: 0
+        explanation: "'El cambio climático' means 'climate change' — one of the most discussed global topics."
+      - id: ex-fb-env-es-001
+        type: fill_blank
+        sentence_template: "Es necesario que todos _____ para proteger el medio ambiente."
+        correct_answer: "reciclemos"
+        hint: "Subjunctive form of 'reciclar' — nosotros"
+        accept_alternatives:
+          - "colaboremos"
+          - "ayudemos"
+      - id: ex-tr-env-es-001
+        type: translate
+        source_text: "We should reduce pollution in our cities."
+        source_language: en
+        target_language: es
+        correct_translation: "Deberíamos reducir la contaminación en nuestras ciudades."
+        accept_alternatives:
+          - "Deberíamos disminuir la contaminación en nuestras ciudades."
+          - "Tendríamos que reducir la contaminación en nuestras ciudades."
+      - id: ex-tr-env-es-002
+        type: translate
+        source_text: "Renewable energy is important for sustainable development."
+        source_language: en
+        target_language: es
+        correct_translation: "Las energías renovables son importantes para el desarrollo sostenible."
+        accept_alternatives:
+          - "La energía renovable es importante para el desarrollo sostenible."
+      - id: ex-tr-env-es-003
+        type: translate
+        source_text: "It's necessary to protect nature for future generations."
+        source_language: en
+        target_language: es
+        correct_translation: "Es necesario proteger la naturaleza para las futuras generaciones."
+        accept_alternatives:
+          - "Es necesario proteger la naturaleza para las generaciones futuras."
+          - "Hay que proteger la naturaleza para las próximas generaciones."
+
+  de:
+    instruction: "Your university seminar in Berlin is debating solutions to the Klimakrise. Everyone has strong opinions about what should change. Let's learn to discuss Umweltthemen auf Deutsch!"
+    vocabulary:
+      - word: "Die Umwelt"
+        translation: "The environment"
+      - word: "Der Klimawandel"
+        translation: "Climate change"
+      - word: "Recyceln / Wiederverwerten"
+        translation: "To recycle"
+      - word: "Die Verschmutzung"
+        translation: "Pollution"
+      - word: "Die erneuerbaren Energien"
+        translation: "Renewable energy"
+      - word: "Wir sollten..."
+        translation: "We should..."
+      - word: "Es ist notwendig, dass..."
+        translation: "It's necessary that..."
+      - word: "Den Verbrauch reduzieren"
+        translation: "To reduce consumption"
+      - word: "Die Natur schützen"
+        translation: "To protect nature"
+      - word: "Die nachhaltige Entwicklung"
+        translation: "Sustainable development"
+    examples:
+      - content: "— Ich finde, wir sollten mehr öffentliche Verkehrsmittel benutzen.\n— Ich bin einverstanden. Die Luftverschmutzung ist ein ernstes Problem in den Städten.\n— Es ist notwendig, dass die Regierungen in erneuerbare Energien investieren.\n— Ja, aber es ist auch wichtig, dass jeder Einzelne recycelt und seinen Verbrauch reduziert."
+        translation: "— I think we should use more public transport.\n— I agree. Air pollution is a serious problem in cities.\n— It's necessary that governments invest in renewable energy.\n— Yes, but it's also important that each individual recycles and reduces their consumption."
+      - content: "— Recycelst du zu Hause?\n— Ja, ich trenne Plastik, Papier und Glas. Und du?\n— Ich versuche es, aber es ist nicht immer einfach. In meiner Nachbarschaft gibt es nicht genug Mülltonnen.\n— Wir sollten bei der Gemeinde mehr fordern."
+        translation: "— Do you recycle at home?\n— Yes, I separate plastic, paper, and glass. And you?\n— I try, but it's not always easy. In my neighborhood there aren't enough bins.\n— We should demand more from the local council."
+    tips:
+      - "'Wir sollten' (We should) + infinitive at the end is the standard way to suggest solutions in German: 'Wir sollten weniger Plastik verwenden' (We should use less plastic)."
+      - "Germany has one of the world's most thorough recycling systems (Mülltrennung). You'll find separate bins for Restmüll (general waste), Biomüll (organic), Papier, Glas, and Gelber Sack (packaging). Not sorting correctly can actually get you fined!"
+    exercises:
+      - id: ex-mc-env-de-001
+        type: multiple_choice
+        question: "What does 'der Klimawandel' mean?"
+        options:
+          - "Climate change"
+          - "Climate control"
+          - "Weather forecast"
+          - "Seasonal change"
+        correct_index: 0
+        explanation: "'Der Klimawandel' means 'climate change.'"
+      - id: ex-fb-env-de-001
+        type: fill_blank
+        sentence_template: "Es ist notwendig, dass alle _____, um die Umwelt zu schützen."
+        correct_answer: "recyceln"
+        hint: "The verb for 'recycle'"
+        accept_alternatives:
+          - "mitmachen"
+          - "helfen"
+      - id: ex-tr-env-de-001
+        type: translate
+        source_text: "We should reduce pollution in our cities."
+        source_language: en
+        target_language: de
+        correct_translation: "Wir sollten die Verschmutzung in unseren Städten reduzieren."
+        accept_alternatives:
+          - "Wir sollten die Umweltverschmutzung in unseren Städten verringern."
+      - id: ex-tr-env-de-002
+        type: translate
+        source_text: "Renewable energy is important for sustainable development."
+        source_language: en
+        target_language: de
+        correct_translation: "Erneuerbare Energien sind wichtig für die nachhaltige Entwicklung."
+        accept_alternatives:
+          - "Erneuerbare Energie ist wichtig für nachhaltige Entwicklung."
+      - id: ex-tr-env-de-003
+        type: translate
+        source_text: "It's necessary to protect nature for future generations."
+        source_language: en
+        target_language: de
+        correct_translation: "Es ist notwendig, die Natur für zukünftige Generationen zu schützen."
+        accept_alternatives:
+          - "Man muss die Natur für kommende Generationen schützen."
+
+  fr:
+    instruction: "Your classmates at a language school in Bordeaux are debating climate solutions. Everyone has ideas about what needs to change. Let's learn to discuss l'environnement en français!"
+    vocabulary:
+      - word: "L'environnement"
+        translation: "The environment"
+      - word: "Le changement climatique"
+        translation: "Climate change"
+      - word: "Recycler"
+        translation: "To recycle"
+      - word: "La pollution"
+        translation: "Pollution"
+      - word: "Les énergies renouvelables"
+        translation: "Renewable energy"
+      - word: "On devrait..."
+        translation: "We should..."
+      - word: "Il est nécessaire que..."
+        translation: "It's necessary that..."
+      - word: "Réduire la consommation"
+        translation: "To reduce consumption"
+      - word: "Protéger la nature"
+        translation: "To protect nature"
+      - word: "Le développement durable"
+        translation: "Sustainable development"
+    examples:
+      - content: "— Je pense qu'on devrait utiliser plus les transports en commun.\n— Je suis d'accord. La pollution de l'air est un problème grave dans les villes.\n— Il est nécessaire que les gouvernements investissent dans les énergies renouvelables.\n— Oui, mais il est aussi important que chacun recycle et réduise sa consommation."
+        translation: "— I think we should use more public transport.\n— I agree. Air pollution is a serious problem in cities.\n— It's necessary that governments invest in renewable energy.\n— Yes, but it's also important that each person recycles and reduces their consumption."
+      - content: "— Tu recycles chez toi ?\n— Oui, je trie le plastique, le papier et le verre. Et toi ?\n— J'essaie, mais ce n'est pas toujours facile. Dans mon quartier, il n'y a pas assez de poubelles de tri.\n— On devrait en demander plus à la mairie."
+        translation: "— Do you recycle at home?\n— Yes, I sort plastic, paper, and glass. And you?\n— I try, but it's not always easy. In my neighborhood, there aren't enough recycling bins.\n— We should ask the town hall for more."
+    tips:
+      - "'On devrait' (We should) + infinitive is the standard way to suggest solutions in French: 'On devrait moins polluer' (We should pollute less)."
+      - "'Il est nécessaire que' triggers the subjonctif in French: 'Il est nécessaire que nous recyclions' (It's necessary that we recycle). Like Spanish, this is a key subjunctive trigger — verbs of necessity and emotion require it."
+    exercises:
+      - id: ex-mc-env-fr-001
+        type: multiple_choice
+        question: "What does 'le changement climatique' mean?"
+        options:
+          - "Climate change"
+          - "Climate control"
+          - "Weather forecast"
+          - "Seasonal change"
+        correct_index: 0
+        explanation: "'Le changement climatique' means 'climate change.'"
+      - id: ex-fb-env-fr-001
+        type: fill_blank
+        sentence_template: "Il est nécessaire que tout le monde _____ pour protéger l'environnement."
+        correct_answer: "recycle"
+        hint: "Subjunctive form of 'recycler' — third person"
+        accept_alternatives:
+          - "participe"
+          - "aide"
+      - id: ex-tr-env-fr-001
+        type: translate
+        source_text: "We should reduce pollution in our cities."
+        source_language: en
+        target_language: fr
+        correct_translation: "On devrait réduire la pollution dans nos villes."
+        accept_alternatives:
+          - "Nous devrions réduire la pollution dans nos villes."
+      - id: ex-tr-env-fr-002
+        type: translate
+        source_text: "Renewable energy is important for sustainable development."
+        source_language: en
+        target_language: fr
+        correct_translation: "Les énergies renouvelables sont importantes pour le développement durable."
+        accept_alternatives:
+          - "L'énergie renouvelable est importante pour le développement durable."
+      - id: ex-tr-env-fr-003
+        type: translate
+        source_text: "It's necessary to protect nature for future generations."
+        source_language: en
+        target_language: fr
+        correct_translation: "Il est nécessaire de protéger la nature pour les générations futures."
+        accept_alternatives:
+          - "Il faut protéger la nature pour les futures générations."

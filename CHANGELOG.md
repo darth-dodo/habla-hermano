@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-03-12
+
+### Added - Phase 23: Unified Lesson Experience
+- **Unified lesson-in-chat**: Lessons now open in the main chat via `/?lesson={id}` query parameter, replacing the dedicated lesson chat page and old step-by-step lesson player
+- **Exercise answer normalization**: Accent-preserving, punctuation-tolerant answer comparison (`normalize_answer()`) so accented input like "esta" matches "esta" but "ano" does not match "ano" vs "año"
+- **LLM-based translation evaluation**: Translation exercises evaluated by the LLM with explicit `[CORRECT]`/`[INCORRECT]` tags, replacing brittle string matching
+- **Lesson resume support**: Checkpoint detection on page load — returning to a lesson resumes from the last phase/step instead of restarting
+- **Streamlined chat header**: Lesson mode shows lesson title and exit link instead of language/level selectors
+
+### Removed
+- **Old lesson player**: Step-by-step lesson UI and 6+ dedicated routes (`/lessons/`, `/lessons/{id}`, `/lessons/{id}/step/{n}`, `/lessons/{id}/exercise/{n}`, etc.) removed
+- **Dedicated lesson chat routes**: `/chat/lesson/{id}` GET and POST endpoints removed — lesson chat now handled by the main chat route with `?lesson=` parameter
+- **Lesson chat route module**: `src/api/routes/lesson_chat.py` deleted
+
+### Changed
+- **Chat route**: `GET /` accepts optional `?lesson=` parameter to initialize lesson mode
+- **Lesson links**: All lesson links across templates (catalog, learning paths, recommendations) updated to `/?lesson={id}` format
+- **Test count**: 2,123 Python tests, 241 JS tests
+
 ## [0.23.0] - 2026-03-11
 
 ### Added

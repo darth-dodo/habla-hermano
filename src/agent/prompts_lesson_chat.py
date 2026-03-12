@@ -176,6 +176,7 @@ Was the answer correct: {is_correct}
 User's answer: {user_answer}
 Correct answer: {correct_answer}
 Exercise: {exercise_description}
+Exercise type: {exercise_type}
 Context: {feedback_context}
 
 Your task:
@@ -190,6 +191,23 @@ If incorrect:
 - Never makes them feel bad ("Hey, no worries, this one trips people up")
 - Explains why the correct answer works in simple, relatable terms
 - Encourages them ("You'll get the next one, I can feel it")
+
+IMPORTANT: If the exercise type is "translate", you MUST start your response with
+exactly [CORRECT] or [INCORRECT] on the very first line, based on YOUR judgment of
+whether the learner's translation is acceptable (it does not need to be word-for-word,
+just semantically correct). Then continue with your conversational feedback on the
+next line. Example:
+
+[CORRECT]
+Great job! "Buenos días" is exactly right...
+
+or:
+
+[INCORRECT]
+Not quite — the correct translation would be "Buenos días"...
+
+Only add the [CORRECT]/[INCORRECT] tag for translate exercises, NOT for multiple
+choice or fill-in-the-blank.
 
 Use the feedback context to decide how to end:
 - If more exercises follow, tease the next one ("Ready for another?")

@@ -9,10 +9,26 @@ Models follow the pattern from product.md:
 - Progress tracks user completion and scores
 """
 
+import re
 from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def _normalize_answer(text: str) -> str:
+    """Normalize answer for comparison: lowercase, strip punctuation, collapse whitespace.
+
+    Preserves Unicode word characters (accented letters, ñ, etc.) but removes
+    punctuation marks like . , ! ¡ ¿ ? so that "Buenos días!" matches "buenos días".
+    """
+    text = text.strip().lower()
+    # Remove punctuation but keep unicode word chars and spaces
+    text = re.sub(r"[^\w\s]", "", text, flags=re.UNICODE)
+    # Collapse multiple spaces
+    text = re.sub(r"\s+", " ", text)
+    return text
+
 
 # =============================================================================
 # Enums
@@ -190,16 +206,23 @@ class FillBlankExercise(Exercise):
     def check_answer(self, answer: str) -> bool:
         """Check if answer is correct.
 
+        Normalizes whitespace, strips punctuation, and compares case-insensitively.
+        Accented characters (é, á, ñ, etc.) are preserved.
+
         Args:
             answer: User's answer.
 
         Returns:
-            True if correct (case-insensitive match with alternatives).
+            True if correct (normalized match against primary answer or alternatives).
         """
-        correct_answers = [self.correct_answer.lower()] + [
-            alt.lower() for alt in self.accept_alternatives
-        ]
-        return answer.lower() in correct_answers
+        normalized_user = _normalize_answer(answer)
+        if normalized_user == _normalize_answer(self.correct_answer):
+            return True
+        if self.accept_alternatives:
+            return any(
+                normalized_user == _normalize_answer(alt) for alt in self.accept_alternatives
+            )
+        return False
 
 
 class TranslateExercise(Exercise):
@@ -223,16 +246,23 @@ class TranslateExercise(Exercise):
     def check_answer(self, answer: str) -> bool:
         """Check if translation is correct.
 
+        Normalizes whitespace, strips punctuation, and compares case-insensitively.
+        Accented characters (é, á, ñ, etc.) are preserved.
+
         Args:
             answer: User's translation.
 
         Returns:
-            True if correct (case-insensitive match with alternatives).
+            True if correct (normalized match against primary answer or alternatives).
         """
-        correct_answers = [self.correct_translation.lower()] + [
-            alt.lower() for alt in self.accept_alternatives
-        ]
-        return answer.lower() in correct_answers
+        normalized_user = _normalize_answer(answer)
+        if normalized_user == _normalize_answer(self.correct_translation):
+            return True
+        if self.accept_alternatives:
+            return any(
+                normalized_user == _normalize_answer(alt) for alt in self.accept_alternatives
+            )
+        return False
 
 
 # Type alias for any exercise
