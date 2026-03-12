@@ -35,7 +35,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from markupsafe import escape
 from postgrest.exceptions import APIError

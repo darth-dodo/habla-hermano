@@ -40,7 +40,6 @@ from src.lessons.models import (
     MultipleChoiceExercise,
     TranslateExercise,
 )
-from src.lessons.service import get_lesson_service
 from src.services.review import ReviewStats
 
 # =============================================================================

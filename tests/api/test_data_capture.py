@@ -20,7 +20,7 @@ from src.api.auth import (
     get_current_user_optional,
 )
 from src.api.dependencies import get_cached_templates
-from src.api.routes import chat, lessons
+from src.api.routes import chat
 from src.lessons.models import (
     Lesson,
     LessonContent,
@@ -29,7 +29,6 @@ from src.lessons.models import (
     LessonStep,
     LessonStepType,
 )
-from src.lessons.service import get_lesson_service
 
 # =============================================================================
 # Fixtures
