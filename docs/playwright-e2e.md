@@ -17,7 +17,7 @@
 | B1 No Scaffold | ✅ Pass | Conditional routing skips scaffold for higher levels |
 | Word Bank Insert | ✅ Pass | Click word to insert into input field |
 | Lesson Catalog | ✅ Pass | Lessons page renders with grouped lesson cards |
-| Lesson Player | ✅ Pass | Step navigation, progress bar, content rendering |
+| Lesson Chat Mode | ✅ Pass | Unified chat with lesson header, progress bar, phase machine |
 | Exercise Submission | ✅ Pass | Multiple choice, fill blank answer validation |
 | Lesson Completion | ✅ Pass | Completion view with score and handoff option |
 | Hamburger Menu | ✅ Pass | Menu opens with Lessons, New Chat, Theme, Auth links |
@@ -42,8 +42,8 @@
 | Review Warmup Prompt | 📋 Plan | Review session warmup appears in chat |
 | Review Question Types | 📋 Plan | Translate, fill-blank, recognize questions render |
 | SM-2 Scoring Update | 📋 Plan | SM-2 scores update after review completion |
-| Lesson Chat Launch | 📋 Plan | "Learn with Hermano" button opens lesson chat |
-| Lesson Chat Page Load | 📋 Plan | Lesson chat renders with progress bar and header |
+| Lesson Chat Launch | 📋 Plan | Clicking lesson card navigates to /?lesson={id} in lesson mode |
+| Lesson Chat Page Load | 📋 Plan | Lesson chat renders with lesson header, progress bar |
 | Lesson Chat Auto-Start | 📋 Plan | Auto-start sends /start triggering Hermano intro |
 | Lesson Teaching Phase | 📋 Plan | Teaching phase delivers batched content steps |
 | Lesson Exercise Interaction | 📋 Plan | Type answer and receive feedback in lesson chat |
@@ -440,25 +440,26 @@ B1: "Ayer fui al cine con mis amigos y vimos una película muy interesante sobre
 
 ---
 
-### 8. Lesson Catalog and Player (Phase 6)
+### 8. Lesson Catalog and Lesson Chat (Phase 6, updated Phase 22)
 
-**Purpose**: Verify micro-lessons system renders correctly with browsing, navigation, exercises, and completion.
+**Purpose**: Verify micro-lessons system renders correctly with browsing and conversational lesson chat.
 
 **Steps**:
 1. Navigate to http://127.0.0.1:8765/lessons/
 2. Verify lesson cards render grouped by difficulty (Beginner/Intermediate)
-3. Click a lesson card to open the player
-4. Navigate through steps using Next/Previous buttons
-5. Complete an exercise with correct answer
-6. Reach completion view
+3. Click a lesson card, which navigates to `/?lesson={id}` opening the unified chat in lesson mode
+4. Verify the lesson header (title + "Exit Lesson" link) appears above the chat
+5. Hermano teaches the lesson conversationally through intro, teaching, exercise, and completion phases
+6. Exercises are answered via free-text input in the chat; completion is handled via `/chat/stream` with `lesson_id` parameter
 
 **Expected Behavior**:
 - Lesson cards show title, icon, level badge
-- Player renders step content based on type (instruction, vocabulary, example, tip, practice)
-- Progress bar updates on each step
-- Exercises validate answers with feedback
-- Completion view shows score and vocabulary count
-- "Practice with Hermano" button redirects to chat
+- Clicking a card navigates to `/?lesson={id}` (unified chat with lesson header)
+- Lesson header displays lesson title and an "Exit Lesson" link back to /lessons/
+- Progress bar updates as the lesson phase machine advances
+- Exercises are validated conversationally by Hermano with feedback in the chat stream
+- Completion message shows score and vocabulary count
+- "Next Lesson" link navigates to the next lesson in sequence
 
 **Result**: ✅ Pass
 
@@ -930,28 +931,28 @@ Empty State Display:
 **Steps**:
 1. Navigate to http://127.0.0.1:8000/lessons/
 2. Locate a lesson card
-3. Click "Learn with Hermano" button on the card
+3. Click the lesson card (or "Learn with Hermano" button)
 
 **Expected Behavior**:
-- "Learn with Hermano" button visible on each lesson card
-- Button navigates to /lessons/{lesson_id}/chat route
-- Lesson chat page loads without errors
-- Distinct from the static lesson player
+- Lesson card is clickable and navigates to `/?lesson={lesson_id}`
+- The unified chat page loads in lesson mode with a lesson header (title + "Exit Lesson" link)
+- Language and level selectors are hidden (lesson determines these)
+- Chat is ready for the conversational lesson flow
 
 ---
 
 #### 16b. Lesson Chat Page Load
 
 **Steps**:
-1. Navigate to a lesson chat page (e.g., /lessons/es-a0-greetings/chat)
+1. Navigate to `/?lesson=es-a0-greetings`
 2. Verify page structure
 
 **Expected Behavior**:
-- Lesson header displays lesson title and level badge
+- Lesson header displays lesson title and "Exit Lesson" link
 - Progress bar visible at top showing current phase progress
 - Chat area renders empty (before auto-start)
 - Language and level selectors hidden (lesson determines these)
-- "Exit Lesson" button accessible in header or navigation
+- "Exit Lesson" link navigates back to /lessons/ catalog
 
 ---
 

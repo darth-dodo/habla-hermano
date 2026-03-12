@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 2.1 | **Tests**: 2,377+ | **Coverage**: 97% | **Date**: March 2026
+**Version**: 2.2 | **Tests**: ~2,364 (2,123 Python + 241 JS) | **Coverage**: 97% | **Date**: March 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -26,10 +26,10 @@ block-beta
         M["Config"] N["Environment-based Pydantic Settings"]
         O["Deployment"] P["Docker + Render.com"]
         Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
-        S["UI"] T["Hamburger menu, lesson player, step navigation"]
+        S["UI"] T["Hamburger menu, unified chat (freeform + lesson modes)"]
         U["Voice"] V["Deepgram STT (Nova-3) + TTS (Aura-2)"]
-        W["JS Testing"] X["Vitest + jsdom (207 tests, ~90% coverage)"]
-        Y["Lesson Chat"] Z["Phase machine: intro→teaching→exercise→complete"]
+        W["JS Testing"] X["Vitest + jsdom (241 tests, ~90% coverage)"]
+        Y["Lesson Chat"] Z["Phase machine: intro→teaching→exercise→complete (unified in chat.py)"]
     end
 ```
 
@@ -43,7 +43,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2,377+ tests (Python + JS) with 97% coverage, strict typing
+- ✅ ~2,364 tests (2,123 Python + 241 JS) with 97% coverage, strict typing
 - ✅ 4 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -57,11 +57,12 @@ block-beta
 - ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
 - ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
 - ✅ Voice conversation: Deepgram STT/TTS via WebSocket proxy with graceful degradation
-- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (207 tests)
+- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (241 tests)
 - ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
 - ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
 - ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
 - ✅ Voice FSM refactor: FSM + AbortController, 5 sub-modules, race condition fixes (Phase 21)
+- ✅ Lesson experience revamp: unified chat handles freeform + lesson modes, removed separate lesson player (Phase 23)
 
 ---
 
@@ -206,14 +207,13 @@ habla-hermano/
 │   │   ├── middleware.py             # SecurityHeadersMiddleware + CSRFMiddleware
 │   │   ├── streaming.py              # SSE streaming: StreamResult, stream_chat_events()
 │   │   └── routes/
-│   │       ├── chat.py               # POST /chat, POST /chat/stream (SSE), GET /
+│   │       ├── chat.py               # GET / (freeform + lesson mode via ?lesson=), POST /chat/stream (SSE, optional lesson_id)
 │   │       ├── auth.py               # Signup, login, logout
-│   │       ├── lessons.py            # Micro-lessons (list, play, exercises, completion)
+│   │       ├── lessons.py            # Micro-lessons (list, catalog)
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │       ├── review.py             # Spaced repetition review sessions (auth-only)
 │   │       ├── learn.py              # Learning paths & adaptive recommendations
-│   │       ├── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
-│   │       └── lesson_chat.py        # Conversational lesson delivery (Phase 19)
+│   │       └── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -257,9 +257,8 @@ habla-hermano/
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
-│   │   ├── chat.html                 # Chat interface with hamburger menu, mobile-responsive
+│   │   ├── chat.html                 # Chat interface: freeform + lesson mode (hamburger menu, mobile-responsive)
 │   │   ├── lessons.html              # Lesson catalog page
-│   │   ├── lesson_player.html        # Interactive lesson player
 │   │   ├── progress.html             # Progress dashboard with charts
 │   │   ├── learn.html                # Learning paths overview page
 │   │   └── partials/
@@ -267,8 +266,6 @@ habla-hermano/
 │   │       ├── grammar_feedback.html # Collapsible grammar tips
 │   │       ├── pronunciation_tips.html # Collapsible pronunciation tips
 │   │       ├── scaffold.html         # Word bank, hints
-│   │       ├── lesson_step.html      # Step content by type
-│   │       ├── lesson_exercise.html  # Exercise forms
 │   │       ├── lesson_complete.html  # Completion celebration
 │   │       ├── progress_vocab.html   # Vocabulary list partial
 │   │       ├── stats_summary.html    # Stats card partial
@@ -287,7 +284,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 2,377+ tests (Python + JS), 97% coverage
+├── tests/                            # ~2,364 tests (2,123 Python + 241 JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -608,19 +605,14 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | `/` | Render chat page |
+| GET | `/` | Render chat page (accepts optional `?lesson=` query param for lesson mode) |
 | POST | `/chat` | Send message, get AI response (non-streaming fallback) |
-| POST | `/chat/stream` | Send message, get SSE streaming response (used by modules/stream.js) |
+| POST | `/chat/stream` | Send message, get SSE streaming response (accepts optional `lesson_id` for lesson-specific streaming) |
 | POST | `/new` | Start new conversation |
 | POST | `/auth/signup` | Register user |
 | POST | `/auth/login` | Authenticate |
 | POST | `/auth/logout` | Sign out |
 | GET | `/lessons/` | Lesson catalog |
-| GET | `/lessons/{id}/play` | Lesson player |
-| POST | `/lessons/{id}/step/next` | Next step navigation |
-| POST | `/lessons/{id}/exercise/{id}/submit` | Submit exercise answer |
-| POST | `/lessons/{id}/complete` | Mark lesson complete |
-| POST | `/lessons/{id}/handoff` | Chat handoff |
 | GET | `/progress/` | Progress dashboard page |
 | GET | `/progress/vocabulary` | Vocabulary list partial (HTMX) |
 | GET | `/progress/stats` | Stats summary partial (HTMX) |
@@ -751,9 +743,9 @@ The chat form uses **modules/stream.js** (fetch + ReadableStream) to POST to `/c
 ### HTMX Pattern (non-chat pages)
 
 ```html
-<!-- Used for lessons, progress, review, learn — NOT for chat submission -->
-<form hx-post="/lessons/{id}/step/next"
-      hx-target="#step-content"
+<!-- Used for progress, review, learn — NOT for chat submission -->
+<form hx-get="/progress/vocabulary"
+      hx-target="#vocab-list"
       hx-swap="innerHTML">
     ...
 </form>
@@ -807,7 +799,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2,377+ tests: Python + JS)
+### Coverage: 97% (~2,364 tests: 2,123 Python + 241 JS)
 
 ### Test Categories
 
@@ -926,7 +918,7 @@ src/validation.py            # Canonical domain validation (VALID_LANGUAGES, VAL
 src/api/main.py              # FastAPI app entry
 src/api/config.py            # Re-export shim → src/config.py
 src/api/middleware.py         # SecurityHeadersMiddleware + CSRFMiddleware
-src/api/routes/chat.py       # Chat endpoints (POST /chat, POST /chat/stream)
+src/api/routes/chat.py       # Chat endpoints (GET /, POST /chat/stream) — handles both freeform and lesson modes
 src/api/streaming.py         # SSE streaming logic
 src/static/js/main.js        # JS entry point (imports all modules)
 src/static/js/modules/stream.js  # SSE client (fetch + ReadableStream)
@@ -967,4 +959,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v2.1 — Habla Hermano (2,377+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons)*
+*Crash Course v2.2 — Habla Hermano (~2,364 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience)*
