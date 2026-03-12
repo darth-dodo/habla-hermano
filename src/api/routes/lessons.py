@@ -31,7 +31,7 @@ async def get_lessons_page(
     templates: TemplatesDep,
     user: OptionalUserDep,
     lesson_service: LessonServiceDep,
-    language: str | None = None,
+    language: str = "es",
     level: str | None = None,
 ) -> HTMLResponse:
     """Render the lessons overview page with available micro-lessons.
@@ -66,7 +66,7 @@ async def get_lessons_page(
         name="lessons.html",
         context={
             "lessons": lessons_grouped,
-            "language": language or "es",
+            "language": language,
             "level": level or "A1",
             "user": user,
         },

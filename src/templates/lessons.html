@@ -3,99 +3,104 @@
 {% block title %}Lessons - Habla Hermano{% endblock %}
 
 {% block content %}
-<div class="h-full overflow-y-auto bg-surface">
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        <!-- Header - Clean Nordic -->
-        <header class="mb-8">
-            <h2 class="text-2xl font-semibold text-text">Lessons</h2>
-            <p class="text-text-muted mt-1">Choose a topic to practice</p>
-        </header>
+<div class="flex flex-col h-full" x-data="{
+    level: '{{ level or 'A1' }}',
+    language: '{{ language or 'es' }}',
+    onLanguageChange(lang) {
+        window.location.href = '/lessons/?language=' + lang;
+    }
+}">
+    {% set page_name = 'lessons' %}
+    {% include "partials/app_header.html" %}
 
-        <!-- Lesson Categories -->
-        <div class="space-y-8">
-            <!-- Beginner Section -->
-            <section aria-labelledby="beginner-heading">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="inline-flex items-center px-2.5 py-1 bg-success-muted text-success text-xs font-medium rounded-full">
-                        Beginner
-                    </span>
-                    <span class="text-sm text-text-muted">A0-A1</span>
-                </div>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    {% for lesson in lessons.beginner %}
-                    <a
-                        href="/?lesson={{ lesson.full_id }}"
-                        class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
-                    >
-                        <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
-                        <div class="min-w-0">
-                            <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
-                                {{ lesson.title }}
-                            </h4>
-                            <p class="text-sm text-text-muted line-clamp-2 sm:truncate">
-                                {{ lesson.description }}
-                            </p>
-                        </div>
-                        <svg class="w-4 h-4 text-text-subtle group-hover:text-accent flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </a>
-                    {% else %}
-                    <div class="col-span-2 text-center py-8 bg-surface-overlay rounded-xl border border-border">
-                        <p class="text-text-muted text-sm">Lessons coming soon...</p>
+    <div class="flex-1 overflow-y-auto bg-surface">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <!-- Lesson Categories -->
+            <div class="space-y-8">
+                <!-- Beginner Section -->
+                <section aria-labelledby="beginner-heading">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="inline-flex items-center px-2.5 py-1 bg-success-muted text-success text-xs font-medium rounded-full">
+                            Beginner
+                        </span>
+                        <span class="text-sm text-text-muted">A0-A1</span>
                     </div>
-                    {% endfor %}
-                </div>
-            </section>
-
-            <!-- Intermediate Section -->
-            <section aria-labelledby="intermediate-heading">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="inline-flex items-center px-2.5 py-1 bg-accent-muted text-accent text-xs font-medium rounded-full">
-                        Intermediate
-                    </span>
-                    <span class="text-sm text-text-muted">A2-B1</span>
-                </div>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    {% for lesson in lessons.intermediate %}
-                    <a
-                        href="/?lesson={{ lesson.full_id }}"
-                        class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
-                    >
-                        <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
-                        <div class="min-w-0">
-                            <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
-                                {{ lesson.title }}
-                            </h4>
-                            <p class="text-sm text-text-muted line-clamp-2 sm:truncate">
-                                {{ lesson.description }}
-                            </p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        {% for lesson in lessons.beginner %}
+                        <a
+                            href="/?lesson={{ lesson.full_id }}"
+                            class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
+                        >
+                            <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
+                            <div class="min-w-0">
+                                <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
+                                    {{ lesson.title }}
+                                </h4>
+                                <p class="text-sm text-text-muted line-clamp-2 sm:truncate">
+                                    {{ lesson.description }}
+                                </p>
+                            </div>
+                            <svg class="w-4 h-4 text-text-subtle group-hover:text-accent flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        {% else %}
+                        <div class="col-span-2 text-center py-8 bg-surface-overlay rounded-xl border border-border">
+                            <p class="text-text-muted text-sm">No beginner lessons for this language yet.</p>
                         </div>
-                        <svg class="w-4 h-4 text-text-subtle group-hover:text-accent flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </a>
-                    {% else %}
-                    <div class="col-span-2 text-center py-8 bg-surface-overlay rounded-xl border border-border">
-                        <p class="text-text-muted text-sm">Lessons coming soon...</p>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-            </section>
-        </div>
+                </section>
 
-        <!-- Free Chat CTA -->
-        <div class="mt-12 p-6 bg-surface-elevated rounded-xl border border-border text-center">
-            <p class="text-text-muted text-sm mb-4">Or practice with free conversation</p>
-            <a
-                href="/"
-                class="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text rounded-lg px-5 py-2.5 font-medium transition-all duration-150"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Start Chatting
-            </a>
+                <!-- Intermediate Section -->
+                <section aria-labelledby="intermediate-heading">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="inline-flex items-center px-2.5 py-1 bg-accent-muted text-accent text-xs font-medium rounded-full">
+                            Intermediate
+                        </span>
+                        <span class="text-sm text-text-muted">A2-B1</span>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        {% for lesson in lessons.intermediate %}
+                        <a
+                            href="/?lesson={{ lesson.full_id }}"
+                            class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
+                        >
+                            <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
+                            <div class="min-w-0">
+                                <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
+                                    {{ lesson.title }}
+                                </h4>
+                                <p class="text-sm text-text-muted line-clamp-2 sm:truncate">
+                                    {{ lesson.description }}
+                                </p>
+                            </div>
+                            <svg class="w-4 h-4 text-text-subtle group-hover:text-accent flex-shrink-0 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                        {% else %}
+                        <div class="col-span-2 text-center py-8 bg-surface-overlay rounded-xl border border-border">
+                            <p class="text-text-muted text-sm">No intermediate lessons for this language yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <!-- Free Chat CTA -->
+            <div class="mt-12 p-6 bg-surface-elevated rounded-xl border border-border text-center">
+                <p class="text-text-muted text-sm mb-4">Or practice with free conversation</p>
+                <a
+                    href="/"
+                    class="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text rounded-lg px-5 py-2.5 font-medium transition-all duration-150"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    Start Chatting
+                </a>
+            </div>
         </div>
     </div>
 </div>
