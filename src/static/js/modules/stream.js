@@ -23,20 +23,19 @@ let tokenCounter = 0;
 // ============================================
 
 /**
- * Detect if the page is in lesson mode.
+ * Detect if the page is in lesson mode via URL params.
  * @returns {boolean}
  */
-function isLessonMode() {
-    const chatRoot = document.querySelector('[data-lesson-mode]');
-    return chatRoot !== null;
+export function isLessonMode() {
+    return new URLSearchParams(window.location.search).has('lesson');
 }
 
 /**
- * Get the stream URL based on mode.
+ * Get the stream URL. Always /chat/stream (lesson_id goes in form data).
  * @returns {string}
  */
-function getStreamUrl() {
-    return isLessonMode() ? '/chat/lesson/stream' : '/chat/stream';
+export function getStreamUrl() {
+    return '/chat/stream';
 }
 
 // ============================================
@@ -284,6 +283,12 @@ async function streamChat(formData) {
     const loadingIndicator = document.getElementById('loading-indicator');
     if (loadingIndicator) loadingIndicator.classList.add('hidden');
 
+    // Include lesson_id from URL params as safety net
+    if (isLessonMode()) {
+        const lessonId = new URLSearchParams(window.location.search).get('lesson');
+        if (lessonId) formData.append('lesson_id', lessonId);
+    }
+
     // Create the streaming bubble
     const bubbleId = createStreamingBubble();
 
@@ -391,28 +396,15 @@ function showStreamError(message) {
 // Lesson Mode Handlers
 // ============================================
 
-const PHASE_LABELS = {
-    intro: 'Introduction',
-    teaching: 'Teaching',
-    exercise_ask: 'Exercise',
-    exercise_eval: 'Checking...',
-    complete: 'Complete!',
-};
-
 /**
- * Update lesson progress bar and phase badge.
+ * Update lesson progress bar width.
  * @param {Object} data - lesson_progress SSE data
  */
 function updateLessonProgress(data) {
     const progressBar = document.getElementById('lesson-progress-bar');
-    const phaseBadge = document.getElementById('lesson-phase-badge');
 
     if (progressBar && data.progress !== undefined) {
         progressBar.style.width = data.progress + '%';
-    }
-
-    if (phaseBadge && data.phase) {
-        phaseBadge.textContent = PHASE_LABELS[data.phase] || data.phase;
     }
 }
 
@@ -442,45 +434,32 @@ function showExerciseResult(data) {
 }
 
 /**
- * Show lesson completion banner.
+ * Show compact lesson completion card.
  * @param {Object} data - lesson_complete SSE data
  */
 function showLessonComplete(data) {
-    const chatMessages = getChatMessages();
-    if (!chatMessages) return;
-
     // Update progress bar to 100%
     const progressBar = document.getElementById('lesson-progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 
-    const phaseBadge = document.getElementById('lesson-phase-badge');
-    if (phaseBadge) phaseBadge.textContent = 'Complete!';
+    const chatMessages = getChatMessages();
+    if (!chatMessages) return;
 
-    const score = data.score || 0;
     const vocabCount = data.vocab_count || 0;
-    const lessonId = data.lesson_id || '';
+    const correctCount = data.correct_count || 0;
+    const totalExercises = data.total_exercises || 0;
 
-    let statsHtml = `<span class="text-2xl font-bold text-accent">${score}%</span> score`;
-    if (vocabCount > 0) {
-        statsHtml += ` · <span class="font-semibold text-green-400">${vocabCount}</span> words`;
-    }
-
-    const html = `
-        <div class="message-enter my-6 p-6 bg-surface-elevated rounded-2xl border border-accent/30 text-center" data-lesson-complete="true">
-            <div class="text-4xl mb-3">🎉</div>
-            <h3 class="text-lg font-bold text-text mb-2">Lesson Complete!</h3>
-            <p class="text-text-muted mb-4">${statsHtml}</p>
-            <div class="flex flex-col sm:flex-row gap-2 justify-center">
-                <a href="/lessons/" class="px-4 py-2 border border-border text-text hover:bg-surface-overlay rounded-lg text-sm font-medium transition-colors">
-                    More Lessons
-                </a>
-                <a href="/chat" class="px-4 py-2 bg-accent hover:bg-accent-hover text-accent-text rounded-lg text-sm font-medium transition-colors">
-                    Free Chat
-                </a>
-            </div>
+    const card = document.createElement('div');
+    card.className = 'mx-auto max-w-md my-4 p-4 bg-surface-elevated rounded-xl border border-border text-center';
+    card.setAttribute('data-lesson-complete', 'true');
+    card.innerHTML = `
+        <p class="text-lg font-semibold text-text mb-2">${correctCount}/${totalExercises} correct · ${vocabCount} words learned</p>
+        <div class="flex gap-3 justify-center mt-3">
+            <a href="/lessons" class="px-4 py-2 text-sm border border-border rounded-lg hover:bg-surface-overlay transition-colors">More Lessons</a>
+            <a href="/chat" class="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors">Free Chat</a>
         </div>
     `;
-    chatMessages.insertAdjacentHTML('beforeend', html);
+    chatMessages.appendChild(card);
     scrollToBottom();
 }
 
@@ -490,6 +469,7 @@ function showLessonComplete(data) {
 
 /**
  * In lesson mode, auto-send a "start" message to kick off the lesson.
+ * The auto-sent user bubble is hidden from the chat display.
  */
 function autoStartLesson() {
     if (!isLessonMode()) return;
@@ -497,12 +477,18 @@ function autoStartLesson() {
     const form = document.getElementById('chat-form');
     if (!form) return;
 
+    // Set flag so addUserMessage skips rendering for auto-start
+    window.__lessonAutoStarting = true;
+
     // Build FormData with a start message
     const formData = new FormData(form);
     formData.set('message', 'Start the lesson');
 
     // Start streaming (no user bubble shown for auto-start)
     streamChat(formData);
+
+    // Clear flag after stream is initiated
+    window.__lessonAutoStarting = false;
 }
 
 // ============================================

@@ -605,4 +605,91 @@ describe('stream.js — initStreamingForm', () => {
         expect(feedbackContainer).not.toBeNull();
         expect(feedbackContainer.innerHTML).toContain('Roll your Rs!');
     });
+
+    // ------------------------------------------------------------------
+    // NEW: lesson completion shows compact card
+    // ------------------------------------------------------------------
+
+    it('shows compact completion card with correct/total and vocab count', async () => {
+        setupChatDOM();
+        // Add progress bar element
+        document.body.insertAdjacentHTML('beforeend', '<div id="lesson-progress-bar" style="width: 80%"></div>');
+
+        globalThis.fetch = vi.fn(() => Promise.resolve(createMockSSEResponse([
+            { event: 'token', data: { content: 'Done' } },
+            { event: 'response_complete', data: { content: 'Done' } },
+            { event: 'lesson_complete', data: { correct_count: 3, total_exercises: 4, vocab_count: 8 } },
+            { event: 'done', data: {} },
+        ])));
+
+        initStreamingForm();
+
+        const input = document.getElementById('message-input');
+        input.value = 'Answer';
+
+        const form = document.getElementById('chat-form');
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+        await vi.waitFor(() => {
+            const btn = form.querySelector('button[type="submit"]');
+            expect(btn.disabled).toBe(false);
+        });
+        await vi.advanceTimersByTimeAsync(200);
+
+        const card = document.querySelector('[data-lesson-complete]');
+        expect(card).not.toBeNull();
+        expect(card.textContent).toContain('3/4 correct');
+        expect(card.textContent).toContain('8 words learned');
+
+        // Progress bar should be 100%
+        const bar = document.getElementById('lesson-progress-bar');
+        expect(bar.style.width).toBe('100%');
+    });
+});
+
+// ===========================================================================
+// Tests for exported helpers: isLessonMode, getStreamUrl
+// ===========================================================================
+
+describe('stream.js — isLessonMode', () => {
+    let isLessonMode;
+
+    beforeEach(async () => {
+        vi.restoreAllMocks();
+        const mod = await import('../../src/static/js/modules/stream.js');
+        isLessonMode = mod.isLessonMode;
+    });
+
+    it('returns true when URL has ?lesson= param', () => {
+        // jsdom allows setting location via Object.defineProperty
+        const url = new URL('http://localhost/chat?lesson=es-a1-greetings');
+        vi.stubGlobal('location', url);
+
+        expect(isLessonMode()).toBe(true);
+
+        vi.unstubAllGlobals();
+    });
+
+    it('returns false on plain /chat without lesson param', () => {
+        const url = new URL('http://localhost/chat');
+        vi.stubGlobal('location', url);
+
+        expect(isLessonMode()).toBe(false);
+
+        vi.unstubAllGlobals();
+    });
+});
+
+describe('stream.js — getStreamUrl', () => {
+    let getStreamUrl;
+
+    beforeEach(async () => {
+        vi.restoreAllMocks();
+        const mod = await import('../../src/static/js/modules/stream.js');
+        getStreamUrl = mod.getStreamUrl;
+    });
+
+    it('always returns /chat/stream regardless of lesson mode', () => {
+        expect(getStreamUrl()).toBe('/chat/stream');
+    });
 });
