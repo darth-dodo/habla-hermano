@@ -24,7 +24,7 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     {% for lesson in lessons.beginner %}
                     <a
-                        href="/chat?lesson={{ lesson.full_id }}"
+                        href="/?lesson={{ lesson.full_id }}"
                         class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
                     >
                         <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
@@ -59,7 +59,7 @@
                 <div class="grid gap-3 sm:grid-cols-2">
                     {% for lesson in lessons.intermediate %}
                     <a
-                        href="/chat?lesson={{ lesson.full_id }}"
+                        href="/?lesson={{ lesson.full_id }}"
                         class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
                     >
                         <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
@@ -88,7 +88,7 @@
         <div class="mt-12 p-6 bg-surface-elevated rounded-xl border border-border text-center">
             <p class="text-text-muted text-sm mb-4">Or practice with free conversation</p>
             <a
-                href="/chat"
+                href="/"
                 class="inline-flex items-center gap-2 bg-accent hover:bg-accent-hover text-accent-text rounded-lg px-5 py-2.5 font-medium transition-all duration-150"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

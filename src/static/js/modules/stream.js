@@ -456,7 +456,7 @@ function showLessonComplete(data) {
         <p class="text-lg font-semibold text-text mb-2">${correctCount}/${totalExercises} correct · ${vocabCount} words learned</p>
         <div class="flex gap-3 justify-center mt-3">
             <a href="/lessons" class="px-4 py-2 text-sm border border-border rounded-lg hover:bg-surface-overlay transition-colors">More Lessons</a>
-            <a href="/chat" class="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors">Free Chat</a>
+            <a href="/" class="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors">Free Chat</a>
         </div>
     `;
     chatMessages.appendChild(card);
