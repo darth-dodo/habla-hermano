@@ -35,7 +35,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from markupsafe import escape
 from postgrest.exceptions import APIError
@@ -135,6 +135,13 @@ async def chat_page(
         context["lesson_language"] = lesson_data.metadata.language
         context["current_language"] = lesson_data.metadata.language
 
+        # Check for existing checkpoint to support lesson resumption
+        effective_user_id = user.id if user else None
+        thread_id, _, _ = _resolve_lesson_thread_id(
+            effective_user_id, session_id, lesson
+        )
+        await _check_lesson_resume(context, thread_id)
+
     # Review features only for authenticated users (skip in lesson mode)
     if user and not lesson:
         try:
@@ -222,6 +229,38 @@ def _resolve_lesson_thread_id(
         return f"lesson:{session_id}:{lesson_id}", None, None
     new_id = str(uuid.uuid4())
     return f"lesson:{new_id}:{lesson_id}", None, new_id
+
+
+async def _check_lesson_resume(context: dict[str, Any], thread_id: str) -> None:
+    """Check for an existing lesson checkpoint and populate resume context.
+
+    If a checkpoint exists for the given thread_id with a lesson_phase,
+    extracts previous messages and sets ``is_resuming`` and
+    ``resume_messages`` in the context dict.
+
+    Args:
+        context: Template context dict to mutate in-place.
+        thread_id: The lesson-scoped thread ID to check.
+    """
+    try:
+        async with get_checkpointer() as checkpointer:
+            graph = build_lesson_chat_graph(checkpointer=checkpointer)
+            existing = await graph.aget_state(
+                RunnableConfig(configurable={"thread_id": thread_id})
+            )
+            if existing and existing.values.get("lesson_phase"):
+                context["is_resuming"] = True
+                # Extract displayable messages from checkpoint
+                messages = existing.values.get("messages", [])
+                resume_messages = []
+                for msg in messages:
+                    if isinstance(msg, HumanMessage):
+                        resume_messages.append({"role": "user", "content": str(msg.content)})
+                    elif isinstance(msg, AIMessage):
+                        resume_messages.append({"role": "ai", "content": str(msg.content)})
+                context["resume_messages"] = resume_messages
+    except Exception:
+        logger.debug("Could not check lesson checkpoint for thread %s", thread_id, exc_info=True)
 
 
 @router.post("/chat", response_class=HTMLResponse)

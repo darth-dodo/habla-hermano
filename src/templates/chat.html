@@ -4,7 +4,8 @@
 
 {% block content %}
 <div class="flex flex-col h-full" x-data="{ level: '{{ current_level or lesson_level or 'A1' }}', language: '{{ current_language or lesson_language or 'es' }}', menuOpen: false, reviewMode: {{ 'true' if review_mode else 'false' }} }"
-    {% if lesson_mode %}data-lesson-mode="true"{% endif %}>
+    {% if lesson_mode %}data-lesson-mode="true"{% endif %}
+    {% if is_resuming %}data-resuming="true"{% endif %}>
     <!-- Header - Nordic Minimal -->
     <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 safe-top safe-x">
         <div class="max-w-3xl mx-auto flex items-center justify-between">
@@ -270,7 +271,28 @@
                 <!-- Normal Chat Mode -->
 
                 {% if lesson_mode %}
-                <!-- Lesson Mode - Auto-start message sent by JS -->
+                <!-- Lesson Mode -->
+                {% if is_resuming and resume_messages %}
+                <!-- Resume indicator -->
+                <div class="text-center text-xs text-text-muted my-2">Resuming your lesson — pick up where you left off</div>
+                <!-- Previous messages from checkpoint -->
+                {% for msg in resume_messages %}
+                {% if msg.role == 'user' %}
+                <div class="flex justify-end mb-6">
+                    <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm border border-border">
+                        <p class="text-user-text leading-relaxed">{{ msg.content }}</p>
+                    </div>
+                </div>
+                {% elif msg.role == 'ai' %}
+                <div class="flex justify-start mb-6">
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm border border-border">
+                        <div class="text-ai-text leading-relaxed">{{ msg.content }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                <!-- Auto-start message sent by JS (skipped when resuming) -->
                 {% else %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->

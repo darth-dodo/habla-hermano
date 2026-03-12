@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
 from src.api.dependencies import get_lesson_service
-from src.api.routes.chat import _resolve_chat_identity, _resolve_lesson_thread_id
+from src.api.routes.chat import _check_lesson_resume, _resolve_chat_identity, _resolve_lesson_thread_id
 from src.lessons.models import (
     Lesson,
     LessonContent,
@@ -1066,3 +1066,144 @@ class TestStreamMessageLessonMode:
 
         assert response.status_code == 200
         assert "Message cannot be empty" in response.text
+
+
+class TestLessonResume:
+    """Tests for lesson resume support via checkpoint message recovery."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_lesson_resume_shows_previous_messages(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson=X with existing checkpoint should show resume indicator and messages."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        # Configure mock graph aget_state to return a state with lesson_phase and messages
+        mock_state = MagicMock()
+        mock_state.values = {
+            "lesson_phase": "teaching",
+            "messages": [
+                HumanMessage(content="Start the lesson"),
+                AIMessage(content="Welcome to Basic Greetings!"),
+            ],
+        }
+
+        with (
+            patch(
+                "src.api.routes.chat.build_lesson_chat_graph"
+            ) as mock_build,
+            TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client,
+        ):
+            mock_graph = MagicMock()
+            mock_graph.aget_state = AsyncMock(return_value=mock_state)
+            mock_build.return_value = mock_graph
+
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        assert "Resuming your lesson" in response.text
+        assert "Welcome to Basic Greetings!" in response.text
+        assert 'data-resuming="true"' in response.text
+
+    def test_lesson_no_checkpoint_does_not_resume(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson=X without checkpoint should not show resume indicator."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        assert "Resuming your lesson" not in response.text
+        assert "data-resuming" not in response.text
+
+    @pytest.mark.asyncio
+    async def test_check_lesson_resume_populates_context(self) -> None:
+        """_check_lesson_resume should set is_resuming and resume_messages."""
+        mock_state = MagicMock()
+        mock_state.values = {
+            "lesson_phase": "exercise_ask",
+            "messages": [
+                HumanMessage(content="Start the lesson"),
+                AIMessage(content="Let's practice greetings!"),
+                HumanMessage(content="Hola"),
+                AIMessage(content="Muy bien!"),
+            ],
+        }
+        mock_graph = MagicMock()
+        mock_graph.aget_state = AsyncMock(return_value=mock_state)
+
+        context: dict[str, Any] = {}
+        with (
+            patch("src.api.routes.chat.build_lesson_chat_graph", return_value=mock_graph),
+            patch("src.api.routes.chat.get_checkpointer") as mock_cp,
+        ):
+            # Make get_checkpointer an async context manager
+            mock_checkpointer = MagicMock()
+            mock_cp.return_value.__aenter__ = AsyncMock(return_value=mock_checkpointer)
+            mock_cp.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            await _check_lesson_resume(context, "lesson:user-abc:es_a1_greetings_01")
+
+        assert context["is_resuming"] is True
+        assert len(context["resume_messages"]) == 4
+        assert context["resume_messages"][0] == {"role": "user", "content": "Start the lesson"}
+        assert context["resume_messages"][1] == {"role": "ai", "content": "Let's practice greetings!"}
+
+    @pytest.mark.asyncio
+    async def test_check_lesson_resume_no_checkpoint(self) -> None:
+        """_check_lesson_resume with no checkpoint should not set is_resuming."""
+        mock_state = MagicMock()
+        mock_state.values = {}
+        mock_graph = MagicMock()
+        mock_graph.aget_state = AsyncMock(return_value=mock_state)
+
+        context: dict[str, Any] = {}
+        with (
+            patch("src.api.routes.chat.build_lesson_chat_graph", return_value=mock_graph),
+            patch("src.api.routes.chat.get_checkpointer") as mock_cp,
+        ):
+            mock_checkpointer = MagicMock()
+            mock_cp.return_value.__aenter__ = AsyncMock(return_value=mock_checkpointer)
+            mock_cp.return_value.__aexit__ = AsyncMock(return_value=None)
+
+            await _check_lesson_resume(context, "lesson:user-abc:es_a1_greetings_01")
+
+        assert "is_resuming" not in context
+        assert "resume_messages" not in context
