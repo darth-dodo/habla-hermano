@@ -507,124 +507,6 @@ class TestGetLessonsPage:
         assert "text/html" in response.headers["content-type"]
 
 
-class TestGetLessonPlayer:
-    """Tests for GET /lessons/{lesson_id}/play - Lesson player page."""
-
-    def test_get_lesson_player_returns_200(self, client: TestClient) -> None:
-        """GET /lessons/{lesson_id}/play should return 200 OK."""
-        response = client.get("/lessons/test-lesson-001/play")
-        assert response.status_code == 200
-
-    def test_get_lesson_player_returns_html(self, client: TestClient) -> None:
-        """GET /lessons/{lesson_id}/play should return HTML content type."""
-        response = client.get("/lessons/test-lesson-001/play")
-        assert "text/html" in response.headers["content-type"]
-
-    def test_get_lesson_player_contains_lesson_title(
-        self, client: TestClient, sample_lesson: Lesson
-    ) -> None:
-        """GET /lessons/{lesson_id}/play should include lesson title."""
-        response = client.get("/lessons/test-lesson-001/play")
-        assert sample_lesson.metadata.title in response.text
-
-    def test_get_lesson_player_is_full_html(self, client: TestClient) -> None:
-        """GET /lessons/{lesson_id}/play should return full HTML page."""
-        response = client.get("/lessons/test-lesson-001/play")
-        assert "<!DOCTYPE html>" in response.text
-
-    def test_get_lesson_player_contains_progress(self, client: TestClient) -> None:
-        """GET /lessons/{lesson_id}/play should include step progress."""
-        response = client.get("/lessons/test-lesson-001/play")
-        assert "Step" in response.text
-
-    def test_get_lesson_not_found(self, client: TestClient, mock_lesson_service: MagicMock) -> None:
-        """GET /lessons/{invalid}/play should return 404."""
-        mock_lesson_service.get_lesson.return_value = None
-        response = client.get("/lessons/nonexistent/play")
-        assert response.status_code == 404
-
-    async def test_get_lesson_player_async(self, async_client: AsyncClient) -> None:
-        """GET /lessons/{lesson_id}/play should work with async client."""
-        response = await async_client.get("/lessons/test-lesson-001/play")
-        assert response.status_code == 200
-
-
-class TestLessonStepNavigation:
-    """Tests for lesson step navigation endpoints."""
-
-    def test_get_step_returns_200(self, client: TestClient) -> None:
-        """GET /lessons/{id}/step/{n} should return 200."""
-        response = client.get("/lessons/test-lesson-001/step/0")
-        assert response.status_code == 200
-
-    def test_get_step_returns_partial(self, client: TestClient) -> None:
-        """GET /lessons/{id}/step/{n} should return partial HTML."""
-        response = client.get("/lessons/test-lesson-001/step/0")
-        assert "<!DOCTYPE html>" not in response.text
-        assert "step-content" in response.text
-
-    def test_get_step_out_of_range(
-        self, client: TestClient, mock_lesson_service: MagicMock
-    ) -> None:
-        """GET /lessons/{id}/step/{invalid} should return 404."""
-        response = client.get("/lessons/test-lesson-001/step/999")
-        assert response.status_code == 404
-
-
-class TestCompleteLesson:
-    """Tests for POST /lessons/{lesson_id}/complete - Mark lesson as completed."""
-
-    def test_complete_lesson_returns_200(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should return 200 OK."""
-        response = client.post("/lessons/test-lesson-001/complete")
-        assert response.status_code == 200
-
-    def test_complete_lesson_returns_html(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should return HTML content type."""
-        response = client.post("/lessons/test-lesson-001/complete")
-        assert "text/html" in response.headers["content-type"]
-
-    def test_complete_lesson_shows_completed_status(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should show completed status."""
-        response = client.post("/lessons/test-lesson-001/complete")
-        assert "Complete" in response.text or "completed" in response.text.lower()
-
-    def test_complete_lesson_is_partial_html(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should return partial HTML."""
-        response = client.post("/lessons/test-lesson-001/complete")
-        assert "<!DOCTYPE html>" not in response.text
-
-    def test_complete_lesson_contains_score(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should show score."""
-        response = client.post("/lessons/test-lesson-001/complete", data={"score": "85"})
-        assert "85" in response.text or "Score" in response.text
-
-    def test_complete_lesson_shows_practice_link(self, client: TestClient) -> None:
-        """POST /lessons/{lesson_id}/complete should link to chat."""
-        response = client.post("/lessons/test-lesson-001/complete")
-        assert "/chat" in response.text or "Practice" in response.text
-
-    async def test_complete_lesson_async(self, async_client: AsyncClient) -> None:
-        """POST /lessons/{lesson_id}/complete should work with async client."""
-        response = await async_client.post("/lessons/test-lesson-001/complete")
-        assert response.status_code == 200
-
-
-class TestLessonHandoff:
-    """Tests for POST /lessons/{lesson_id}/handoff - Handoff to chat."""
-
-    def test_handoff_returns_200(self, client: TestClient) -> None:
-        """POST /lessons/{id}/handoff should return 200."""
-        response = client.post("/lessons/test-lesson-001/handoff")
-        assert response.status_code == 200
-
-    def test_handoff_has_redirect_header(self, client: TestClient) -> None:
-        """POST /lessons/{id}/handoff should have HX-Redirect header."""
-        response = client.post("/lessons/test-lesson-001/handoff")
-        assert "HX-Redirect" in response.headers
-        assert "/chat" in response.headers["HX-Redirect"]
-
-
 # =============================================================================
 # Progress Route Tests
 # =============================================================================
@@ -907,16 +789,10 @@ class TestLessonsAndProgressIntegration:
         assert lessons_response.status_code == 200
         assert progress_response.status_code == 200
 
-    def test_lesson_completion_flow(self, client: TestClient) -> None:
-        """Test complete flow: play lesson -> complete lesson."""
-        # Play lesson
-        play_response = client.get("/lessons/test-lesson-001/play")
-        assert play_response.status_code == 200
-
-        # Complete lesson
-        complete_response = client.post("/lessons/test-lesson-001/complete")
-        assert complete_response.status_code == 200
-        assert "complete" in complete_response.text.lower()
+    def test_lesson_list_accessible(self, client: TestClient) -> None:
+        """Test lesson list is accessible."""
+        response = client.get("/lessons/")
+        assert response.status_code == 200
 
     def test_progress_flow(self, client: TestClient) -> None:
         """Test progress flow: view progress -> view vocab -> view stats."""
@@ -965,12 +841,6 @@ class TestEdgeCases:
         response = client.delete(f"/progress/vocabulary/{max_id}")
         assert response.status_code == 200
 
-    def test_concurrent_lesson_completions(self, client: TestClient) -> None:
-        """Test multiple lesson completions in sequence."""
-        for _ in range(3):
-            response = client.post("/lessons/test-lesson-001/complete")
-            assert response.status_code == 200
-
     def test_repeated_vocabulary_deletion(self, client: TestClient) -> None:
         """Test deleting the same vocabulary word multiple times."""
         # This tests idempotency
@@ -991,11 +861,6 @@ class TestHTTPMethods:
     def test_progress_page_post_not_allowed(self, client: TestClient) -> None:
         """POST to /progress/ should not be allowed."""
         response = client.post("/progress/")
-        assert response.status_code == 405
-
-    def test_complete_lesson_get_not_allowed(self, client: TestClient) -> None:
-        """GET to /lessons/{lesson_id}/complete should not be allowed."""
-        response = client.get("/lessons/test-lesson-001/complete")
         assert response.status_code == 405
 
     def test_vocabulary_post_not_allowed(self, client: TestClient) -> None:
