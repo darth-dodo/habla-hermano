@@ -939,9 +939,7 @@ class TestResolveLessonThreadId:
 
     def test_missing_lesson_session_generates_uuid(self) -> None:
         """When lesson_session is None, a UUID suffix is auto-generated."""
-        thread_id, _user_id, _ = _resolve_lesson_thread_id(
-            "user-abc", None, "es_a1_greetings_01"
-        )
+        thread_id, _user_id, _ = _resolve_lesson_thread_id("user-abc", None, "es_a1_greetings_01")
         # Format: lesson:user-abc:es_a1_greetings_01:<auto-uuid>
         parts = thread_id.split(":")
         assert len(parts) == 4

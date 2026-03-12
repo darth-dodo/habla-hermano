@@ -29,6 +29,7 @@ def _normalize_answer(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     return text
 
+
 # =============================================================================
 # Enums
 # =============================================================================
@@ -219,8 +220,7 @@ class FillBlankExercise(Exercise):
             return True
         if self.accept_alternatives:
             return any(
-                normalized_user == _normalize_answer(alt)
-                for alt in self.accept_alternatives
+                normalized_user == _normalize_answer(alt) for alt in self.accept_alternatives
             )
         return False
 
@@ -260,8 +260,7 @@ class TranslateExercise(Exercise):
             return True
         if self.accept_alternatives:
             return any(
-                normalized_user == _normalize_answer(alt)
-                for alt in self.accept_alternatives
+                normalized_user == _normalize_answer(alt) for alt in self.accept_alternatives
             )
         return False
 

@@ -987,9 +987,7 @@ class TestTranslateExerciseLLMEval:
         self, translate_exercise_state: LessonChatState
     ) -> None:
         """When LLM response starts with [CORRECT], is_correct should be True."""
-        llm_response = AIMessage(
-            content="[CORRECT]\nGreat job! That's a perfect translation."
-        )
+        llm_response = AIMessage(content="[CORRECT]\nGreat job! That's a perfect translation.")
         with (
             patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
             patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
@@ -1007,9 +1005,7 @@ class TestTranslateExerciseLLMEval:
         self, translate_exercise_state: LessonChatState
     ) -> None:
         """When LLM response starts with [INCORRECT], is_correct should be False."""
-        llm_response = AIMessage(
-            content="[INCORRECT]\nNot quite, the correct translation is..."
-        )
+        llm_response = AIMessage(content="[INCORRECT]\nNot quite, the correct translation is...")
         with (
             patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
             patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
@@ -1135,12 +1131,8 @@ class TestTranslateExerciseLLMEval:
     ) -> None:
         """[CORRECT] tag should mark as correct even if string match would fail."""
         # Use an answer that wouldn't pass string matching
-        translate_exercise_state["messages"] = [
-            HumanMessage(content="Hola, que tal?")
-        ]
-        llm_response = AIMessage(
-            content="[CORRECT]\nThat's a valid informal translation!"
-        )
+        translate_exercise_state["messages"] = [HumanMessage(content="Hola, que tal?")]
+        llm_response = AIMessage(content="[CORRECT]\nThat's a valid informal translation!")
         with (
             patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
             patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),

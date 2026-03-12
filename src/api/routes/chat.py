@@ -231,7 +231,6 @@ def _resolve_lesson_thread_id(
     return f"lesson:{new_id}:{lesson_id}:{suffix}", None, new_id
 
 
-
 @router.post("/chat", response_class=HTMLResponse)
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
 async def send_message(

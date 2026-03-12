@@ -128,9 +128,7 @@ class LessonService:
     # Private helpers for the two YAML layouts
     # ------------------------------------------------------------------
 
-    def _parse_single_language_file(
-        self, data: dict[str, Any], path: Path
-    ) -> Lesson | None:
+    def _parse_single_language_file(self, data: dict[str, Any], path: Path) -> Lesson | None:
         """Parse the legacy single-language YAML layout.
 
         Args:
@@ -177,9 +175,7 @@ class LessonService:
         content = LessonContent(steps=steps, exercises=exercises)
         return Lesson(metadata=metadata, content=content)
 
-    def _parse_multi_language_file(
-        self, data: dict[str, Any], path: Path
-    ) -> list[Lesson]:
+    def _parse_multi_language_file(self, data: dict[str, Any], path: Path) -> list[Lesson]:
         """Parse the new topic-based multi-language YAML layout.
 
         One file produces one ``Lesson`` per language entry under the

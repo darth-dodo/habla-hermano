@@ -406,9 +406,7 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
 
     # For translate exercises, parse [CORRECT]/[INCORRECT] tag from LLM response
     if exercise_type == "translate" and is_correct is None:
-        is_correct, response = _parse_translate_correctness(
-            response, exercise_data, user_answer
-        )
+        is_correct, response = _parse_translate_correctness(response, exercise_data, user_answer)
 
     # Record result
     exercise_results.append(
