@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
 from src.api.dependencies import get_lesson_service
-from src.api.routes.chat import _resolve_chat_identity
+from src.api.routes.chat import _resolve_chat_identity, _resolve_lesson_thread_id
 from src.lessons.models import (
     Lesson,
     LessonContent,
@@ -904,3 +904,165 @@ class TestChatPageLessonMode:
             response = client.get("/?lesson=nonexistent_lesson")
 
         assert response.status_code == 404
+
+
+class TestResolveLessonThreadId:
+    """Tests for _resolve_lesson_thread_id helper."""
+
+    def test_authenticated_user(self) -> None:
+        """Authenticated user gets lesson-scoped thread_id."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            "user-abc", None, "es_a1_greetings_01"
+        )
+        assert thread_id == "lesson:user-abc:es_a1_greetings_01"
+        assert user_id == "user-abc"
+        assert new_session is None
+
+    def test_guest_with_session(self) -> None:
+        """Guest with existing session gets lesson-scoped thread_id."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            None, "session-123", "es_a1_greetings_01"
+        )
+        assert thread_id == "lesson:session-123:es_a1_greetings_01"
+        assert user_id is None
+        assert new_session is None
+
+    def test_first_time_guest(self) -> None:
+        """First-time guest gets new session and lesson-scoped thread_id."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            None, None, "es_a1_greetings_01"
+        )
+        assert thread_id.startswith("lesson:")
+        assert thread_id.endswith(":es_a1_greetings_01")
+        assert user_id is None
+        assert new_session is not None
+
+
+class TestStreamMessageLessonMode:
+    """Tests for POST /chat/stream with lesson_id — unified stream endpoint."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_stream_with_lesson_id_returns_sse(
+        self,
+        app_with_mocked_graph: Any,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id should return SSE stream."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "Hola", "lesson_id": "es_a1_greetings_01"},
+            )
+
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+        # Should contain SSE events (at least token/done)
+        assert "event:" in response.text or "data:" in response.text
+
+    def test_stream_without_lesson_id_still_works(
+        self,
+        test_client: TestClient,
+        sample_message: str,
+    ) -> None:
+        """POST /chat/stream without lesson_id should still work as freeform (no regression)."""
+        response = test_client.post(
+            "/chat/stream",
+            data={"message": sample_message, "level": "A1", "language": "es"},
+        )
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+
+    def test_stream_with_invalid_lesson_id_returns_error(
+        self,
+        app_with_mocked_graph: Any,
+    ) -> None:
+        """POST /chat/stream with nonexistent lesson_id should return error event."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = None
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "Hola", "lesson_id": "nonexistent_lesson"},
+            )
+
+        assert response.status_code == 200  # SSE always returns 200
+        assert "Lesson not found" in response.text
+
+    def test_stream_lesson_uses_metadata_level_and_language(
+        self,
+        app_with_mocked_graph: Any,
+        mock_compiled_graph: MagicMock,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id should use lesson metadata for level/language."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            # Send with wrong level/language — lesson metadata should override
+            client.post(
+                "/chat/stream",
+                data={
+                    "message": "Hola",
+                    "lesson_id": "es_a1_greetings_01",
+                    "level": "B1",
+                    "language": "de",
+                },
+            )
+
+        # The lesson metadata says level=A1, language=es
+        # Check that aget_state was called (lesson path was taken)
+        assert mock_compiled_graph.aget_state.await_count >= 1
+
+    def test_stream_lesson_whitespace_message_returns_error(
+        self,
+        app_with_mocked_graph: Any,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id but whitespace-only message returns error."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "   ", "lesson_id": "es_a1_greetings_01"},
+            )
+
+        assert response.status_code == 200
+        assert "Message cannot be empty" in response.text

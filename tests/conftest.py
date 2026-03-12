@@ -341,6 +341,12 @@ def mock_compiled_graph(mock_graph_result: dict[str, Any], sample_ai_response: s
         )
 
     mock_graph.astream = mock_astream
+
+    # Phase 23: aget_state mock for lesson checkpoint awareness
+    mock_state = MagicMock()
+    mock_state.values = {}
+    mock_graph.aget_state = AsyncMock(return_value=mock_state)
+
     return mock_graph
 
 
@@ -443,6 +449,7 @@ def app_with_mocked_graph(
 
     with (
         patch("src.api.routes.chat.build_graph", mock_build_graph),
+        patch("src.api.routes.chat.build_lesson_chat_graph", mock_build_graph),
         patch("src.api.routes.chat.get_checkpointer", mock_get_checkpointer),
         patch("src.db.repository.get_supabase", return_value=mock_supabase),
         patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_supabase),
