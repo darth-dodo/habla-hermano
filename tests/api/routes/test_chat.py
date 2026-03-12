@@ -4,12 +4,22 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
+from src.api.dependencies import get_lesson_service
 from src.api.routes.chat import _resolve_chat_identity
+from src.lessons.models import (
+    Lesson,
+    LessonContent,
+    LessonLevel,
+    LessonMetadata,
+    LessonStep,
+    LessonStepType,
+)
 from tests.conftest import CSRF_HEADERS
 
 
@@ -807,3 +817,90 @@ class TestNewConversationEndpoint:
             response = client.post("/new", follow_redirects=False)
 
             assert "conversation_version" not in response.cookies
+
+
+class TestChatPageLessonMode:
+    """Tests for GET /?lesson= — Lesson mode rendering via chat_page."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_lesson_mode_returns_200(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson=es_a1_greetings_01 should return 200 with lesson context."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        assert "Basic Greetings" in response.text
+
+    def test_lesson_mode_contains_lesson_context(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson= should include lesson_id and lesson_mode markers in the page."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        # The template uses lesson_id in hidden inputs / JS data attributes
+        assert "es_a1_greetings_01" in response.text
+
+    def test_freeform_chat_still_works(self, test_client: TestClient) -> None:
+        """GET / without lesson param should still render freeform chat (no regression)."""
+        response = test_client.get("/")
+        assert response.status_code == 200
+        assert "Habla Hermano" in response.text
+
+    def test_nonexistent_lesson_returns_404(
+        self,
+        app_with_mocked_graph: FastAPI,
+    ) -> None:
+        """GET /?lesson=nonexistent_lesson should return 404."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = None
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(
+            app_with_mocked_graph, headers=CSRF_HEADERS, raise_server_exceptions=False
+        ) as client:
+            response = client.get("/?lesson=nonexistent_lesson")
+
+        assert response.status_code == 404

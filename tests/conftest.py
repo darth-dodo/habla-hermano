@@ -17,7 +17,7 @@ from src.agent.graph import clear_graph_cache
 from src.agent.llm import clear_llm_cache
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
-from src.api.dependencies import get_cached_templates
+from src.api.dependencies import get_cached_templates, get_lesson_service
 from src.api.rate_limit import reset_rate_limits
 
 # =============================================================================
@@ -460,11 +460,18 @@ def app_with_mocked_graph(
         app.dependency_overrides[get_current_user] = mock_get_current_user
         app.dependency_overrides[get_current_user_optional] = mock_get_current_user_optional
 
+        # Override lesson service with a mock that returns None by default
+        # (freeform chat doesn't use it; lesson-mode tests override per-test)
+        mock_lesson_svc = MagicMock()
+        mock_lesson_svc.get_lesson.return_value = None
+        app.dependency_overrides[get_lesson_service] = lambda: mock_lesson_svc
+
         yield app
 
         # Clean up dependency overrides
         app.dependency_overrides.pop(get_current_user, None)
         app.dependency_overrides.pop(get_current_user_optional, None)
+        app.dependency_overrides.pop(get_lesson_service, None)
 
 
 @pytest.fixture

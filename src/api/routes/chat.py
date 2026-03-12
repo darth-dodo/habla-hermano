@@ -33,7 +33,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Cookie, Form, Request
+from fastapi import APIRouter, Cookie, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response
 from langchain_core.messages import HumanMessage
 from markupsafe import escape
@@ -44,7 +44,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.cookies import set_secure_cookie
-from src.api.dependencies import SettingsDep, TemplatesDep
+from src.api.dependencies import LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.streaming import StreamResult, stream_chat_events
 from src.api.supabase_client import get_supabase_for_user
@@ -73,10 +73,12 @@ async def chat_page(
     templates: TemplatesDep,
     settings: SettingsDep,
     user: OptionalUserDep,
+    lesson_service: LessonServiceDep,
     mode: str | None = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
     language: str = "es",
+    lesson: Annotated[str | None, Query()] = None,
 ) -> HTMLResponse:
     """Render the main chat interface.
 
@@ -87,23 +89,26 @@ async def chat_page(
     Phase 12: Added review mode support. When mode=review, shows the
     review session start UI instead of normal chat.
 
-    Phase 12: Added review mode support. When mode=review, shows the
-    review session start UI instead of normal chat.
+    When the ``lesson`` query param is provided, renders the chat page in
+    lesson mode with lesson-specific context so the frontend auto-starts
+    the lesson conversation flow.
 
     Args:
         request: FastAPI request object.
         templates: Jinja2 templates instance.
         settings: Application settings.
         user: Optional authenticated user (None if guest).
+        lesson_service: Lesson service for loading lesson data.
         mode: Optional mode parameter ("review" for review mode).
         warmup_dismissed: Cookie tracking if warmup was dismissed.
         language: Target language for review stats.
+        lesson: Optional lesson ID to render in lesson mode.
 
     Returns:
         HTMLResponse: Rendered chat page for both authenticated and guest users.
     """
     # Default context
-    context = {
+    context: dict[str, Any] = {
         "app_name": settings.APP_NAME,
         "debug": settings.DEBUG,
         "user": user,
@@ -114,8 +119,21 @@ async def chat_page(
         "voice_enabled": settings.voice_enabled,
     }
 
-    # Review features only for authenticated users
-    if user:
+    # Lesson mode: load lesson and add context for the template
+    if lesson:
+        lesson_data = lesson_service.get_lesson(lesson)
+        if not lesson_data:
+            raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson}")
+        context["lesson_mode"] = True
+        context["lesson_id"] = lesson
+        context["lesson_title"] = lesson_data.metadata.title
+        context["lesson_description"] = lesson_data.metadata.description
+        context["lesson_level"] = str(lesson_data.metadata.level)
+        context["lesson_language"] = lesson_data.metadata.language
+        context["current_language"] = lesson_data.metadata.language
+
+    # Review features only for authenticated users (skip in lesson mode)
+    if user and not lesson:
         try:
             review_service = ReviewService(user.id)
             review_stats = review_service.get_stats(language=language)
