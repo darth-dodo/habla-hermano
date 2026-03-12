@@ -956,10 +956,202 @@ class TestTeachingAdjustments:
             user_answer="hola",
             correct_answer="hola",
             exercise_description="What does 'hola' mean?",
+            exercise_type="multiple_choice",
             feedback_context="Last exercise.",
             teaching_adjustments=get_teaching_adjustments("A1"),
         )
         assert "pattern recognition" in result
+
+
+class TestTranslateExerciseLLMEval:
+    """Tests for LLM-based translation exercise evaluation."""
+
+    @pytest.fixture
+    def translate_exercise_state(self, sample_lesson_data: dict[str, Any]) -> LessonChatState:
+        """State positioned at the translate exercise (index 2)."""
+        return LessonChatState(
+            messages=[HumanMessage(content="Hola, como estas?")],
+            level="A1",
+            language="es",
+            lesson_id="es_a1_greetings_01",
+            lesson_data=sample_lesson_data,
+            lesson_phase="exercise_eval",
+            step_index=0,
+            exercise_index=2,  # translate exercise
+            exercise_results=[],
+            lesson_score=0,
+        )
+
+    @pytest.mark.asyncio
+    async def test_correct_tag_sets_is_correct_true(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """When LLM response starts with [CORRECT], is_correct should be True."""
+        llm_response = AIMessage(
+            content="[CORRECT]\nGreat job! That's a perfect translation."
+        )
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            assert result["exercise_results"][-1]["is_correct"] is True
+
+    @pytest.mark.asyncio
+    async def test_incorrect_tag_sets_is_correct_false(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """When LLM response starts with [INCORRECT], is_correct should be False."""
+        llm_response = AIMessage(
+            content="[INCORRECT]\nNot quite, the correct translation is..."
+        )
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            assert result["exercise_results"][-1]["is_correct"] is False
+
+    @pytest.mark.asyncio
+    async def test_correct_tag_stripped_from_displayed_message(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """The [CORRECT] tag should be stripped from the message shown to the user."""
+        llm_response = AIMessage(content="[CORRECT]\nAwesome work!")
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            msg_content = result["messages"][0].content
+            assert "[CORRECT]" not in msg_content
+            assert "Awesome work!" in msg_content
+
+    @pytest.mark.asyncio
+    async def test_incorrect_tag_stripped_from_displayed_message(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """The [INCORRECT] tag should be stripped from the message shown to the user."""
+        llm_response = AIMessage(content="[INCORRECT]\nClose, but not quite.")
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            msg_content = result["messages"][0].content
+            assert "[INCORRECT]" not in msg_content
+            assert "Close, but not quite." in msg_content
+
+    @pytest.mark.asyncio
+    async def test_missing_tag_falls_back_to_string_matching(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """When LLM doesn't include a tag, fall back to string matching."""
+        llm_response = AIMessage(content="Nice try! Keep going.")
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            # Fallback uses TranslateExercise.check_answer()
+            # The user answer "Hola, como estas?" vs correct "Hola, ¿cómo estás?"
+            # String matching will likely return False (no exact match)
+            assert result["exercise_results"][-1]["is_correct"] is not None
+            assert isinstance(result["exercise_results"][-1]["is_correct"], bool)
+
+    @pytest.mark.asyncio
+    async def test_mc_exercise_not_affected_by_tag_parsing(
+        self, base_lesson_state: LessonChatState
+    ) -> None:
+        """MC exercises should NOT use LLM tag parsing — keep existing logic."""
+        base_lesson_state["lesson_phase"] = "exercise_eval"
+        base_lesson_state["exercise_index"] = 0  # MC exercise
+        base_lesson_state["messages"] = [HumanMessage(content="B")]  # Correct
+
+        llm_response = AIMessage(content="[INCORRECT]\nThis should be ignored for MC.")
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(base_lesson_state)
+
+            # MC answer B = index 1 = correct_index 1, so is_correct=True
+            # LLM tag [INCORRECT] should NOT override this
+            assert result["exercise_results"][-1]["is_correct"] is True
+
+    @pytest.mark.asyncio
+    async def test_eval_prompt_includes_exercise_type(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """The eval prompt should include exercise_type for LLM context."""
+        llm_response = AIMessage(content="[CORRECT]\nPerfect!")
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            await lesson_respond_node(translate_exercise_state)
+
+            call_args = mock_llm.ainvoke.call_args[0][0]
+            system_msg = call_args[0].content
+            assert "translate" in system_msg
+            assert "pending" in system_msg.lower()
+
+    @pytest.mark.asyncio
+    async def test_translate_correct_tag_overrides_string_mismatch(
+        self, translate_exercise_state: LessonChatState
+    ) -> None:
+        """[CORRECT] tag should mark as correct even if string match would fail."""
+        # Use an answer that wouldn't pass string matching
+        translate_exercise_state["messages"] = [
+            HumanMessage(content="Hola, que tal?")
+        ]
+        llm_response = AIMessage(
+            content="[CORRECT]\nThat's a valid informal translation!"
+        )
+        with (
+            patch("src.agent.nodes.lesson_chat.get_llm") as mock_get_llm,
+            patch("src.agent.nodes.lesson_chat.get_prompt_for_level", return_value="base"),
+        ):
+            mock_llm = AsyncMock()
+            mock_llm.ainvoke.return_value = llm_response
+            mock_get_llm.return_value = mock_llm
+
+            result = await lesson_respond_node(translate_exercise_state)
+
+            assert result["exercise_results"][-1]["is_correct"] is True
 
 
 class TestPhaseHandlersInjectAdjustments:

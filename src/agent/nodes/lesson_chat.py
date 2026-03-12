@@ -140,6 +140,28 @@ async def _call_llm(system_prompt: str, state: LessonChatState) -> Any:
     return await llm.ainvoke(messages)
 
 
+def _parse_translate_correctness(
+    response: Any,
+    exercise_data: dict[str, Any],
+    user_answer: str,
+) -> tuple[bool, Any]:
+    """Parse [CORRECT]/[INCORRECT] tag from LLM response for translate exercises.
+
+    Returns (is_correct, updated_response) where the tag is stripped from the
+    response content. Falls back to string matching if no tag is found.
+    """
+    response_text = response.content if hasattr(response, "content") else str(response)
+    if response_text.startswith("[CORRECT]"):
+        stripped = response_text[len("[CORRECT]") :].strip()
+        return True, type(response)(content=stripped)
+    if response_text.startswith("[INCORRECT]"):
+        stripped = response_text[len("[INCORRECT]") :].strip()
+        return False, type(response)(content=stripped)
+    # Fallback to string matching if LLM didn't include tag
+    translate = TranslateExercise(**exercise_data)
+    return translate.check_answer(user_answer), response
+
+
 # ---------------------------------------------------------------------------
 # Phase handlers
 # ---------------------------------------------------------------------------
@@ -335,8 +357,9 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
         correct_answer = exercise_data.get("correct_answer", "")
 
     elif exercise_type == "translate":
-        translate = TranslateExercise(**exercise_data)
-        is_correct = translate.check_answer(user_answer)
+        # For translation: let the LLM evaluate correctness via [CORRECT]/[INCORRECT] tag.
+        # We'll parse the tag from the LLM response after it generates.
+        is_correct = None  # Will be determined from LLM response
         correct_answer = exercise_data.get("correct_translation", "")
 
     else:
@@ -361,13 +384,17 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
 
     # Build evaluation prompt
     language_name = _get_language_name(language)
+    is_correct_str = (
+        "pending (use your judgment)" if is_correct is None else ("Yes" if is_correct else "No")
+    )
     system_prompt = LESSON_EXERCISE_EVAL_PROMPT.format(
         language_name=language_name,
         level=level,
-        is_correct="Yes" if is_correct else "No",
+        is_correct=is_correct_str,
         user_answer=user_answer,
         correct_answer=correct_answer,
         exercise_description=exercise_description,
+        exercise_type=exercise_type,
         feedback_context=feedback_context,
         teaching_adjustments=get_teaching_adjustments(level),
     )
@@ -376,6 +403,12 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
     full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
+
+    # For translate exercises, parse [CORRECT]/[INCORRECT] tag from LLM response
+    if exercise_type == "translate" and is_correct is None:
+        is_correct, response = _parse_translate_correctness(
+            response, exercise_data, user_answer
+        )
 
     # Record result
     exercise_results.append(
