@@ -2,6 +2,8 @@
 
 {% block title %}Lessons - Habla Hermano{% endblock %}
 
+{% from "macros/lesson_icon.html" import lesson_icon %}
+
 {% block content %}
 <div class="flex flex-col h-full" x-data="{
     level: '{{ level or 'A1' }}',
@@ -31,7 +33,9 @@
                             href="/?lesson={{ lesson.full_id }}"
                             class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
                         >
-                            <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
+                            <div class="w-10 h-10 flex-shrink-0 rounded-lg bg-accent-muted text-accent flex items-center justify-center" aria-hidden="true">
+                                {{ lesson_icon(lesson.icon) }}
+                            </div>
                             <div class="min-w-0">
                                 <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
                                     {{ lesson.title }}
@@ -66,7 +70,9 @@
                             href="/?lesson={{ lesson.full_id }}"
                             class="group flex items-center gap-4 p-4 bg-surface-elevated rounded-xl border border-border hover:border-accent transition-colors"
                         >
-                            <span class="text-2xl flex-shrink-0" role="img" aria-hidden="true">{{ lesson.icon }}</span>
+                            <div class="w-10 h-10 flex-shrink-0 rounded-lg bg-accent-muted text-accent flex items-center justify-center" aria-hidden="true">
+                                {{ lesson_icon(lesson.icon) }}
+                            </div>
                             <div class="min-w-0">
                                 <h4 class="font-medium text-text group-hover:text-accent transition-colors truncate">
                                     {{ lesson.title }}
