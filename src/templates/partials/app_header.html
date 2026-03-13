@@ -70,7 +70,7 @@ Variables expected:
                     <div class="px-4 py-2 text-xs text-text-muted uppercase tracking-wide">Theme</div>
                     <button
                         @click="setTheme('azulejo'); open = false"
-                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         :class="theme === 'azulejo' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@ Variables expected:
                     </button>
                     <button
                         @click="setTheme('terracotta'); open = false"
-                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         :class="theme === 'terracotta' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ Variables expected:
                     </button>
                     <button
                         @click="setTheme('flamenco'); open = false"
-                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         :class="theme === 'flamenco' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +101,7 @@ Variables expected:
                     </button>
                     <button
                         @click="setTheme('sangria'); open = false"
-                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3"
+                        class="w-full px-4 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:outline-none"
                         :class="theme === 'sangria' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

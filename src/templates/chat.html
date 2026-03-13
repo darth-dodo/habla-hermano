@@ -4,14 +4,22 @@
 
 {% block content %}
 <div class="flex flex-col h-full" x-data="{
-    level: '{{ current_level or lesson_level or 'A1' }}',
-    language: '{{ current_language or lesson_language or 'es' }}',
+    {% if lesson_mode %}
+    language: '{{ lesson_language or 'es' }}',
+    level: '{{ lesson_level or 'A1' }}',
+    {% else %}
+    language: localStorage.getItem('hermano-language') || '{{ current_language or 'es' }}',
+    level: localStorage.getItem('hermano-level') || '{{ current_level or 'A1' }}',
+    {% endif %}
     menuOpen: false,
     reviewMode: {{ 'true' if review_mode else 'false' }},
     onLanguageChange(lang) {
         if (this.$refs.languageInput) this.$refs.languageInput.value = lang;
+        {% if not lesson_mode %}localStorage.setItem('hermano-language', lang);{% endif %}
     }
-}"
+}" x-init="{% if not lesson_mode %}
+    $watch('level', val => localStorage.setItem('hermano-level', val));
+{% endif %}"
 >
     {% set page_name = 'chat' %}
     {% include "partials/app_header.html" %}
@@ -19,8 +27,31 @@
     <!-- Chat Messages Container -->
     <main class="flex-1 overflow-y-auto bg-surface" id="chat-container">
         {% if lesson_mode %}
-        <!-- Thin lesson progress bar -->
-        <div id="lesson-progress-bar" class="h-[3px] bg-accent transition-[width] duration-300 ease-in-out" style="width: 0%"></div>
+        <!-- Segmented Lesson Phase Indicator -->
+        <div id="lesson-progress-bar" class="flex items-center gap-1.5 px-4 py-2" aria-label="Lesson progress" role="progressbar"
+             aria-valuenow="{{ lesson_step | default(0) }}" aria-valuemax="4">
+            {% set phases = [
+                ('intro', 'Intro'),
+                ('teaching', 'Learn'),
+                ('exercise', 'Practice'),
+                ('complete', 'Done')
+            ] %}
+            {% for phase_id, phase_label in phases %}
+            {% set phase_index = loop.index %}
+            {% set current_index = {'intro': 1, 'teaching': 2, 'exercise': 3, 'complete': 4}.get(lesson_phase | default('intro'), 1) %}
+            <div class="flex flex-col items-center gap-0.5 flex-1">
+                <div class="h-1.5 w-full rounded-full transition-all duration-500
+                    {{ 'bg-accent' if phase_index <= current_index else 'bg-border' }}
+                    {% if phase_index == current_index and phase_id != 'complete' %}ring-0{% endif %}
+                    {% if phase_index == current_index and phase_id == 'complete' %}progress-shimmer{% endif %}">
+                </div>
+                <span class="text-[10px] font-medium transition-colors duration-300
+                    {{ 'text-accent' if phase_index <= current_index else 'text-text-subtle' }}">
+                    {{ phase_label }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
         {% endif %}
         <div class="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
             <div id="chat-messages" class="space-y-6">
@@ -153,6 +184,12 @@
                     </button>
                 </div>
             </form>
+
+            <!-- Voice status announcement for screen readers -->
+            <div id="voice-status-announcement"
+                 aria-live="polite"
+                 aria-atomic="true"
+                 class="sr-only"></div>
 
             <!-- Helper Text -->
             <p class="mt-2 text-xs text-text-subtle text-center">
