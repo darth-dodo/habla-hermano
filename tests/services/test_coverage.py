@@ -518,7 +518,10 @@ class TestGetPostgresCheckpointerSuccessPath:
 
             async with get_postgres_checkpointer() as checkpointer:
                 assert checkpointer is mock_checkpointer
-            mock_from_conn.assert_called_once_with("postgresql://user:pass@localhost:5432/test")
+            mock_from_conn.assert_called_once()
+            args, kwargs = mock_from_conn.call_args
+            assert args[0] == "postgresql://user:pass@localhost:5432/test"
+            assert "serde" in kwargs  # encrypted serde injected
             mock_checkpointer.setup.assert_awaited_once()
 
     @pytest.mark.asyncio

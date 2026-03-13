@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 from postgrest.exceptions import APIError
 
 from src.db.client import get_supabase
+from src.db.encryption import decrypt_field, encrypt_field
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
@@ -46,7 +47,9 @@ class UserProfileRepository:
         """
         response = self._client.table("user_profiles").select("*").eq("id", self._user_id).execute()
         if response.data:
-            return UserProfile(**response.data[0])
+            row = response.data[0]
+            row["display_name"] = decrypt_field(row.get("display_name"))
+            return UserProfile(**row)
         return None
 
     def update(
@@ -68,7 +71,7 @@ class UserProfileRepository:
         update_data: dict[str, Any] = {"updated_at": datetime.now(UTC).isoformat()}
 
         if display_name is not None:
-            update_data["display_name"] = display_name
+            update_data["display_name"] = encrypt_field(display_name)
         if preferred_language is not None:
             update_data["preferred_language"] = preferred_language
         if current_level is not None:
@@ -81,7 +84,9 @@ class UserProfileRepository:
             .execute()
         )
         if response.data:
-            return UserProfile(**response.data[0])
+            row = response.data[0]
+            row["display_name"] = decrypt_field(row.get("display_name"))
+            return UserProfile(**row)
         return None
 
 
@@ -98,6 +103,11 @@ class VocabularyRepository:
         """
         self._user_id = user_id
         self._client = client or get_supabase()
+
+    def _decrypt_vocabulary_fields(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Decrypt encrypted fields in a vocabulary row before model construction."""
+        data["translation"] = decrypt_field(data.get("translation"))
+        return data
 
     def get_all(self, language: str | None = None) -> list[Vocabulary]:
         """Get all vocabulary for the user.
@@ -118,7 +128,7 @@ class VocabularyRepository:
             query = query.eq("language", language)
 
         response = query.execute()
-        return [Vocabulary(**item) for item in response.data]
+        return [Vocabulary(**self._decrypt_vocabulary_fields(item)) for item in response.data]
 
     def get_by_id(self, vocab_id: int) -> Vocabulary | None:
         """Get vocabulary entry by ID.
@@ -137,7 +147,7 @@ class VocabularyRepository:
             .execute()
         )
         if response.data:
-            return Vocabulary(**response.data[0])
+            return Vocabulary(**self._decrypt_vocabulary_fields(response.data[0]))
         return None
 
     async def aget_by_id(self, vocab_id: int) -> Vocabulary | None:
@@ -167,7 +177,7 @@ class VocabularyRepository:
             .execute()
         )
         if response.data:
-            return Vocabulary(**response.data[0])
+            return Vocabulary(**self._decrypt_vocabulary_fields(response.data[0]))
         return None
 
     async def aget_by_word_and_language(self, word: str, language: str) -> Vocabulary | None:
@@ -210,6 +220,7 @@ class VocabularyRepository:
             The created or updated Vocabulary entry.
         """
         try:
+            encrypted_translation = encrypt_field(translation)
             # Optimistic path: try inserting a new entry first
             response = (
                 self._client.table("vocabulary")
@@ -217,7 +228,7 @@ class VocabularyRepository:
                     {
                         "user_id": self._user_id,
                         "word": word,
-                        "translation": translation,
+                        "translation": encrypted_translation,
                         "language": language,
                         "part_of_speech": part_of_speech,
                         "first_seen_at": datetime.now(UTC).isoformat(),
@@ -227,7 +238,7 @@ class VocabularyRepository:
                 )
                 .execute()
             )
-            return Vocabulary(**response.data[0])
+            return Vocabulary(**self._decrypt_vocabulary_fields(response.data[0]))
         except APIError as exc:
             if exc.code != "23505":
                 raise
@@ -247,12 +258,12 @@ class VocabularyRepository:
                     "p_user_id": self._user_id,
                     "p_word": word,
                     "p_language": language,
-                    "p_translation": translation,
+                    "p_translation": encrypted_translation,
                     "p_part_of_speech": part_of_speech,
                 },
             ).execute()
             if rpc_response.data:
-                return Vocabulary(**rpc_response.data[0])
+                return Vocabulary(**self._decrypt_vocabulary_fields(rpc_response.data[0]))
         except APIError:
             logger.warning(
                 "RPC vocabulary_upsert_increment not available, falling back to "
@@ -273,7 +284,7 @@ class VocabularyRepository:
             self._client.table("vocabulary")
             .update(
                 {
-                    "translation": translation,
+                    "translation": encrypted_translation,
                     "part_of_speech": part_of_speech,
                     "times_seen": existing.times_seen + 1,
                 }
@@ -281,7 +292,7 @@ class VocabularyRepository:
             .eq("id", existing.id)
             .execute()
         )
-        return Vocabulary(**response.data[0])
+        return Vocabulary(**self._decrypt_vocabulary_fields(response.data[0]))
 
     async def aupsert(
         self,
@@ -317,7 +328,7 @@ class VocabularyRepository:
             .limit(limit)
             .execute()
         )
-        return [Vocabulary(**item) for item in response.data]
+        return [Vocabulary(**self._decrypt_vocabulary_fields(item)) for item in response.data]
 
     def delete(self, word_id: int) -> None:
         """Delete a vocabulary entry.
@@ -397,7 +408,7 @@ class VocabularyRepository:
             query = query.limit(limit)
 
         response = query.execute()
-        return [Vocabulary(**item) for item in response.data]
+        return [Vocabulary(**self._decrypt_vocabulary_fields(item)) for item in response.data]
 
     def get_due_by_keywords(
         self, language: str, keywords: list[str], limit: int = 5
@@ -419,12 +430,12 @@ class VocabularyRepository:
         if not keywords:
             return []
 
-        # Build OR filter for keyword matching across word and translation columns
+        # Build OR filter for keyword matching on word column only
+        # (translation is encrypted and cannot be searched server-side)
         or_conditions = []
         for kw in keywords:
             escaped = kw.replace("%", "\\%")
             or_conditions.append(f"word.ilike.%{escaped}%")
-            or_conditions.append(f"translation.ilike.%{escaped}%")
 
         or_filter = ",".join(or_conditions)
 
@@ -440,7 +451,7 @@ class VocabularyRepository:
             .limit(limit)
             .execute()
         )
-        return [Vocabulary(**item) for item in response.data]
+        return [Vocabulary(**self._decrypt_vocabulary_fields(item)) for item in response.data]
 
     async def aget_due_by_keywords(
         self, language: str, keywords: list[str], limit: int = 5
@@ -491,7 +502,7 @@ class VocabularyRepository:
         )
 
         if response.data:
-            return Vocabulary(**response.data[0])
+            return Vocabulary(**self._decrypt_vocabulary_fields(response.data[0]))
         return None
 
     async def aupdate_review_schedule(
@@ -658,7 +669,7 @@ class VocabularyRepository:
             }
             rpc_response = self._client.rpc("vocabulary_update_sm2", params).execute()
             if rpc_response.data:
-                return Vocabulary(**rpc_response.data[0])
+                return Vocabulary(**self._decrypt_vocabulary_fields(rpc_response.data[0]))
             # Empty result means the optimistic lock failed (concurrent update)
             return None
         except APIError:

@@ -2114,6 +2114,8 @@ CREATE POLICY "Users can delete own vocabulary"
 
 **RLS with User-Authenticated Clients**: All data operations use `get_supabase_for_user(sb_access_token)`, which creates a Supabase client authenticated with the user's JWT. This allows RLS policies to use `auth.uid()` naturally without any bypass. Guest users do not persist data to these tables -- they only have access to chat (via LangGraph checkpointing with a session cookie).
 
+**Checkpoint RLS (Phase 24)**: RLS is also enabled on all four LangGraph checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`). A PostgreSQL function `checkpoint_owner()` extracts the user UUID from the `thread_id` column. This is defense-in-depth -- the application connects as a superuser, so RLS policies are not the primary access control mechanism, but they provide an additional layer of isolation ensuring that even a compromised query cannot access another user's checkpoint data.
+
 ---
 
 ## Middleware Stack
@@ -2127,10 +2129,11 @@ Request → SecurityHeadersMiddleware → CSRFMiddleware → CORSMiddleware → 
 ### SecurityHeadersMiddleware (`src/api/middleware.py`)
 
 Adds security response headers on every request:
-- `Content-Security-Policy` (CSP)
+- `Content-Security-Policy` (nonce-based CSP)
 - `Strict-Transport-Security` (HSTS)
 - `X-Frame-Options`
 - `X-Content-Type-Options`
+- `Cache-Control` for `/static/` paths (`max-age=3600` in debug, `max-age=86400` in production)
 
 ### CSRFMiddleware (`src/api/middleware.py`)
 
@@ -2172,6 +2175,76 @@ src/agent/      → can import from: src/config, src/validation, src/db
 src/db/         → can import from: src/config
 src/lessons/    → can import from: src/config
 ```
+
+---
+
+## Security and Privacy
+
+This section consolidates the full security posture of the application. Individual mechanisms (middleware, RLS, WebSocket auth, rate limiting) are documented in their respective sections above; this section provides the complete picture and covers encryption and data privacy features added in Phase 24.
+
+### Security Stack
+
+| Layer | Mechanism | Module |
+|-------|-----------|--------|
+| Transport | HSTS, X-Frame-Options, X-Content-Type-Options | `src/api/middleware.py` |
+| Content Security | Nonce-based CSP (`'nonce-{nonce}'` for script-src) | `src/api/middleware.py` |
+| CSRF | Custom-header pattern (HX-Request / X-Requested-With) | `src/api/middleware.py` |
+| WebSocket Auth | JWT validated on connect, reject code 4001 | `src/api/routes/voice.py` |
+| Rate Limiting | REST decorator + WebSocket sliding window per-connection | `src/api/rate_limit.py` |
+| Row-Level Security | RLS on all app tables + all 4 checkpoint tables | Supabase PostgreSQL |
+| Encryption at Rest | Fernet field-level + checkpoint blob encryption | `src/db/encryption.py` |
+| LLM Privacy | Anthropic zero-retention headers | `src/agent/llm.py` |
+| XSS Prevention | nh3 sanitization + markupsafe.escape() | Templates, routes |
+| Cookie Security | Signed with itsdangerous, environment-aware secure flag | `src/api/cookies.py` |
+| Auth Gating | JWT required via ALLOW_UNVERIFIED_JWT=false | `src/config.py` |
+
+### Encryption at Rest (Phase 24)
+
+All sensitive user data is encrypted before it reaches the database. Encryption uses the `cryptography` library's Fernet symmetric encryption, which provides AES-128-CBC with HMAC-SHA256 authentication.
+
+**Key derivation**: A single Fernet key is derived from `SECRET_KEY` + `ENCRYPTION_SALT` using PBKDF2-HMAC-SHA256 (480,000 iterations). There is no separate key management infrastructure -- the application's existing secret configuration is sufficient.
+
+**Field-level encryption** (`src/db/encryption.py`):
+
+| Table | Encrypted Fields | Purpose |
+|-------|-----------------|---------|
+| `vocabulary` | `translation` | Protects user-specific translations |
+| `user_profiles` | `display_name` | Protects personally identifiable information |
+
+The `FieldEncryptor` class provides `encrypt_field()` and `decrypt_field()` methods. Encrypted values are stored as base64-encoded Fernet tokens. Reads decrypt transparently; writes encrypt before persistence.
+
+**Checkpoint-level encryption**:
+
+All LangGraph state blobs (which contain conversation history, lesson progress, and exercise state) are encrypted via `EncryptedSerializer`. This serializer wraps the default pickle/JSON serialization with a `FernetCipher` layer, so checkpoint data is opaque at rest. The `EncryptedSerializer` is injected into the LangGraph checkpointer at graph construction time.
+
+### Anthropic Zero-Retention (Phase 24)
+
+When `ANTHROPIC_ZERO_RETENTION=true` (the default), the application adds an `x-no-store: true` header to all Anthropic API requests. This requests that Anthropic does not retain or log any input or output from API calls. The header is applied in the `ChatAnthropic` client configuration in `src/agent/llm.py`.
+
+This is a privacy-by-default measure. Conversation content, exercise responses, and lesson interactions are not stored on Anthropic's servers beyond the duration of the API call.
+
+### Data Retention (Phase 24)
+
+Configurable retention policies automatically purge stale data:
+
+| Data Type | Setting | Default | Mechanism |
+|-----------|---------|---------|-----------|
+| Checkpoint blobs | `CHECKPOINT_RETENTION_DAYS` | 30 days | TTL-based purge of checkpoints, checkpoint_blobs, and checkpoint_writes older than the threshold |
+| Learning sessions | Configurable | -- | Cleanup of old `learning_sessions` records |
+| Vocabulary | Configurable | -- | Cleanup of old `vocabulary` records for inactive users |
+
+Retention purging runs as a maintenance task. Expired checkpoints are deleted in bulk, which also removes the associated encrypted state blobs.
+
+### Privacy Settings Reference
+
+All privacy and data retention behavior is controlled via environment variables in `src/config.py` (Pydantic `Settings` model). See `.env.example` for the full configuration template.
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `ENCRYPTION_SALT` | `habla-hermano-encryption-v1` | Static salt for PBKDF2 key derivation. Combined with `SECRET_KEY` to derive the Fernet encryption key. Changing this value invalidates all previously encrypted data. |
+| `ANTHROPIC_ZERO_RETENTION` | `false` | When `true`, adds an `x-no-store: true` header to all Anthropic API calls, requesting that input and output are not retained or logged. |
+| `CONVERSATION_RETENTION_DAYS` | `0` | Auto-delete old conversation data after the specified number of days. `0` disables automatic purging. |
+| `CHECKPOINT_RETENTION_DAYS` | `30` | Auto-purge LangGraph checkpoint blobs, writes, and associated records older than the specified number of days. `0` disables automatic purging. |
 
 ---
 

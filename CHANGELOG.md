@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-03-13
+
+### Added - Phase 24: Message Encryption & Privacy
+- **Field-level encryption** (`src/db/encryption.py`): Fernet symmetric encryption (AES-128-CBC + HMAC-SHA256) with PBKDF2-HMAC-SHA256 key derivation (480,000 iterations) for PII fields at rest
+- **FernetCipher class**: LangGraph `CipherProtocol` implementation reusing the application Fernet key for checkpoint blob encryption
+- **Checkpoint encryption**: LangGraph `EncryptedSerializer` with `FernetCipher` encrypts all conversation state blobs (chat messages, lesson state) stored in PostgreSQL
+- **Backward compatibility**: Existing unencrypted checkpoints (type `msgpack`) transparently readable; new checkpoints stored as `msgpack+fernet`
+- **Repository encryption boundary**: `display_name` and `translation` fields encrypted on write, decrypted on read at the repository layer
+- **Vocabulary decryption helper**: `_decrypt_vocabulary_fields()` ensures consistent decryption across all `VocabularyRepository` read methods
+- **RLS migration** (`migrations/004_checkpoint_rls.sql`): Row-Level Security policies on all 4 LangGraph checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`)
+- **`checkpoint_owner()` SQL function**: Extracts user UUID from thread_id formats (`user:{uuid}`, `lesson:{uuid}:...`) for RLS policy evaluation
+- **Encryption test suite**: 10 tests for `FernetCipher` (round-trip, error handling, `EncryptedSerializer` integration, backward compat)
+- **Repository encryption tests**: 19 tests validating encrypt-on-write/decrypt-on-read boundary for vocabulary and user profile fields
+- **Design doc**: `docs/design/phase24-message-encryption.md` — 6-layer encryption architecture
+
+### Changed
+- **`src/agent/checkpointer.py`**: `init_checkpointer()` and `get_postgres_checkpointer()` now pass `serde=EncryptedSerializer(cipher=FernetCipher())` to `AsyncPostgresSaver.from_conn_string()`
+- **`src/db/repository.py`**: `UserProfileRepository` encrypts/decrypts `display_name`; `VocabularyRepository` encrypts/decrypts `translation` in all read/write paths
+- **Keyword search**: `get_due_by_keywords()` searches only `word` column (plaintext); `translation` removed from ilike filter since it's now encrypted
+- **Security architecture docs**: `docs/architecture.md` updated with encryption at rest, checkpoint RLS, and privacy settings reference
+
+### Security
+- **Encryption at rest**: All user PII (display names, translations, chat messages) encrypted with Fernet before PostgreSQL storage
+- **Row-Level Security**: Checkpoint tables enforce user isolation via `checkpoint_owner(thread_id) = auth.uid()` policies
+- **Service role bypass**: Guest sessions and admin operations use service_role client which bypasses RLS
+- **Key derivation**: Single key from `SECRET_KEY` + `ENCRYPTION_SALT` governs all encryption — no separate key management
 ## [0.24.0] - 2026-03-12
 
 ### Added - Phase 23: Unified Lesson Experience

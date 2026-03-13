@@ -22,6 +22,16 @@ from src.db.repository import (
 # =============================================================================
 
 
+@pytest.fixture(autouse=True)
+def _bypass_encryption():
+    """Bypass field encryption so existing tests work with plaintext mock data."""
+    with (
+        patch("src.db.repository.encrypt_field", side_effect=lambda x: x),
+        patch("src.db.repository.decrypt_field", side_effect=lambda x: x),
+    ):
+        yield
+
+
 @pytest.fixture
 def mock_supabase() -> MagicMock:
     """Create a mock Supabase client.
@@ -531,7 +541,7 @@ class TestVocabularyRepositorySR:
         result = repo.get_due_by_keywords("es", ["gato"])
         assert len(result) == 1
         assert result[0].word == "gato"
-        mock_query.or_.assert_called_once_with("word.ilike.%gato%,translation.ilike.%gato%")
+        mock_query.or_.assert_called_once_with("word.ilike.%gato%")
 
     def test_get_due_by_keywords_matches_translation(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
@@ -544,7 +554,7 @@ class TestVocabularyRepositorySR:
         result = repo.get_due_by_keywords("es", ["dog"])
         assert len(result) == 1
         assert result[0].word == "perro"
-        mock_query.or_.assert_called_once_with("word.ilike.%dog%,translation.ilike.%dog%")
+        mock_query.or_.assert_called_once_with("word.ilike.%dog%")
 
     def test_get_due_by_keywords_case_insensitive(self, mock_get_supabase: MagicMock) -> None:
         """ilike is case-insensitive in PostgreSQL, so the filter uses keywords as-is."""
@@ -555,7 +565,7 @@ class TestVocabularyRepositorySR:
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["GATO"])
         assert len(result) == 1
-        mock_query.or_.assert_called_once_with("word.ilike.%GATO%,translation.ilike.%GATO%")
+        mock_query.or_.assert_called_once_with("word.ilike.%GATO%")
 
     def test_get_due_by_keywords_no_matches(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
@@ -588,10 +598,7 @@ class TestVocabularyRepositorySR:
         repo = VocabularyRepository("user-123")
         result = repo.get_due_by_keywords("es", ["gato", "perro"])
         assert len(result) == 2
-        mock_query.or_.assert_called_once_with(
-            "word.ilike.%gato%,translation.ilike.%gato%,"
-            "word.ilike.%perro%,translation.ilike.%perro%"
-        )
+        mock_query.or_.assert_called_once_with("word.ilike.%gato%,word.ilike.%perro%")
 
     def test_update_review_schedule_with_direct_fields(self, mock_get_supabase: MagicMock) -> None:
         mock_query = _chainable_query(mock_get_supabase)
