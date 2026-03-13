@@ -38,6 +38,8 @@ Chat Layer           Feedback Layer       Chrome Layer
 --ai-text            --error-muted        --scrollbar-*
 ```
 
+> **CSS Cascade Note**: `:root, [data-theme="azulejo"]` must be declared FIRST in the stylesheet so that other `[data-theme="..."]` selectors (same specificity 0,1,0) can override defaults via source order. Never move the default block below other theme blocks.
+
 ### 2.2 Themes
 
 #### Azulejo (Light — Default)
@@ -51,7 +53,7 @@ Inspiration: Portuguese ceramic tiles, cobalt blue, whitewashed walls.
 | `--border` | `#D4CFC6` | Dividers, input borders |
 | `--text` | `#1E293B` | Primary text |
 | `--text-muted` | `#4B5563` | Secondary text |
-| `--text-subtle` | `#7C8494` | Tertiary / placeholder |
+| `--text-subtle` | `#596472` | Tertiary / placeholder (5.68:1) |
 | `--accent` | `#1D4ED8` | Links, CTA, interactive |
 | `--accent-hover` | `#1E40AF` | Hover state |
 | `--user-bubble` | `#2563EB` | User message bg |
@@ -70,6 +72,7 @@ Inspiration: Andalusian earth, warm clay, parchment cream.
 | `--border` | `#4A3B30` | Dividers |
 | `--text` | `#F2E8DE` | Primary text |
 | `--text-muted` | `#BFA98F` | Secondary text |
+| `--text-subtle` | `#A08870` | Tertiary / placeholder (5.40:1) |
 | `--accent` | `#E07A5F` | Burnt orange interactive |
 | `--accent-hover` | `#EE9A7F` | Hover state |
 | `--user-bubble` | `#C85A3A` | User message bg |
@@ -88,8 +91,9 @@ Inspiration: Passionate night, red drama, black stage, gold accents.
 | `--border` | `#4A2D32` | Dividers |
 | `--text` | `#FAE8E8` | Primary text |
 | `--text-muted` | `#C9A3A8` | Secondary text |
-| `--accent` | `#DC2626` | Vibrant red interactive |
-| `--accent-hover` | `#EF4444` | Hover state |
+| `--text-subtle` | `#A07A80` | Tertiary / placeholder (5.22:1) |
+| `--accent` | `#EF4444` | Vibrant red interactive (5.21:1) |
+| `--accent-hover` | `#F87171` | Hover state |
 | `--user-bubble` | `#B91C1C` | User message bg |
 | `--ai-bubble` | `#1E1214` | AI message bg |
 | `--success` | `#CA8A04` | Amber / gold |
@@ -112,6 +116,25 @@ Inspiration: Mediterranean dusk, wine purple, sunset amber.
 | `--ai-bubble` | `#261528` | AI message bg |
 | `--success` | `#F59E0B` | Amber |
 | `--error` | `#FB7185` | Pink |
+
+#### Jardín (Light — Garden)
+Inspiration: Living garden, learning indigo, progress green, mint cream.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--surface` | `#F0FDF4` | Page background (mint cream) |
+| `--surface-elevated` | `#FFFFFF` | Cards, header |
+| `--surface-overlay` | `#ECFCCB` | Hover states |
+| `--border` | `#BBF7D0` | Dividers, input borders |
+| `--text` | `#14532D` | Primary text (deep forest green) |
+| `--text-muted` | `#166534` | Secondary text |
+| `--text-subtle` | `#4D7C0F` | Tertiary / placeholder (4.77:1) |
+| `--accent` | `#4F46E5` | Learning indigo — links, CTA |
+| `--accent-hover` | `#4338CA` | Hover state |
+| `--user-bubble` | `#4F46E5` | User message bg |
+| `--ai-bubble` | `#F0FDF4` | AI message bg |
+| `--success` | `#22C55E` | Progress green |
+| `--error` | `#DC2626` | Errors |
 
 ### 2.3 Contrast Audit (Known Issues)
 

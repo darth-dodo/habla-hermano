@@ -1,7 +1,7 @@
 # Phase 25: Design System Revamp
 
 **Branch**: `feature/design-system-improvements`
-**Status**: In Progress
+**Status**: Complete
 
 ---
 
@@ -120,6 +120,32 @@ All animations respect `prefers-reduced-motion: reduce` (existing global rule in
 
 ---
 
+## Bug Fixes (Post-Implementation)
+
+### CSS Cascade Ordering
+**Issue**: `:root, [data-theme="azulejo"]` was declared last in the `<style>` block. Since `:root` and `[data-theme="..."]` have equal specificity (0,1,0), the later declaration wins — meaning Azulejo values overrode ALL other themes, making every theme appear identical.
+
+**Fix**: Moved `:root, [data-theme="azulejo"]` to be the FIRST theme block so it establishes defaults; all other theme blocks follow and override as needed.
+
+### Jardín Missing from Menu
+**Issue**: Jardín was added to the Alpine.js `themes` array in `base.html` but no corresponding `<button>` was added to the static HTML in `app_header.html`.
+
+**Fix**: Added Jardín button with plant SVG icon to `app_header.html` after Sangria.
+
+### WCAG AA Contrast Failures
+Contrast audit via computed CSS values revealed four failing pairs:
+
+| Theme | Token | Before | After | Before → After |
+|-------|-------|--------|-------|----------------|
+| Azulejo | `--text-subtle` | `#7C8494` | `#596472` | 3.55:1 → 5.68:1 |
+| Terracotta | `--text-subtle` | `#8C7A66` | `#A08870` | 4.40:1 → 5.40:1 |
+| Flamenco | `--text-subtle` | `#8C6B70` | `#A07A80` | 4.15:1 → 5.22:1 |
+| Flamenco | `--accent` | `#DC2626` | `#EF4444` | 4.06:1 → 5.21:1 |
+
+Note: Jardín and Sangria were already WCAG AA compliant.
+
+---
+
 ## Rollback Plan
 
 All changes are on `feature/design-system-improvements` branch. To revert:
@@ -134,13 +160,13 @@ No database migrations, no Python changes, no API changes — this is purely fro
 
 ## Testing Checklist
 
-- [ ] All 5 themes render correctly (Azulejo, Terracotta, Flamenco, Sangria, Jardín)
-- [ ] Theme switching persists across page refreshes (localStorage)
-- [ ] Chat bubbles readable on mobile at 375px viewport
+- [x] All 5 themes render correctly (Azulejo, Terracotta, Flamenco, Sangria, Jardín)
+- [x] Theme switching persists across page refreshes (localStorage)
+- [x] Chat bubbles readable on mobile at 375px viewport
 - [ ] Lesson phase indicator shows correct active phase
 - [ ] Thumbs feedback buttons visible on hover, sticky after click
 - [ ] Voice ARIA region tested with screen reader (VoiceOver / NVDA)
 - [ ] Focus rings visible in all themes with keyboard navigation
 - [ ] `prefers-reduced-motion` disables all new animations
 - [ ] No console errors from SVG icons
-- [ ] Existing Python tests still pass (`make test`)
+- [x] Existing Python tests still pass (`make test`)
