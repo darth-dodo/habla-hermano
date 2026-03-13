@@ -1,6 +1,6 @@
 # Habla Hermano
 
-> Learn Spanish, German, or French through conversation.
+> Your AI conversation partner for Spanish, German, and French.
 
 [![CI](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml/badge.svg)](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
@@ -11,12 +11,12 @@
 [![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
 [![Built with Claude](https://img.shields.io/badge/Built%20with-Claude-cc785c?logo=anthropic&logoColor=white)](https://claude.ai)
 
-An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude, featuring real-time voice, adaptive scaffolding, and 60 structured lessons across 4 CEFR levels.
+An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude -featuring real-time voice, adaptive scaffolding, 60 structured lessons, encrypted conversations, and five culture-inspired themes.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-chat-home-voice.png" alt="Chat with voice controls" width="270"/>
+  <img src="docs/screenshots/hero-opening.png" alt="Opening screen - Spanish A1" width="270"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-conversation-voice.png" alt="Conversation with AI feedback" width="270"/>
+  <img src="docs/screenshots/mobile-scaffolding-beach.png" alt="Word bank and scaffolding for beach vocabulary" width="270"/>
 </p>
 
 ---
@@ -45,9 +45,9 @@ The pedagogical model is [Communicative Language Teaching](docs/product.md#pedag
 ### Scaffolding That Fades
 
 <p align="center">
-  <img src="docs/screenshots/mobile-scaffolding-expanded.png" alt="Word bank, hints, and pronunciation tips" width="270"/>
+  <img src="docs/screenshots/mobile-conversation-beach.png" alt="Beach conversation with vocabulary" width="270"/>
   &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-grammar-feedback.png" alt="Grammar correction feedback" width="270"/>
+  <img src="docs/screenshots/mobile-pronunciation-beach.png" alt="Pronunciation tips for nadar and mar" width="270"/>
 </p>
 
 Stuck? Beginners get contextual help: **hints**, **word banks** (tap to insert), and **sentence starters**. Made a mistake? Hermano recasts it naturally, then offers expandable grammar and pronunciation tips.
@@ -59,52 +59,61 @@ For A0, scaffolding appears automatically. By A2, you won't need it.
 Type or tap the microphone to speak. Hermano understands both.
 
 - **Speech-to-text** via Deepgram Nova-3 with code-switching (mix English and target language naturally)
-- **Text-to-speech** - tap the speaker icon on any response to hear native pronunciation
-- **Speed control** - 0.75x, 1x, or 1.25x for comprehension practice
-
-<p align="center">
-  <img src="docs/screenshots/mobile-ocean-chat-voice.png" alt="Voice input" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-light-chat-voice.png" alt="Voice controls" width="270"/>
-</p>
+- **Text-to-speech** -tap the play button on any response to hear native pronunciation
+- **Per-message speed control** -0.75x to 1.5x, with CEFR-aware defaults (slower for beginners)
 
 ### 60 Structured Lessons
 
-Beyond freeform chat, bite-sized lessons teach vocabulary and grammar through exercises, or conversationally through the chat interface via "Learn with Hermano."
+Beyond freeform chat, Hermano teaches bite-sized lessons through natural conversation. Lessons open directly in the chat interface -no separate player, just a guided dialogue.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-lessons-browse.png" alt="Browse lessons" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-vocabulary.png" alt="Vocabulary step" width="270"/>
+  <img src="docs/screenshots/lessons-svg-icons.png" alt="Lesson catalog with SVG icons" width="500"/>
 </p>
 
-- 3 languages × 4 CEFR levels × 5 lessons each
+- 3 languages &times; 4 CEFR levels &times; 5 lessons each
 - Multiple choice, fill-in-the-blank, and translation exercises
-- Conversational lesson mode: AI teaches through dialogue with real-time progress tracking
+- LLM-evaluated answers with accent-preserving normalization
+- Checkpoint-aware resume -pick up where you left off
 
 ### Learning Paths & Spaced Repetition
 
-<p align="center">
-  <img src="docs/screenshots/mobile-learning-path.png" alt="Learning path" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-lesson-complete.png" alt="Lesson complete" width="270"/>
-</p>
+Structured paths guide you from beginner to intermediate with clear progression through CEFR levels. The SM-2 spaced repetition algorithm tracks every word you learn and weaves due vocabulary back into conversations at optimal intervals -no flashcard decks, just natural reinforcement during chat.
 
-Structured paths guide you from beginner to intermediate. The SM-2 spaced repetition algorithm weaves vocabulary back into conversations at optimal intervals.
+### Five Themes
 
-### Guest Access & Themes
-
-No sign-up required. Start chatting immediately. Four Spanish culture-inspired themes (Azulejo, Terracotta, Flamenco, Sangria) with WCAG AA contrast.
+Five culture-inspired themes with WCAG AA contrast compliance across all color tokens:
 
 <p align="center">
-  <img src="docs/screenshots/chat-terracotta-mobile.png" alt="Terracotta" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/lessons-sangria-mobile.png" alt="Sangria" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/signup-azulejo-mobile.png" alt="Azulejo" width="200"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/menu-flamenco-mobile.png" alt="Flamenco" width="200"/>
+  <img src="docs/screenshots/theme-azulejo.png" alt="Azulejo" width="150"/>
+  &nbsp;
+  <img src="docs/screenshots/theme-terracotta.png" alt="Terracotta" width="150"/>
+  &nbsp;
+  <img src="docs/screenshots/theme-flamenco.png" alt="Flamenco" width="150"/>
+  &nbsp;
+  <img src="docs/screenshots/theme-sangria.png" alt="Sangria" width="150"/>
+  &nbsp;
+  <img src="docs/screenshots/theme-jardin.png" alt="Jardin" width="150"/>
 </p>
+
+| Theme | Palette |
+|-------|---------|
+| **Azulejo** | Cool Mediterranean blue, warm sand backgrounds |
+| **Terracotta** | Warm earth tones, dark mode default |
+| **Flamenco** | Sunset reds and warm amber |
+| **Sangria** | Deep berry reds, rich plum accents |
+| **Jardin** | Mint green light theme for daytime learning |
+
+### Guest Access & Accounts
+
+No sign-up required. Start chatting immediately as a guest -full conversation with Hermano, grammar feedback, scaffolding, and voice all work out of the box.
+
+Create an account to unlock:
+- **Vocabulary tracking** -words you learn are saved and reviewed via SM-2 spaced repetition
+- **Progress dashboard** -visualize your learning journey with charts and stats
+
+### Privacy & Encryption
+
+All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256). User PII fields use field-level encryption, and LangGraph checkpoint blobs are encrypted with a dedicated cipher. Row-level security policies ensure users can only access their own data.
 
 ---
 
@@ -124,8 +133,9 @@ No sign-up required. Start chatting immediately. Four Spanish culture-inspired t
 | **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
-| **Lessons** | 60 YAML files | 3 languages × 4 CEFR levels × 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,377 tests, strict mypy, ruff linting |
+| **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
+| **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
+| **Testing** | pytest + Vitest | 2,400+ tests, strict mypy, ruff linting |
 
 ### System Overview
 
@@ -167,8 +177,8 @@ graph TD
 **Key design decisions**:
 - **Conditional edges over sequential chains**: Scaffolding and analysis only run when needed, reducing latency and API costs for advanced learners
 - **State as TypedDict with reducers**: `add_messages` reducer for conversation history, explicit fields for `grammar_feedback`, `scaffolding`, `new_vocabulary`
-- **Separate lesson subgraph**: Conversational lessons use a dedicated LangGraph with a 5-phase state machine (intro → teaching → exercise_ask → exercise_eval → complete) rather than overloading the freeform chat graph
-- **Checkpointing**: PostgreSQL-backed `PostgresSaver` in production, `MemorySaver` for local dev
+- **Separate lesson subgraph**: Conversational lessons use a dedicated LangGraph with a 5-phase state machine (intro → teaching → exercise_ask → exercise_eval → complete) with LLM-based answer evaluation
+- **Checkpointing**: PostgreSQL-backed `AsyncPostgresSaver` with encrypted serialization in production, `MemorySaver` for local dev
 
 ### Streaming Architecture
 
@@ -177,10 +187,10 @@ Responses stream token-by-token via **Server-Sent Events** (POST to `/chat/strea
 | SSE Event | Payload | Client Action |
 |-----------|---------|---------------|
 | `token` | `{content}` | Append to bubble, throttled scroll (every 3 tokens) |
-| `response_complete` | `{content}` | Finalize bubble, add TTS speaker button |
+| `response_complete` | `{content, rendered_html}` | Finalize bubble with server-rendered markdown |
 | `scaffolding` | `{html}` | Insert collapsible help section |
 | `grammar` | `{html}` | Insert grammar correction panel |
-| `lesson_progress` | `{progress, phase}` | Update progress bar and phase badge |
+| `lesson_progress` | `{progress, phase}` | Update segmented progress indicator |
 | `done` | `{}` | Re-enable input |
 
 ### Voice Pipeline
@@ -189,9 +199,19 @@ Voice is optional. The app degrades gracefully without Deepgram keys.
 
 **STT**: Browser captures audio via `AudioWorklet` (PCM16 at 16kHz), streams over WebSocket to a FastAPI proxy forwarding to Deepgram Nova-3 with interim results and endpoint detection.
 
-**TTS**: Speaker icon opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit).
+**TTS**: Per-message play button opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit). CEFR-aware speed defaults (A0=0.75x, A1=0.85x, A2/B1=1x).
 
 **iOS Safari**: `AudioContext.state` can report `'running'` while silently refusing output. Fix: always call `resume()` on every gesture, plus `AbortController` per session to prevent stale WebSocket handlers from corrupting active sessions.
+
+### Design System
+
+Five themes built on CSS custom properties with a shared token architecture:
+
+- **Typography**: Plus Jakarta Sans (warmer than Inter, near-identical metrics)
+- **Spacing tokens**: `--space-chat-gap`, `--space-bubble-pad`, `--radius-bubble`, etc.
+- **Icons**: Lucide SVG icons replacing emoji indicators throughout
+- **Animations**: `vocabHighlight`, `levelBadgePop`, `progressShimmer`, `confettiBurst`
+- **Accessibility**: WCAG AA contrast on all themes, `aria-live` regions, focus-visible rings
 
 ### Frontend Modules
 
@@ -204,12 +224,11 @@ Server-rendered HTML (Jinja2 + HTMX) with 10 ES modules:
 | `voice-constants.js` | Voice config: sample rates, Deepgram voice IDs, SVG icons, audio utilities |
 | `voice-stt.js` | STT state machine, mic capture via AudioWorklet, WebSocket transcript streaming |
 | `voice-tts.js` | TTS state machine, WebSocket PCM streaming, REST fallback, AudioContext playback |
-| `voice-ui.js` | Stateless voice UI helpers: recording indicators, timers, tooltips, stop bar |
+| `voice-ui.js` | Stateless voice UI helpers: recording indicators, timers, tooltips |
 | `fsm.js` | Generic finite state machine: `createMachine` + `interpret` with onChange listeners |
 | `dom.js` | Scroll management, focus, message rendering, HTML escaping |
 | `scaffold.js` | Click-to-insert word bank, collapsible help sections |
 | `shortcuts.js` | Keyboard shortcuts (`/` to focus, `Shift+Enter` for newline) |
-| `htmx-handlers.js` | HTMX lifecycle hooks (afterSwap scroll, error display) |
 
 ### Project Structure
 
@@ -217,14 +236,14 @@ Server-rendered HTML (Jinja2 + HTMX) with 10 ES modules:
 src/
 ├── agent/           LangGraph graphs, nodes, prompts (freeform + lesson subgraphs)
 ├── api/             FastAPI routes, auth, middleware, streaming, rate limiting
-├── db/              Supabase client, repository pattern, models
+├── db/              Supabase client, repository pattern, models, encryption
 ├── services/        Business logic (review/SM-2, lesson completion, adaptive paths)
 ├── lessons/         Lesson models and YAML loader
 ├── templates/       Jinja2 with HTMX partials
-└── static/js/       10 ES modules + AudioWorklet processor
+└── static/          CSS + 10 ES modules + AudioWorklet processor
 
 data/lessons/        60 YAML lesson files (es/, de/, fr/)
-tests/               2,150 pytest + 207 Vitest tests
+tests/               2,100+ pytest + 240+ Vitest tests
 docs/                Architecture, API reference, design docs, ADRs
 ```
 
@@ -235,9 +254,11 @@ docs/                Architecture, API reference, design docs, ADRs
 
 | Layer | Implementation |
 |-------|---------------|
+| **Encryption at rest** | Fernet (AES-128-CBC + HMAC-SHA256) for PII fields + LangGraph checkpoint blobs |
+| **Row-Level Security** | Checkpoint tables enforce user isolation via `checkpoint_owner()` policies |
 | **CSP** | Nonce-based `script-src`, no `'unsafe-inline'` |
 | **CSRF** | Custom-header pattern (`X-Requested-With` / `HX-Request`) via middleware |
-| **WebSocket Auth** | JWT validated from cookies before `accept()`, reject with 1008 |
+| **WebSocket Auth** | JWT validated from cookies before `accept()`, reject with 4001 |
 | **Rate Limiting** | Decorator-based for REST, sliding-window per-connection for WebSocket |
 | **XSS** | `nh3` sanitization + `markupsafe.escape()` for all user content |
 | **Cookies** | Signed with `itsdangerous`, environment-aware `Secure` flag |
@@ -250,16 +271,16 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 <details>
 <summary><strong>Testing</strong></summary>
 
-**2,150 Python tests** (pytest) + **207 JavaScript tests** (Vitest) with CI on every push.
+**2,100+ Python tests** (pytest) + **240+ JavaScript tests** (Vitest) with CI on every push.
 
 | Domain | What's Tested |
 |--------|---------------|
 | Agent | LangGraph node behavior, conditional routing, state mutations, prompt injection |
 | API | Every route (chat, lessons, auth, voice, progress), CSRF, rate limiting |
 | Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
-| Database | Repository pattern, Supabase query builder mocks, model validation |
-| JavaScript | All 10 ES modules: DOM, streaming, scaffolding, shortcuts, HTMX handlers, voice (FSM + sub-modules) |
-| Security | CSP nonce injection, WebSocket auth rejection, header verification |
+| Database | Repository pattern, encryption boundary (encrypt-on-write, decrypt-on-read) |
+| JavaScript | All 10 ES modules: DOM, streaming, scaffolding, shortcuts, voice (FSM + sub-modules) |
+| Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip |
 | Integration | Voice WebSocket transport, SSE streaming end-to-end |
 
 </details>
@@ -295,9 +316,10 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | [Architecture](docs/architecture.md) | LangGraph pipeline, data flow, security model, voice architecture |
 | [Product Vision](docs/product.md) | Pedagogical approach, CEFR progression, personality system |
 | [API Reference](docs/api.md) | All endpoints, WebSocket protocols, SSE event spec |
+| [Design System](docs/design/design-system.md) | Token architecture, typography, spacing, themes, animations |
 | [Testing](docs/testing.md) | Test strategy, mock patterns, coverage targets |
 | [Codebase Summary](docs/codebase-summary.md) | Onboarding guide for the full codebase |
-| [Changelog](CHANGELOG.md) | Release history across 21 phases |
+| [Changelog](CHANGELOG.md) | Release history across 25 phases |
 
 #### Design Documents
 
@@ -313,5 +335,7 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | Conversational Lessons | [Phase 19](docs/design/phase19-conversational-lessons.md) |
 | Spanish Themes | [Phase 20](docs/design/phase20-spanish-themes.md) |
 | Voice FSM Refactor | [Phase 21](docs/design/phase21-voice-fsm-refactor.md) |
+| Message Encryption | [Phase 24](docs/design/phase24-message-encryption.md) |
+| Design System Revamp | [Phase 25](docs/design/phase25-design-system-revamp.md) |
 
 </details>
