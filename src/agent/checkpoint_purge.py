@@ -43,7 +43,7 @@ async def purge_old_checkpoints(retention_days: int | None = None) -> int:
         return 0
 
     try:
-        conn = saver.conn  # psycopg AsyncConnection (not a pool)
+        conn = saver.conn  # psycopg AsyncConnection
         total_deleted = 0
 
         for table in _CHECKPOINT_TABLES:
