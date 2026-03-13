@@ -255,16 +255,7 @@ def clean_env() -> Generator[None, None, None]:
 
 @pytest.fixture(autouse=True)
 def reset_settings_cache() -> Generator[None, None, None]:
-    """Reset settings cache and rate limits before and after each test.
-
-    This ensures each test starts with fresh settings, clean rate limit state,
-    and uncached LLM/graph instances.
-    """
-    get_settings.cache_clear()
-    get_cached_templates.cache_clear()
-    reset_rate_limits()
-    clear_llm_cache()
-    clear_graph_cache()
+    """Reset caches after each test to ensure test isolation."""
     yield
     get_settings.cache_clear()
     get_cached_templates.cache_clear()

@@ -548,18 +548,26 @@ class TestScaffoldNodeEdgeCases:
     @pytest.mark.asyncio
     async def test_handles_long_conversation_history(self) -> None:
         """scaffold_node should handle long conversation histories."""
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(
+            return_value=AIMessage(
+                content='{"word_bank": ["hola"], "hint": "Try greeting", "sentence_starter": null}'
+            )
+        )
+
         messages = []
         for i in range(50):
             messages.append(HumanMessage(content=f"User {i}"))
             messages.append(AIMessage(content=f"AI {i}"))
 
-        state: ConversationState = {
-            "messages": messages,
-            "level": "A0",
-            "language": "es",
-        }
-        result = await scaffold_node(state)
-        assert "scaffolding" in result
+        with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": messages,
+                "level": "A0",
+                "language": "es",
+            }
+            result = await scaffold_node(state)
+            assert "scaffolding" in result
 
 
 class TestScaffoldNodePhaseDocumentation:
