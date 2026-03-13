@@ -190,39 +190,23 @@ function onTtsChange(state, prev) {
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading');
             ttsActiveBtn.classList.add('voice-playing');
-            // Swap play icon to stop
             var playEl = ttsActiveBtn.querySelector('.voice-tts-play');
             if (playEl) playEl.innerHTML = WF_STOP_ICON;
-            // Freeze speed chip
             var chip = ttsActiveBtn.querySelector('.voice-tts-speed');
             if (chip) chip.classList.add('voice-tts-speed-frozen');
         }
     }
 
-    // --- entering idle (from loading on ERROR/CANCEL/ALL_ENDED) ---
-    if (state === 'idle' && prev === 'loading') {
+    // --- entering idle (from loading or playing) ---
+    if (state === 'idle' && (prev === 'loading' || prev === 'playing')) {
         cleanupTtsResources(ttsAbort);
         ttsAbort = null;
         if (ttsActiveBtn) {
             ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            var playEl1 = ttsActiveBtn.querySelector('.voice-tts-play');
-            if (playEl1) playEl1.innerHTML = WF_PLAY_ICON;
-            var chip1 = ttsActiveBtn.querySelector('.voice-tts-speed');
-            if (chip1) chip1.classList.remove('voice-tts-speed-frozen');
-        }
-        ttsActiveBtn = null;
-    }
-
-    // --- entering idle (from playing on ALL_ENDED/ERROR/CANCEL) ---
-    if (state === 'idle' && prev === 'playing') {
-        cleanupTtsResources(ttsAbort);
-        ttsAbort = null;
-        if (ttsActiveBtn) {
-            ttsActiveBtn.classList.remove('voice-loading', 'voice-playing');
-            var playEl2 = ttsActiveBtn.querySelector('.voice-tts-play');
-            if (playEl2) playEl2.innerHTML = WF_PLAY_ICON;
-            var chip2 = ttsActiveBtn.querySelector('.voice-tts-speed');
-            if (chip2) chip2.classList.remove('voice-tts-speed-frozen');
+            var playBtn = ttsActiveBtn.querySelector('.voice-tts-play');
+            if (playBtn) playBtn.innerHTML = WF_PLAY_ICON;
+            var speedChip = ttsActiveBtn.querySelector('.voice-tts-speed');
+            if (speedChip) speedChip.classList.remove('voice-tts-speed-frozen');
         }
         ttsActiveBtn = null;
     }
@@ -286,9 +270,15 @@ export function initVoice() {
         }
     });
 
-    // Handle page visibility changes (background/foreground)
+    // Handle page visibility changes (background/foreground).
+    // iOS suspends AudioContext when backgrounded, leaving scheduled
+    // BufferSource nodes paused. Without cleanup they resume as "zombie
+    // audio" when the context is later unlocked (e.g. by getUserMedia).
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') {
+            if (ttsService && !ttsService.matches('idle')) {
+                ttsService.send('CANCEL');
+            }
             // iOS kills MediaStream tracks when backgrounded -- stop cleanly
             if (sttService && (sttService.matches('recording') || sttService.matches('connecting'))) {
                 sttService.send('CANCEL');
@@ -355,6 +345,12 @@ export function destroyVoice() {
 export function toggleRecording() {
     if (!sttService) return;
     if (sttService.matches('idle')) {
+        // Kill any active TTS before starting STT.
+        // On iOS, getUserMedia() resumes a suspended AudioContext which would
+        // replay any scheduled TTS BufferSource nodes ("zombie audio").
+        if (ttsService && !ttsService.matches('idle')) {
+            ttsService.send('CANCEL');
+        }
         sttService.send('START');
     } else if (sttService.matches('recording')) {
         sttService.send('STOP');
@@ -404,7 +400,9 @@ export function handleSpeakClick(btn) {
     // Use WebSocket streaming TTS with AudioContext fallback check
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (Ctx) {
-        // Reuse shared TTS AudioContext (Safari limits to 4 instances per page)
+        // Reuse shared TTS AudioContext (Safari limits to 4 instances per page).
+        // iOS can leave a context permanently 'suspended' after backgrounding,
+        // so treat both 'closed' and stuck 'suspended' as needing replacement.
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }

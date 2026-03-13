@@ -35,44 +35,6 @@ var currentAudio = null;
 var currentBlobUrl = null;
 
 /**
- * Assemble Float32 PCM chunks into a WAV Blob.
- *
- * @param {Float32Array[]} chunks - array of Float32Array PCM chunks
- * @param {number} sampleRate - audio sample rate
- * @returns {Blob} WAV audio blob
- */
-export function assembleWavBlob(chunks, sampleRate) {
-    var totalLength = chunks.reduce(function(sum, c) { return sum + c.length; }, 0);
-    var merged = new Float32Array(totalLength);
-    var offset = 0;
-    for (var i = 0; i < chunks.length; i++) {
-        merged.set(chunks[i], offset);
-        offset += chunks[i].length;
-    }
-    var buffer = new ArrayBuffer(44 + merged.length * 2);
-    var view = new DataView(buffer);
-    function writeString(o, s) { for (var j = 0; j < s.length; j++) view.setUint8(o + j, s.charCodeAt(j)); }
-    writeString(0, 'RIFF');
-    view.setUint32(4, 36 + merged.length * 2, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
-    writeString(36, 'data');
-    view.setUint32(40, merged.length * 2, true);
-    for (var k = 0; k < merged.length; k++) {
-        var s = Math.max(-1, Math.min(1, merged[k]));
-        view.setInt16(44 + k * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-    }
-    return new Blob([buffer], { type: 'audio/wav' });
-}
-
-/**
  * WebSocket streaming TTS — sends text to /ws/speak, receives PCM audio
  * chunks, and plays them via AudioContext for near-instant playback.
  *
@@ -84,16 +46,14 @@ export function assembleWavBlob(chunks, sampleRate) {
  * @param {AbortSignal} signal - cancellation signal
  * @param {object} ttsService - FSM service to send events
  * @param {function(HTMLElement, string): void} showError - error display callback
- * @param {function(Blob): void} [onAudioReady] - callback with assembled WAV blob after playback
  */
-export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService, showError, onAudioReady) {
+export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService, showError) {
     ttsSources = [];
 
     var nextStartTime = 0;
     var started = false;
     var totalScheduled = 0;
     var wsDone = false;
-    var pcmChunks = [];
 
     // Chunk text for the server's MAX_TTS_TEXT_LENGTH limit
     var textChunks = chunkTextForTTS(text);
@@ -106,13 +66,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
     );
     ws.binaryType = 'arraybuffer';
     ttsWs = ws;
-
-    function deliverBlob() {
-        if (onAudioReady && pcmChunks.length > 0) {
-            var wavBlob = assembleWavBlob(pcmChunks, TTS_SAMPLE_RATE);
-            onAudioReady(wavBlob);
-        }
-    }
 
     ws.onopen = function() {
         if (signal.aborted) {
@@ -144,9 +97,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
                 floatData[i] = pcmData[i] / 32768.0;
             }
 
-            // Collect chunk for WAV blob assembly
-            pcmChunks.push(floatData);
-
             var audioBuffer = audioCtx.createBuffer(1, floatData.length, TTS_SAMPLE_RATE);
             audioBuffer.getChannelData(0).set(floatData);
 
@@ -172,7 +122,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
                 if (signal.aborted) return;
                 totalScheduled--;
                 if (totalScheduled <= 0 && wsDone) {
-                    deliverBlob();
                     ttsService.send('ALL_ENDED');
                 }
             };
@@ -186,7 +135,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
                     if (flushedCount >= totalChunks) {
                         wsDone = true;
                         if (totalScheduled <= 0) {
-                            deliverBlob();
                             ttsService.send('ALL_ENDED');
                         }
                     }
@@ -217,7 +165,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
         }
         wsDone = true;
         if (totalScheduled <= 0) {
-            deliverBlob();
             ttsService.send('ALL_ENDED');
         } else {
             // Fallback: ensure cleanup runs after remaining audio finishes.
@@ -226,7 +173,6 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
             ttsEndFallback = setTimeout(function() {
                 if (signal.aborted) return;
                 if (ttsService.matches('playing') || ttsService.matches('loading')) {
-                    deliverBlob();
                     ttsService.send('ALL_ENDED');
                 }
             }, (remaining * 1000) + 500);
@@ -245,9 +191,8 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
  * @param {AbortSignal} signal - cancellation signal
  * @param {object} ttsService - FSM service to send events
  * @param {function(HTMLElement, string): void} showError - error display callback
- * @param {function(Blob): void} [onAudioReady] - callback with audio blob when available
  */
-export function restTTS(btn, text, voice, speed, signal, ttsService, showError, onAudioReady) {
+export function restTTS(btn, text, voice, speed, signal, ttsService, showError) {
     var textChunks = chunkTextForTTS(text);
     var allBlobs = [];
 
@@ -290,8 +235,6 @@ export function restTTS(btn, text, voice, speed, signal, ttsService, showError, 
 
     function playRestAudio(audioBlob) {
         if (signal.aborted) return;
-
-        if (onAudioReady) onAudioReady(audioBlob);
 
         var audioUrl = URL.createObjectURL(audioBlob);
         var audio = new Audio(audioUrl);
