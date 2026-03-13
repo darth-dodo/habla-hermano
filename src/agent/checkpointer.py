@@ -28,8 +28,10 @@ from typing import Any, cast
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.checkpoint.serde.encrypted import EncryptedSerializer
 
 from src.config import get_settings
+from src.db.encryption import FernetCipher
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,17 @@ _state: dict[str, Any] = {
     # proper shutdown via __aexit__.
     "postgres_cm": None,
 }
+
+
+def _get_encrypted_serde() -> EncryptedSerializer:
+    """Build an ``EncryptedSerializer`` using the application Fernet key.
+
+    Wraps the default ``JsonPlusSerializer`` so checkpoint state blobs are
+    encrypted at rest.  Old unencrypted checkpoints are read transparently
+    (the ``EncryptedSerializer`` falls back when the type field has no
+    ``+cipher`` suffix).
+    """
+    return EncryptedSerializer(cipher=FernetCipher())
 
 
 def _get_memory_saver() -> MemorySaver:
@@ -89,12 +102,13 @@ async def init_checkpointer() -> None:
     logger.info("Initialising persistent Postgres checkpointer")
     # from_conn_string returns an async context manager; we enter it manually
     # so the connection pool stays open for the lifetime of the application.
-    cm = AsyncPostgresSaver.from_conn_string(db_url)
+    encrypted_serde = _get_encrypted_serde()
+    cm = AsyncPostgresSaver.from_conn_string(db_url, serde=encrypted_serde)
     saver = await cm.__aenter__()
     await saver.setup()
     _state["postgres_cm"] = cm
     _state["postgres_saver"] = saver
-    logger.info("Postgres checkpointer ready")
+    logger.info("Postgres checkpointer ready (checkpoint encryption enabled)")
 
 
 async def close_checkpointer() -> None:
@@ -175,7 +189,10 @@ async def get_postgres_checkpointer() -> AsyncGenerator[AsyncPostgresSaver, None
         "Creating transient Postgres checkpointer — "
         "call init_checkpointer() at startup for better performance"
     )
-    async with AsyncPostgresSaver.from_conn_string(settings.SUPABASE_DB_URL) as checkpointer:
+    encrypted_serde = _get_encrypted_serde()
+    async with AsyncPostgresSaver.from_conn_string(
+        settings.SUPABASE_DB_URL, serde=encrypted_serde
+    ) as checkpointer:
         await checkpointer.setup()
         yield checkpointer
 

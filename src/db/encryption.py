@@ -94,6 +94,46 @@ def decrypt_field(ciphertext: str | None) -> str | None:
     return fernet.decrypt(ciphertext.encode("utf-8")).decode("utf-8")
 
 
+class FernetCipher:
+    """LangGraph ``CipherProtocol`` implementation backed by Fernet.
+
+    Uses the same derived key as :func:`encrypt_field` / :func:`decrypt_field`
+    so checkpoint encryption is governed by the same ``SECRET_KEY`` +
+    ``ENCRYPTION_SALT`` configuration — no extra key management required.
+    """
+
+    CIPHER_NAME = "fernet"
+
+    def encrypt(self, plaintext: bytes) -> tuple[str, bytes]:
+        """Encrypt raw bytes for checkpoint storage.
+
+        Returns:
+            Tuple of (cipher name, ciphertext bytes).
+        """
+        fernet = _get_fernet()
+        return self.CIPHER_NAME, fernet.encrypt(plaintext)
+
+    def decrypt(self, ciphername: str, ciphertext: bytes) -> bytes:
+        """Decrypt checkpoint bytes.
+
+        Args:
+            ciphername: Must match :attr:`CIPHER_NAME`.
+            ciphertext: Fernet token bytes.
+
+        Returns:
+            Decrypted plaintext bytes.
+
+        Raises:
+            ValueError: If *ciphername* doesn't match.
+            cryptography.fernet.InvalidToken: If token is invalid.
+        """
+        if ciphername != self.CIPHER_NAME:
+            msg = f"Unknown cipher {ciphername!r}, expected {self.CIPHER_NAME!r}"
+            raise ValueError(msg)
+        fernet = _get_fernet()
+        return fernet.decrypt(ciphertext)
+
+
 def clear_encryption_cache() -> None:
     """Clear the cached Fernet instance.
 
