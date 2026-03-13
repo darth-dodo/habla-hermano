@@ -26,7 +26,8 @@
 | Session | `api/test_session.py` | 20+ | Thread ID management, cookie lifecycle |
 | Persistence | `api/test_persistence.py` | 25+ | End-to-end auth + persistence workflows |
 | DB Models | `db/test_models.py` | 25+ | Pydantic models for Supabase |
-| DB Repository | `db/test_repository.py` | 30+ | Data access layer with mocked client |
+| DB Encryption | `db/test_encryption.py` | 10 | FernetCipher, EncryptedSerializer, round-trip, backward compat |
+| DB Repository | `db/test_repository.py` | 49+ | Data access layer with mocked client, encrypt-on-write, decrypt-on-read |
 | Supabase Client | `api/test_supabase_client.py` | 15+ | Client singleton, cache management |
 | CSRF Middleware | `api/test_csrf.py` | 15 | CSRF token validation, safe/unsafe methods, exempt paths |
 | Services Levels | `services/test_levels.py` | 20+ | CEFR level detection |
@@ -46,8 +47,8 @@
 | Adaptive Service | `services/test_adaptive.py` | 49 | Phase 14 daily recommendations, category strengths, level readiness |
 | Coverage Services | `services/test_coverage.py` | 20+ | Service module coverage validation |
 | JS DOM | `tests/js/dom.test.js` | 37 | DOM utilities, scroll behavior, focus management, escapeHtml |
-| JS Stream | `tests/js/stream.test.js` | 24 | SSE parsing, streaming bubble, token append, TTS speaker buttons |
-| JS Voice | `tests/js/voice.test.js` | 87 | VoiceManager lifecycle, STT recording, TTS playback, error handling |
+| JS Stream | `tests/js/stream.test.js` | 29 | SSE parsing, streaming bubble, token append, TTS speaker buttons |
+| JS Voice | `tests/js/voice.test.js` | 112 | VoiceManager lifecycle, STT recording, TTS playback, error handling, voice sub-modules |
 | JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
 | JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
@@ -58,7 +59,7 @@
 | Answer Normalization | `agent/nodes/test_lesson_chat.py` | 15 | Phase 23 normalize_answer, fill-blank, translate normalization |
 | LLM Translation Eval | `agent/nodes/test_lesson_chat.py` | 8 | Phase 23 LLM-based translation evaluation |
 
-**Total**: ~2364 tests (~2123 Python + ~241 JavaScript) with 97% code coverage
+**Total**: ~2,437 tests (~2,196 Python + ~241 JavaScript) with 97% code coverage
 
 ---
 
@@ -66,7 +67,7 @@
 
 ### Parallel Execution with pytest-xdist
 
-Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,100+ Python test suite.
+Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,196+ Python test suite.
 
 ```bash
 # Default: parallel execution (auto-detect cores)

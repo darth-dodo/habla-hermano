@@ -66,7 +66,7 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Spaced Repetition** | ✅ Complete | SM-2 algorithm with intelligent chat weaving and dedicated review mode (authenticated users only) |
 | **Word Banks & Hints** | ✅ Complete | Contextual help for A0-A1 learners |
 | **Sentence Starters** | ✅ Complete | Partial sentences to get beginners going |
-| **3 Themes** | ✅ Complete | Nordic Minimal design with Light, Dark, Ocean variants |
+| **5 Themes** | ✅ Complete | Spanish-inspired design with Azulejo, Terracotta, Flamenco, Sangria, and Jardín variants |
 | **Mobile-First UI** | ✅ Complete | Safe areas, dynamic viewport, touch-optimized, works on all devices |
 | **Micro-Lessons** | ✅ Complete | 60 lessons across 3 languages (es, de, fr) × 4 levels (A0-B1) with vocabulary, exercises, completion tracking |
 | **Hamburger Menu** | ✅ Complete | Clean navigation: Lessons, New Chat, Theme, Login/Logout |
@@ -74,11 +74,12 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Progress Tracking** | ✅ Complete | Words learned, patterns mastered, conversation stats (authenticated users only) |
 | **Learning Paths** | ✅ Complete | Structured progression from A0 to B1 with adaptive daily recommendations |
 | **Voice Input/Output** | ✅ Complete | Deepgram STT (Nova-3) + TTS (Aura-2) via WebSocket proxy |
-| **Conversational Lessons** | ✅ Complete | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete) |
+| **Conversational Lessons** | ✅ Complete | Hermano teaches lessons directly in the main chat via `/?lesson={id}`, with phase machine (intro→teaching→exercise→complete) |
+| **Encryption at Rest** | ✅ Complete | PII fields and chat history encrypted with Fernet (AES-128-CBC + HMAC), row-level security on all checkpoint tables |
 
 ### Guest vs. Authenticated Experience
 
-Guests can try Habla Hermano without creating an account. The chat experience works fully -- conversation persists via LangGraph checkpointing, and Hermano still provides grammar feedback, pronunciation tips, and scaffolding (word banks, sentence starters) in every response.
+Guests can try Habla Hermano without creating an account. The chat experience works fully -- conversation persists via LangGraph checkpointing, and Hermano still provides grammar feedback, pronunciation tips, and scaffolding (word banks, sentence starters) in every response. All conversation data is encrypted at rest.
 
 To unlock the full learning loop, guests need to sign up:
 
@@ -493,7 +494,7 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 8** | Guest Access | Chat-only guest mode with grammar feedback and scaffolding; no data persistence | ✅ Complete |
 | **Phase 9** | AI-Enhanced Lessons | LangGraph subgraphs for personalized lesson delivery | ✅ Complete |
 | **Phase 10** | Lesson Content Expansion | 60 lessons across all languages and levels | ✅ Complete |
-| **Phase 11** | Nordic Design + Pronunciation | Clean minimal design system, pronunciation tips in chat | ✅ Complete |
+| **Phase 11** | Design + Pronunciation | Spanish-inspired design system (5 themes), pronunciation tips in chat | ✅ Complete |
 | **Phase 12** | Spaced Repetition | SM-2 algorithm, intelligent chat weaving, dedicated review mode | ✅ Complete |
 | **Phase 13** | Mobile Responsive | Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Complete |
 | **Phase 14** | Learning Paths | Structured A0→B1 progression with adaptive daily recommendations | ✅ Complete |
@@ -502,6 +503,9 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 17** | Voice Conversation | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, browser microphone capture | ✅ Complete |
 | **Phase 18** | JavaScript Testing | Vitest test suite (189 tests, ~90% coverage) | ✅ Complete |
 | **Phase 19** | Conversational Lessons | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete), CEFR teaching adjustments, progress bar, checkpoint-aware inputs | ✅ Complete |
+| **Phase 23** | Unified Lesson Experience | Lessons open in main chat via `/?lesson={id}`, old lesson player removed, LLM-based translation evaluation | ✅ Complete |
+| **Phase 24** | Message Encryption & Privacy | Fernet encryption at rest for PII fields and checkpoint blobs, row-level security on checkpoint tables | ✅ Complete |
+| **Phase 25** | Design System Revamp | Jardín theme, Plus Jakarta Sans typography, spacing tokens, Lucide SVG icons, WCAG AA contrast compliance, localStorage persistence for language/level | ✅ Complete |
 | **P1 Audit** | Audit Remediation (HIGH) | 7 HIGH severity items — WebSocket auth, CSRF middleware, layer violations, SRP extraction | ✅ Complete |
 | **P2 Audit** | Audit Remediation (MEDIUM) | 10 MEDIUM severity items — CSP nonce, rate limiting, caching, JSON logging | ✅ Complete |
 | **P3 Audit** | Audit Remediation (LOW) | 7 LOW severity items — Cache-Control headers, voice docs, integration tests, cleanup | ✅ Complete |
