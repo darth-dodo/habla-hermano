@@ -29,8 +29,10 @@
 | **Phase 21** | Voice FSM Refactor - FSM + AbortController, split into 5 sub-modules | ✅ Completed |
 | **Phase 22** | Voice UX Redesign - bottom bar, hold-to-talk, inline TTS buttons | ✅ Completed |
 | **Phase 23** | Lesson Experience Revamp - unified chat routing, deleted lesson_player | ✅ Completed |
+| **Phase 24** | Message Encryption & Privacy - Fernet field encryption, checkpoint blob encryption, RLS policies | ✅ Completed |
+| **Phase 25** | Design System Revamp - 5th theme (Jardín), Plus Jakarta Sans, spacing tokens, SVG icons, WCAG AA | ✅ Completed |
 
-**Test Coverage**: 2,377+ tests (2,150 Python + 207 JavaScript) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2,437+ tests (2,196 Python + 241 JavaScript) covering agent, API, database, auth, lessons, review, service, and encryption modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
@@ -155,9 +157,9 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **LLM** | Claude API | Superior language understanding, structured outputs |
 | **Database** | PostgreSQL (Supabase) | Production persistence with MemorySaver fallback for dev |
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
-| **Styling** | Tailwind CSS + CSS Variables | Nordic Minimal design with 3 themes (light/dark/ocean), mobile-responsive |
+| **Styling** | Tailwind CSS + CSS Variables | Design system with 5 themes (Azulejo/Terracotta/Flamenco/Sangria/Jardín), mobile-responsive |
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time STT/TTS via JWT-authenticated WebSocket proxy |
-| **JS Testing** | Vitest + jsdom | 186 tests with ~90% coverage on ES modules |
+| **JS Testing** | Vitest + jsdom | 241 tests with ~90% coverage on ES modules |
 
 ---
 
@@ -238,7 +240,7 @@ habla-hermano/
 │   │   └── lesson_completion.py # [Implemented] Extracted lesson completion logic (exercise validation, vocab upsert, persistence)
 │   │
 │   ├── templates/               # [Implemented] All template files (mobile-responsive)
-│   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables, safe areas, dynamic viewport
+│   │   ├── base.html            # [Implemented] Theme system (5 themes), CSS variables, safe areas, dynamic viewport
 │   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu, safe areas, virtual keyboard support; lesson mode via ?lesson= param
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
 │   │   ├── progress.html        # [Implemented] Progress dashboard with stats, vocabulary, charts

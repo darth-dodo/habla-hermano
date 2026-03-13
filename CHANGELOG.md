@@ -64,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Row-Level Security**: Checkpoint tables enforce user isolation via `checkpoint_owner(thread_id) = auth.uid()` policies
 - **Service role bypass**: Guest sessions and admin operations use service_role client which bypasses RLS
 - **Key derivation**: Single key from `SECRET_KEY` + `ENCRYPTION_SALT` governs all encryption — no separate key management
-## [0.24.0] - 2026-03-12
+
+## [0.23.0] - 2026-03-12
 
 ### Added - Phase 23: Unified Lesson Experience
 - **Unified lesson-in-chat**: Lessons now open in the main chat via `/?lesson={id}` query parameter, replacing the dedicated lesson chat page and old step-by-step lesson player
@@ -83,7 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Lesson links**: All lesson links across templates (catalog, learning paths, recommendations) updated to `/?lesson={id}` format
 - **Test count**: 2,123 Python tests, 241 JS tests
 
-## [0.23.0] - 2026-03-11
+## [0.22.1] - 2026-03-11
 
 ### Added
 - **Markdown rendering for AI responses**: Server-side pipeline (`markdown` lib → `nh3` sanitization → Jinja2 `| markdown` filter) renders AI chat responses as rich HTML with headings, lists, code blocks, tables, and blockquotes

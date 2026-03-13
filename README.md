@@ -129,13 +129,13 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 | **Backend** | FastAPI | Async SSE streaming, Pydantic validation, WebSocket support |
 | **Agent** | LangGraph | Stateful conversation graphs with conditional routing and checkpointing |
 | **LLM** | Claude (Haiku 4.5) | Strong multilingual understanding, structured output for exercises |
-| **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 10 ES modules |
+| **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 11 ES modules |
 | **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
 | **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,400+ tests, strict mypy, ruff linting |
+| **Testing** | pytest + Vitest | 2,437 tests (2,196 Python + 241 JS), strict mypy, ruff linting |
 
 ### System Overview
 
@@ -215,7 +215,7 @@ Five themes built on CSS custom properties with a shared token architecture:
 
 ### Frontend Modules
 
-Server-rendered HTML (Jinja2 + HTMX) with 10 ES modules:
+Server-rendered HTML (Jinja2 + HTMX) with 11 ES modules:
 
 | Module | Responsibility |
 |--------|---------------|
@@ -229,6 +229,7 @@ Server-rendered HTML (Jinja2 + HTMX) with 10 ES modules:
 | `dom.js` | Scroll management, focus, message rendering, HTML escaping |
 | `scaffold.js` | Click-to-insert word bank, collapsible help sections |
 | `shortcuts.js` | Keyboard shortcuts (`/` to focus, `Shift+Enter` for newline) |
+| `htmx-handlers.js` | HTMX lifecycle event handlers: after-swap scroll, error display |
 
 ### Project Structure
 
@@ -240,10 +241,10 @@ src/
 ├── services/        Business logic (review/SM-2, lesson completion, adaptive paths)
 ├── lessons/         Lesson models and YAML loader
 ├── templates/       Jinja2 with HTMX partials
-└── static/          CSS + 10 ES modules + AudioWorklet processor
+└── static/          CSS + 11 ES modules + AudioWorklet processor
 
 data/lessons/        60 YAML lesson files (es/, de/, fr/)
-tests/               2,100+ pytest + 240+ Vitest tests
+tests/               2,196 pytest + 241 Vitest tests
 docs/                Architecture, API reference, design docs, ADRs
 ```
 
@@ -271,7 +272,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 <details>
 <summary><strong>Testing</strong></summary>
 
-**2,100+ Python tests** (pytest) + **240+ JavaScript tests** (Vitest) with CI on every push.
+**2,196 Python tests** (pytest) + **241 JavaScript tests** (Vitest) with CI on every push.
 
 | Domain | What's Tested |
 |--------|---------------|
@@ -279,7 +280,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 | API | Every route (chat, lessons, auth, voice, progress), CSRF, rate limiting |
 | Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
 | Database | Repository pattern, encryption boundary (encrypt-on-write, decrypt-on-read) |
-| JavaScript | All 10 ES modules: DOM, streaming, scaffolding, shortcuts, voice (FSM + sub-modules) |
+| JavaScript | All 11 ES modules: DOM, streaming, scaffolding, shortcuts, voice (FSM + sub-modules) |
 | Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip |
 | Integration | Voice WebSocket transport, SSE streaming end-to-end |
 

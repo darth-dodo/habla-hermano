@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 2.2 | **Tests**: ~2,364 (2,123 Python + 241 JS) | **Coverage**: 97% | **Date**: March 2026
+**Version**: 2.4 | **Tests**: 2,437 (2,196 Python + 241 JS) | **Coverage**: 97% | **Date**: March 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -17,12 +17,12 @@ block-beta
     columns 1
     block:stack["HABLA HERMANO"]
         columns 2
-        A["Frontend"] B["HTMX + Jinja2 + Tailwind (4 themes)"]
+        A["Frontend"] B["HTMX + Jinja2 + Tailwind (5 themes)"]
         C["Backend"] D["FastAPI with dependency injection"]
         E["AI System"] F["LangGraph with 3 nodes, conditional routing"]
         G["LLM"] H["Claude Haiku 4.5 (conversational + analysis)"]
         I["Auth"] J["Supabase Auth with JWT validation"]
-        K["Persistence"] L["PostgreSQL checkpointing (LangGraph)"]
+        K["Persistence"] L["PostgreSQL checkpointing (LangGraph) + Fernet encryption"]
         M["Config"] N["Environment-based Pydantic Settings"]
         O["Deployment"] P["Docker + Render.com"]
         Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
@@ -43,8 +43,8 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ ~2,364 tests (2,123 Python + 241 JS) with 97% coverage, strict typing
-- ✅ 4 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria
+- ✅ 2,437 tests (2,196 Python + 241 JS) with 97% coverage, strict typing
+- ✅ 5 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria, Jardin
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
 - ✅ Micro-lessons system: 60 lessons across all languages and levels
@@ -63,6 +63,8 @@ block-beta
 - ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
 - ✅ Voice FSM refactor: FSM + AbortController, 5 sub-modules, race condition fixes (Phase 21)
 - ✅ Lesson experience revamp: unified chat handles freeform + lesson modes, removed separate lesson player (Phase 23)
+- ✅ Message encryption & privacy: Fernet field-level encryption, checkpoint blob encryption, RLS on checkpoint tables, PBKDF2 key derivation (Phase 24)
+- ✅ Design system revamp: Jardin theme, Plus Jakarta Sans typography, spacing tokens, SVG lesson icons, WCAG AA compliance (Phase 25)
 
 ---
 
@@ -284,7 +286,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # ~2,364 tests (2,123 Python + 241 JS), 97% coverage
+├── tests/                            # 2,437 tests (2,196 Python + 241 JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -799,7 +801,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (~2,364 tests: 2,123 Python + 241 JS)
+### Coverage: 97% (2,437 tests: 2,196 Python + 241 JS)
 
 ### Test Categories
 
@@ -959,4 +961,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v2.2 — Habla Hermano (~2,364 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience)*
+*Crash Course v2.4 — Habla Hermano (2,437 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience + Message Encryption + Design System)*
