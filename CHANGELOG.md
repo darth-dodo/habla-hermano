@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **iOS zombie TTS audio** (`voice.js`): TTS playback resumed unexpectedly when triggering STT because `getUserMedia()` unlocked a suspended AudioContext with stale scheduled `BufferSource` nodes. Now cancel any active TTS before starting STT and on page background (visibility change).
+- **TTS not cancelled on background** (`voice.js`): Added TTS cancellation to visibility change handler (STT already had this). Prevents iOS from leaving scheduled audio nodes in limbo when the page is backgrounded.
+- **Duplicate TTS cleanup** (`voice.js`): Consolidated identical `idle←loading` and `idle←playing` transition handlers into a single block.
+
+### Removed
+- **Dead WAV blob code** (`voice-tts.js`): Removed `assembleWavBlob()`, `pcmChunks` collection, `deliverBlob()`, and unused `onAudioReady` parameter from `streamTTS` and `restTTS` (~45 lines).
+
 ## [0.25.0] - 2026-03-13
 
 ### Added - Phase 25: Design System Revamp
