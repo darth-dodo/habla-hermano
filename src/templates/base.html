@@ -58,8 +58,8 @@
                         },
                     },
                     fontFamily: {
-                        display: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     animation: {
@@ -70,6 +70,10 @@
                         'check-draw': 'checkDraw 0.4s ease-out forwards',
                         'gentle-bounce': 'gentleBounce 0.5s ease-out',
                         'float': 'float 3s ease-in-out infinite',
+                        'vocab-highlight': 'vocabHighlight 0.3s ease-out forwards',
+                        'level-badge-pop': 'levelBadgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'progress-shimmer': 'progressShimmer 1.5s linear infinite',
+                        'confetti-burst': 'confettiBurst 0.4s ease-out forwards',
                     },
                     keyframes: {
                         fadeIn: {
@@ -118,10 +122,10 @@
         }
     </script>
 
-    <!-- Inter (display) + Inter (body) fonts - Clean Nordic typography -->
+    <!-- Plus Jakarta Sans + JetBrains Mono fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- HTMX -->
     <script nonce="{{ request.state.csp_nonce }}" src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
@@ -136,6 +140,45 @@
            Four themes inspired by Spanish heritage
            ============================================ */
 
+        /* Azulejo Theme (default) - Ceramic Tiles: Cobalt blue, whitewashed walls */
+        :root, [data-theme="azulejo"] {
+            --surface: #FBF8F4;
+            --surface-elevated: #FFFFFF;
+            --surface-overlay: #F0EDE7;
+            --border: #D4CFC6;
+            --border-subtle: #E5E0D8;
+            --text: #1E293B;
+            --text-muted: #4B5563;
+            --text-subtle: #596472;
+            --accent: #1D4ED8;
+            --accent-hover: #1E40AF;
+            --accent-muted: rgba(29, 78, 216, 0.1);
+            --accent-text: #FFFFFF;
+            --user-bubble: #2563EB;
+            --user-text: #FFFFFF;
+            --ai-bubble: #F0EDE7;
+            --ai-text: #1E293B;
+            --success: #059669;
+            --success-muted: rgba(5, 150, 105, 0.1);
+            --error: #DC2626;
+            --error-muted: rgba(220, 38, 38, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.06);
+            --scrollbar-track: #F0EDE7;
+            --scrollbar-thumb: #D4CFC6;
+            --scrollbar-thumb-hover: #B8B3AA;
+            --paper-texture: none;
+            /* Spacing tokens */
+            --space-chat-gap: 0.75rem;
+            --space-bubble-pad: 1rem;
+            --space-section-gap: 2rem;
+            --space-input-height: 3rem;
+            /* Radius tokens */
+            --radius-bubble: 1rem;
+            --radius-button: 0.75rem;
+            --radius-card: 1rem;
+            --radius-input: 0.75rem;
+        }
+
         /* Terracotta Theme - Andalusian Earth: Warm clay, parchment cream */
         [data-theme="terracotta"] {
             --surface: #1C1410;
@@ -144,8 +187,8 @@
             --border: #4A3B30;
             --border-subtle: #3E3028;
             --text: #F2E8DE;
-            --text-muted: #BFA98F;
-            --text-subtle: #8C7A66;
+            --text-muted: #D4BC9E;
+            --text-subtle: #A08870;
             --accent: #E07A5F;
             --accent-hover: #EE9A7F;
             --accent-muted: rgba(224, 122, 95, 0.15);
@@ -170,13 +213,13 @@
             --surface: #110A0A;
             --surface-elevated: #1E1214;
             --surface-overlay: #2D1B1E;
-            --border: #4A2D32;
+            --border: #6B3D44;
             --border-subtle: #3A2228;
             --text: #FAE8E8;
             --text-muted: #C9A3A8;
-            --text-subtle: #8C6B70;
-            --accent: #DC2626;
-            --accent-hover: #EF4444;
+            --text-subtle: #A07A80;
+            --accent: #EF4444;
+            --accent-hover: #F87171;
             --accent-muted: rgba(220, 38, 38, 0.15);
             --accent-text: #FFFFFF;
             --user-bubble: #B91C1C;
@@ -203,7 +246,7 @@
             --border-subtle: #3D2342;
             --text: #F3E8FF;
             --text-muted: #C4A5D4;
-            --text-subtle: #8B6E9C;
+            --text-subtle: #A88BC0;
             --accent: #C084FC;
             --accent-hover: #D8B4FE;
             --accent-muted: rgba(192, 132, 252, 0.15);
@@ -223,32 +266,32 @@
             --paper-texture: none;
         }
 
-        /* Azulejo Theme (default) - Ceramic Tiles: Cobalt blue, whitewashed walls */
-        :root, [data-theme="azulejo"] {
-            --surface: #FBF8F4;
+        /* Jardín Theme - Living Garden: Learning indigo, progress green, mint cream */
+        [data-theme="jardin"] {
+            --surface: #F0FDF4;
             --surface-elevated: #FFFFFF;
-            --surface-overlay: #F0EDE7;
-            --border: #D4CFC6;
-            --border-subtle: #E5E0D8;
-            --text: #1E293B;
-            --text-muted: #4B5563;
-            --text-subtle: #7C8494;
-            --accent: #1D4ED8;
-            --accent-hover: #1E40AF;
-            --accent-muted: rgba(29, 78, 216, 0.1);
+            --surface-overlay: #ECFCCB;
+            --border: #BBF7D0;
+            --border-subtle: #D1FAE5;
+            --text: #14532D;
+            --text-muted: #166534;
+            --text-subtle: #4D7C0F;
+            --accent: #4F46E5;
+            --accent-hover: #4338CA;
+            --accent-muted: rgba(79, 70, 229, 0.12);
             --accent-text: #FFFFFF;
-            --user-bubble: #2563EB;
+            --user-bubble: #4F46E5;
             --user-text: #FFFFFF;
-            --ai-bubble: #F0EDE7;
-            --ai-text: #1E293B;
-            --success: #059669;
-            --success-muted: rgba(5, 150, 105, 0.1);
+            --ai-bubble: #F0FDF4;
+            --ai-text: #14532D;
+            --success: #22C55E;
+            --success-muted: rgba(34, 197, 94, 0.12);
             --error: #DC2626;
             --error-muted: rgba(220, 38, 38, 0.1);
             --shadow-color: rgba(0, 0, 0, 0.06);
-            --scrollbar-track: #F0EDE7;
-            --scrollbar-thumb: #D4CFC6;
-            --scrollbar-thumb-hover: #B8B3AA;
+            --scrollbar-track: #ECFCCB;
+            --scrollbar-thumb: #BBF7D0;
+            --scrollbar-thumb-hover: #86EFAC;
             --paper-texture: none;
         }
 
@@ -267,7 +310,7 @@
         body {
             background-color: var(--surface);
             color: var(--text);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
             position: relative;
             -webkit-font-smoothing: antialiased;
@@ -414,6 +457,31 @@
         @keyframes cursorBlink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
+        }
+
+        /* Vocabulary highlight - underline draws left to right */
+        @keyframes vocabHighlight {
+            0% { width: 0; opacity: 0; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        /* Level badge pop - celebration moment */
+        @keyframes levelBadgePop {
+            0% { transform: scale(0); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Progress shimmer - sweeping gradient on completion */
+        @keyframes progressShimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Confetti particle - micro-burst on correct answer */
+        @keyframes confettiBurst {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--cx, 20px), var(--cy, -30px)) scale(0); opacity: 0; }
         }
 
         /* Success state - warm glow */
@@ -769,6 +837,13 @@
 </head>
 <body class="h-full antialiased font-sans" x-data="{
     theme: localStorage.getItem('hermano-theme') || 'azulejo',
+    themes: [
+        { id: 'azulejo', label: 'Azulejo' },
+        { id: 'terracotta', label: 'Terracotta' },
+        { id: 'flamenco', label: 'Flamenco' },
+        { id: 'sangria', label: 'Sangria' },
+        { id: 'jardin', label: 'Jardín' },
+    ],
     setTheme(newTheme) {
         this.theme = newTheme;
         localStorage.setItem('hermano-theme', newTheme);

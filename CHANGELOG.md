@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-03-13
+
+### Added - Phase 25: Design System Revamp
+- **Jardín theme** (`[data-theme="jardin"]`): Fifth theme — mint green light palette for daytime learners (surface `#F0FDF4`, accent `#4F46E5`, success `#22C55E`, text `#14532D`)
+- **Spacing tokens**: `--space-chat-gap`, `--space-bubble-pad`, `--space-section-gap`, `--space-input-height`, `--radius-bubble`, `--radius-button`, `--radius-card`, `--radius-input` defined on `:root`
+- **Animation keyframes**: `vocabHighlight`, `levelBadgePop`, `progressShimmer`, `confettiBurst` in `base.html`
+- **CSS utilities**: `.progress-shimmer`, `.vocab-highlight-underline`, `.level-badge-celebrate` in `input.css`
+- **AI response feedback row**: Thumbs up/down buttons on each AI message (hidden until hover, sticky on click)
+- **Voice ARIA**: `aria-live="polite"` announcement region for screen readers (`#voice-status-announcement`)
+- **localStorage language/level**: Free-chat language and level selections persist across page loads (keys `hermano-language`, `hermano-level`); isolated from lesson mode which uses server-assigned values
+- **Design reference**: `docs/design/design-system.md` — comprehensive token reference, typography, spacing, animation, and icon system
+
+### Changed
+- **Typography**: Inter → **Plus Jakarta Sans** (warmer letterforms; near-identical metrics, minimal layout shift)
+- **AI bubble**: Added `border-l-2 border-l-accent/30` subtle left accent stripe
+- **Emoji → SVG**: 💡 and 📝 semantic indicators in `message.html` replaced with Lucide `lightbulb` and `book-open` SVGs (`aria-hidden="true"`)
+- **Focus rings**: Hardcoded `ring-primary-500` → `var(--accent)` CSS variable (theme-aware) on theme switcher buttons
+- **Lesson progress**: Linear percentage bar → segmented 4-phase indicator (Intro / Learn / Practice / Done) with `progressShimmer` on completion
+- **Chat bubble width**: Desktop max-width `max-w-[85%]` → `max-w-[75%]` (narrower, more readable line length)
+- **Flamenco `--accent`**: `#DC2626` → `#EF4444`; `--accent-hover`: `#EF4444` → `#F87171` (brighter for contrast compliance)
+
+### Fixed
+- **CSS cascade ordering** (`base.html`): `:root, [data-theme="azulejo"]` was last in stylesheet, overriding ALL theme tokens (equal specificity, last-wins). Moved to first position — all other themes now correctly override the defaults.
+- **Jardín menu button** (`app_header.html`): Jardín was in the Alpine `themes` array but missing from the static button list in the hamburger menu.
+- **WCAG AA contrast** — Four tokens brought above 4.5:1 minimum:
+  - Azulejo `--text-subtle`: 3.55:1 → 5.68:1
+  - Terracotta `--text-subtle`: 4.40:1 → 5.40:1
+  - Flamenco `--text-subtle`: 4.15:1 → 5.22:1
+  - Flamenco `--accent`: 4.06:1 → 5.21:1
+- **Pre-existing Terracotta/Flamenco/Sangria theme tokens** (`base.html` Phase 21 regression): All dark themes were silently rendering as Azulejo since Phase 21 introduced the `:root` ordering bug. Now fixed.
+
 ## [0.24.0] - 2026-03-13
 
 ### Added - Phase 24: Message Encryption & Privacy
