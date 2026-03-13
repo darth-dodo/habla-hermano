@@ -21,6 +21,28 @@ from src.agent.state import ScaffoldingConfig
 if TYPE_CHECKING:
     from src.agent.state import ConversationState
 
+_MOCK_SCAFFOLD_JSON = (
+    '{"word_bank": ["hola (hello)", "buenos días (good morning)"], '
+    '"hint": "Try greeting them back", '
+    '"sentence_starter": "Hola, me llamo..."}'
+)
+
+
+@pytest.fixture(autouse=True)
+def _mock_scaffold_llm():
+    """Auto-mock get_llm for all tests to prevent real API calls.
+
+    Tests that patch get_llm themselves will naturally override this.
+    """
+    mock_response = MagicMock()
+    mock_response.content = _MOCK_SCAFFOLD_JSON
+
+    mock_llm = MagicMock()
+    mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
+    with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
+        yield
+
 
 class TestScaffoldNodeReturnStructure:
     """Tests for scaffold_node return structure."""

@@ -62,6 +62,45 @@
 
 ---
 
+## Running Tests
+
+### Parallel Execution with pytest-xdist
+
+Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,100+ Python test suite.
+
+```bash
+# Default: parallel execution (auto-detect cores)
+make test
+# or directly:
+pytest -n auto
+
+# Serial execution (useful for debugging or inspecting output):
+pytest -n0
+# or disable the plugin entirely:
+pytest -p no:xdist
+```
+
+All tests are isolated and safe for parallel execution — there is no shared state between tests. Database calls are mocked via Supabase client fixtures, and LLM calls are mocked via `get_llm` patches, so no real external services are contacted during the test run.
+
+### LLM Mocking Strategy
+
+Tests that exercise agent nodes (e.g. `respond_node`, `scaffold_node`, `lesson_respond_node`) mock `get_llm` from `src.agent.llm` to return a fake `ChatAnthropic` instance. This prevents real API calls to Anthropic, ensures deterministic outputs, and keeps the test suite fast. The typical pattern:
+
+```python
+@patch("src.agent.llm.get_llm")
+async def test_node_behavior(self, mock_get_llm):
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.return_value = AIMessage(content="mocked response")
+    mock_get_llm.return_value = mock_llm
+
+    result = await some_node(state)
+    # assertions on result ...
+```
+
+This approach applies to all LangGraph node tests, including the lesson chat phase machine and LLM-based translation evaluation.
+
+---
+
 ## Phase 3 Test Coverage
 
 Phase 3 introduced conditional routing and scaffolding for A0-A1 learners. The following sections document the new test coverage.

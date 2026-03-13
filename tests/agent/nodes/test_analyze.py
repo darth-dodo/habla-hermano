@@ -142,18 +142,27 @@ class TestAnalyzeNodeWithConversationHistory:
     @pytest.mark.asyncio
     async def test_handles_long_conversation(self) -> None:
         """analyze_node should handle long conversation histories."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        mock_response = MagicMock()
+        mock_response.content = '{"grammar_feedback": [], "pronunciation_tips": []}'
+
+        mock_llm = MagicMock()
+        mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+
         messages = []
         for i in range(10):
             messages.append(HumanMessage(content=f"User message {i}"))
             messages.append(AIMessage(content=f"AI response {i}"))
 
-        state: ConversationState = {
-            "messages": messages,
-            "level": "A1",
-            "language": "es",
-        }
-        result = await analyze_node(state)
-        assert isinstance(result, dict)
+        with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
+            state: ConversationState = {
+                "messages": messages,
+                "level": "A1",
+                "language": "es",
+            }
+            result = await analyze_node(state)
+            assert isinstance(result, dict)
 
 
 class TestAnalyzeNodeLevels:
