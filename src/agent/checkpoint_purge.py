@@ -43,28 +43,27 @@ async def purge_old_checkpoints(retention_days: int | None = None) -> int:
         return 0
 
     try:
-        pool = saver.conn  # psycopg AsyncConnectionPool
+        conn = saver.conn  # psycopg AsyncConnection (not a pool)
         total_deleted = 0
 
-        async with pool.connection() as conn:
-            for table in _CHECKPOINT_TABLES:
-                # thread_ts is the checkpoint timestamp column used by
-                # langgraph-checkpoint-postgres.  Table names are from our
-                # constant tuple; retention_days is parameterised.
-                result = await conn.execute(
-                    SQL("DELETE FROM {} WHERE thread_ts < NOW() - INTERVAL %s").format(
-                        Identifier(table)
-                    ),
-                    (f"{retention_days} days",),
-                )
-                deleted = result.rowcount if result.rowcount else 0
-                total_deleted += deleted
-                logger.debug(
-                    "Purged %d rows from %s (older than %d days)",
-                    deleted,
-                    table,
-                    retention_days,
-                )
+        for table in _CHECKPOINT_TABLES:
+            # thread_ts is the checkpoint timestamp column used by
+            # langgraph-checkpoint-postgres.  Table names are from our
+            # constant tuple; retention_days is parameterised.
+            result = await conn.execute(
+                SQL("DELETE FROM {} WHERE thread_ts < NOW() - INTERVAL %s").format(
+                    Identifier(table)
+                ),
+                (f"{retention_days} days",),
+            )
+            deleted = result.rowcount if result.rowcount else 0
+            total_deleted += deleted
+            logger.debug(
+                "Purged %d rows from %s (older than %d days)",
+                deleted,
+                table,
+                retention_days,
+            )
 
         logger.info(
             "Checkpoint purge complete: %d total rows deleted (retention=%d days)",

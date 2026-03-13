@@ -74,22 +74,14 @@ class TestPurgeWithPostgresSaver:
 
         mock_conn = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
-        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__aexit__ = AsyncMock(return_value=False)
-
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(return_value=mock_conn)
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
 
         assert result == 5 * len(_CHECKPOINT_TABLES)
-        assert mock_conn.execute.call_count == len(_CHECKPOINT_TABLES)
-
-        # Verify all three tables were targeted
         assert mock_conn.execute.call_count == len(_CHECKPOINT_TABLES)
 
     @pytest.mark.asyncio
@@ -107,14 +99,9 @@ class TestPurgeWithPostgresSaver:
 
         mock_conn = AsyncMock()
         mock_conn.execute = AsyncMock(side_effect=lambda *_args, **_kwargs: make_result())
-        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__aexit__ = AsyncMock(return_value=False)
-
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(return_value=mock_conn)
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=7)
@@ -131,14 +118,9 @@ class TestPurgeWithPostgresSaver:
 
         mock_conn = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
-        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__aexit__ = AsyncMock(return_value=False)
-
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(return_value=mock_conn)
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             await purge_old_checkpoints(retention_days=14)
@@ -176,14 +158,9 @@ class TestPurgeDefaultSettings:
 
         mock_conn = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
-        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__aexit__ = AsyncMock(return_value=False)
-
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(return_value=mock_conn)
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with (
             patch(
@@ -210,11 +187,11 @@ class TestPurgeErrorHandling:
         """Should catch exceptions and return 0 without raising."""
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(side_effect=RuntimeError("connection failed"))
+        mock_conn = AsyncMock()
+        mock_conn.execute = AsyncMock(side_effect=RuntimeError("connection failed"))
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
@@ -226,11 +203,11 @@ class TestPurgeErrorHandling:
         """Should log the exception details when purge fails."""
         from src.agent.checkpoint_purge import purge_old_checkpoints
 
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(side_effect=RuntimeError("connection failed"))
+        mock_conn = AsyncMock()
+        mock_conn.execute = AsyncMock(side_effect=RuntimeError("connection failed"))
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             with caplog.at_level(logging.ERROR):
@@ -248,14 +225,9 @@ class TestPurgeErrorHandling:
 
         mock_conn = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
-        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__aexit__ = AsyncMock(return_value=False)
-
-        mock_pool = MagicMock()
-        mock_pool.connection = MagicMock(return_value=mock_conn)
 
         mock_saver = MagicMock()
-        mock_saver.conn = mock_pool
+        mock_saver.conn = mock_conn
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
             result = await purge_old_checkpoints(retention_days=30)
