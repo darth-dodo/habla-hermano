@@ -290,7 +290,7 @@ export function initVoice() {
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') {
             // iOS kills MediaStream tracks when backgrounded -- stop cleanly
-            if (sttService.matches('recording') || sttService.matches('connecting')) {
+            if (sttService && (sttService.matches('recording') || sttService.matches('connecting'))) {
                 sttService.send('CANCEL');
             }
         }
@@ -408,12 +408,17 @@ export function handleSpeakClick(btn) {
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
-        // ALWAYS call resume() in the click handler -- iOS Safari can report
-        // state='running' but silently refuse to produce audio after the first
-        // TTS session ends. resume() on an already-running context is a no-op
-        // on desktop but re-activates the audio pipeline on iOS.
         var ctx = sharedTtsCtx;
+        // resume() + silent buffer warmup in the user-gesture callstack.
+        // iOS Safari requires actual audio output within the gesture to unlock
+        // the AudioContext; resume() alone reports 'running' but stays muted.
+        // Without this, TTS only works after STT (getUserMedia unlocks audio).
         ctx.resume();
+        var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        var silentSrc = ctx.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(ctx.destination);
+        silentSrc.start();
         streamTTS(btn, text, voice, speed, ctx, ttsAbort.signal, ttsService, showError);
     } else {
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);

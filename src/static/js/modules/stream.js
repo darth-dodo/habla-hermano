@@ -79,6 +79,10 @@ function createStreamingBubble() {
     const chatMessages = getChatMessages();
     if (!chatMessages) return '';
 
+    // Remove lesson welcome card if present (lesson auto-start replaces it)
+    const welcome = document.getElementById('lesson-welcome');
+    if (welcome) welcome.remove();
+
     const id = 'stream-' + (++bubbleCounter);
     const bubbleHtml = `
         <div class="message-enter flex justify-start mb-6" id="${id}-wrapper">

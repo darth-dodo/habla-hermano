@@ -32,7 +32,14 @@
                 <!-- Normal Chat Mode -->
 
                 {% if lesson_mode %}
-                <!-- Lesson Mode — auto-start message sent by JS -->
+                <!-- Lesson welcome card — visible until JS auto-start streams the first response -->
+                <div id="lesson-welcome" class="message-enter flex justify-start mb-6">
+                    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
+                        <p class="text-accent font-semibold text-lg mb-1">{{ lesson_title }}</p>
+                        <p class="text-text-muted text-sm mb-3">{{ lesson_description }}</p>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium text-xs">{{ lesson_level }}</span>
+                    </div>
+                </div>
                 {% else %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->
