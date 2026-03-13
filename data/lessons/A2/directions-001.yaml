@@ -1,0 +1,211 @@
+id: directions-001
+level: A2
+category: directions
+icon: "\U0001F5FA\uFE0F"
+tags:
+  - directions
+  - navigation
+  - city
+  - practical
+estimated_minutes: 6
+title: Getting Around Town
+description: Ask for and give directions to find places in a city
+
+languages:
+  es:
+    instruction: "You're on foot in the old quarter of Cartagena, looking for a famous restaurant your friend recommended. Your phone just died — time to ask a local for directions!"
+    vocabulary:
+      - word: "¿Dónde está...?"
+        translation: "Where is...?"
+      - word: "Gire a la derecha"
+        translation: "Turn right"
+      - word: "Gire a la izquierda"
+        translation: "Turn left"
+      - word: "Siga todo recto"
+        translation: "Go straight ahead"
+      - word: "Está al lado de..."
+        translation: "It's next to..."
+      - word: "Está enfrente de..."
+        translation: "It's in front of / across from..."
+      - word: "A dos calles de aquí"
+        translation: "Two blocks from here"
+      - word: "¿Está lejos?"
+        translation: "Is it far?"
+      - word: "La primera calle a la derecha"
+        translation: "The first street on the right"
+      - word: "Al final de la calle"
+        translation: "At the end of the street"
+    examples:
+      - content: "— Perdone, ¿dónde está el restaurante La Cevichería?\n— Siga todo recto y gire a la izquierda en la segunda calle. Está al lado de la iglesia.\n— ¿Está lejos?\n— No, a cinco minutos andando."
+        translation: "— Excuse me, where is the restaurant La Cevichería?\n— Go straight ahead and turn left on the second street. It's next to the church.\n— Is it far?\n— No, five minutes walking."
+      - content: "— Disculpe, ¿cómo llego al museo?\n— Camine dos calles y gire a la derecha. El museo está enfrente del parque.\n— Muchas gracias.\n— De nada."
+        translation: "— Excuse me, how do I get to the museum?\n— Walk two blocks and turn right. The museum is across from the park.\n— Thank you very much.\n— You're welcome."
+    tips:
+      - "In Spain, people often give directions using landmarks ('next to the church', 'across from the park') rather than street names. Look for the landmarks!"
+      - "'Disculpe' (formal) and 'Perdone' (formal) are both polite ways to get a stranger's attention before asking directions."
+    exercises:
+      - id: ex-mc-dir-es-001
+        type: multiple_choice
+        question: "'Gire a la izquierda' means:"
+        options:
+          - "Turn right"
+          - "Go straight"
+          - "Turn left"
+          - "Go back"
+        correct_index: 2
+        explanation: "'Izquierda' means left. 'Gire a la izquierda' = Turn left."
+      - id: ex-fb-dir-es-001
+        type: fill_blank
+        sentence_template: "Siga todo _____ y el banco está al final de la calle."
+        correct_answer: "recto"
+        hint: "The word for 'straight'"
+        accept_alternatives:
+          - "derecho"
+      - id: ex-tr-dir-es-001
+        type: translate
+        source_text: "Excuse me, where is the pharmacy?"
+        source_language: en
+        target_language: es
+        correct_translation: "Perdone, ¿dónde está la farmacia?"
+        accept_alternatives:
+          - "Disculpe, ¿dónde está la farmacia?"
+          - "Perdón, ¿dónde está la farmacia?"
+      - id: ex-tr-dir-es-002
+        type: translate
+        source_text: "It's next to the park."
+        source_language: en
+        target_language: es
+        correct_translation: "Está al lado del parque."
+        accept_alternatives:
+          - "Está junto al parque."
+          - "Está cerca del parque."
+
+  de:
+    instruction: "You're wandering through Munich's Altstadt looking for the Deutsches Museum. Your phone battery is dead and you need to ask a passerby for help. Time to navigate auf Deutsch!"
+    vocabulary:
+      - word: "Wo ist...?"
+        translation: "Where is...?"
+      - word: "Biegen Sie rechts ab"
+        translation: "Turn right"
+      - word: "Biegen Sie links ab"
+        translation: "Turn left"
+      - word: "Gehen Sie geradeaus"
+        translation: "Go straight ahead"
+      - word: "Es ist neben..."
+        translation: "It's next to..."
+      - word: "Es ist gegenüber von..."
+        translation: "It's across from..."
+      - word: "Zwei Straßen weiter"
+        translation: "Two streets further"
+      - word: "Ist es weit?"
+        translation: "Is it far?"
+      - word: "Die erste Straße rechts"
+        translation: "The first street on the right"
+      - word: "Am Ende der Straße"
+        translation: "At the end of the street"
+    examples:
+      - content: "— Entschuldigung, wo ist das Deutsche Museum?\n— Gehen Sie geradeaus und biegen Sie an der zweiten Straße links ab. Es ist neben der Kirche.\n— Ist es weit?\n— Nein, etwa fünf Minuten zu Fuß."
+        translation: "— Excuse me, where is the Deutsches Museum?\n— Go straight ahead and turn left at the second street. It's next to the church.\n— Is it far?\n— No, about five minutes on foot."
+      - content: "— Entschuldigen Sie, wie komme ich zum Bahnhof?\n— Gehen Sie zwei Straßen weiter und biegen Sie rechts ab. Der Bahnhof ist gegenüber vom Park.\n— Vielen Dank.\n— Bitte schön."
+        translation: "— Excuse me, how do I get to the train station?\n— Go two streets further and turn right. The station is across from the park.\n— Thank you very much.\n— You're welcome."
+    tips:
+      - "Germans tend to give very precise directions with distances ('200 Meter', 'fünf Minuten zu Fuß'). If you hear numbers, they're telling you how far it is!"
+      - "Use 'Entschuldigung' (excuse me) or 'Entschuldigen Sie' (more formal) to get someone's attention. Both are polite and universally accepted."
+    exercises:
+      - id: ex-mc-dir-de-001
+        type: multiple_choice
+        question: "'Biegen Sie links ab' means:"
+        options:
+          - "Turn right"
+          - "Go straight"
+          - "Turn left"
+          - "Go back"
+        correct_index: 2
+        explanation: "'Links' means left. 'Biegen Sie links ab' = Turn left."
+      - id: ex-fb-dir-de-001
+        type: fill_blank
+        sentence_template: "Gehen Sie _____ und dann links."
+        correct_answer: "geradeaus"
+        hint: "The word for 'straight ahead'"
+        accept_alternatives: []
+      - id: ex-tr-dir-de-001
+        type: translate
+        source_text: "Excuse me, where is the pharmacy?"
+        source_language: en
+        target_language: de
+        correct_translation: "Entschuldigung, wo ist die Apotheke?"
+        accept_alternatives:
+          - "Entschuldigen Sie, wo ist die Apotheke?"
+      - id: ex-tr-dir-de-002
+        type: translate
+        source_text: "It's next to the park."
+        source_language: en
+        target_language: de
+        correct_translation: "Es ist neben dem Park."
+        accept_alternatives:
+          - "Es liegt neben dem Park."
+
+  fr:
+    instruction: "You're walking through the Marais in Paris, searching for a bookshop a local recommended. Your phone is out of battery — it's time to ask for directions en français!"
+    vocabulary:
+      - word: "Où est...?"
+        translation: "Where is...?"
+      - word: "Tournez à droite"
+        translation: "Turn right"
+      - word: "Tournez à gauche"
+        translation: "Turn left"
+      - word: "Allez tout droit"
+        translation: "Go straight ahead"
+      - word: "C'est à côté de..."
+        translation: "It's next to..."
+      - word: "C'est en face de..."
+        translation: "It's across from..."
+      - word: "À deux rues d'ici"
+        translation: "Two streets from here"
+      - word: "C'est loin?"
+        translation: "Is it far?"
+      - word: "La première rue à droite"
+        translation: "The first street on the right"
+      - word: "Au bout de la rue"
+        translation: "At the end of the street"
+    examples:
+      - content: "— Excusez-moi, où est la librairie Shakespeare ?\n— Allez tout droit et tournez à gauche à la deuxième rue. C'est à côté de l'église.\n— C'est loin ?\n— Non, à cinq minutes à pied."
+        translation: "— Excuse me, where is the Shakespeare bookshop?\n— Go straight ahead and turn left at the second street. It's next to the church.\n— Is it far?\n— No, five minutes on foot."
+      - content: "— Pardon, comment aller au musée ?\n— Continuez deux rues et tournez à droite. Le musée est en face du parc.\n— Merci beaucoup.\n— De rien."
+        translation: "— Excuse me, how do I get to the museum?\n— Continue two streets and turn right. The museum is across from the park.\n— Thank you very much.\n— You're welcome."
+    tips:
+      - "In France, people often reference well-known landmarks or métro stations when giving directions: 'C'est près du métro Saint-Paul' (It's near the Saint-Paul métro)."
+      - "'Excusez-moi' and 'Pardon' are both polite ways to approach a stranger. Starting with 'Bonjour' before asking is considered essential French politeness."
+    exercises:
+      - id: ex-mc-dir-fr-001
+        type: multiple_choice
+        question: "'Tournez à gauche' means:"
+        options:
+          - "Turn right"
+          - "Go straight"
+          - "Turn left"
+          - "Go back"
+        correct_index: 2
+        explanation: "'Gauche' means left. 'Tournez à gauche' = Turn left."
+      - id: ex-fb-dir-fr-001
+        type: fill_blank
+        sentence_template: "Allez tout _____ et la banque est au bout de la rue."
+        correct_answer: "droit"
+        hint: "The word for 'straight'"
+        accept_alternatives: []
+      - id: ex-tr-dir-fr-001
+        type: translate
+        source_text: "Excuse me, where is the pharmacy?"
+        source_language: en
+        target_language: fr
+        correct_translation: "Excusez-moi, où est la pharmacie ?"
+        accept_alternatives:
+          - "Pardon, où est la pharmacie ?"
+      - id: ex-tr-dir-fr-002
+        type: translate
+        source_text: "It's next to the park."
+        source_language: en
+        target_language: fr
+        correct_translation: "C'est à côté du parc."
+        accept_alternatives:
+          - "C'est près du parc."

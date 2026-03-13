@@ -1,0 +1,190 @@
+id: numbers-001
+level: A0
+category: numbers
+icon: "\U0001F522"
+tags:
+  - numbers
+  - counting
+  - prices
+  - basics
+estimated_minutes: 3
+title: Counting and Prices
+description: Use numbers 1-20 to count items, understand prices, and exchange phone numbers
+
+languages:
+  es:
+    instruction: "You're at a fruit stand in Barcelona. The vendor holds up some oranges and says a price — can you understand it? Numbers are everywhere: prices, phone numbers, addresses. Let's master 1-20."
+    vocabulary:
+      - word: "Uno, dos, tres"
+        translation: "One, two, three"
+      - word: "Cuatro, cinco, seis"
+        translation: "Four, five, six"
+      - word: "Siete, ocho, nueve, diez"
+        translation: "Seven, eight, nine, ten"
+      - word: "Once, doce, trece"
+        translation: "Eleven, twelve, thirteen"
+      - word: "Catorce, quince"
+        translation: "Fourteen, fifteen"
+      - word: "Dieciséis, diecisiete, dieciocho"
+        translation: "Sixteen, seventeen, eighteen"
+      - word: "Diecinueve, veinte"
+        translation: "Nineteen, twenty"
+      - word: "¿Cuánto cuesta?"
+        translation: "How much does it cost?"
+    examples:
+      - content: "— ¿Cuánto cuesta?\n— Dos euros.\n— Perfecto. Tres naranjas, por favor."
+        translation: "— How much does it cost?\n— Two euros.\n— Perfect. Three oranges, please."
+      - content: "— ¿Cuál es tu número de teléfono?\n— Es el seis, uno, cinco, nueve, dos, tres, cuatro, ocho, cero."
+        translation: "— What's your phone number?\n— It's 6-1-5-9-2-3-4-8-0."
+    tips:
+      - "Spanish phone numbers are usually read digit by digit. For prices, you'll hear 'euro' (singular) and 'euros' (plural): 'un euro', 'cinco euros'."
+      - "Numbers 16-19 are single words in Spanish: 'dieciséis', 'diecisiete', etc. This is different from English where they're two words."
+    exercises:
+      - id: ex-mc-num-es-001
+        type: multiple_choice
+        question: "The vendor says 'Cinco euros'. How much is it?"
+        options:
+          - "3 euros"
+          - "5 euros"
+          - "15 euros"
+          - "50 euros"
+        correct_index: 1
+        explanation: "'Cinco' means five. So 'cinco euros' = 5 euros."
+      - id: ex-mc-num-es-002
+        type: multiple_choice
+        question: "How do you say the number 12 in Spanish?"
+        options:
+          - "Diez"
+          - "Doce"
+          - "Veinte"
+          - "Dos"
+        correct_index: 1
+        explanation: "'Doce' is twelve. 'Diez' is ten, 'veinte' is twenty, 'dos' is two."
+      - id: ex-mc-num-es-003
+        type: multiple_choice
+        question: "You want to ask 'How much does it cost?' What do you say?"
+        options:
+          - "¿Cómo estás?"
+          - "¿Cuánto cuesta?"
+          - "¿Dónde está?"
+          - "¿Qué hora es?"
+        correct_index: 1
+        explanation: "'¿Cuánto cuesta?' means 'How much does it cost?' — essential for shopping!"
+
+  de:
+    instruction: "You're at a Marktstand in Munich, eyeing some fresh pretzels. The vendor says a price — can you catch it? From shopping to sharing your phone number, numbers are the first thing you need. Let's learn 1-20 in German."
+    vocabulary:
+      - word: "Eins, zwei, drei"
+        translation: "One, two, three"
+      - word: "Vier, fünf, sechs"
+        translation: "Four, five, six"
+      - word: "Sieben, acht, neun, zehn"
+        translation: "Seven, eight, nine, ten"
+      - word: "Elf, zwölf, dreizehn"
+        translation: "Eleven, twelve, thirteen"
+      - word: "Vierzehn, fünfzehn"
+        translation: "Fourteen, fifteen"
+      - word: "Sechzehn, siebzehn, achtzehn"
+        translation: "Sixteen, seventeen, eighteen"
+      - word: "Neunzehn, zwanzig"
+        translation: "Nineteen, twenty"
+      - word: "Was kostet das?"
+        translation: "How much does that cost?"
+    examples:
+      - content: "— Was kostet das?\n— Zwei Euro.\n— Gut. Drei Brezeln, bitte."
+        translation: "— How much does that cost?\n— Two euros.\n— Good. Three pretzels, please."
+      - content: "— Was ist Ihre Telefonnummer?\n— Sechs, eins, fünf, neun, zwei, drei, vier, acht, null."
+        translation: "— What is your phone number?\n— 6-1-5-9-2-3-4-8-0."
+    tips:
+      - "German numbers 13-19 follow a pattern: the unit + 'zehn' (ten). So 'dreizehn' = three-ten = thirteen. Note that 'sechzehn' drops the 's' from 'sechs' and 'siebzehn' drops the 'en' from 'sieben'."
+      - "Germans usually say prices with 'Euro' (no plural 's'): 'fünf Euro' not 'fünf Euros'. For cents, they say 'Cent': 'zwei Euro fünfzig' (2.50)."
+    exercises:
+      - id: ex-mc-num-de-001
+        type: multiple_choice
+        question: "The baker says 'Fünf Euro'. How much is it?"
+        options:
+          - "3 euros"
+          - "5 euros"
+          - "15 euros"
+          - "50 euros"
+        correct_index: 1
+        explanation: "'Fünf' means five. So 'fünf Euro' = 5 euros."
+      - id: ex-mc-num-de-002
+        type: multiple_choice
+        question: "How do you say the number 12 in German?"
+        options:
+          - "Zehn"
+          - "Zwölf"
+          - "Zwanzig"
+          - "Zwei"
+        correct_index: 1
+        explanation: "'Zwölf' is twelve. 'Zehn' is ten, 'zwanzig' is twenty, 'zwei' is two."
+      - id: ex-mc-num-de-003
+        type: multiple_choice
+        question: "You want to ask 'How much does that cost?' What do you say?"
+        options:
+          - "Wie geht es Ihnen?"
+          - "Was kostet das?"
+          - "Wo ist das?"
+          - "Wie spät ist es?"
+        correct_index: 1
+        explanation: "'Was kostet das?' means 'How much does that cost?' — essential for shopping in Germany!"
+
+  fr:
+    instruction: "You're at a marché in Nice, surrounded by colorful fruit stalls. The vendor holds up some peaches and names a price — can you follow? Numbers are everywhere in daily life. Let's master 1-20 in French."
+    vocabulary:
+      - word: "Un, deux, trois"
+        translation: "One, two, three"
+      - word: "Quatre, cinq, six"
+        translation: "Four, five, six"
+      - word: "Sept, huit, neuf, dix"
+        translation: "Seven, eight, nine, ten"
+      - word: "Onze, douze, treize"
+        translation: "Eleven, twelve, thirteen"
+      - word: "Quatorze, quinze"
+        translation: "Fourteen, fifteen"
+      - word: "Seize, dix-sept, dix-huit"
+        translation: "Sixteen, seventeen, eighteen"
+      - word: "Dix-neuf, vingt"
+        translation: "Nineteen, twenty"
+      - word: "Combien ça coûte ?"
+        translation: "How much does it cost?"
+    examples:
+      - content: "— Combien ça coûte ?\n— Deux euros.\n— Parfait. Trois pêches, s'il vous plaît."
+        translation: "— How much does it cost?\n— Two euros.\n— Perfect. Three peaches, please."
+      - content: "— Quel est votre numéro de téléphone ?\n— C'est le six, un, cinq, neuf, deux, trois, quatre, huit, zéro."
+        translation: "— What is your phone number?\n— It's 6-1-5-9-2-3-4-8-0."
+    tips:
+      - "French numbers 17-19 are built as 'dix-sept' (ten-seven = 17), 'dix-huit' (ten-eight = 18), 'dix-neuf' (ten-nine = 19). But 16 is the irregular 'seize' — not 'dix-six'."
+      - "In France, phone numbers are read in pairs: 06 15 92 34 80 becomes 'zéro six, quinze, quatre-vingt-douze, trente-quatre, quatre-vingts'. But at A0 level, digit by digit works fine!"
+    exercises:
+      - id: ex-mc-num-fr-001
+        type: multiple_choice
+        question: "The vendor says 'Cinq euros'. How much is it?"
+        options:
+          - "3 euros"
+          - "5 euros"
+          - "15 euros"
+          - "50 euros"
+        correct_index: 1
+        explanation: "'Cinq' means five. So 'cinq euros' = 5 euros."
+      - id: ex-mc-num-fr-002
+        type: multiple_choice
+        question: "How do you say the number 12 in French?"
+        options:
+          - "Dix"
+          - "Douze"
+          - "Vingt"
+          - "Deux"
+        correct_index: 1
+        explanation: "'Douze' is twelve. 'Dix' is ten, 'vingt' is twenty, 'deux' is two."
+      - id: ex-mc-num-fr-003
+        type: multiple_choice
+        question: "You want to ask 'How much does it cost?' What do you say?"
+        options:
+          - "Comment allez-vous ?"
+          - "Combien ça coûte ?"
+          - "Où est-ce ?"
+          - "Quelle heure est-il ?"
+        correct_index: 1
+        explanation: "'Combien ça coûte ?' means 'How much does it cost?' — essential for shopping in France!"

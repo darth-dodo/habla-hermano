@@ -34,7 +34,7 @@
 | Lessons/Progress | `api/routes/test_progress.py` | 50+ | Lesson endpoints, progress tracking |
 | Lesson Models | `lessons/test_models.py` | 36 | Phase 6 lesson data model validation |
 | Lesson Service | `lessons/test_service.py` | 20 | Phase 6 lesson service functionality |
-| Lesson Routes | `api/routes/test_lessons.py` | 39 | Phase 6 lesson API endpoints |
+| Lesson Routes | `api/routes/test_lessons.py` | 30 | Phase 6 lesson API endpoints (list, detail, progress) |
 | Progress Service | `services/test_progress.py` | 25+ | Phase 7 dashboard stats, chart data |
 | Data Capture | `api/test_data_capture.py` | 20+ | Phase 7 vocabulary/session capture integration |
 | Review Service | `services/test_review.py` | 30+ | Phase 12 spaced repetition review scheduling |
@@ -51,10 +51,14 @@
 | JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
 | JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
-| Lesson Chat Node | `agent/nodes/test_lesson_chat.py` | 45 | Phase 19 lesson respond node, phase machine, exercise evaluation |
-| Lesson Chat Routes | `api/routes/test_lesson_chat.py` | 23 | Phase 19 lesson chat API routes, thread ID, validation |
+| JS Lesson | `tests/js/lesson.test.js` | 45 | Lesson mode detection, progress bar, completion overlay |
+| JS Theme | `tests/js/theme.test.js` | 7 | Theme picker, localStorage persistence |
+| Lesson Chat Node | `agent/nodes/test_lesson_chat.py` | 45 | Phase 19/23 lesson respond node, phase machine, exercise evaluation |
+| Chat Routes (Lesson) | `api/routes/test_chat.py` | 16 | Phase 23 unified chat routes: lesson mode, thread ID, streaming, resume |
+| Answer Normalization | `agent/nodes/test_lesson_chat.py` | 15 | Phase 23 normalize_answer, fill-blank, translate normalization |
+| LLM Translation Eval | `agent/nodes/test_lesson_chat.py` | 8 | Phase 23 LLM-based translation evaluation |
 
-**Total**: 2312+ tests (2123 Python + 189 JavaScript) with 97% code coverage
+**Total**: ~2364 tests (~2123 Python + ~241 JavaScript) with 97% code coverage
 
 ---
 
@@ -448,7 +452,7 @@ def test_progress_updates_existing(self) -> None:
 
 ### Lesson Route Tests (`tests/api/routes/test_lessons.py`)
 
-**39 test cases** covering all lesson API endpoints.
+**30 test cases** covering lesson list, detail, and progress API endpoints. (Phase 23 removed the step-based `/lessons/{id}/play` player endpoint; lessons are now delivered conversationally through the unified chat route.)
 
 #### Test Classes
 
@@ -456,9 +460,8 @@ def test_progress_updates_existing(self) -> None:
 |-------|-------|---------|
 | `TestLessonListEndpoint` | 8 | GET /lessons with filters |
 | `TestLessonDetailEndpoint` | 6 | GET /lessons/{id} |
-| `TestLessonPlayerEndpoint` | 8 | GET /lessons/{id}/play with step navigation |
 | `TestLessonProgressEndpoints` | 10 | Progress save/retrieve/update |
-| `TestGuestAccess` | 7 | Unauthenticated user lesson access |
+| `TestGuestAccess` | 6 | Unauthenticated user lesson access |
 
 #### Key Test Scenarios
 
@@ -489,34 +492,6 @@ async def test_get_lessons_with_language_filter(self, async_client) -> None:
     assert all(lesson["language"] == "es" for lesson in lessons)
 ```
 
-**Lesson Player Endpoints**:
-```python
-async def test_lesson_player_renders_first_step(self, async_client) -> None:
-    """GET /lessons/{id}/play should render first step."""
-    response = await async_client.get("/lessons/greetings-a1/play")
-
-    assert response.status_code == 200
-    assert "step" in response.json()
-    assert response.json()["current_step"] == 1
-
-async def test_lesson_player_navigates_to_step(self, async_client) -> None:
-    """GET /lessons/{id}/play?step=3 should navigate to specific step."""
-    response = await async_client.get("/lessons/greetings-a1/play?step=3")
-
-    assert response.status_code == 200
-    assert response.json()["current_step"] == 3
-
-async def test_lesson_player_marks_completion(self, async_client) -> None:
-    """Reaching final step should mark lesson as complete."""
-    # Navigate to final step
-    response = await async_client.get("/lessons/greetings-a1/play?step=8")
-
-    assert response.status_code == 200
-    # Check completion state
-    progress_response = await async_client.get("/lessons/greetings-a1/progress")
-    assert progress_response.json()["completed"] is True
-```
-
 **Guest Access (Unauthenticated Users)**:
 ```python
 async def test_guest_can_view_lesson_list(self, async_client) -> None:
@@ -526,15 +501,15 @@ async def test_guest_can_view_lesson_list(self, async_client) -> None:
     assert response.status_code == 200
     assert len(response.json()["lessons"]) > 0
 
-async def test_guest_can_play_lessons(self, async_client) -> None:
-    """Unauthenticated users should access lesson player."""
-    response = await async_client.get("/lessons/greetings-a1/play")
+async def test_guest_can_start_lesson(self, async_client) -> None:
+    """Unauthenticated users should start lesson via chat."""
+    response = await async_client.get("/?lesson=greetings-a1")
 
     assert response.status_code == 200
 
 async def test_guest_progress_uses_session(self, async_client) -> None:
     """Guest progress should be stored in session, not database."""
-    response = await async_client.get("/lessons/greetings-a1/play?step=3")
+    response = await async_client.get("/?lesson=greetings-a1")
 
     assert response.status_code == 200
     # Progress tracked via session cookie, not user_id
@@ -543,35 +518,19 @@ async def test_guest_progress_uses_session(self, async_client) -> None:
 
 ---
 
-### Phase 6 E2E Browser Tests (Playwright)
+### Phase 6/23 E2E Browser Tests (Playwright)
 
-End-to-end browser testing for the lesson player interface.
+End-to-end browser testing for lesson discovery and conversational lesson delivery.
 
 | Test | Status | Description |
 |------|--------|-------------|
 | Lesson Catalog Display | Pass | Lessons render with correct metadata |
 | Level Filter UI | Pass | Dropdown filters lessons by CEFR level |
-| Lesson Player Navigation | Pass | Next/Previous buttons navigate steps |
-| Progress Indicator | Pass | Visual progress bar updates correctly |
-| Step Content Rendering | Pass | Vocabulary, grammar, dialogue steps render |
-| Completion Celebration | Pass | Completion message displays at final step |
+| Lesson Chat Flow | Pass | Conversational lesson delivery through unified chat |
+| Progress Indicator | Pass | Visual progress bar updates during lesson phases |
+| Completion Overlay | Pass | Completion overlay with score displays at end |
 
-#### Lesson Player Navigation Test
-
-**Test Steps**:
-1. Navigate to lesson catalog `/lessons`
-2. Click on "Greetings and Introductions" lesson card
-3. Verify lesson player loads with step 1
-4. Click "Next" button
-5. Verify step 2 content displays
-6. Click "Previous" button
-7. Verify step 1 content displays again
-
-**Expected Behavior**:
-- Step counter updates (e.g., "Step 2 of 8")
-- Progress bar advances visually
-- Step content transitions smoothly
-- Navigation buttons disable appropriately at boundaries
+> **Note**: Phase 23 replaced the step-based lesson player with conversational delivery through the main chat route (`GET /?lesson={id}`). The old `/lessons/{id}/play` navigation tests are no longer applicable.
 
 ---
 
@@ -716,9 +675,9 @@ async def test_chat_captures_vocabulary_with_auth_user(self, async_client) -> No
 
 **Lesson Session Capture**:
 ```python
-async def test_lesson_play_creates_session_record(self, async_client) -> None:
-    """Playing a lesson should create a session record."""
-    response = await async_client.get("/lessons/greetings-a1/play")
+async def test_lesson_chat_creates_session_record(self, async_client) -> None:
+    """Starting a lesson via chat should create a session record."""
+    response = await async_client.get("/?lesson=greetings-a1")
 
     assert response.status_code == 200
     # Session record created
@@ -727,11 +686,8 @@ async def test_lesson_play_creates_session_record(self, async_client) -> None:
 
 async def test_lesson_completion_records_vocabulary(self, async_client) -> None:
     """Completing a lesson should record vocabulary from lesson content."""
-    # Navigate through all lesson steps
-    for step in range(1, 9):
-        await async_client.get(f"/lessons/greetings-a1/play?step={step}")
-
-    # Verify vocabulary captured from lesson
+    # Lesson completion handled through conversational chat flow
+    # Vocabulary captured via lesson respond node's complete phase
     vocab_response = await async_client.get("/progress/vocabulary")
     vocab_words = [v["word"] for v in vocab_response.json()["vocabulary"]]
     assert "hola" in vocab_words or "buenos dias" in vocab_words
@@ -809,13 +765,13 @@ Phase 14 introduced learning paths and adaptive recommendations. 99 new tests we
 
 ---
 
-## Phase 19 Test Coverage
+## Phase 19/23 Test Coverage
 
-Phase 19 introduced conversational lesson delivery through the chat UI. 68 new tests cover the lesson respond node phase machine and the lesson chat API routes.
+Phase 19 introduced conversational lesson delivery through the chat UI. Phase 23 unified lessons into the main chat route (`GET /` with `?lesson=` param and `POST /chat/stream` with `lesson_id`), removing the separate `/chat/lesson/` routes. Tests cover the lesson respond node phase machine, unified routing, answer normalization, and LLM-based evaluation.
 
 ### Lesson Chat Node Tests (`tests/agent/nodes/test_lesson_chat.py`)
 
-**45 test cases** covering the lesson respond node implementation.
+**45+ test cases** covering the lesson respond node and answer normalization.
 
 | Class | Tests | Purpose |
 |-------|-------|---------|
@@ -827,16 +783,21 @@ Phase 19 introduced conversational lesson delivery through the chat UI. 68 new t
 | `TestHandleExerciseEval` | 10 | Exercise eval: MC/fill-blank/translate, correctness, result recording |
 | `TestHandleComplete` | 4 | Completion: score calculation, vocabulary count, UI events |
 | `TestLessonRespondNode` | 5 | Main dispatch: phase routing, unknown phase fallback |
+| `TestNormalizeAnswer` | 6 | Phase 23 answer normalization: accents, punctuation, casing, whitespace |
+| `TestFillBlankNormalization` | 6 | Phase 23 fill-blank exercise normalization: articles, extra words, partial |
+| `TestTranslateNormalization` | 3 | Phase 23 translation exercise normalization: equivalences, synonyms |
+| `TestTranslateExerciseLLMEval` | 8 | Phase 23 LLM-based translation evaluation: correct/incorrect/partial, fallback |
 
-### Lesson Chat Route Tests (`tests/api/routes/test_lesson_chat.py`)
+### Unified Chat Route Tests — Lesson Mode (`tests/api/routes/test_chat.py`)
 
-**23 test cases** covering the lesson chat API routes.
+Phase 23 merged lesson routes into the main chat endpoints. **16 test cases** cover lesson-specific behavior within the unified routes.
 
 | Class | Tests | Purpose |
 |-------|-------|---------|
-| `TestResolveThreadId` | 4 | Thread ID format: authenticated, guest session, new guest, priority |
-| `TestLessonChatPage` | 4 | GET /chat/lesson/{id}: 200, context, 404, session cookie |
-| `TestLessonStreamValidation` | 4 | POST /chat/lesson/stream: empty msg, invalid level/language, missing lesson |
+| `TestChatPageLessonMode` | 4 | GET / with `?lesson=` param: 200, lesson context, 404 unknown, session cookie |
+| `TestResolveLessonThreadId` | 3 | Thread ID generation: `lesson-{id}-{user}` format, guest fallback, deterministic |
+| `TestStreamMessageLessonMode` | 5 | POST /chat/stream with `lesson_id`: graph invocation, SSE events, validation |
+| `TestLessonResume` | 4 | Checkpoint-based resume: existing checkpoint loads state, new lesson initializes |
 
 ---
 
@@ -844,8 +805,8 @@ Phase 19 introduced conversational lesson delivery through the chat UI. 68 new t
 
 **Framework**: Vitest 3.x + jsdom environment
 **Location**: `tests/js/`
-**Total**: 186 tests across 6 test files
-**Coverage**: ~90% on tested modules (dom, stream, voice, scaffold)
+**Total**: 241 tests across 8 test files
+**Coverage**: ~90% on tested modules (dom, stream, voice, scaffold, lesson, theme)
 
 ### Running JavaScript Tests
 
@@ -1158,7 +1119,7 @@ tests/
 │       ├── test_analyze.py        # Phase 2 analyze node
 │       ├── test_scaffold.py       # Phase 3 scaffold node
 │       ├── test_review.py         # Review node tests
-│       └── test_lesson_chat.py    # Phase 19 lesson chat node
+│       └── test_lesson_chat.py    # Phase 19/23 lesson chat node + answer normalization
 ├── api/                           # API module tests (mirrors src/api/)
 │   ├── __init__.py
 │   ├── test_auth.py               # JWT validation, signup/login flows
@@ -1170,15 +1131,14 @@ tests/
 │   ├── test_persistence.py        # Auth + persistence integration
 │   └── routes/                    # Route tests (mirrors src/api/routes/)
 │       ├── __init__.py
-│       ├── test_chat.py           # Chat endpoint tests
+│       ├── test_chat.py           # Chat endpoint tests + Phase 23 lesson mode
 │       ├── test_auth.py           # Auth route tests
 │       ├── test_learn.py          # Learn page routes
 │       ├── test_lessons.py        # Lesson API endpoints
 │       ├── test_progress.py       # Progress route tests
 │       ├── test_review.py         # Review route tests
 │       ├── test_validation.py     # Input validation tests
-│       ├── test_e2e.py            # E2E route integration tests
-│       └── test_lesson_chat.py    # Phase 19 lesson chat routes
+│       └── test_e2e.py            # E2E route integration tests
 ├── db/                            # Database tests (mirrors src/db/)
 │   ├── __init__.py
 │   ├── test_models.py             # Pydantic models for Supabase
@@ -1202,7 +1162,9 @@ tests/
     ├── voice.test.js              # VoiceManager lifecycle, STT, TTS playback
     ├── scaffold.test.js           # Click-to-insert word bank
     ├── shortcuts.test.js          # Keyboard shortcuts (/, Shift+Enter, Escape)
-    └── htmx-handlers.test.js      # HTMX event handlers (afterSwap, scroll)
+    ├── htmx-handlers.test.js      # HTMX event handlers (afterSwap, scroll)
+    ├── lesson.test.js             # Lesson mode detection, progress bar, completion overlay
+    └── theme.test.js              # Theme picker, localStorage persistence
 ```
 
 ### Test Naming Conventions

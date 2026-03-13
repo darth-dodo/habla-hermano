@@ -23,6 +23,7 @@ from src.lessons.models import (
     MultipleChoiceExercise,
     TranslateExercise,
     UserLessonProgress,
+    _normalize_answer,
 )
 
 # =============================================================================
@@ -609,3 +610,139 @@ class TestEdgeCases:
             total_exercises=0,
         )
         assert progress.completion_percentage >= 0
+
+
+# =============================================================================
+# Answer Normalization Tests
+# =============================================================================
+
+
+class TestNormalizeAnswer:
+    """Tests for _normalize_answer helper function."""
+
+    def test_strips_whitespace(self) -> None:
+        assert _normalize_answer("  hello  ") == "hello"
+
+    def test_lowercases(self) -> None:
+        assert _normalize_answer("HELLO") == "hello"
+
+    def test_collapses_inner_whitespace(self) -> None:
+        assert _normalize_answer("estoy  bien") == "estoy bien"
+
+    def test_strips_punctuation(self) -> None:
+        assert _normalize_answer("¡Hola!") == "hola"
+        assert _normalize_answer("Buenos días.") == "buenos días"
+
+    def test_preserves_accented_characters(self) -> None:
+        assert _normalize_answer("días") == "días"
+        assert _normalize_answer("café") == "café"
+        assert _normalize_answer("niño") == "niño"
+
+    def test_preserves_unicode_word_chars(self) -> None:
+        # ñ, ü, é should all survive
+        assert _normalize_answer("Über") == "über"
+        assert _normalize_answer("señor") == "señor"
+
+
+class TestFillBlankNormalization:
+    """Tests for FillBlankExercise.check_answer with normalization."""
+
+    def test_normalizes_whitespace(self) -> None:
+        exercise = FillBlankExercise(
+            id="t1",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="I am _____",
+            correct_answer="estoy bien",
+        )
+        assert exercise.check_answer("  estoy  bien  ") is True
+
+    def test_strips_punctuation(self) -> None:
+        exercise = FillBlankExercise(
+            id="t2",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="I am _____",
+            correct_answer="estoy bien",
+        )
+        assert exercise.check_answer("Estoy bien.") is True
+        assert exercise.check_answer("¡Estoy bien!") is True
+
+    def test_case_insensitive(self) -> None:
+        exercise = FillBlankExercise(
+            id="t3",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="I am _____",
+            correct_answer="estoy bien",
+        )
+        assert exercise.check_answer("ESTOY BIEN") is True
+
+    def test_alternatives_with_normalization(self) -> None:
+        exercise = FillBlankExercise(
+            id="t4",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="I am _____",
+            correct_answer="estoy bien",
+            accept_alternatives=["estoy muy bien"],
+        )
+        assert exercise.check_answer("estoy muy bien") is True
+        assert exercise.check_answer("  Estoy  Muy  Bien!  ") is True
+
+    def test_wrong_answer(self) -> None:
+        exercise = FillBlankExercise(
+            id="t5",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="I am _____",
+            correct_answer="estoy bien",
+        )
+        assert exercise.check_answer("tengo hambre") is False
+
+    def test_accents_matter(self) -> None:
+        """Accented and unaccented versions should NOT match."""
+        exercise = FillBlankExercise(
+            id="t6",
+            type=ExerciseType.FILL_BLANK,
+            sentence_template="Good morning: _____",
+            correct_answer="buenos días",
+        )
+        assert exercise.check_answer("buenos días") is True
+        assert exercise.check_answer("buenos dias") is False
+
+
+class TestTranslateNormalization:
+    """Tests for TranslateExercise.check_answer with normalization."""
+
+    def test_normalizes_punctuation_and_whitespace(self) -> None:
+        exercise = TranslateExercise(
+            id="t7",
+            type=ExerciseType.TRANSLATE,
+            source_text="Good morning",
+            source_language="en",
+            target_language="es",
+            correct_translation="buenos días",
+        )
+        assert exercise.check_answer("Buenos días!") is True
+        assert exercise.check_answer("  buenos  días  ") is True
+
+    def test_alternatives_with_normalization(self) -> None:
+        exercise = TranslateExercise(
+            id="t8",
+            type=ExerciseType.TRANSLATE,
+            source_text="Hello",
+            source_language="en",
+            target_language="es",
+            correct_translation="Hola",
+            accept_alternatives=["¡Hola!"],
+        )
+        assert exercise.check_answer("hola") is True
+        assert exercise.check_answer("¡Hola!") is True
+        assert exercise.check_answer("Hola.") is True
+
+    def test_wrong_translation(self) -> None:
+        exercise = TranslateExercise(
+            id="t9",
+            type=ExerciseType.TRANSLATE,
+            source_text="Hello",
+            source_language="en",
+            target_language="es",
+            correct_translation="Hola",
+        )
+        assert exercise.check_answer("Adiós") is False

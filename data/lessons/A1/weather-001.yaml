@@ -1,0 +1,199 @@
+id: weather-001
+level: A1
+category: weather
+icon: "\u2600\uFE0F"
+tags:
+  - weather
+  - seasons
+  - small-talk
+  - daily-life
+estimated_minutes: 4
+title: Weather Small Talk
+description: Make small talk about the weather and describe seasons
+
+languages:
+  es:
+    instruction: "You're waiting at a bus stop and the person next to you glances at the sky. Weather is the universal icebreaker — in any language! Let's learn how to chat about the weather in Spanish."
+    vocabulary:
+      - word: "Hace sol"
+        translation: "It's sunny"
+      - word: "Hace frío"
+        translation: "It's cold"
+      - word: "Hace calor"
+        translation: "It's hot"
+      - word: "Llueve"
+        translation: "It's raining"
+      - word: "Hace buen tiempo"
+        translation: "The weather is nice"
+      - word: "Hace mal tiempo"
+        translation: "The weather is bad"
+      - word: "¿Qué tiempo hace?"
+        translation: "What's the weather like?"
+      - word: "Hoy / Mañana"
+        translation: "Today / Tomorrow"
+    examples:
+      - content: "— ¡Qué calor hace hoy!\n— Sí, hace mucho calor. Necesito un helado.\n— ¡Buena idea!"
+        translation: "— It's so hot today!\n— Yes, it's very hot. I need an ice cream.\n— Good idea!"
+      - content: "— ¿Qué tiempo hace mañana?\n— Creo que llueve.\n— Ah, necesito un paraguas."
+        translation: "— What's the weather like tomorrow?\n— I think it's going to rain.\n— Ah, I need an umbrella."
+    tips:
+      - "Spanish uses 'Hace...' (It makes...) for most weather: 'Hace sol' (It's sunny), 'Hace frío' (It's cold). But rain and snow use their own verbs: 'Llueve' (It rains), 'Nieva' (It snows)."
+      - "Complaining about heat is very common in Spain during summer. '¡Qué calor!' (So hot!) is something you'll hear constantly from June to September."
+    exercises:
+      - id: ex-mc-weather-es-001
+        type: multiple_choice
+        question: "It's a beautiful, warm day. What do you say?"
+        options:
+          - "Hace frío"
+          - "Llueve"
+          - "Hace buen tiempo"
+          - "Hace mal tiempo"
+        correct_index: 2
+        explanation: "'Hace buen tiempo' means 'The weather is nice' — perfect for a beautiful day."
+      - id: ex-mc-weather-es-002
+        type: multiple_choice
+        question: "What does 'Llueve' mean?"
+        options:
+          - "It's sunny"
+          - "It's cold"
+          - "It's raining"
+          - "It's windy"
+        correct_index: 2
+        explanation: "'Llueve' means 'It's raining.' From the verb 'llover' (to rain)."
+      - id: ex-fb-weather-es-001
+        type: fill_blank
+        sentence_template: "Hace mucho _____ en verano."
+        correct_answer: "calor"
+        hint: "The opposite of 'frío' (cold)"
+        accept_alternatives:
+          - "sol"
+      - id: ex-fb-weather-es-002
+        type: fill_blank
+        sentence_template: "¿Qué _____ hace hoy?"
+        correct_answer: "tiempo"
+        hint: "The word for 'weather' in Spanish"
+        accept_alternatives: []
+
+  de:
+    instruction: "You're waiting at a Bushaltestelle in Frankfurt and the person beside you glances at the grey sky. Talking about the weather is a German national pastime! Let's learn how to join in."
+    vocabulary:
+      - word: "Die Sonne scheint"
+        translation: "The sun is shining"
+      - word: "Es ist kalt"
+        translation: "It's cold"
+      - word: "Es ist warm"
+        translation: "It's warm"
+      - word: "Es regnet"
+        translation: "It's raining"
+      - word: "Das Wetter ist schön"
+        translation: "The weather is nice"
+      - word: "Das Wetter ist schlecht"
+        translation: "The weather is bad"
+      - word: "Wie ist das Wetter?"
+        translation: "What's the weather like?"
+      - word: "Heute / Morgen"
+        translation: "Today / Tomorrow"
+    examples:
+      - content: "— Es ist so warm heute!\n— Ja, sehr warm. Ich brauche ein Eis.\n— Gute Idee!"
+        translation: "— It's so warm today!\n— Yes, very warm. I need an ice cream.\n— Good idea!"
+      - content: "— Wie ist das Wetter morgen?\n— Ich glaube, es regnet.\n— Dann brauche ich einen Regenschirm."
+        translation: "— What's the weather like tomorrow?\n— I think it's going to rain.\n— Then I need an umbrella."
+    tips:
+      - "Germans love discussing the weather, especially complaining about it. 'Es regnet schon wieder!' (It's raining again!) is practically a national motto. Joining in earns you instant friendship points."
+      - "German weather uses 'Es ist...' (It is...) for temperature: 'Es ist kalt/warm/heiß'. For precipitation, verbs are used: 'Es regnet' (It rains), 'Es schneit' (It snows)."
+    exercises:
+      - id: ex-mc-weather-de-001
+        type: multiple_choice
+        question: "It's a beautiful, warm day. What do you say?"
+        options:
+          - "Es ist kalt"
+          - "Es regnet"
+          - "Das Wetter ist schön"
+          - "Das Wetter ist schlecht"
+        correct_index: 2
+        explanation: "'Das Wetter ist schön' means 'The weather is nice' — perfect for a beautiful day."
+      - id: ex-mc-weather-de-002
+        type: multiple_choice
+        question: "What does 'Es regnet' mean?"
+        options:
+          - "It's sunny"
+          - "It's cold"
+          - "It's raining"
+          - "It's windy"
+        correct_index: 2
+        explanation: "'Es regnet' means 'It's raining.' From the verb 'regnen' (to rain)."
+      - id: ex-fb-weather-de-001
+        type: fill_blank
+        sentence_template: "Es ist sehr _____ im Sommer."
+        correct_answer: "warm"
+        hint: "The opposite of 'kalt' (cold)"
+        accept_alternatives:
+          - "heiß"
+      - id: ex-fb-weather-de-002
+        type: fill_blank
+        sentence_template: "Wie ist das _____ heute?"
+        correct_answer: "Wetter"
+        hint: "The word for 'weather' in German"
+        accept_alternatives: []
+
+  fr:
+    instruction: "You're waiting at an arrêt de bus in Lyon and the person next to you looks up at the sky. In France, weather talk is the easiest way to start a conversation with a stranger. Let's learn how!"
+    vocabulary:
+      - word: "Il fait beau"
+        translation: "The weather is nice"
+      - word: "Il fait froid"
+        translation: "It's cold"
+      - word: "Il fait chaud"
+        translation: "It's hot"
+      - word: "Il pleut"
+        translation: "It's raining"
+      - word: "Il fait beau temps"
+        translation: "The weather is fine"
+      - word: "Il fait mauvais"
+        translation: "The weather is bad"
+      - word: "Quel temps fait-il ?"
+        translation: "What's the weather like?"
+      - word: "Aujourd'hui / Demain"
+        translation: "Today / Tomorrow"
+    examples:
+      - content: "— Qu'est-ce qu'il fait chaud aujourd'hui !\n— Oui, il fait très chaud. J'ai besoin d'une glace.\n— Bonne idée !"
+        translation: "— It's so hot today!\n— Yes, it's very hot. I need an ice cream.\n— Good idea!"
+      - content: "— Quel temps fait-il demain ?\n— Je crois qu'il pleut.\n— Ah, j'ai besoin d'un parapluie."
+        translation: "— What's the weather like tomorrow?\n— I think it's going to rain.\n— Ah, I need an umbrella."
+    tips:
+      - "French uses 'Il fait...' for most weather expressions: 'Il fait beau' (nice), 'Il fait froid' (cold), 'Il fait chaud' (hot). Rain and snow use their own verbs: 'Il pleut' (It rains), 'Il neige' (It snows)."
+      - "In France, complaining about the weather is perfectly acceptable small talk. 'Quel sale temps !' (What awful weather!) is a classic conversation opener, especially in northern France and Brittany."
+    exercises:
+      - id: ex-mc-weather-fr-001
+        type: multiple_choice
+        question: "It's a beautiful, warm day. What do you say?"
+        options:
+          - "Il fait froid"
+          - "Il pleut"
+          - "Il fait beau"
+          - "Il fait mauvais"
+        correct_index: 2
+        explanation: "'Il fait beau' means 'The weather is nice' — perfect for a beautiful day."
+      - id: ex-mc-weather-fr-002
+        type: multiple_choice
+        question: "What does 'Il pleut' mean?"
+        options:
+          - "It's sunny"
+          - "It's cold"
+          - "It's raining"
+          - "It's windy"
+        correct_index: 2
+        explanation: "'Il pleut' means 'It's raining.' From the verb 'pleuvoir' (to rain)."
+      - id: ex-fb-weather-fr-001
+        type: fill_blank
+        sentence_template: "Il fait très _____ en été."
+        correct_answer: "chaud"
+        hint: "The opposite of 'froid' (cold)"
+        accept_alternatives:
+          - "beau"
+      - id: ex-fb-weather-fr-002
+        type: fill_blank
+        sentence_template: "Quel _____ fait-il aujourd'hui ?"
+        correct_answer: "temps"
+        hint: "The word for 'weather' in French"
+        accept_alternatives: []

@@ -1,0 +1,190 @@
+id: about-me-001
+level: A0
+category: about-me
+icon: "\U0001F64B"
+tags:
+  - introductions
+  - name
+  - nationality
+  - basics
+estimated_minutes: 3
+title: Introducing Yourself
+description: Tell people your name, where you're from, and ask about theirs
+
+languages:
+  es:
+    instruction: "You're at a language exchange meetup in Seville. Someone walks up and starts chatting — time to introduce yourself! These phrases let you share the basics about who you are."
+    vocabulary:
+      - word: "Me llamo..."
+        translation: "My name is..."
+      - word: "¿Cómo te llamas?"
+        translation: "What's your name? (informal)"
+      - word: "Soy de..."
+        translation: "I'm from..."
+      - word: "¿De dónde eres?"
+        translation: "Where are you from? (informal)"
+      - word: "Mucho gusto"
+        translation: "Nice to meet you"
+      - word: "Encantado / Encantada"
+        translation: "Pleased to meet you (m/f)"
+      - word: "Soy americano/a"
+        translation: "I'm American (m/f)"
+      - word: "Vivo en..."
+        translation: "I live in..."
+    examples:
+      - content: "— ¡Hola! ¿Cómo te llamas?\n— Me llamo Sarah. ¿Y tú?\n— Me llamo Carlos. Mucho gusto.\n— ¡Encantada!"
+        translation: "— Hi! What's your name?\n— My name is Sarah. And you?\n— My name is Carlos. Nice to meet you.\n— Pleased to meet you!"
+      - content: "— ¿De dónde eres?\n— Soy de Estados Unidos. Vivo en Nueva York. ¿Y tú?\n— Soy de aquí, de Sevilla."
+        translation: "— Where are you from?\n— I'm from the United States. I live in New York. And you?\n— I'm from here, from Seville."
+    tips:
+      - "'Encantado' (if you're male) or 'Encantada' (if you're female) is a warm way to say 'pleased to meet you'. 'Mucho gusto' works for everyone."
+      - "In Spanish, you don't say 'My name is...' literally — 'Me llamo' means 'I call myself'. It's the standard way to give your name."
+    exercises:
+      - id: ex-mc-about-es-001
+        type: multiple_choice
+        question: "Someone asks '¿Cómo te llamas?' — what do they want to know?"
+        options:
+          - "Where are you from?"
+          - "What's your name?"
+          - "How are you?"
+          - "How old are you?"
+        correct_index: 1
+        explanation: "'¿Cómo te llamas?' means 'What's your name?' Answer with 'Me llamo...'"
+      - id: ex-mc-about-es-002
+        type: multiple_choice
+        question: "How do you say 'I'm from Germany' in Spanish?"
+        options:
+          - "Me llamo Alemania"
+          - "Vivo en Alemania"
+          - "Soy de Alemania"
+          - "Estoy en Alemania"
+        correct_index: 2
+        explanation: "'Soy de Alemania' means 'I'm from Germany'. 'Soy de...' + place = I'm from..."
+      - id: ex-mc-about-es-003
+        type: multiple_choice
+        question: "After meeting someone, what's a polite thing to say?"
+        options:
+          - "Adiós"
+          - "No entiendo"
+          - "Mucho gusto"
+          - "¿Cuánto cuesta?"
+        correct_index: 2
+        explanation: "'Mucho gusto' (Nice to meet you) is the perfect phrase after an introduction."
+
+  de:
+    instruction: "You're at a Stammtisch (regular meetup table) in a Munich beer garden. A friendly local turns to you and introduces themselves — time to respond! Let's learn how to tell people who you are in German."
+    vocabulary:
+      - word: "Ich heiße..."
+        translation: "My name is..."
+      - word: "Wie heißen Sie?"
+        translation: "What's your name? (formal)"
+      - word: "Ich komme aus..."
+        translation: "I'm from..."
+      - word: "Woher kommen Sie?"
+        translation: "Where are you from? (formal)"
+      - word: "Freut mich"
+        translation: "Nice to meet you"
+      - word: "Sehr erfreut"
+        translation: "Pleased to meet you (formal)"
+      - word: "Ich bin Amerikaner/in"
+        translation: "I'm American (m/f)"
+      - word: "Ich wohne in..."
+        translation: "I live in..."
+    examples:
+      - content: "— Hallo! Wie heißen Sie?\n— Ich heiße Sarah. Und Sie?\n— Ich heiße Thomas. Freut mich.\n— Freut mich auch!"
+        translation: "— Hello! What's your name?\n— My name is Sarah. And you?\n— My name is Thomas. Nice to meet you.\n— Nice to meet you too!"
+      - content: "— Woher kommen Sie?\n— Ich komme aus den USA. Ich wohne in New York. Und Sie?\n— Ich komme aus München."
+        translation: "— Where are you from?\n— I come from the USA. I live in New York. And you?\n— I come from Munich."
+    tips:
+      - "Germans take the du/Sie distinction seriously. Use 'Sie' (formal you) with strangers and older people. Only switch to 'du' when they invite you to: 'Wir können uns duzen' (We can use du)."
+      - "'Freut mich' is the standard 'Nice to meet you.' In business settings, a handshake with direct eye contact is expected. Germans value a firm handshake!"
+    exercises:
+      - id: ex-mc-about-de-001
+        type: multiple_choice
+        question: "Someone asks 'Wie heißen Sie?' — what do they want to know?"
+        options:
+          - "Where are you from?"
+          - "What's your name?"
+          - "How are you?"
+          - "How old are you?"
+        correct_index: 1
+        explanation: "'Wie heißen Sie?' means 'What's your name?' (formal). Answer with 'Ich heiße...'"
+      - id: ex-mc-about-de-002
+        type: multiple_choice
+        question: "How do you say 'I'm from France' in German?"
+        options:
+          - "Ich heiße Frankreich"
+          - "Ich wohne in Frankreich"
+          - "Ich komme aus Frankreich"
+          - "Ich bin in Frankreich"
+        correct_index: 2
+        explanation: "'Ich komme aus Frankreich' means 'I come from France'. 'Ich komme aus...' + place = I'm from..."
+      - id: ex-mc-about-de-003
+        type: multiple_choice
+        question: "After meeting someone, what's a polite thing to say?"
+        options:
+          - "Tschüss"
+          - "Ich verstehe nicht"
+          - "Freut mich"
+          - "Was kostet das?"
+        correct_index: 2
+        explanation: "'Freut mich' (Nice to meet you) is the standard phrase after an introduction."
+
+  fr:
+    instruction: "You're at an apéritif gathering in Lyon. Someone raises their glass and introduces themselves — 'Je m'appelle Marie, et vous ?' Time to introduce yourself! Let's learn the French basics of who you are."
+    vocabulary:
+      - word: "Je m'appelle..."
+        translation: "My name is..."
+      - word: "Comment vous appelez-vous ?"
+        translation: "What's your name? (formal)"
+      - word: "Je suis de..."
+        translation: "I'm from..."
+      - word: "D'où venez-vous ?"
+        translation: "Where are you from? (formal)"
+      - word: "Enchanté / Enchantée"
+        translation: "Pleased to meet you (m/f)"
+      - word: "Ravi(e) de vous connaître"
+        translation: "Delighted to meet you"
+      - word: "Je suis américain(e)"
+        translation: "I'm American (m/f)"
+      - word: "J'habite à..."
+        translation: "I live in..."
+    examples:
+      - content: "— Bonjour ! Comment vous appelez-vous ?\n— Je m'appelle Sarah. Et vous ?\n— Je m'appelle Pierre. Enchanté.\n— Enchantée !"
+        translation: "— Hello! What's your name?\n— My name is Sarah. And you?\n— My name is Pierre. Pleased to meet you.\n— Pleased to meet you!"
+      - content: "— D'où venez-vous ?\n— Je suis des États-Unis. J'habite à New York. Et vous ?\n— Je suis d'ici, de Lyon."
+        translation: "— Where are you from?\n— I'm from the United States. I live in New York. And you?\n— I'm from here, from Lyon."
+    tips:
+      - "'Enchanté' (if you're male) or 'Enchantée' (if you're female) is the classic French introduction. In France, it's often accompanied by la bise — a kiss on each cheek (the number varies by region!)."
+      - "The tu/vous distinction is crucial in France. Always use 'vous' with strangers, in shops, and with older people. Using 'tu' too soon can feel presumptuous. Wait to be invited: 'On peut se tutoyer' (We can use tu)."
+    exercises:
+      - id: ex-mc-about-fr-001
+        type: multiple_choice
+        question: "Someone asks 'Comment vous appelez-vous ?' — what do they want to know?"
+        options:
+          - "Where are you from?"
+          - "What's your name?"
+          - "How are you?"
+          - "How old are you?"
+        correct_index: 1
+        explanation: "'Comment vous appelez-vous ?' means 'What's your name?' (formal). Answer with 'Je m'appelle...'"
+      - id: ex-mc-about-fr-002
+        type: multiple_choice
+        question: "How do you say 'I'm from Germany' in French?"
+        options:
+          - "Je m'appelle Allemagne"
+          - "J'habite en Allemagne"
+          - "Je suis d'Allemagne"
+          - "Je suis en Allemagne"
+        correct_index: 2
+        explanation: "'Je suis d'Allemagne' means 'I'm from Germany'. 'Je suis de...' + place = I'm from..."
+      - id: ex-mc-about-fr-003
+        type: multiple_choice
+        question: "After meeting someone, what's a polite thing to say?"
+        options:
+          - "Au revoir"
+          - "Je ne comprends pas"
+          - "Enchanté(e)"
+          - "Combien ça coûte ?"
+        correct_index: 2
+        explanation: "'Enchanté(e)' (Pleased to meet you) is the classic French phrase after an introduction."

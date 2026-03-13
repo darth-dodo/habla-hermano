@@ -1,0 +1,191 @@
+id: essentials-001
+level: A0
+category: essentials
+icon: "\U0001F4DA"
+tags:
+  - polite
+  - survival
+  - please
+  - thank-you
+  - basics
+estimated_minutes: 3
+title: Survival Phrases
+description: Use essential polite phrases to get by in any situation
+
+languages:
+  es:
+    instruction: "You're lost in a busy market, someone bumps into you, and you need to ask for help — but you barely know any Spanish. These survival phrases will get you through ANY situation, even on your first day."
+    vocabulary:
+      - word: "Por favor"
+        translation: "Please"
+      - word: "Gracias"
+        translation: "Thank you"
+      - word: "De nada"
+        translation: "You're welcome"
+      - word: "Sí / No"
+        translation: "Yes / No"
+      - word: "Perdón"
+        translation: "Excuse me / Sorry"
+      - word: "No entiendo"
+        translation: "I don't understand"
+      - word: "¿Puede repetir?"
+        translation: "Can you repeat?"
+      - word: "Más despacio, por favor"
+        translation: "More slowly, please"
+    examples:
+      - content: "— Perdón, ¿dónde está el baño?\n— Allí, a la derecha.\n— Gracias.\n— De nada."
+        translation: "— Excuse me, where is the bathroom?\n— There, on the right.\n— Thank you.\n— You're welcome."
+      - content: "— Blah blah blah blah...\n— No entiendo. Más despacio, por favor.\n— Ah, sí. ¿Café?\n— Sí, por favor. Gracias."
+        translation: "— (Speaking quickly)...\n— I don't understand. More slowly, please.\n— Ah, yes. Coffee?\n— Yes, please. Thank you."
+    tips:
+      - "'Perdón' is your Swiss Army knife — use it to get someone's attention, apologize for bumping into them, or interrupt politely. It works everywhere."
+      - "'No entiendo' + 'Más despacio, por favor' is the most useful combo for beginners. Locals will immediately slow down and simplify when they hear this."
+    exercises:
+      - id: ex-mc-ess-es-001
+        type: multiple_choice
+        question: "Someone helps you find your hotel. What do you say?"
+        options:
+          - "Perdón"
+          - "Gracias"
+          - "No entiendo"
+          - "Adiós"
+        correct_index: 1
+        explanation: "'Gracias' (Thank you) is the right response when someone helps you."
+      - id: ex-mc-ess-es-002
+        type: multiple_choice
+        question: "Someone is speaking too fast. What do you say?"
+        options:
+          - "Gracias"
+          - "De nada"
+          - "Más despacio, por favor"
+          - "Buenas noches"
+        correct_index: 2
+        explanation: "'Más despacio, por favor' means 'More slowly, please' — very useful for beginners!"
+      - id: ex-mc-ess-es-003
+        type: multiple_choice
+        question: "What does 'De nada' mean?"
+        options:
+          - "Goodbye"
+          - "Please"
+          - "I don't understand"
+          - "You're welcome"
+        correct_index: 3
+        explanation: "'De nada' literally means 'of nothing' — it's how you say 'You're welcome'."
+
+  de:
+    instruction: "You're navigating the busy Hauptbahnhof in Hamburg, someone bumps into you, and you need to ask for directions — but your German is minimal. These survival phrases will carry you through any situation on your first day."
+    vocabulary:
+      - word: "Bitte"
+        translation: "Please / You're welcome"
+      - word: "Danke"
+        translation: "Thank you"
+      - word: "Danke schön"
+        translation: "Thank you very much"
+      - word: "Ja / Nein"
+        translation: "Yes / No"
+      - word: "Entschuldigung"
+        translation: "Excuse me / Sorry"
+      - word: "Ich verstehe nicht"
+        translation: "I don't understand"
+      - word: "Können Sie das wiederholen?"
+        translation: "Can you repeat that?"
+      - word: "Langsamer, bitte"
+        translation: "More slowly, please"
+    examples:
+      - content: "— Entschuldigung, wo ist die Toilette?\n— Dort, rechts.\n— Danke schön.\n— Bitte."
+        translation: "— Excuse me, where is the toilet?\n— There, on the right.\n— Thank you very much.\n— You're welcome."
+      - content: "— Blah blah blah blah...\n— Ich verstehe nicht. Langsamer, bitte.\n— Ah, ja. Kaffee?\n— Ja, bitte. Danke."
+        translation: "— (Speaking quickly)...\n— I don't understand. More slowly, please.\n— Ah, yes. Coffee?\n— Yes, please. Thank you."
+    tips:
+      - "'Bitte' is the most versatile German word — it means 'please', 'you're welcome', and 'here you go'. You'll use it constantly. When someone says 'Danke', just reply 'Bitte'."
+      - "'Entschuldigung' is long but worth memorizing. Germans appreciate politeness. If the full word is too hard at first, 'Entschuldigen Sie' works too. Just make the effort!"
+    exercises:
+      - id: ex-mc-ess-de-001
+        type: multiple_choice
+        question: "Someone helps you find the train station. What do you say?"
+        options:
+          - "Entschuldigung"
+          - "Danke"
+          - "Ich verstehe nicht"
+          - "Tschüss"
+        correct_index: 1
+        explanation: "'Danke' (Thank you) is the right response when someone helps you."
+      - id: ex-mc-ess-de-002
+        type: multiple_choice
+        question: "Someone is speaking too fast. What do you say?"
+        options:
+          - "Danke"
+          - "Bitte"
+          - "Langsamer, bitte"
+          - "Guten Abend"
+        correct_index: 2
+        explanation: "'Langsamer, bitte' means 'More slowly, please' — a lifesaver for beginners!"
+      - id: ex-mc-ess-de-003
+        type: multiple_choice
+        question: "What does 'Bitte' mean when someone says 'Danke' to you?"
+        options:
+          - "Goodbye"
+          - "Please"
+          - "I don't understand"
+          - "You're welcome"
+        correct_index: 3
+        explanation: "'Bitte' after 'Danke' means 'You're welcome'. It's the most common reply to thanks in German."
+
+  fr:
+    instruction: "You're wandering through a crowded marché aux puces in Paris, someone bumps into you, and you need help finding your way. These survival phrases will carry you through any French situation, even on day one."
+    vocabulary:
+      - word: "S'il vous plaît"
+        translation: "Please (formal)"
+      - word: "Merci"
+        translation: "Thank you"
+      - word: "De rien"
+        translation: "You're welcome"
+      - word: "Oui / Non"
+        translation: "Yes / No"
+      - word: "Pardon"
+        translation: "Excuse me / Sorry"
+      - word: "Je ne comprends pas"
+        translation: "I don't understand"
+      - word: "Pouvez-vous répéter ?"
+        translation: "Can you repeat?"
+      - word: "Plus lentement, s'il vous plaît"
+        translation: "More slowly, please"
+    examples:
+      - content: "— Pardon, où sont les toilettes ?\n— Là-bas, à droite.\n— Merci.\n— De rien."
+        translation: "— Excuse me, where are the toilets?\n— Over there, on the right.\n— Thank you.\n— You're welcome."
+      - content: "— Blah blah blah blah...\n— Je ne comprends pas. Plus lentement, s'il vous plaît.\n— Ah, oui. Café ?\n— Oui, s'il vous plaît. Merci."
+        translation: "— (Speaking quickly)...\n— I don't understand. More slowly, please.\n— Ah, yes. Coffee?\n— Yes, please. Thank you."
+    tips:
+      - "'Pardon' works just like in English — use it to apologize, get attention, or squeeze past someone. In a crowded métro, you'll hear and say it constantly."
+      - "'Je ne comprends pas' is your best friend as a beginner. French people will usually switch to simpler words or even some English. Adding 'Je suis désolé(e)' (I'm sorry) makes it even more polite."
+    exercises:
+      - id: ex-mc-ess-fr-001
+        type: multiple_choice
+        question: "Someone helps you find your hotel. What do you say?"
+        options:
+          - "Pardon"
+          - "Merci"
+          - "Je ne comprends pas"
+          - "Au revoir"
+        correct_index: 1
+        explanation: "'Merci' (Thank you) is the right response when someone helps you."
+      - id: ex-mc-ess-fr-002
+        type: multiple_choice
+        question: "Someone is speaking too fast. What do you say?"
+        options:
+          - "Merci"
+          - "De rien"
+          - "Plus lentement, s'il vous plaît"
+          - "Bonsoir"
+        correct_index: 2
+        explanation: "'Plus lentement, s'il vous plaît' means 'More slowly, please' — essential for beginners!"
+      - id: ex-mc-ess-fr-003
+        type: multiple_choice
+        question: "What does 'De rien' mean?"
+        options:
+          - "Goodbye"
+          - "Please"
+          - "I don't understand"
+          - "You're welcome"
+        correct_index: 3
+        explanation: "'De rien' literally means 'of nothing' — it's how you say 'You're welcome' in French."

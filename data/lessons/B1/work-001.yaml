@@ -1,0 +1,237 @@
+id: work-001
+level: B1
+category: work
+icon: "\U0001F4BC"
+tags:
+  - work
+  - jobs
+  - professional
+  - interview
+estimated_minutes: 8
+title: Talking About Work
+description: Describe your job, handle interviews, and discuss professional life
+
+languages:
+  es:
+    instruction: "You're at a networking event in Mexico City, and someone asks what you do. Or maybe you're preparing for a job interview in Spanish. Either way, talking about work is essential at B1 level."
+    vocabulary:
+      - word: "Trabajo de/como..."
+        translation: "I work as..."
+      - word: "Soy responsable de..."
+        translation: "I'm responsible for..."
+      - word: "Tengo experiencia en..."
+        translation: "I have experience in..."
+      - word: "Me gustaría postularme"
+        translation: "I'd like to apply"
+      - word: "El horario de trabajo"
+        translation: "The work schedule"
+      - word: "Trabajo a tiempo completo"
+        translation: "I work full-time"
+      - word: "Mi punto fuerte es..."
+        translation: "My strong point is..."
+      - word: "¿Cuál es su formación?"
+        translation: "What is your background/education?"
+      - word: "Estudié... en la universidad"
+        translation: "I studied... at university"
+      - word: "Llevo tres años trabajando aquí"
+        translation: "I've been working here for three years"
+    examples:
+      - content: "— ¿A qué te dedicas?\n— Trabajo como diseñador gráfico en una agencia. ¿Y tú?\n— Soy ingeniera. Llevo cinco años trabajando en una empresa de tecnología.\n— ¡Qué interesante!"
+        translation: "— What do you do for a living?\n— I work as a graphic designer at an agency. And you?\n— I'm an engineer. I've been working at a tech company for five years.\n— How interesting!"
+      - content: "— ¿Cuál es su experiencia relevante?\n— Tengo experiencia en marketing digital. Fui responsable del equipo de redes sociales.\n— ¿Y cuál es su punto fuerte?\n— Mi punto fuerte es la creatividad y el trabajo en equipo."
+        translation: "— What is your relevant experience?\n— I have experience in digital marketing. I was responsible for the social media team.\n— And what is your strong point?\n— My strong point is creativity and teamwork."
+    tips:
+      - "'¿A qué te dedicas?' (What do you do?) is more natural than '¿Cuál es tu trabajo?' for asking about someone's job in casual conversation."
+      - "'Llevo + time + gerund' is how Spanish expresses 'I've been doing... for': 'Llevo tres años viviendo aquí' (I've been living here for three years). Very common and useful!"
+    exercises:
+      - id: ex-mc-work-es-001
+        type: multiple_choice
+        question: "Someone asks '¿A qué te dedicas?' What do they want to know?"
+        options:
+          - "Where do you work?"
+          - "What do you do for a living?"
+          - "Do you like your job?"
+          - "How long have you worked?"
+        correct_index: 1
+        explanation: "'¿A qué te dedicas?' is the standard casual way to ask about someone's profession."
+      - id: ex-fb-work-es-001
+        type: fill_blank
+        sentence_template: "_____ cinco años trabajando en esta empresa."
+        correct_answer: "Llevo"
+        hint: "The verb used for 'I've been (doing something) for...'"
+        accept_alternatives: []
+      - id: ex-tr-work-es-001
+        type: translate
+        source_text: "I work as a teacher and I'm responsible for 30 students."
+        source_language: en
+        target_language: es
+        correct_translation: "Trabajo como profesor y soy responsable de 30 estudiantes."
+        accept_alternatives:
+          - "Trabajo de profesor y soy responsable de 30 alumnos."
+          - "Trabajo como profesora y soy responsable de 30 estudiantes."
+      - id: ex-tr-work-es-002
+        type: translate
+        source_text: "I'd like to apply for the marketing position."
+        source_language: en
+        target_language: es
+        correct_translation: "Me gustaría postularme para el puesto de marketing."
+        accept_alternatives:
+          - "Me gustaría solicitar el puesto de marketing."
+          - "Quisiera postularme para el puesto de marketing."
+      - id: ex-tr-work-es-003
+        type: translate
+        source_text: "My strong point is working in a team."
+        source_language: en
+        target_language: es
+        correct_translation: "Mi punto fuerte es el trabajo en equipo."
+        accept_alternatives:
+          - "Mi fortaleza es el trabajo en equipo."
+          - "Mi punto fuerte es trabajar en equipo."
+
+  de:
+    instruction: "You're at a networking event in Frankfurt and someone asks what you do. Or maybe you're preparing for a Vorstellungsgespräch (job interview). Let's learn how to talk about your Beruf auf Deutsch!"
+    vocabulary:
+      - word: "Ich arbeite als..."
+        translation: "I work as..."
+      - word: "Ich bin zuständig für..."
+        translation: "I'm responsible for..."
+      - word: "Ich habe Erfahrung in..."
+        translation: "I have experience in..."
+      - word: "Ich möchte mich bewerben"
+        translation: "I'd like to apply"
+      - word: "Die Arbeitszeiten"
+        translation: "The work schedule"
+      - word: "Ich arbeite Vollzeit"
+        translation: "I work full-time"
+      - word: "Meine Stärke ist..."
+        translation: "My strength is..."
+      - word: "Was ist Ihre Ausbildung?"
+        translation: "What is your education/training?"
+      - word: "Ich habe... an der Universität studiert"
+        translation: "I studied... at university"
+      - word: "Ich arbeite seit drei Jahren hier"
+        translation: "I've been working here for three years"
+    examples:
+      - content: "— Was machen Sie beruflich?\n— Ich arbeite als Grafikdesigner in einer Agentur. Und Sie?\n— Ich bin Ingenieurin. Ich arbeite seit fünf Jahren bei einem Technologieunternehmen.\n— Wie interessant!"
+        translation: "— What do you do for a living?\n— I work as a graphic designer at an agency. And you?\n— I'm an engineer. I've been working at a tech company for five years.\n— How interesting!"
+      - content: "— Was ist Ihre relevante Erfahrung?\n— Ich habe Erfahrung im digitalen Marketing. Ich war zuständig für das Social-Media-Team.\n— Und was ist Ihre Stärke?\n— Meine Stärke ist Kreativität und Teamarbeit."
+        translation: "— What is your relevant experience?\n— I have experience in digital marketing. I was responsible for the social media team.\n— And what is your strength?\n— My strength is creativity and teamwork."
+    tips:
+      - "'Was machen Sie beruflich?' (What do you do professionally?) is the standard formal question. Among friends, 'Was machst du so?' is more casual."
+      - "'Seit + time' is how German expresses duration: 'Ich arbeite seit drei Jahren hier' (I've been working here for three years). Note that German uses the present tense with 'seit', unlike English."
+    exercises:
+      - id: ex-mc-work-de-001
+        type: multiple_choice
+        question: "Someone asks 'Was machen Sie beruflich?' What do they want to know?"
+        options:
+          - "Where do you work?"
+          - "What do you do for a living?"
+          - "Do you like your job?"
+          - "How long have you worked?"
+        correct_index: 1
+        explanation: "'Was machen Sie beruflich?' is the standard formal way to ask about someone's profession."
+      - id: ex-fb-work-de-001
+        type: fill_blank
+        sentence_template: "Ich arbeite _____ fünf Jahren in dieser Firma."
+        correct_answer: "seit"
+        hint: "The word for 'since/for' (duration)"
+        accept_alternatives: []
+      - id: ex-tr-work-de-001
+        type: translate
+        source_text: "I work as a teacher and I'm responsible for 30 students."
+        source_language: en
+        target_language: de
+        correct_translation: "Ich arbeite als Lehrer und bin zuständig für 30 Schüler."
+        accept_alternatives:
+          - "Ich arbeite als Lehrerin und bin zuständig für 30 Schüler."
+          - "Ich arbeite als Lehrer und bin verantwortlich für 30 Schüler."
+      - id: ex-tr-work-de-002
+        type: translate
+        source_text: "I'd like to apply for the marketing position."
+        source_language: en
+        target_language: de
+        correct_translation: "Ich möchte mich für die Marketingstelle bewerben."
+        accept_alternatives:
+          - "Ich würde mich gerne für die Marketingposition bewerben."
+      - id: ex-tr-work-de-003
+        type: translate
+        source_text: "My strength is working in a team."
+        source_language: en
+        target_language: de
+        correct_translation: "Meine Stärke ist die Teamarbeit."
+        accept_alternatives:
+          - "Meine Stärke ist das Arbeiten im Team."
+
+  fr:
+    instruction: "You're at a networking event in Paris and someone asks what you do. Or you're preparing for an entretien d'embauche (job interview). Let's learn how to talk about your métier en français!"
+    vocabulary:
+      - word: "Je travaille comme..."
+        translation: "I work as..."
+      - word: "Je suis responsable de..."
+        translation: "I'm responsible for..."
+      - word: "J'ai de l'expérience en..."
+        translation: "I have experience in..."
+      - word: "Je voudrais postuler"
+        translation: "I'd like to apply"
+      - word: "Les horaires de travail"
+        translation: "The work schedule"
+      - word: "Je travaille à temps plein"
+        translation: "I work full-time"
+      - word: "Mon point fort, c'est..."
+        translation: "My strong point is..."
+      - word: "Quelle est votre formation ?"
+        translation: "What is your education/training?"
+      - word: "J'ai étudié... à l'université"
+        translation: "I studied... at university"
+      - word: "Je travaille ici depuis trois ans"
+        translation: "I've been working here for three years"
+    examples:
+      - content: "— Qu'est-ce que vous faites dans la vie ?\n— Je travaille comme graphiste dans une agence. Et vous ?\n— Je suis ingénieure. Je travaille dans une entreprise de technologie depuis cinq ans.\n— Comme c'est intéressant !"
+        translation: "— What do you do for a living?\n— I work as a graphic designer at an agency. And you?\n— I'm an engineer. I've been working at a tech company for five years.\n— How interesting!"
+      - content: "— Quelle est votre expérience pertinente ?\n— J'ai de l'expérience en marketing digital. J'étais responsable de l'équipe des réseaux sociaux.\n— Et quel est votre point fort ?\n— Mon point fort, c'est la créativité et le travail d'équipe."
+        translation: "— What is your relevant experience?\n— I have experience in digital marketing. I was responsible for the social media team.\n— And what is your strong point?\n— My strong point is creativity and teamwork."
+    tips:
+      - "'Qu'est-ce que vous faites dans la vie ?' (What do you do in life?) is the standard way to ask about someone's profession. Among friends: 'Tu fais quoi comme travail ?'"
+      - "'Depuis + time' is how French expresses duration with the present tense: 'Je travaille ici depuis trois ans' (I've been working here for three years). Like German, French uses the present tense — not the past."
+    exercises:
+      - id: ex-mc-work-fr-001
+        type: multiple_choice
+        question: "Someone asks 'Qu'est-ce que vous faites dans la vie ?' What do they want to know?"
+        options:
+          - "Where do you work?"
+          - "What do you do for a living?"
+          - "Do you like your job?"
+          - "How long have you worked?"
+        correct_index: 1
+        explanation: "'Qu'est-ce que vous faites dans la vie ?' is the standard way to ask about someone's profession."
+      - id: ex-fb-work-fr-001
+        type: fill_blank
+        sentence_template: "Je travaille ici _____ cinq ans."
+        correct_answer: "depuis"
+        hint: "The word for 'since/for' (duration)"
+        accept_alternatives: []
+      - id: ex-tr-work-fr-001
+        type: translate
+        source_text: "I work as a teacher and I'm responsible for 30 students."
+        source_language: en
+        target_language: fr
+        correct_translation: "Je travaille comme professeur et je suis responsable de 30 étudiants."
+        accept_alternatives:
+          - "Je travaille comme enseignant et je suis responsable de 30 élèves."
+      - id: ex-tr-work-fr-002
+        type: translate
+        source_text: "I'd like to apply for the marketing position."
+        source_language: en
+        target_language: fr
+        correct_translation: "Je voudrais postuler pour le poste de marketing."
+        accept_alternatives:
+          - "J'aimerais postuler pour le poste de marketing."
+          - "Je souhaiterais postuler au poste de marketing."
+      - id: ex-tr-work-fr-003
+        type: translate
+        source_text: "My strong point is working in a team."
+        source_language: en
+        target_language: fr
+        correct_translation: "Mon point fort, c'est le travail d'équipe."
+        accept_alternatives:
+          - "Ma force, c'est le travail en équipe."

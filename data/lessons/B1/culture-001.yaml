@@ -1,0 +1,237 @@
+id: culture-001
+level: B1
+category: culture
+icon: "\U0001F3AD"
+tags:
+  - culture
+  - traditions
+  - holidays
+  - customs
+estimated_minutes: 8
+title: Customs and Traditions
+description: Discuss cultural practices, holidays, and traditions in Spanish-speaking countries
+
+languages:
+  es:
+    instruction: "Your Mexican friend invites you to a Día de los Muertos celebration. You're curious about the traditions and want to share your own. Discussing culture is how you truly connect across borders."
+    vocabulary:
+      - word: "La costumbre"
+        translation: "The custom/tradition"
+      - word: "Se celebra..."
+        translation: "It's celebrated..."
+      - word: "Es típico de..."
+        translation: "It's typical of..."
+      - word: "En mi país..."
+        translation: "In my country..."
+      - word: "La Nochebuena"
+        translation: "Christmas Eve"
+      - word: "El Día de los Muertos"
+        translation: "Day of the Dead"
+      - word: "La sobremesa"
+        translation: "After-meal conversation time"
+      - word: "Es muy importante para..."
+        translation: "It's very important for..."
+      - word: "Se suele + infinitivo"
+        translation: "People usually + verb"
+      - word: "A diferencia de..."
+        translation: "Unlike... / As opposed to..."
+    examples:
+      - content: "— ¿Cómo se celebra el Día de los Muertos?\n— Se ponen altares con fotos, flores y comida favorita de los difuntos. Es una celebración alegre, no triste.\n— ¡Qué interesante! A diferencia de mi país, donde los funerales son muy solemnes.\n— Sí, aquí es muy diferente. Es una forma de recordar con amor."
+        translation: "— How is Day of the Dead celebrated?\n— People put up altars with photos, flowers, and the deceased's favorite food. It's a joyful celebration, not a sad one.\n— How interesting! Unlike my country, where funerals are very solemn.\n— Yes, here it's very different. It's a way of remembering with love."
+      - content: "— En España, la sobremesa es muy importante.\n— ¿La sobremesa?\n— Sí, es la costumbre de quedarse en la mesa después de comer, hablando durante horas.\n— ¡Me encanta esa idea! En mi país se suele comer rápido."
+        translation: "— In Spain, the 'sobremesa' is very important.\n— The 'sobremesa'?\n— Yes, it's the custom of staying at the table after eating, talking for hours.\n— I love that idea! In my country people usually eat quickly."
+    tips:
+      - "'La sobremesa' has no English translation — it's the time spent chatting at the table after a meal. It can last hours and is considered sacred social time in Spain."
+      - "'Se suele + infinitivo' is a handy structure for describing cultural norms: 'Se suele comer tarde' (People usually eat late), 'Se suele dar dos besos' (People usually give two kisses)."
+    exercises:
+      - id: ex-mc-culture-es-001
+        type: multiple_choice
+        question: "What is 'la sobremesa'?"
+        options:
+          - "A type of dessert"
+          - "After-meal conversation time"
+          - "A table decoration"
+          - "A Spanish dance"
+        correct_index: 1
+        explanation: "'La sobremesa' is the Spanish tradition of staying at the table and chatting after a meal."
+      - id: ex-fb-culture-es-001
+        type: fill_blank
+        sentence_template: "El Día de los Muertos se _____ el 1 y 2 de noviembre."
+        correct_answer: "celebra"
+        hint: "The verb for 'is celebrated'"
+        accept_alternatives:
+          - "festeja"
+          - "conmemora"
+      - id: ex-tr-culture-es-001
+        type: translate
+        source_text: "In Spain, people usually have dinner very late."
+        source_language: en
+        target_language: es
+        correct_translation: "En España, se suele cenar muy tarde."
+        accept_alternatives:
+          - "En España la gente suele cenar muy tarde."
+          - "En España se cena muy tarde."
+      - id: ex-tr-culture-es-002
+        type: translate
+        source_text: "Unlike my country, here it's typical to greet with two kisses."
+        source_language: en
+        target_language: es
+        correct_translation: "A diferencia de mi país, aquí es típico saludar con dos besos."
+        accept_alternatives:
+          - "A diferencia de mi país, aquí se suele saludar con dos besos."
+      - id: ex-tr-culture-es-003
+        type: translate
+        source_text: "It's a very important tradition for families."
+        source_language: en
+        target_language: es
+        correct_translation: "Es una tradición muy importante para las familias."
+        accept_alternatives:
+          - "Es una costumbre muy importante para las familias."
+
+  de:
+    instruction: "Your German friend invites you to a Weihnachtsmarkt (Christmas market) in Nuremberg. You're curious about the traditions and want to compare them with your own. Let's discuss Kultur auf Deutsch!"
+    vocabulary:
+      - word: "Die Tradition / Der Brauch"
+        translation: "The tradition / The custom"
+      - word: "Man feiert..."
+        translation: "People celebrate..."
+      - word: "Es ist typisch für..."
+        translation: "It's typical of..."
+      - word: "In meinem Land..."
+        translation: "In my country..."
+      - word: "Heiligabend"
+        translation: "Christmas Eve"
+      - word: "Der Weihnachtsmarkt"
+        translation: "The Christmas market"
+      - word: "Die Kaffee-und-Kuchen-Zeit"
+        translation: "Afternoon coffee and cake time"
+      - word: "Es ist sehr wichtig für..."
+        translation: "It's very important for..."
+      - word: "Man... normalerweise"
+        translation: "People usually..."
+      - word: "Im Gegensatz zu..."
+        translation: "Unlike... / In contrast to..."
+    examples:
+      - content: "— Wie feiert man Weihnachten in Deutschland?\n— Am Heiligabend stellt man einen Weihnachtsbaum auf und tauscht Geschenke aus. Wir essen Kartoffelsalat mit Würstchen.\n— Interessant! Im Gegensatz zu meinem Land, wo man ein großes Festessen hat.\n— Das klingt toll! Hier ist Heiligabend der wichtigste Tag."
+        translation: "— How do people celebrate Christmas in Germany?\n— On Christmas Eve, you put up a Christmas tree and exchange gifts. We eat potato salad with sausages.\n— Interesting! Unlike my country, where people have a big feast.\n— That sounds great! Here, Christmas Eve is the most important day."
+      - content: "— In Deutschland ist die Kaffee-und-Kuchen-Zeit sehr beliebt.\n— Was ist das?\n— Das ist der Brauch, am Nachmittag Kaffee zu trinken und Kuchen zu essen, normalerweise am Sonntag.\n— Das gefällt mir! Bei uns trinkt man normalerweise Tee."
+        translation: "— In Germany, coffee-and-cake time is very popular.\n— What is that?\n— It's the custom of drinking coffee and eating cake in the afternoon, usually on Sundays.\n— I like that! In our country people usually drink tea."
+    tips:
+      - "'Kaffee und Kuchen' (coffee and cake) around 3-4 PM on Sundays is a cherished German tradition, especially when visiting family. It's the German equivalent of the British afternoon tea."
+      - "'Man + verb' is the standard impersonal construction for describing customs: 'Man feiert Weihnachten am 24. Dezember' (People celebrate Christmas on December 24th). It's equivalent to 'se + verb' in Spanish."
+    exercises:
+      - id: ex-mc-culture-de-001
+        type: multiple_choice
+        question: "What is 'Kaffee und Kuchen'?"
+        options:
+          - "A type of breakfast"
+          - "Afternoon coffee and cake tradition"
+          - "A holiday decoration"
+          - "A German dance"
+        correct_index: 1
+        explanation: "'Kaffee und Kuchen' is the German tradition of enjoying coffee and cake in the afternoon, especially on Sundays."
+      - id: ex-fb-culture-de-001
+        type: fill_blank
+        sentence_template: "Weihnachten _____ man am 24. Dezember."
+        correct_answer: "feiert"
+        hint: "The verb for 'celebrates' with 'man'"
+        accept_alternatives: []
+      - id: ex-tr-culture-de-001
+        type: translate
+        source_text: "In Germany, people usually have dinner early."
+        source_language: en
+        target_language: de
+        correct_translation: "In Deutschland isst man normalerweise früh zu Abend."
+        accept_alternatives:
+          - "In Deutschland essen die Leute normalerweise früh zu Abend."
+      - id: ex-tr-culture-de-002
+        type: translate
+        source_text: "Unlike my country, here it's typical to shake hands."
+        source_language: en
+        target_language: de
+        correct_translation: "Im Gegensatz zu meinem Land ist es hier typisch, sich die Hand zu geben."
+        accept_alternatives:
+          - "Anders als in meinem Land gibt man sich hier die Hand."
+      - id: ex-tr-culture-de-003
+        type: translate
+        source_text: "It's a very important tradition for families."
+        source_language: en
+        target_language: de
+        correct_translation: "Es ist eine sehr wichtige Tradition für Familien."
+        accept_alternatives:
+          - "Es ist ein sehr wichtiger Brauch für Familien."
+
+  fr:
+    instruction: "Your French friend invites you to celebrate le 14 Juillet (Bastille Day) in Paris. You're fascinated by the traditions and want to share your own. Discussing la culture is how you truly connect en France!"
+    vocabulary:
+      - word: "La coutume / La tradition"
+        translation: "The custom / The tradition"
+      - word: "On fête..."
+        translation: "People celebrate..."
+      - word: "C'est typique de..."
+        translation: "It's typical of..."
+      - word: "Dans mon pays..."
+        translation: "In my country..."
+      - word: "Le réveillon de Noël"
+        translation: "Christmas Eve dinner"
+      - word: "Le 14 Juillet"
+        translation: "Bastille Day (July 14th)"
+      - word: "L'apéro"
+        translation: "Pre-dinner drinks and snacks"
+      - word: "C'est très important pour..."
+        translation: "It's very important for..."
+      - word: "On... d'habitude"
+        translation: "People usually..."
+      - word: "Contrairement à..."
+        translation: "Unlike... / Contrary to..."
+    examples:
+      - content: "— Comment est-ce qu'on fête le 14 Juillet en France ?\n— Il y a un grand défilé militaire sur les Champs-Élysées, et le soir il y a des feux d'artifice et des bals populaires.\n— C'est fascinant ! Contrairement à mon pays, où les fêtes nationales sont plus calmes.\n— Oui, ici c'est une grande fête. Tout le monde sort dans la rue."
+        translation: "— How do people celebrate Bastille Day in France?\n— There's a big military parade on the Champs-Élysées, and in the evening there are fireworks and public dances.\n— That's fascinating! Unlike my country, where national holidays are quieter.\n— Yes, here it's a big celebration. Everyone goes out into the streets."
+      - content: "— En France, l'apéro est très important.\n— L'apéro ?\n— Oui, c'est la coutume de prendre un verre avec des amis avant le dîner, avec des petites choses à grignoter.\n— J'adore cette idée ! Chez nous, on passe directement à table d'habitude."
+        translation: "— In France, the 'apéro' is very important.\n— The 'apéro'?\n— Yes, it's the custom of having a drink with friends before dinner, with little things to snack on.\n— I love that idea! At home, we usually go straight to the table."
+    tips:
+      - "'L'apéro' (short for l'apéritif) is a sacred French social ritual — casual drinks and snacks before dinner, usually around 7 PM. Refusing an apéro invitation is almost unthinkable among friends."
+      - "'On + verb' is the standard French way to describe customs and general habits: 'On fête le 14 Juillet' (People celebrate Bastille Day), 'On mange tard en France' (People eat late in France). It's equivalent to 'se + verb' in Spanish."
+    exercises:
+      - id: ex-mc-culture-fr-001
+        type: multiple_choice
+        question: "What is 'l'apéro'?"
+        options:
+          - "A type of dessert"
+          - "Pre-dinner drinks and snacks"
+          - "A table decoration"
+          - "A French dance"
+        correct_index: 1
+        explanation: "'L'apéro' is the French tradition of having drinks and snacks before dinner."
+      - id: ex-fb-culture-fr-001
+        type: fill_blank
+        sentence_template: "Le 14 Juillet, on _____ la fête nationale en France."
+        correct_answer: "fête"
+        hint: "The verb for 'celebrates' with 'on'"
+        accept_alternatives:
+          - "célèbre"
+      - id: ex-tr-culture-fr-001
+        type: translate
+        source_text: "In France, people usually have dinner late."
+        source_language: en
+        target_language: fr
+        correct_translation: "En France, on dîne d'habitude tard."
+        accept_alternatives:
+          - "En France, les gens dînent d'habitude tard."
+          - "En France, on mange tard d'habitude."
+      - id: ex-tr-culture-fr-002
+        type: translate
+        source_text: "Unlike my country, here it's typical to greet with two kisses."
+        source_language: en
+        target_language: fr
+        correct_translation: "Contrairement à mon pays, ici c'est typique de se saluer avec deux bises."
+        accept_alternatives:
+          - "Contrairement à mon pays, ici on se fait la bise."
+      - id: ex-tr-culture-fr-003
+        type: translate
+        source_text: "It's a very important tradition for families."
+        source_language: en
+        target_language: fr
+        correct_translation: "C'est une tradition très importante pour les familles."
+        accept_alternatives:
+          - "C'est une coutume très importante pour les familles."

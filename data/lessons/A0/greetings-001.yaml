@@ -1,0 +1,190 @@
+id: greetings-001
+level: A0
+category: greetings
+icon: "\U0001F44B"
+tags:
+  - greetings
+  - hello
+  - goodbye
+  - polite
+estimated_minutes: 3
+title: Meeting People
+description: Greet people, say goodbye, and respond to basic pleasantries
+
+languages:
+  es:
+    instruction: "You're walking into a small café in Madrid on a sunny morning. The barista looks up and smiles — what do you say? Let's learn the greetings you'll use every single day in Spanish."
+    vocabulary:
+      - word: "Hola"
+        translation: "Hello"
+      - word: "Buenos días"
+        translation: "Good morning"
+      - word: "Buenas tardes"
+        translation: "Good afternoon"
+      - word: "Buenas noches"
+        translation: "Good night"
+      - word: "Adiós"
+        translation: "Goodbye"
+      - word: "Hasta luego"
+        translation: "See you later"
+      - word: "¿Cómo estás?"
+        translation: "How are you? (informal)"
+      - word: "Bien, gracias"
+        translation: "Fine, thank you"
+    examples:
+      - content: "— ¡Hola! ¿Cómo estás?\n— Bien, gracias. ¿Y tú?"
+        translation: "— Hello! How are you?\n— Fine, thanks. And you?"
+      - content: "— Buenos días. Un café, por favor.\n— Aquí tiene. ¡Hasta luego!\n— ¡Adiós!"
+        translation: "— Good morning. A coffee, please.\n— Here you go. See you later!\n— Goodbye!"
+    tips:
+      - "'Hola' works any time of day and in any situation — it's the most versatile Spanish greeting. Pair it with a smile and you're set."
+      - "Use 'buenos días' until about noon, 'buenas tardes' from noon to sunset, and 'buenas noches' after dark. Note: 'buenas noches' is both 'good evening' and 'good night'."
+    exercises:
+      - id: ex-mc-greet-es-001
+        type: multiple_choice
+        question: "You enter a shop at 9 AM. What do you say?"
+        options:
+          - "Buenas noches"
+          - "Buenos días"
+          - "Buenas tardes"
+          - "Hasta luego"
+        correct_index: 1
+        explanation: "'Buenos días' is the morning greeting, used until around noon."
+      - id: ex-mc-greet-es-002
+        type: multiple_choice
+        question: "How do you say 'goodbye' in Spanish?"
+        options:
+          - "Hola"
+          - "Gracias"
+          - "Adiós"
+          - "Buenas tardes"
+        correct_index: 2
+        explanation: "'Adiós' means goodbye. You can also say 'Hasta luego' (see you later) for a more casual farewell."
+      - id: ex-mc-greet-es-003
+        type: multiple_choice
+        question: "Someone says '¿Cómo estás?' — what are they asking?"
+        options:
+          - "What's your name?"
+          - "How are you?"
+          - "Where are you from?"
+          - "What time is it?"
+        correct_index: 1
+        explanation: "'¿Cómo estás?' means 'How are you?' A simple reply is 'Bien, gracias' (Fine, thanks)."
+
+  de:
+    instruction: "You've just arrived in Berlin and step into a cozy Bäckerei for your first Brötchen. The baker greets you with a friendly nod — time to respond! Let's learn the greetings Germans use every day."
+    vocabulary:
+      - word: "Hallo"
+        translation: "Hello (informal)"
+      - word: "Guten Morgen"
+        translation: "Good morning"
+      - word: "Guten Tag"
+        translation: "Good day (standard greeting)"
+      - word: "Guten Abend"
+        translation: "Good evening"
+      - word: "Tschüss"
+        translation: "Bye (informal)"
+      - word: "Auf Wiedersehen"
+        translation: "Goodbye (formal)"
+      - word: "Wie geht es Ihnen?"
+        translation: "How are you? (formal)"
+      - word: "Gut, danke"
+        translation: "Fine, thank you"
+    examples:
+      - content: "— Guten Tag! Wie geht es Ihnen?\n— Gut, danke. Und Ihnen?"
+        translation: "— Good day! How are you?\n— Fine, thanks. And you?"
+      - content: "— Guten Morgen. Ein Brötchen, bitte.\n— Bitte schön. Tschüss!\n— Auf Wiedersehen!"
+        translation: "— Good morning. A bread roll, please.\n— There you go. Bye!\n— Goodbye!"
+    tips:
+      - "'Guten Tag' is the safe, polite greeting for any time of day. In northern Germany, you might also hear 'Moin' — a friendly all-purpose greeting used morning, noon, and night."
+      - "In southern Germany and Austria, people say 'Grüß Gott' (God greet you) instead of 'Guten Tag'. In Switzerland, you'll hear 'Grüezi'. These are regional, not religious."
+    exercises:
+      - id: ex-mc-greet-de-001
+        type: multiple_choice
+        question: "You enter a shop at 9 AM in Berlin. What do you say?"
+        options:
+          - "Guten Abend"
+          - "Guten Morgen"
+          - "Gute Nacht"
+          - "Tschüss"
+        correct_index: 1
+        explanation: "'Guten Morgen' is the morning greeting, used until about midday."
+      - id: ex-mc-greet-de-002
+        type: multiple_choice
+        question: "How do you say goodbye formally in German?"
+        options:
+          - "Hallo"
+          - "Danke"
+          - "Auf Wiedersehen"
+          - "Guten Tag"
+        correct_index: 2
+        explanation: "'Auf Wiedersehen' is the formal goodbye. 'Tschüss' is the informal version."
+      - id: ex-mc-greet-de-003
+        type: multiple_choice
+        question: "Someone says 'Wie geht es Ihnen?' — what are they asking?"
+        options:
+          - "What's your name?"
+          - "How are you?"
+          - "Where are you from?"
+          - "What time is it?"
+        correct_index: 1
+        explanation: "'Wie geht es Ihnen?' means 'How are you?' (formal). Reply with 'Gut, danke' (Fine, thanks)."
+
+  fr:
+    instruction: "You push open the door of a boulangerie in Paris. The heavenly smell of fresh croissants fills the air and the baker looks up — what do you say? In France, greeting people properly is essential. Let's learn how."
+    vocabulary:
+      - word: "Bonjour"
+        translation: "Hello / Good day"
+      - word: "Bonsoir"
+        translation: "Good evening"
+      - word: "Au revoir"
+        translation: "Goodbye"
+      - word: "Salut"
+        translation: "Hi / Bye (informal)"
+      - word: "Comment allez-vous ?"
+        translation: "How are you? (formal)"
+      - word: "Bien, merci"
+        translation: "Fine, thank you"
+      - word: "Bonne nuit"
+        translation: "Good night (when going to sleep)"
+      - word: "À bientôt"
+        translation: "See you soon"
+    examples:
+      - content: "— Bonjour ! Comment allez-vous ?\n— Bien, merci. Et vous ?"
+        translation: "— Hello! How are you?\n— Fine, thanks. And you?"
+      - content: "— Bonjour. Un croissant, s'il vous plaît.\n— Voilà. Au revoir !\n— Au revoir, bonne journée !"
+        translation: "— Hello. A croissant, please.\n— There you go. Goodbye!\n— Goodbye, have a nice day!"
+    tips:
+      - "'Bonjour' is absolutely essential in France. Always say it when entering a shop, meeting someone, or starting a conversation. Skipping it is considered rude — it's the golden rule of French politeness."
+      - "Switch from 'Bonjour' to 'Bonsoir' around 6 PM. 'Bonne nuit' is only used when someone is going to sleep — never as a greeting."
+    exercises:
+      - id: ex-mc-greet-fr-001
+        type: multiple_choice
+        question: "You walk into a bakery in Paris. What should you say first?"
+        options:
+          - "Bonne nuit"
+          - "Bonjour"
+          - "Au revoir"
+          - "Salut"
+        correct_index: 1
+        explanation: "'Bonjour' is essential when entering any shop in France. Skipping it is considered impolite."
+      - id: ex-mc-greet-fr-002
+        type: multiple_choice
+        question: "How do you say goodbye in French?"
+        options:
+          - "Bonjour"
+          - "Merci"
+          - "Au revoir"
+          - "Bonsoir"
+        correct_index: 2
+        explanation: "'Au revoir' means goodbye. 'Salut' can also mean bye informally."
+      - id: ex-mc-greet-fr-003
+        type: multiple_choice
+        question: "Someone says 'Comment allez-vous ?' — what are they asking?"
+        options:
+          - "What's your name?"
+          - "How are you?"
+          - "Where are you going?"
+          - "What time is it?"
+        correct_index: 1
+        explanation: "'Comment allez-vous ?' means 'How are you?' (formal). Reply with 'Bien, merci' (Fine, thanks)."

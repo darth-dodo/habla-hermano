@@ -1,0 +1,239 @@
+id: storytelling-001
+level: B1
+category: storytelling
+icon: "\U0001F4D6"
+tags:
+  - past-tense
+  - stories
+  - narrating
+  - preterite
+estimated_minutes: 8
+title: Telling Stories
+description: Narrate past events and tell anecdotes using past tenses
+
+languages:
+  es:
+    instruction: "You're at a bar with friends and someone starts telling a hilarious story about their weekend. Soon it's your turn — '¿Y a ti qué te pasó?' Storytelling is how friendships deepen in every culture."
+    vocabulary:
+      - word: "El otro día..."
+        translation: "The other day..."
+      - word: "De repente..."
+        translation: "Suddenly..."
+      - word: "Mientras estaba..."
+        translation: "While I was..."
+      - word: "Entonces..."
+        translation: "Then..."
+      - word: "Al final..."
+        translation: "In the end..."
+      - word: "¿Sabes qué me pasó?"
+        translation: "Do you know what happened to me?"
+      - word: "No te lo vas a creer"
+        translation: "You're not going to believe it"
+      - word: "Fue increíble"
+        translation: "It was incredible"
+      - word: "Resulta que..."
+        translation: "It turns out that..."
+      - word: "¿Y qué pasó después?"
+        translation: "And what happened next?"
+    examples:
+      - content: "— ¿Sabes qué me pasó el fin de semana? No te lo vas a creer.\n— ¡Cuéntame!\n— Estaba en el metro y de repente vi a mi profesor de la escuela. ¡Después de veinte años!\n— ¡No me digas! ¿Y qué pasó?\n— Hablamos durante una hora. Fue increíble."
+        translation: "— Do you know what happened to me this weekend? You're not going to believe it.\n— Tell me!\n— I was on the subway and suddenly I saw my school teacher. After twenty years!\n— No way! And what happened?\n— We talked for an hour. It was incredible."
+      - content: "— El otro día fui a un restaurante nuevo.\n— ¿Y qué tal?\n— Al principio todo iba bien. Pero mientras esperaba la comida, resulta que había una cucaracha en la mesa.\n— ¡Qué asco! ¿Y qué hiciste?\n— Al final me fui sin pagar."
+        translation: "— The other day I went to a new restaurant.\n— And how was it?\n— At first everything was going well. But while I was waiting for the food, it turns out there was a cockroach on the table.\n— How disgusting! And what did you do?\n— In the end I left without paying."
+    tips:
+      - "Spanish storytelling uses two past tenses: pretérito (completed actions: 'fui', 'vi') and imperfecto (background/ongoing: 'estaba', 'iba'). They work together like a movie scene — imperfecto sets the stage, pretérito is the action."
+      - "'No te lo vas a creer' and '¿Sabes qué me pasó?' are classic story openers that immediately grab attention. Use them to hook your listener!"
+    exercises:
+      - id: ex-mc-story-es-001
+        type: multiple_choice
+        question: "Which phrase introduces a surprise twist in a story?"
+        options:
+          - "Al final..."
+          - "De repente..."
+          - "Mientras estaba..."
+          - "El otro día..."
+        correct_index: 1
+        explanation: "'De repente' (Suddenly) introduces an unexpected event — the twist in your story."
+      - id: ex-fb-story-es-001
+        type: fill_blank
+        sentence_template: "_____ estaba caminando por la calle, vi un accidente."
+        correct_answer: "Mientras"
+        hint: "The word for 'While'"
+        accept_alternatives:
+          - "Cuando"
+      - id: ex-tr-story-es-001
+        type: translate
+        source_text: "The other day I went to the beach and I met an old friend."
+        source_language: en
+        target_language: es
+        correct_translation: "El otro día fui a la playa y me encontré con un viejo amigo."
+        accept_alternatives:
+          - "El otro día fui a la playa y encontré a un viejo amigo."
+      - id: ex-tr-story-es-002
+        type: translate
+        source_text: "You're not going to believe what happened to me."
+        source_language: en
+        target_language: es
+        correct_translation: "No te lo vas a creer lo que me pasó."
+        accept_alternatives:
+          - "No vas a creer lo que me pasó."
+          - "No te vas a creer lo que me ocurrió."
+      - id: ex-tr-story-es-003
+        type: translate
+        source_text: "In the end, everything turned out well."
+        source_language: en
+        target_language: es
+        correct_translation: "Al final, todo salió bien."
+        accept_alternatives:
+          - "Al final todo resultó bien."
+          - "Al final todo terminó bien."
+
+  de:
+    instruction: "You're at a Kneipe with friends and someone starts telling a wild story about their weekend. Now it's your turn — 'Und was ist dir passiert?' Let's learn to tell great stories auf Deutsch!"
+    vocabulary:
+      - word: "Neulich..."
+        translation: "The other day... / Recently..."
+      - word: "Plötzlich..."
+        translation: "Suddenly..."
+      - word: "Während ich... war"
+        translation: "While I was..."
+      - word: "Dann..."
+        translation: "Then..."
+      - word: "Am Ende..."
+        translation: "In the end..."
+      - word: "Weißt du, was mir passiert ist?"
+        translation: "Do you know what happened to me?"
+      - word: "Das glaubst du nicht"
+        translation: "You're not going to believe it"
+      - word: "Es war unglaublich"
+        translation: "It was incredible"
+      - word: "Es stellte sich heraus, dass..."
+        translation: "It turned out that..."
+      - word: "Und was ist dann passiert?"
+        translation: "And what happened then?"
+    examples:
+      - content: "— Weißt du, was mir am Wochenende passiert ist? Das glaubst du nicht.\n— Erzähl!\n— Ich war in der U-Bahn und plötzlich habe ich meinen Schullehrer gesehen. Nach zwanzig Jahren!\n— Nein! Und was ist dann passiert?\n— Wir haben eine Stunde lang geredet. Es war unglaublich."
+        translation: "— Do you know what happened to me this weekend? You're not going to believe it.\n— Tell me!\n— I was on the subway and suddenly I saw my school teacher. After twenty years!\n— No way! And what happened then?\n— We talked for an hour. It was incredible."
+      - content: "— Neulich war ich in einem neuen Restaurant.\n— Und wie war es?\n— Am Anfang war alles gut. Aber während ich auf das Essen gewartet habe, stellte sich heraus, dass eine Kakerlake auf dem Tisch war.\n— Wie eklig! Und was hast du gemacht?\n— Am Ende bin ich gegangen, ohne zu bezahlen."
+        translation: "— The other day I was at a new restaurant.\n— And how was it?\n— At first everything was good. But while I was waiting for the food, it turned out there was a cockroach on the table.\n— How disgusting! And what did you do?\n— In the end I left without paying."
+    tips:
+      - "German storytelling primarily uses Perfekt (conversational past: 'Ich habe gesehen', 'Ich bin gegangen') for completed actions and Präteritum for background (mainly with 'war', 'hatte'). Perfekt is standard in spoken German."
+      - "'Stell dir vor!' (Imagine!) and 'Das glaubst du nicht!' (You won't believe it!) are great German story openers. They create the same suspense as their Spanish equivalents."
+    exercises:
+      - id: ex-mc-story-de-001
+        type: multiple_choice
+        question: "Which phrase introduces a surprise twist in a story?"
+        options:
+          - "Am Ende..."
+          - "Plötzlich..."
+          - "Während ich... war"
+          - "Neulich..."
+        correct_index: 1
+        explanation: "'Plötzlich' (Suddenly) introduces an unexpected event — the twist in your story."
+      - id: ex-fb-story-de-001
+        type: fill_blank
+        sentence_template: "_____ ich durch die Straße ging, sah ich einen Unfall."
+        correct_answer: "Während"
+        hint: "The word for 'While'"
+        accept_alternatives:
+          - "Als"
+      - id: ex-tr-story-de-001
+        type: translate
+        source_text: "The other day I went to the beach and I met an old friend."
+        source_language: en
+        target_language: de
+        correct_translation: "Neulich bin ich an den Strand gegangen und habe einen alten Freund getroffen."
+        accept_alternatives:
+          - "Neulich war ich am Strand und habe einen alten Freund getroffen."
+      - id: ex-tr-story-de-002
+        type: translate
+        source_text: "You're not going to believe what happened to me."
+        source_language: en
+        target_language: de
+        correct_translation: "Du glaubst nicht, was mir passiert ist."
+        accept_alternatives:
+          - "Das glaubst du nicht, was mir passiert ist."
+      - id: ex-tr-story-de-003
+        type: translate
+        source_text: "In the end, everything turned out well."
+        source_language: en
+        target_language: de
+        correct_translation: "Am Ende ist alles gut ausgegangen."
+        accept_alternatives:
+          - "Am Ende hat alles gut geklappt."
+          - "Schließlich ist alles gut gelaufen."
+
+  fr:
+    instruction: "You're at a café terrace with friends and someone launches into a hilarious story about their weekend. Now everyone looks at you — 'Et toi, qu'est-ce qui t'est arrivé ?' Time to tell your story en français!"
+    vocabulary:
+      - word: "L'autre jour..."
+        translation: "The other day..."
+      - word: "Tout à coup..."
+        translation: "Suddenly..."
+      - word: "Pendant que j'étais..."
+        translation: "While I was..."
+      - word: "Ensuite..."
+        translation: "Then..."
+      - word: "Finalement..."
+        translation: "In the end..."
+      - word: "Tu sais ce qui m'est arrivé ?"
+        translation: "Do you know what happened to me?"
+      - word: "Tu ne vas pas le croire"
+        translation: "You're not going to believe it"
+      - word: "C'était incroyable"
+        translation: "It was incredible"
+      - word: "Il s'est avéré que..."
+        translation: "It turned out that..."
+      - word: "Et qu'est-ce qui s'est passé après ?"
+        translation: "And what happened next?"
+    examples:
+      - content: "— Tu sais ce qui m'est arrivé ce week-end ? Tu ne vas pas le croire.\n— Raconte !\n— J'étais dans le métro et tout à coup j'ai vu mon professeur d'école. Après vingt ans !\n— Non ! Et qu'est-ce qui s'est passé ?\n— On a parlé pendant une heure. C'était incroyable."
+        translation: "— Do you know what happened to me this weekend? You're not going to believe it.\n— Tell me!\n— I was on the subway and suddenly I saw my school teacher. After twenty years!\n— No way! And what happened?\n— We talked for an hour. It was incredible."
+      - content: "— L'autre jour, je suis allé dans un nouveau restaurant.\n— Et c'était comment ?\n— Au début, tout allait bien. Mais pendant que j'attendais le repas, il s'est avéré qu'il y avait un cafard sur la table.\n— Quelle horreur ! Et qu'est-ce que tu as fait ?\n— Finalement, je suis parti sans payer."
+        translation: "— The other day, I went to a new restaurant.\n— And how was it?\n— At first everything was going well. But while I was waiting for the food, it turned out there was a cockroach on the table.\n— How horrible! And what did you do?\n— In the end I left without paying."
+    tips:
+      - "French storytelling uses passé composé (completed actions: 'je suis allé', 'j'ai vu') and imparfait (background/setting: 'j'étais', 'tout allait bien'). Like Spanish, imparfait sets the scene and passé composé drives the action."
+      - "'Figure-toi que...' (Can you imagine that...) and 'Tu ne vas pas le croire' (You won't believe it) are classic French story hooks. They signal something surprising is coming!"
+    exercises:
+      - id: ex-mc-story-fr-001
+        type: multiple_choice
+        question: "Which phrase introduces a surprise twist in a story?"
+        options:
+          - "Finalement..."
+          - "Tout à coup..."
+          - "Pendant que j'étais..."
+          - "L'autre jour..."
+        correct_index: 1
+        explanation: "'Tout à coup' (Suddenly) introduces an unexpected event — the twist in your story."
+      - id: ex-fb-story-fr-001
+        type: fill_blank
+        sentence_template: "_____ que je marchais dans la rue, j'ai vu un accident."
+        correct_answer: "Pendant"
+        hint: "The word for 'While' / 'During'"
+        accept_alternatives:
+          - "Alors"
+      - id: ex-tr-story-fr-001
+        type: translate
+        source_text: "The other day I went to the beach and I met an old friend."
+        source_language: en
+        target_language: fr
+        correct_translation: "L'autre jour, je suis allé à la plage et j'ai rencontré un vieil ami."
+        accept_alternatives:
+          - "L'autre jour je suis allé à la plage et j'ai retrouvé un vieil ami."
+      - id: ex-tr-story-fr-002
+        type: translate
+        source_text: "You're not going to believe what happened to me."
+        source_language: en
+        target_language: fr
+        correct_translation: "Tu ne vas pas croire ce qui m'est arrivé."
+        accept_alternatives:
+          - "Tu ne vas pas le croire, ce qui m'est arrivé."
+      - id: ex-tr-story-fr-003
+        type: translate
+        source_text: "In the end, everything turned out well."
+        source_language: en
+        target_language: fr
+        correct_translation: "Finalement, tout s'est bien passé."
+        accept_alternatives:
+          - "Au final, tout s'est bien terminé."
+          - "À la fin, tout s'est bien passé."

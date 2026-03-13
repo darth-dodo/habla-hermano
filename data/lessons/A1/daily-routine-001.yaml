@@ -1,0 +1,201 @@
+id: daily-routine-001
+level: A1
+category: daily-routine
+icon: "\U0001F550"
+tags:
+  - routine
+  - time
+  - verbs
+  - daily-life
+estimated_minutes: 4
+title: My Typical Day
+description: Describe your daily routine and ask about someone else's schedule
+
+languages:
+  es:
+    instruction: "Your host family in Costa Rica wants to know your schedule so they can plan meals. '¿A qué hora desayunas?' Let's learn to describe your daily routine in Spanish."
+    vocabulary:
+      - word: "Me levanto a las..."
+        translation: "I get up at..."
+      - word: "Desayuno"
+        translation: "I have breakfast"
+      - word: "Voy al trabajo / a la escuela"
+        translation: "I go to work / school"
+      - word: "Como / Almuerzo"
+        translation: "I eat lunch"
+      - word: "Vuelvo a casa"
+        translation: "I come home"
+      - word: "Ceno"
+        translation: "I have dinner"
+      - word: "Me acuesto"
+        translation: "I go to bed"
+      - word: "¿A qué hora...?"
+        translation: "At what time...?"
+    examples:
+      - content: "— ¿A qué hora te levantas?\n— Me levanto a las siete. ¿Y tú?\n— Yo me levanto a las seis. Aquí desayunamos temprano."
+        translation: "— What time do you get up?\n— I get up at seven. And you?\n— I get up at six. We have breakfast early here."
+      - content: "— ¿Qué haces por la tarde?\n— Después del trabajo, vuelvo a casa y ceno a las ocho.\n— Nosotros cenamos a las nueve."
+        translation: "— What do you do in the afternoon?\n— After work, I come home and have dinner at eight.\n— We have dinner at nine."
+    tips:
+      - "In Spain, dinner is typically at 9-10 PM — much later than in most countries. In Latin America, it's usually 7-8 PM. Adjust your expectations!"
+      - "Reflexive verbs like 'levantarse' (to get up) and 'acostarse' (to go to bed) always need 'me': 'Me levanto' (I get up), not just 'Levanto'."
+    exercises:
+      - id: ex-mc-routine-es-001
+        type: multiple_choice
+        question: "'Me levanto a las siete' means:"
+        options:
+          - "I go to bed at seven"
+          - "I have breakfast at seven"
+          - "I get up at seven"
+          - "I leave at seven"
+        correct_index: 2
+        explanation: "'Me levanto' means 'I get up'. 'A las siete' = at seven."
+      - id: ex-mc-routine-es-002
+        type: multiple_choice
+        question: "Which word means 'I have dinner'?"
+        options:
+          - "Desayuno"
+          - "Almuerzo"
+          - "Ceno"
+          - "Como"
+        correct_index: 2
+        explanation: "'Ceno' means I have dinner. 'Desayuno' = breakfast, 'almuerzo' = lunch."
+      - id: ex-fb-routine-es-001
+        type: fill_blank
+        sentence_template: "_____ a las ocho de la mañana."
+        correct_answer: "Desayuno"
+        hint: "The morning meal"
+        accept_alternatives:
+          - "Me levanto"
+      - id: ex-fb-routine-es-002
+        type: fill_blank
+        sentence_template: "¿A qué hora _____ a casa?"
+        correct_answer: "vuelves"
+        hint: "The verb for 'to return/come back' — tú form"
+        accept_alternatives:
+          - "llegas"
+          - "regresas"
+
+  de:
+    instruction: "You're staying with a host family in Hamburg. They want to coordinate mealtimes — 'Wann frühstückst du?' Let's learn to describe your daily routine in German."
+    vocabulary:
+      - word: "Ich stehe um... auf"
+        translation: "I get up at..."
+      - word: "Ich frühstücke"
+        translation: "I have breakfast"
+      - word: "Ich gehe zur Arbeit / zur Schule"
+        translation: "I go to work / school"
+      - word: "Ich esse zu Mittag"
+        translation: "I eat lunch"
+      - word: "Ich komme nach Hause"
+        translation: "I come home"
+      - word: "Ich esse zu Abend"
+        translation: "I have dinner"
+      - word: "Ich gehe ins Bett"
+        translation: "I go to bed"
+      - word: "Um wie viel Uhr...?"
+        translation: "At what time...?"
+    examples:
+      - content: "— Um wie viel Uhr stehst du auf?\n— Ich stehe um sieben Uhr auf. Und du?\n— Ich stehe um sechs auf. Wir frühstücken hier früh."
+        translation: "— What time do you get up?\n— I get up at seven. And you?\n— I get up at six. We have breakfast early here."
+      - content: "— Was machst du nachmittags?\n— Nach der Arbeit komme ich nach Hause und esse um acht zu Abend.\n— Wir essen um sieben."
+        translation: "— What do you do in the afternoon?\n— After work, I come home and have dinner at eight.\n— We have dinner at seven."
+    tips:
+      - "Germans typically eat dinner (Abendessen) between 6-7 PM, much earlier than in Spain. 'Abendbrot' (evening bread) is often a cold meal with bread, cheese, and cold cuts — not a hot dinner."
+      - "'Aufstehen' (to get up) is a separable verb: 'Ich stehe auf' — the 'auf' goes to the end of the sentence. Many daily routine verbs in German are separable: 'aufwachen' (wake up), 'anfangen' (start)."
+    exercises:
+      - id: ex-mc-routine-de-001
+        type: multiple_choice
+        question: "'Ich stehe um sieben auf' means:"
+        options:
+          - "I go to bed at seven"
+          - "I have breakfast at seven"
+          - "I get up at seven"
+          - "I leave at seven"
+        correct_index: 2
+        explanation: "'Ich stehe auf' means 'I get up'. 'Um sieben' = at seven."
+      - id: ex-mc-routine-de-002
+        type: multiple_choice
+        question: "Which phrase means 'I have breakfast'?"
+        options:
+          - "Ich esse zu Mittag"
+          - "Ich frühstücke"
+          - "Ich esse zu Abend"
+          - "Ich gehe ins Bett"
+        correct_index: 1
+        explanation: "'Ich frühstücke' means I have breakfast. 'Zu Mittag' = lunch, 'zu Abend' = dinner."
+      - id: ex-fb-routine-de-001
+        type: fill_blank
+        sentence_template: "Ich _____ um acht Uhr."
+        correct_answer: "frühstücke"
+        hint: "The verb for having the morning meal"
+        accept_alternatives:
+          - "esse"
+      - id: ex-fb-routine-de-002
+        type: fill_blank
+        sentence_template: "Um wie viel Uhr kommst du nach _____?"
+        correct_answer: "Hause"
+        hint: "The word for 'home' (after 'nach')"
+        accept_alternatives: []
+
+  fr:
+    instruction: "You're staying with a host family in Toulouse. They need to plan meals around your schedule — 'À quelle heure tu prends le petit-déjeuner ?' Let's learn to describe your daily routine in French."
+    vocabulary:
+      - word: "Je me lève à..."
+        translation: "I get up at..."
+      - word: "Je prends le petit-déjeuner"
+        translation: "I have breakfast"
+      - word: "Je vais au travail / à l'école"
+        translation: "I go to work / school"
+      - word: "Je déjeune"
+        translation: "I eat lunch"
+      - word: "Je rentre à la maison"
+        translation: "I come home"
+      - word: "Je dîne"
+        translation: "I have dinner"
+      - word: "Je me couche"
+        translation: "I go to bed"
+      - word: "À quelle heure... ?"
+        translation: "At what time...?"
+    examples:
+      - content: "— À quelle heure tu te lèves ?\n— Je me lève à sept heures. Et toi ?\n— Moi, je me lève à six heures. Ici, on prend le petit-déjeuner tôt."
+        translation: "— What time do you get up?\n— I get up at seven. And you?\n— I get up at six. Here, we have breakfast early."
+      - content: "— Qu'est-ce que tu fais l'après-midi ?\n— Après le travail, je rentre à la maison et je dîne à huit heures.\n— Nous, on dîne à sept heures et demie."
+        translation: "— What do you do in the afternoon?\n— After work, I come home and have dinner at eight.\n— We have dinner at seven thirty."
+    tips:
+      - "In France, lunch (le déjeuner) is a proper meal, often lasting an hour. Many shops still close between 12-2 PM. Dinner (le dîner) is usually around 7:30-8 PM."
+      - "Reflexive verbs like 'se lever' (to get up) and 'se coucher' (to go to bed) always need 'me' in the first person: 'Je me lève' (I get up). The 'se' changes to 'me', 'te', 'se', 'nous', 'vous', 'se'."
+    exercises:
+      - id: ex-mc-routine-fr-001
+        type: multiple_choice
+        question: "'Je me lève à sept heures' means:"
+        options:
+          - "I go to bed at seven"
+          - "I have breakfast at seven"
+          - "I get up at seven"
+          - "I leave at seven"
+        correct_index: 2
+        explanation: "'Je me lève' means 'I get up'. 'À sept heures' = at seven o'clock."
+      - id: ex-mc-routine-fr-002
+        type: multiple_choice
+        question: "Which phrase means 'I have dinner'?"
+        options:
+          - "Je prends le petit-déjeuner"
+          - "Je déjeune"
+          - "Je dîne"
+          - "Je me couche"
+        correct_index: 2
+        explanation: "'Je dîne' means I have dinner. 'Petit-déjeuner' = breakfast, 'déjeuner' = lunch."
+      - id: ex-fb-routine-fr-001
+        type: fill_blank
+        sentence_template: "Je prends le _____ à huit heures."
+        correct_answer: "petit-déjeuner"
+        hint: "The French word for breakfast"
+        accept_alternatives: []
+      - id: ex-fb-routine-fr-002
+        type: fill_blank
+        sentence_template: "À quelle heure tu _____ à la maison ?"
+        correct_answer: "rentres"
+        hint: "The verb for 'to come back/return home' — tu form"
+        accept_alternatives:
+          - "reviens"

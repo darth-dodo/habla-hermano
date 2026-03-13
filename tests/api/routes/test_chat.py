@@ -4,12 +4,22 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.api.auth import AuthenticatedUser
-from src.api.routes.chat import _resolve_chat_identity
+from src.api.dependencies import get_lesson_service
+from src.api.routes.chat import _resolve_chat_identity, _resolve_lesson_thread_id
+from src.lessons.models import (
+    Lesson,
+    LessonContent,
+    LessonLevel,
+    LessonMetadata,
+    LessonStep,
+    LessonStepType,
+)
 from tests.conftest import CSRF_HEADERS
 
 
@@ -807,3 +817,331 @@ class TestNewConversationEndpoint:
             response = client.post("/new", follow_redirects=False)
 
             assert "conversation_version" not in response.cookies
+
+
+class TestChatPageLessonMode:
+    """Tests for GET /?lesson= — Lesson mode rendering via chat_page."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_lesson_mode_returns_200(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson=es_a1_greetings_01 should return 200 with lesson context."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        assert "Basic Greetings" in response.text
+
+    def test_lesson_mode_contains_lesson_context(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson= should include lesson_id and lesson_mode markers in the page."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        # The template uses lesson_id in hidden inputs / JS data attributes
+        assert "es_a1_greetings_01" in response.text
+
+    def test_freeform_chat_still_works(self, test_client: TestClient) -> None:
+        """GET / without lesson param should still render freeform chat (no regression)."""
+        response = test_client.get("/")
+        assert response.status_code == 200
+        assert "Habla Hermano" in response.text
+
+    def test_nonexistent_lesson_returns_404(
+        self,
+        app_with_mocked_graph: FastAPI,
+    ) -> None:
+        """GET /?lesson=nonexistent_lesson should return 404."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = None
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(
+            app_with_mocked_graph, headers=CSRF_HEADERS, raise_server_exceptions=False
+        ) as client:
+            response = client.get("/?lesson=nonexistent_lesson")
+
+        assert response.status_code == 404
+
+
+class TestResolveLessonThreadId:
+    """Tests for _resolve_lesson_thread_id helper."""
+
+    def test_authenticated_user_with_session(self) -> None:
+        """Authenticated user gets lesson-scoped thread_id with lesson_session suffix."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            "user-abc", None, "es_a1_greetings_01", "sess-uuid-1"
+        )
+        assert thread_id == "lesson:user-abc:es_a1_greetings_01:sess-uuid-1"
+        assert user_id == "user-abc"
+        assert new_session is None
+
+    def test_guest_with_session(self) -> None:
+        """Guest with existing session gets lesson-scoped thread_id."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            None, "session-123", "es_a1_greetings_01", "sess-uuid-2"
+        )
+        assert thread_id == "lesson:session-123:es_a1_greetings_01:sess-uuid-2"
+        assert user_id is None
+        assert new_session is None
+
+    def test_first_time_guest(self) -> None:
+        """First-time guest gets new session and lesson-scoped thread_id."""
+        thread_id, user_id, new_session = _resolve_lesson_thread_id(
+            None, None, "es_a1_greetings_01", "sess-uuid-3"
+        )
+        assert thread_id.startswith("lesson:")
+        assert ":es_a1_greetings_01:sess-uuid-3" in thread_id
+        assert user_id is None
+        assert new_session is not None
+
+    def test_missing_lesson_session_generates_uuid(self) -> None:
+        """When lesson_session is None, a UUID suffix is auto-generated."""
+        thread_id, _user_id, _ = _resolve_lesson_thread_id("user-abc", None, "es_a1_greetings_01")
+        # Format: lesson:user-abc:es_a1_greetings_01:<auto-uuid>
+        parts = thread_id.split(":")
+        assert len(parts) == 4
+        assert parts[0] == "lesson"
+        assert parts[1] == "user-abc"
+        assert parts[2] == "es_a1_greetings_01"
+        assert len(parts[3]) > 0  # auto-generated UUID
+
+
+class TestStreamMessageLessonMode:
+    """Tests for POST /chat/stream with lesson_id — unified stream endpoint."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_stream_with_lesson_id_returns_sse(
+        self,
+        app_with_mocked_graph: Any,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id should return SSE stream."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "Hola", "lesson_id": "es_a1_greetings_01"},
+            )
+
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+        # Should contain SSE events (at least token/done)
+        assert "event:" in response.text or "data:" in response.text
+
+    def test_stream_without_lesson_id_still_works(
+        self,
+        test_client: TestClient,
+        sample_message: str,
+    ) -> None:
+        """POST /chat/stream without lesson_id should still work as freeform (no regression)."""
+        response = test_client.post(
+            "/chat/stream",
+            data={"message": sample_message, "level": "A1", "language": "es"},
+        )
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+
+    def test_stream_with_invalid_lesson_id_returns_error(
+        self,
+        app_with_mocked_graph: Any,
+    ) -> None:
+        """POST /chat/stream with nonexistent lesson_id should return error event."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = None
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "Hola", "lesson_id": "nonexistent_lesson"},
+            )
+
+        assert response.status_code == 200  # SSE always returns 200
+        assert "Lesson not found" in response.text
+
+    def test_stream_lesson_uses_metadata_level_and_language(
+        self,
+        app_with_mocked_graph: Any,
+        mock_compiled_graph: MagicMock,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id should use lesson metadata for level/language."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            # Send with wrong level/language — lesson metadata should override
+            client.post(
+                "/chat/stream",
+                data={
+                    "message": "Hola",
+                    "lesson_id": "es_a1_greetings_01",
+                    "level": "B1",
+                    "language": "de",
+                },
+            )
+
+        # The lesson metadata says level=A1, language=es
+        # Check that aget_state was called (lesson path was taken)
+        assert mock_compiled_graph.aget_state.await_count >= 1
+
+    def test_stream_lesson_whitespace_message_returns_error(
+        self,
+        app_with_mocked_graph: Any,
+        sample_lesson: Lesson,
+    ) -> None:
+        """POST /chat/stream with lesson_id but whitespace-only message returns error."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.post(
+                "/chat/stream",
+                data={"message": "   ", "lesson_id": "es_a1_greetings_01"},
+            )
+
+        assert response.status_code == 200
+        assert "Message cannot be empty" in response.text
+
+
+class TestLessonResume:
+    """Tests for lesson resume support via checkpoint message recovery."""
+
+    @pytest.fixture
+    def sample_lesson(self) -> Lesson:
+        """Create a sample lesson for testing."""
+        return Lesson(
+            metadata=LessonMetadata(
+                id="es_a1_greetings_01",
+                title="Basic Greetings",
+                description="Learn common greetings in Spanish",
+                language="es",
+                level=LessonLevel.A1,
+                estimated_minutes=3,
+                category="greetings",
+                tags=["greeting"],
+                vocabulary_count=2,
+                icon="wave",
+            ),
+            content=LessonContent(
+                steps=[
+                    LessonStep(
+                        type=LessonStepType.INSTRUCTION,
+                        content="Learn greetings!",
+                        order=1,
+                    ),
+                ],
+                exercises=[],
+            ),
+        )
+
+    def test_lesson_always_starts_fresh(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """GET /?lesson=X should always start a fresh lesson (no resume)."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        # No resume indicator — lessons always start fresh
+        assert "Resuming your lesson" not in response.text
+        assert "data-resuming" not in response.text
+        # Fresh lesson_session UUID is included
+        assert 'name="lesson_session"' in response.text
+
+    def test_lesson_session_uuid_in_context(
+        self,
+        app_with_mocked_graph: FastAPI,
+        sample_lesson: Lesson,
+    ) -> None:
+        """Lesson page should include a fresh lesson_session UUID in context."""
+        mock_svc = MagicMock()
+        mock_svc.get_lesson.return_value = sample_lesson
+        app_with_mocked_graph.dependency_overrides[get_lesson_service] = lambda: mock_svc
+
+        with TestClient(app_with_mocked_graph, headers=CSRF_HEADERS) as client:
+            response = client.get("/?lesson=es_a1_greetings_01")
+
+        assert response.status_code == 200
+        assert 'name="lesson_session"' in response.text

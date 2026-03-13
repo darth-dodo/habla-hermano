@@ -1,0 +1,199 @@
+id: food-drink-001
+level: A1
+category: food-drink
+icon: "\U0001F37D\uFE0F"
+tags:
+  - food
+  - drinks
+  - ordering
+  - restaurant
+estimated_minutes: 4
+title: Ordering at a Café
+description: Order food and drinks at a café or restaurant and understand the menu
+
+languages:
+  es:
+    instruction: "You sit down at a terrace café in Salamanca. The waiter comes over with a notepad — '¿Qué desea?' It's time to order! Let's learn how to get exactly what you want."
+    vocabulary:
+      - word: "Un café con leche"
+        translation: "A coffee with milk"
+      - word: "Un agua, por favor"
+        translation: "A water, please"
+      - word: "La cuenta, por favor"
+        translation: "The bill, please"
+      - word: "¿Qué desea?"
+        translation: "What would you like? (formal)"
+      - word: "Para mí..."
+        translation: "For me..."
+      - word: "Un bocadillo de jamón"
+        translation: "A ham sandwich"
+      - word: "Una cerveza"
+        translation: "A beer"
+      - word: "¿Algo más?"
+        translation: "Anything else?"
+    examples:
+      - content: "— Buenos días. ¿Qué desea?\n— Un café con leche, por favor.\n— ¿Algo más?\n— No, gracias."
+        translation: "— Good morning. What would you like?\n— A coffee with milk, please.\n— Anything else?\n— No, thank you."
+      - content: "— Para mí, un bocadillo de jamón y una cerveza.\n— ¿Y para usted?\n— Yo quiero una ensalada y un agua.\n— Perfecto. Ahora mismo."
+        translation: "— For me, a ham sandwich and a beer.\n— And for you?\n— I'd like a salad and a water.\n— Perfect. Right away."
+    tips:
+      - "In Spain, it's normal to get the waiter's attention by saying 'Perdona' or making eye contact. Tipping is not expected but rounding up is appreciated (e.g., leave the coins)."
+      - "'La cuenta, por favor' (The bill, please) is essential. In Spain, the bill won't come unless you ask — the waiter won't rush you."
+    exercises:
+      - id: ex-mc-food-es-001
+        type: multiple_choice
+        question: "The waiter asks '¿Qué desea?' What should you do?"
+        options:
+          - "Pay the bill"
+          - "Order your food/drink"
+          - "Ask for the bathroom"
+          - "Leave the restaurant"
+        correct_index: 1
+        explanation: "'¿Qué desea?' means 'What would you like?' — it's time to order!"
+      - id: ex-mc-food-es-002
+        type: multiple_choice
+        question: "How do you ask for the bill?"
+        options:
+          - "¿Algo más?"
+          - "La cuenta, por favor"
+          - "¿Qué desea?"
+          - "Un café, por favor"
+        correct_index: 1
+        explanation: "'La cuenta, por favor' means 'The bill, please.'"
+      - id: ex-fb-food-es-001
+        type: fill_blank
+        sentence_template: "Un café con _____, por favor."
+        correct_answer: "leche"
+        hint: "The white liquid you add to coffee"
+        accept_alternatives:
+          - "azúcar"
+      - id: ex-fb-food-es-002
+        type: fill_blank
+        sentence_template: "_____ mí, una ensalada."
+        correct_answer: "Para"
+        hint: "The word meaning 'for'"
+        accept_alternatives: []
+
+  de:
+    instruction: "You sit down at a Straßencafé on Unter den Linden in Berlin. The waiter comes over — 'Was darf es sein?' Time to order! Let's learn how to get exactly what you want in a German café."
+    vocabulary:
+      - word: "Einen Kaffee mit Milch"
+        translation: "A coffee with milk"
+      - word: "Ein Wasser, bitte"
+        translation: "A water, please"
+      - word: "Die Rechnung, bitte"
+        translation: "The bill, please"
+      - word: "Was darf es sein?"
+        translation: "What can I get you?"
+      - word: "Für mich..."
+        translation: "For me..."
+      - word: "Ein Schinkenbrot"
+        translation: "A ham sandwich"
+      - word: "Ein Bier"
+        translation: "A beer"
+      - word: "Sonst noch etwas?"
+        translation: "Anything else?"
+    examples:
+      - content: "— Guten Tag. Was darf es sein?\n— Einen Kaffee mit Milch, bitte.\n— Sonst noch etwas?\n— Nein, danke."
+        translation: "— Good day. What can I get you?\n— A coffee with milk, please.\n— Anything else?\n— No, thank you."
+      - content: "— Für mich ein Schinkenbrot und ein Bier.\n— Und für Sie?\n— Ich hätte gerne einen Salat und ein Wasser.\n— Kommt sofort."
+        translation: "— For me a ham sandwich and a beer.\n— And for you?\n— I'd like a salad and a water.\n— Coming right up."
+    tips:
+      - "In Germany, you typically pay at the table. Say 'Zahlen, bitte' or 'Die Rechnung, bitte' to get the bill. Tipping 5-10% is standard — round up to a convenient amount and say 'Stimmt so' (Keep the change)."
+      - "'Ich hätte gerne...' (I would like...) is the polite way to order in German. It's softer than 'Ich will' (I want), which sounds demanding."
+    exercises:
+      - id: ex-mc-food-de-001
+        type: multiple_choice
+        question: "The waiter asks 'Was darf es sein?' What should you do?"
+        options:
+          - "Pay the bill"
+          - "Order your food/drink"
+          - "Ask for the bathroom"
+          - "Leave the restaurant"
+        correct_index: 1
+        explanation: "'Was darf es sein?' means 'What can I get you?' — it's time to order!"
+      - id: ex-mc-food-de-002
+        type: multiple_choice
+        question: "How do you ask for the bill in German?"
+        options:
+          - "Sonst noch etwas?"
+          - "Die Rechnung, bitte"
+          - "Was darf es sein?"
+          - "Ein Kaffee, bitte"
+        correct_index: 1
+        explanation: "'Die Rechnung, bitte' means 'The bill, please.'"
+      - id: ex-fb-food-de-001
+        type: fill_blank
+        sentence_template: "Einen Kaffee mit _____, bitte."
+        correct_answer: "Milch"
+        hint: "The white liquid you add to coffee"
+        accept_alternatives:
+          - "Zucker"
+      - id: ex-fb-food-de-002
+        type: fill_blank
+        sentence_template: "_____ mich ein Schinkenbrot."
+        correct_answer: "Für"
+        hint: "The word meaning 'for'"
+        accept_alternatives: []
+
+  fr:
+    instruction: "You sit down at a terrasse on the Champs-Élysées in Paris. The waiter approaches — 'Vous désirez ?' It's time to order! Let's learn how to navigate a French café like a local."
+    vocabulary:
+      - word: "Un café au lait"
+        translation: "A coffee with milk"
+      - word: "Une carafe d'eau, s'il vous plaît"
+        translation: "A carafe of water, please"
+      - word: "L'addition, s'il vous plaît"
+        translation: "The bill, please"
+      - word: "Vous désirez ?"
+        translation: "What would you like?"
+      - word: "Pour moi..."
+        translation: "For me..."
+      - word: "Un croque-monsieur"
+        translation: "A ham and cheese toasted sandwich"
+      - word: "Un verre de vin"
+        translation: "A glass of wine"
+      - word: "Autre chose ?"
+        translation: "Anything else?"
+    examples:
+      - content: "— Bonjour. Vous désirez ?\n— Un café au lait, s'il vous plaît.\n— Autre chose ?\n— Non, merci."
+        translation: "— Hello. What would you like?\n— A coffee with milk, please.\n— Anything else?\n— No, thank you."
+      - content: "— Pour moi, un croque-monsieur et un verre de vin rouge.\n— Et pour vous ?\n— Je voudrais une salade et une carafe d'eau.\n— Très bien."
+        translation: "— For me, a croque-monsieur and a glass of red wine.\n— And for you?\n— I'd like a salad and a carafe of water.\n— Very well."
+    tips:
+      - "In France, tap water is free — just ask for 'une carafe d'eau'. If you just say 'de l'eau', you might get expensive bottled water. The bill won't come unless you ask: 'L'addition, s'il vous plaît.'"
+      - "Service is included in French prices (service compris), so tipping is not required. However, leaving a euro or two for good service is a nice gesture — never more than 5-10%."
+    exercises:
+      - id: ex-mc-food-fr-001
+        type: multiple_choice
+        question: "The waiter asks 'Vous désirez ?' What should you do?"
+        options:
+          - "Pay the bill"
+          - "Order your food/drink"
+          - "Ask for the bathroom"
+          - "Leave the restaurant"
+        correct_index: 1
+        explanation: "'Vous désirez ?' means 'What would you like?' — it's time to order!"
+      - id: ex-mc-food-fr-002
+        type: multiple_choice
+        question: "How do you ask for the bill in French?"
+        options:
+          - "Autre chose ?"
+          - "L'addition, s'il vous plaît"
+          - "Vous désirez ?"
+          - "Un café, s'il vous plaît"
+        correct_index: 1
+        explanation: "'L'addition, s'il vous plaît' means 'The bill, please.'"
+      - id: ex-fb-food-fr-001
+        type: fill_blank
+        sentence_template: "Un café au _____, s'il vous plaît."
+        correct_answer: "lait"
+        hint: "The white liquid you add to coffee"
+        accept_alternatives:
+          - "sucre"
+      - id: ex-fb-food-fr-002
+        type: fill_blank
+        sentence_template: "_____ moi, une salade."
+        correct_answer: "Pour"
+        hint: "The word meaning 'for'"
+        accept_alternatives: []

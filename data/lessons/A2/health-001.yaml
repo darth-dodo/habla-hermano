@@ -1,0 +1,209 @@
+id: health-001
+level: A2
+category: health
+icon: "\U0001F3E5"
+tags:
+  - health
+  - doctor
+  - symptoms
+  - pharmacy
+estimated_minutes: 6
+title: At the Doctor's Office
+description: Describe symptoms, understand a doctor's instructions, and get medicine
+
+languages:
+  es:
+    instruction: "You wake up feeling terrible in your Airbnb in Lima — headache, fever, and a sore throat. You need to see a doctor and explain what's wrong. These are the phrases that could save your trip."
+    vocabulary:
+      - word: "Me duele la cabeza"
+        translation: "My head hurts / I have a headache"
+      - word: "Tengo fiebre"
+        translation: "I have a fever"
+      - word: "Me siento mal"
+        translation: "I feel sick"
+      - word: "¿Qué le pasa?"
+        translation: "What's wrong? (formal)"
+      - word: "Necesito ver a un médico"
+        translation: "I need to see a doctor"
+      - word: "La farmacia"
+        translation: "The pharmacy"
+      - word: "Tome esta medicina"
+        translation: "Take this medicine"
+      - word: "Dos veces al día"
+        translation: "Twice a day"
+      - word: "Me duele el estómago"
+        translation: "My stomach hurts"
+      - word: "Tengo tos"
+        translation: "I have a cough"
+    examples:
+      - content: "— Buenos días. ¿Qué le pasa?\n— Me duele la cabeza y tengo fiebre.\n— ¿Desde cuándo?\n— Desde ayer por la noche.\n— Voy a examinarlo."
+        translation: "— Good morning. What's wrong?\n— My head hurts and I have a fever.\n— Since when?\n— Since last night.\n— I'm going to examine you."
+      - content: "— En la farmacia:\n— Buenas tardes. Necesito esta medicina.\n— Sí. Tome una pastilla dos veces al día, con comida.\n— Gracias. ¿Cuánto cuesta?"
+        translation: "— At the pharmacy:\n— Good afternoon. I need this medicine.\n— Yes. Take one pill twice a day, with food.\n— Thanks. How much is it?"
+    tips:
+      - "In most Spanish-speaking countries, pharmacists can recommend medicine for common ailments without a prescription. Describe your symptoms and they'll help."
+      - "'Me duele' + body part is the pattern: 'Me duele la cabeza' (head), 'Me duele el estómago' (stomach), 'Me duelen los pies' (feet — plural uses 'duelen')."
+    exercises:
+      - id: ex-mc-health-es-001
+        type: multiple_choice
+        question: "The doctor asks '¿Qué le pasa?' What does this mean?"
+        options:
+          - "Where does it hurt?"
+          - "What's wrong?"
+          - "How old are you?"
+          - "Do you have insurance?"
+        correct_index: 1
+        explanation: "'¿Qué le pasa?' means 'What's wrong with you?' (formal)."
+      - id: ex-fb-health-es-001
+        type: fill_blank
+        sentence_template: "Me _____ la cabeza."
+        correct_answer: "duele"
+        hint: "The verb for pain/hurting (singular)"
+        accept_alternatives: []
+      - id: ex-tr-health-es-001
+        type: translate
+        source_text: "I feel sick and I have a fever."
+        source_language: en
+        target_language: es
+        correct_translation: "Me siento mal y tengo fiebre."
+        accept_alternatives:
+          - "Estoy enfermo y tengo fiebre."
+          - "Me encuentro mal y tengo fiebre."
+      - id: ex-tr-health-es-002
+        type: translate
+        source_text: "Take this medicine twice a day."
+        source_language: en
+        target_language: es
+        correct_translation: "Tome esta medicina dos veces al día."
+        accept_alternatives:
+          - "Tome este medicamento dos veces al día."
+
+  de:
+    instruction: "You wake up feeling awful in your Berlin apartment — headache, fever, and a sore throat. You need to visit a doctor (Arzt) and explain your symptoms. German healthcare is efficient, but you need the right words!"
+    vocabulary:
+      - word: "Ich habe Kopfschmerzen"
+        translation: "I have a headache"
+      - word: "Ich habe Fieber"
+        translation: "I have a fever"
+      - word: "Mir ist schlecht"
+        translation: "I feel sick"
+      - word: "Was fehlt Ihnen?"
+        translation: "What's wrong? (formal)"
+      - word: "Ich muss zum Arzt"
+        translation: "I need to see a doctor"
+      - word: "Die Apotheke"
+        translation: "The pharmacy"
+      - word: "Nehmen Sie diese Medizin"
+        translation: "Take this medicine"
+      - word: "Zweimal täglich"
+        translation: "Twice a day"
+      - word: "Ich habe Bauchschmerzen"
+        translation: "My stomach hurts"
+      - word: "Ich habe Husten"
+        translation: "I have a cough"
+    examples:
+      - content: "— Guten Tag. Was fehlt Ihnen?\n— Ich habe Kopfschmerzen und Fieber.\n— Seit wann?\n— Seit gestern Abend.\n— Ich werde Sie untersuchen."
+        translation: "— Good day. What's wrong?\n— I have a headache and a fever.\n— Since when?\n— Since last night.\n— I'm going to examine you."
+      - content: "— In der Apotheke:\n— Guten Tag. Ich brauche dieses Medikament.\n— Ja. Nehmen Sie eine Tablette zweimal täglich, zum Essen.\n— Danke. Was kostet das?"
+        translation: "— At the pharmacy:\n— Good day. I need this medicine.\n— Yes. Take one tablet twice a day, with food.\n— Thanks. How much is it?"
+    tips:
+      - "In Germany, pharmacies (Apotheke) are different from drugstores (Drogerie). For medicine, you must go to an Apotheke — look for the red 'A' sign. Drogerien sell toiletries, not medication."
+      - "German builds body-pain words by combining: Kopf (head) + Schmerzen (pain) = Kopfschmerzen, Bauch (stomach) + Schmerzen = Bauchschmerzen, Hals (throat) + Schmerzen = Halsschmerzen."
+    exercises:
+      - id: ex-mc-health-de-001
+        type: multiple_choice
+        question: "The doctor asks 'Was fehlt Ihnen?' What does this mean?"
+        options:
+          - "Where does it hurt?"
+          - "What's wrong?"
+          - "How old are you?"
+          - "Do you have insurance?"
+        correct_index: 1
+        explanation: "'Was fehlt Ihnen?' means 'What's wrong with you?' (formal)."
+      - id: ex-fb-health-de-001
+        type: fill_blank
+        sentence_template: "Ich habe _____."
+        correct_answer: "Kopfschmerzen"
+        hint: "The compound word for 'headache' (Kopf + Schmerzen)"
+        accept_alternatives: []
+      - id: ex-tr-health-de-001
+        type: translate
+        source_text: "I feel sick and I have a fever."
+        source_language: en
+        target_language: de
+        correct_translation: "Mir ist schlecht und ich habe Fieber."
+        accept_alternatives:
+          - "Ich fühle mich krank und ich habe Fieber."
+      - id: ex-tr-health-de-002
+        type: translate
+        source_text: "Take this medicine twice a day."
+        source_language: en
+        target_language: de
+        correct_translation: "Nehmen Sie diese Medizin zweimal täglich."
+        accept_alternatives:
+          - "Nehmen Sie dieses Medikament zweimal am Tag."
+
+  fr:
+    instruction: "You've caught a nasty cold during your stay in Lyon. You need to visit a médecin and then stop by the pharmacie. Knowing how to describe your symptoms in French is essential — let's prepare!"
+    vocabulary:
+      - word: "J'ai mal à la tête"
+        translation: "I have a headache"
+      - word: "J'ai de la fièvre"
+        translation: "I have a fever"
+      - word: "Je me sens mal"
+        translation: "I feel sick"
+      - word: "Qu'est-ce qui ne va pas ?"
+        translation: "What's wrong?"
+      - word: "Je dois voir un médecin"
+        translation: "I need to see a doctor"
+      - word: "La pharmacie"
+        translation: "The pharmacy"
+      - word: "Prenez ce médicament"
+        translation: "Take this medicine"
+      - word: "Deux fois par jour"
+        translation: "Twice a day"
+      - word: "J'ai mal au ventre"
+        translation: "My stomach hurts"
+      - word: "J'ai de la toux"
+        translation: "I have a cough"
+    examples:
+      - content: "— Bonjour. Qu'est-ce qui ne va pas ?\n— J'ai mal à la tête et j'ai de la fièvre.\n— Depuis quand ?\n— Depuis hier soir.\n— Je vais vous examiner."
+        translation: "— Good morning. What's wrong?\n— I have a headache and a fever.\n— Since when?\n— Since last night.\n— I'm going to examine you."
+      - content: "— À la pharmacie :\n— Bonjour. J'ai besoin de ce médicament.\n— Oui. Prenez un comprimé deux fois par jour, pendant les repas.\n— Merci. C'est combien ?"
+        translation: "— At the pharmacy:\n— Good morning. I need this medicine.\n— Yes. Take one tablet twice a day, with meals.\n— Thanks. How much is it?"
+    tips:
+      - "French pharmacies (look for the green cross sign) are staffed by trained pharmacists who can advise on common ailments. They'll often recommend treatment before suggesting you see a doctor."
+      - "'J'ai mal à' + body part is the French pain pattern: 'J'ai mal à la tête' (head), 'J'ai mal au ventre' (stomach), 'J'ai mal aux pieds' (feet). Note the article changes: à la, au, aux."
+    exercises:
+      - id: ex-mc-health-fr-001
+        type: multiple_choice
+        question: "The doctor asks 'Qu'est-ce qui ne va pas ?' What does this mean?"
+        options:
+          - "Where does it hurt?"
+          - "What's wrong?"
+          - "How old are you?"
+          - "Do you have insurance?"
+        correct_index: 1
+        explanation: "'Qu'est-ce qui ne va pas ?' means 'What's wrong?'"
+      - id: ex-fb-health-fr-001
+        type: fill_blank
+        sentence_template: "J'ai mal à la _____."
+        correct_answer: "tête"
+        hint: "The word for 'head'"
+        accept_alternatives: []
+      - id: ex-tr-health-fr-001
+        type: translate
+        source_text: "I feel sick and I have a fever."
+        source_language: en
+        target_language: fr
+        correct_translation: "Je me sens mal et j'ai de la fièvre."
+        accept_alternatives:
+          - "Je suis malade et j'ai de la fièvre."
+      - id: ex-tr-health-fr-002
+        type: translate
+        source_text: "Take this medicine twice a day."
+        source_language: en
+        target_language: fr
+        correct_translation: "Prenez ce médicament deux fois par jour."
+        accept_alternatives:
+          - "Prenez cette médecine deux fois par jour."

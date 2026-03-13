@@ -27,6 +27,8 @@
 | **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
 | **Phase 19** | Conversational Lesson Delivery - Phase machine teaches lessons through chat UI | ✅ Completed |
 | **Phase 21** | Voice FSM Refactor - FSM + AbortController, split into 5 sub-modules | ✅ Completed |
+| **Phase 22** | Voice UX Redesign - bottom bar, hold-to-talk, inline TTS buttons | ✅ Completed |
+| **Phase 23** | Lesson Experience Revamp - unified chat routing, deleted lesson_player | ✅ Completed |
 
 **Test Coverage**: 2,377+ tests (2,150 Python + 207 JavaScript) covering agent, API, database, auth, lessons, review, and service modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
@@ -180,7 +182,7 @@ habla-hermano/
 │   │   ├── validation.py       # [Implemented] Re-export shim (canonical location: src/validation.py)
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
-│   │       ├── chat.py          # [Implemented] POST /chat, POST /chat/stream (SSE streaming)
+│   │       ├── chat.py          # [Implemented] GET / (chat page with optional ?lesson= param), POST /chat, POST /chat/stream (freeform + lesson modes)
 │   │       ├── auth.py          # [Implemented] Login, signup, logout
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (routing only; completion logic in services/lesson_completion.py)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
@@ -237,9 +239,8 @@ habla-hermano/
 │   │
 │   ├── templates/               # [Implemented] All template files (mobile-responsive)
 │   │   ├── base.html            # [Implemented] Theme system (dark/light/ocean), CSS variables, safe areas, dynamic viewport
-│   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu, safe areas, virtual keyboard support
+│   │   ├── chat.html            # [Implemented] Chat UI with hamburger menu, safe areas, virtual keyboard support; lesson mode via ?lesson= param
 │   │   ├── lessons.html         # [Implemented] Lesson catalog with beginner/intermediate grouping
-│   │   ├── lesson_player.html   # [Implemented] Interactive lesson player with step navigation
 │   │   ├── progress.html        # [Implemented] Progress dashboard with stats, vocabulary, charts
 │   │   ├── learn.html             # [Implemented] Learning path overview page
 │   │   ├── auth/
@@ -248,9 +249,9 @@ habla-hermano/
 │   │   └── partials/
 │   │       ├── message.html     # [Implemented] Message bubble styling
 │   │       ├── message_pair.html # [Implemented] AI response partial (optimistic UI)
-│   │       ├── lesson_step.html # [Implemented] Step content by type (instruction, vocabulary, example, tip, practice)
-│   │       ├── lesson_exercise.html # [Implemented] Exercise forms (multiple choice, fill blank, translate)
-│   │       ├── lesson_complete.html # [Implemented] Completion celebration with handoff to chat
+│   │       ├── lesson_step_enhanced.html # [Implemented] Enhanced step content rendered via SSE during lesson chat
+│   │       ├── exercise_feedback_enhanced.html # [Implemented] Enhanced exercise feedback rendered via SSE
+│   │       ├── lesson_complete.html # [Implemented] Completion celebration
 │   │       ├── grammar_feedback.html # [Implemented] Collapsible grammar feedback
 │   │       ├── pronunciation_tips.html # [Implemented] Collapsible pronunciation tips UI
 │   │       ├── scaffold.html    # [Implemented] Word bank, hints, sentence starters UI
@@ -995,15 +996,22 @@ The chat form in `chat.html` no longer uses HTMX for submission (`hx-post` remov
 
 ---
 
-### Lesson Chat Graph (Phase 19)
+### Lesson Chat Graph (Phase 19, unified in Phase 23)
 
-The conversational lesson delivery system uses a dedicated LangGraph graph that teaches YAML lesson content through the chat UI.
+The conversational lesson delivery system uses a dedicated LangGraph graph that teaches YAML lesson content through the chat UI. In Phase 23, the separate `src/api/routes/lesson_chat.py` module and dedicated lesson templates (`lesson_player.html`, `lesson_step.html`, `lesson_exercise.html`) were deleted. Lessons are now served entirely through the unified chat route (`src/api/routes/chat.py`).
 
 #### Architecture
 
 ```
+Unified Chat Routing (Phase 23):
+
+  GET /          → chat page (optional ?lesson= param triggers lesson mode)
+  POST /chat/stream → SSE streaming (optional lesson_id selects graph)
+                      ├── No lesson_id  → freeform chat graph (respond → scaffold → analyze)
+                      └── With lesson_id → lesson chat graph (lesson_respond node)
+
 Lesson Chat Graph:
-START → lesson_respond → END
+  START → lesson_respond → END
 
 Phase Machine (inside lesson_respond node):
   intro → teaching → exercise_ask → exercise_eval → complete
@@ -1013,6 +1021,7 @@ Unlike the main chat graph's multi-node pipeline (respond → scaffold → analy
 - Reuses the existing SSE streaming infrastructure (`stream_chat_events()`)
 - Maintains lesson state across turns via LangGraph checkpointing
 - Isolates lesson conversations from freeform chat threads
+- Shares the same route handler (`chat.py`) and chat UI (`chat.html`) as freeform chat
 
 #### CEFR Teaching Adjustments
 
@@ -1068,7 +1077,7 @@ The JS client (`stream.js` `updateLessonProgress()`) uses the server-computed `d
 
 #### Checkpoint-Aware Inputs
 
-The lesson chat route (`src/api/routes/lesson_chat.py`) checks for an existing checkpoint before sending inputs to the graph:
+The lesson chat route (in `src/api/routes/chat.py`) checks for an existing checkpoint before sending inputs to the graph:
 
 - **First invocation** (no checkpoint): sends full initialization — `lesson_data`, `lesson_phase="intro"`, `step_index=0`, `exercise_index=0`, etc.
 - **Subsequent turns** (checkpoint exists): sends only the new message, `user_id`, and `supabase_client`.
@@ -1294,11 +1303,11 @@ def needs_scaffold(state: ConversationState) -> str:
 
 ---
 
-## Micro-Lessons Data Flow (Phase 6)
+## Micro-Lessons Data Flow (Phase 6, revised Phase 23)
 
-The micro-lessons system operates independently from the LangGraph conversation graph, providing structured learning content that complements free-form chat practice.
+The micro-lessons system provides structured learning content. In Phase 23, the standalone lesson player (`lesson_player.html`, `/lessons/{id}/play`) was removed. Lessons are now delivered conversationally through the unified chat page.
 
-### Lesson Flow Architecture
+### Lesson Flow Architecture (Phase 23)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1309,56 +1318,32 @@ The micro-lessons system operates independently from the LangGraph conversation 
 │  │ 👋 A0       │ │ 🔢 A0       │ │ 🎨 A0       │                │
 │  └──────┬──────┘ └─────────────┘ └─────────────┘                │
 └─────────┼───────────────────────────────────────────────────────┘
-          │ Click "Play"
+          │ Click "Start Lesson"
           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      LESSON PLAYER                               │
-│  /lessons/{id}/play                                              │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │ Progress: [████████░░░░░░░░░░░░] Step 3 of 7              │ │
-│  └────────────────────────────────────────────────────────────┘ │
+│                    UNIFIED CHAT PAGE                              │
+│  GET /?lesson={id}                                               │
 │                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │               STEP CONTENT (HTMX Swap)                     │ │
-│  │  ┌──────────────────────────────────────────────────────┐  │ │
-│  │  │ instruction │ vocabulary │ example │ tip │ practice  │  │ │
-│  │  └──────────────────────────────────────────────────────┘  │ │
-│  └────────────────────────────────────────────────────────────┘ │
+│  chat.html renders in lesson mode:                               │
+│  - Lesson title and progress bar in header                       │
+│  - Language/level selectors hidden                               │
+│  - Chat input sends to POST /chat/stream with lesson_id         │
 │                                                                  │
-│  ┌──────────┐                                    ┌──────────┐   │
-│  │ Previous │ ◄──── HTMX POST ────► │   Next   │           │   │
-│  └──────────┘                                    └──────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-          │ Final Step: "Complete Lesson"
-          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    COMPLETION VIEW                               │
-│  🎉 Lesson Complete!                                             │
-│  Score: 100%  |  Words Learned: 6                               │
+│  LangGraph lesson_chat_graph handles the conversation:           │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │ Phase Machine (inside lesson_respond node):           │       │
+│  │   intro → teaching → exercise_ask → exercise_eval    │       │
+│  │   → complete                                          │       │
+│  │                                                       │       │
+│  │ SSE events: token, lesson_progress, exercise_result,  │       │
+│  │   lesson_complete                                     │       │
+│  └──────────────────────────────────────────────────────┘       │
 │                                                                  │
-│  ┌────────────────────┐  ┌────────────────────┐                 │
-│  │ Practice with      │  │ More Lessons       │                 │
-│  │ Hermano           │  │                    │                 │
-│  └─────────┬──────────┘  └────────────────────┘                 │
-└────────────┼────────────────────────────────────────────────────┘
-             │ Handoff (HX-Redirect)
-             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        CHAT PAGE                                 │
-│  /chat?lesson={id}&topic={category}                              │
-│  Chat with Hermano using vocabulary from the lesson              │
+│  On lesson_complete SSE event:                                   │
+│  - Score and vocab count displayed                               │
+│  - "Continue chatting" transitions to freeform mode              │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
-### Step Types and Templates
-
-| Step Type | Template Rendering | Purpose |
-|-----------|-------------------|---------|
-| `instruction` | Text block with prose styling | Introduce concepts |
-| `vocabulary` | Grid of word/translation cards | Present new words |
-| `example` | Highlighted target text + translation | Show usage in context |
-| `tip` | Yellow info box with lightbulb icon | Cultural notes, learning tips |
-| `practice` | Dynamic exercise form (HTMX load) | Interactive practice |
 
 ### Exercise Types and Validation
 
@@ -1845,25 +1830,34 @@ PRONUNCIATION TIPS: Polish their accent naturally:
 
 ## API Endpoints
 
-### Chat
+### Chat (unified in Phase 23)
 
-The primary chat endpoint is `POST /chat/stream`, which returns SSE events for real-time token streaming. The `POST /chat` endpoint remains as a non-streaming fallback that returns a complete HTML partial.
+The chat module (`src/api/routes/chat.py`) handles both freeform conversation and lesson delivery through a single set of endpoints. The primary streaming endpoint is `POST /chat/stream`, which accepts an optional `lesson_id` form field to select the appropriate LangGraph graph.
 
 The frontend uses `stream.js` (fetch + ReadableStream) to intercept the chat form submit, POST to `/chat/stream`, and parse SSE events. HTMX is **not** used for chat form submission. Other pages continue to use HTMX.
 
 ```python
+# Chat page - serves both freeform and lesson modes
+@router.get("/")
+async def chat_page(..., lesson: str | None = None):
+    """Render chat UI. When ?lesson={id} is present, renders in lesson mode
+    with lesson title, progress bar, and auto-start behavior."""
+    ...
+
 # Non-streaming fallback
 @router.post("/chat")
 async def send_message(...):
     """Send a message, get complete AI response with scaffolding/feedback"""
     ...
 
-# Primary streaming endpoint (Phase 15)
+# Primary streaming endpoint (Phase 15, unified Phase 23)
 @router.post("/chat/stream")
-async def stream_message(...):
-    """Send a message, get SSE streaming response with tokens + feedback HTML"""
-    # Returns StreamingResponse with text/event-stream content type
-    # Events: token, response_complete, scaffolding, grammar, pronunciation, done, error
+async def stream_message(..., lesson_id: str | None = Form(None)):
+    """Send a message, get SSE streaming response.
+    - Without lesson_id: uses freeform chat graph (respond → scaffold → analyze)
+    - With lesson_id: uses lesson chat graph (lesson_respond phase machine)
+    Events: token, response_complete, scaffolding, grammar, pronunciation,
+            lesson_progress, exercise_result, lesson_complete, done, error"""
     ...
 ```
 
@@ -1881,9 +1875,9 @@ async def set_level(
     ...
 ```
 
-### Lessons (Phase 6)
+### Lessons (Phase 6, revised Phase 23)
 
-The lessons module provides a complete API for structured micro-lessons with step navigation, exercises, and progress tracking.
+The lessons module provides the lesson catalog and metadata endpoints. Lesson delivery (step navigation, exercises, completion) is now handled conversationally through the unified chat route (`POST /chat/stream` with `lesson_id`). The standalone lesson player (`/lessons/{id}/play`), step navigation endpoints, and exercise submission endpoints were removed in Phase 23.
 
 **Lesson List**:
 ```python
@@ -1892,51 +1886,14 @@ async def get_lessons_page(
     language: str | None = None,
     level: str | None = None,
 ) -> HTMLResponse:
-    """Render lessons catalog with filtering by language and level."""
+    """Render lessons catalog with filtering by language and level.
+    Each lesson card links to /?lesson={id} (the unified chat page in lesson mode)."""
 ```
 
-**Lesson Player**:
+**Lesson Completion** (called internally by the lesson chat graph via SSE, not directly by the user):
 ```python
-@router.get("/{lesson_id}/play")
-async def get_lesson_player(lesson_id: str) -> HTMLResponse:
-    """Render interactive lesson player with step navigation."""
-```
-
-**Step Navigation**:
-```python
-@router.get("/{lesson_id}/step/{step_index}")
-async def get_lesson_step(lesson_id: str, step_index: int) -> HTMLResponse:
-    """Get specific step content as partial HTML for HTMX navigation."""
-
-@router.post("/{lesson_id}/step/next")
-async def next_lesson_step(lesson_id: str, current_step: int) -> HTMLResponse:
-    """Navigate to next step."""
-
-@router.post("/{lesson_id}/step/prev")
-async def previous_lesson_step(lesson_id: str, current_step: int) -> HTMLResponse:
-    """Navigate to previous step."""
-```
-
-**Exercise Handling**:
-```python
-@router.get("/{lesson_id}/exercise/{exercise_id}")
-async def get_exercise(lesson_id: str, exercise_id: str) -> HTMLResponse:
-    """Render exercise form based on type (multiple choice, fill blank, translate)."""
-
-@router.post("/{lesson_id}/exercise/{exercise_id}/submit")
-async def submit_exercise(lesson_id: str, exercise_id: str, answer: str) -> HTMLResponse:
-    """Validate answer and return feedback HTML."""
-```
-
-**Lesson Completion and Handoff**:
-```python
-@router.post("/{lesson_id}/complete")
-async def complete_lesson(lesson_id: str, score: int) -> HTMLResponse:
-    """Mark lesson complete and show celebration view."""
-
-@router.post("/{lesson_id}/handoff")
-async def handoff_to_chat(lesson_id: str) -> Response:
-    """Redirect to chat with lesson context for practice."""
+# Lesson completion is triggered by the lesson_respond node's 'complete' phase
+# and persisted via complete_lesson_and_persist() in src/services/lesson_completion.py
 ```
 
 ### Progress (Phase 7-8)
