@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="min-h-full flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 safe-top">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <!-- Icon -->
+        <div class="flex justify-center">
+            <div class="w-20 h-20 rounded-3xl bg-accent/10 flex items-center justify-center">
+                <svg class="w-12 h-12 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+            </div>
+        </div>
+
+        <p class="mt-6 text-6xl font-bold text-accent">404</p>
+        <h1 class="mt-4 text-2xl font-bold text-text">Page not found</h1>
+        <p class="mt-3 text-text-muted">
+            The page you're looking for doesn't exist or has been moved.
+        </p>
+
+        <!-- Actions -->
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/"
+               class="w-full sm:w-auto inline-flex justify-center items-center gap-2 py-3 px-6 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Back to Chat
+            </a>
+            <a href="/lessons"
+               class="w-full sm:w-auto inline-flex justify-center py-3 px-6 border border-border rounded-xl text-sm font-medium text-text hover:bg-surface-overlay transition-all duration-200">
+                Browse Lessons
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

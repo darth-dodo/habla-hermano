@@ -11,10 +11,10 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from postgrest.exceptions import APIError
 
-from src.api.auth import OptionalUserDep
+from src.api.auth import CurrentUserDep, OptionalUserDep
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import validate_days, validate_language
@@ -27,21 +27,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_model=None)
 async def get_progress_page(
     request: Request,
     templates: TemplatesDep,
     user: OptionalUserDep,
     language: str = "es",
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
-) -> HTMLResponse:
+) -> HTMLResponse | RedirectResponse:
     """Render the progress overview page with learning statistics.
 
-    Phase 12: Added review stats for spaced repetition display.
-    Phase 7: Uses ProgressService for real dashboard stats.
-
-    Requires authentication. Unauthenticated users see empty stats
-    with a sign-up prompt.
+    Requires authentication. Unauthenticated users are redirected
+    to the login page.
 
     Args:
         request: FastAPI request for template context.
@@ -51,22 +48,10 @@ async def get_progress_page(
 
     Returns:
         HTMLResponse: Rendered progress page with stats and vocabulary.
+        RedirectResponse: Redirect to login if not authenticated.
     """
     if not user or not sb_access_token:
-        return templates.TemplateResponse(
-            request=request,
-            name="progress.html",
-            context={
-                "total_words": 0,
-                "sessions_count": 0,
-                "current_streak": 0,
-                "lessons_completed": 0,
-                "vocabulary": [],
-                "user": None,
-                "is_guest": True,
-                "review_stats": None,
-            },
-        )
+        return RedirectResponse(url="/auth/login", status_code=302)
 
     # Use user-authenticated client for RLS to work with auth.uid()
     user_client = get_supabase_for_user(sb_access_token)

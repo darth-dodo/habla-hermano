@@ -5,17 +5,22 @@ and lifespan management.
 """
 
 import logging
+import secrets
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
 from src.agent.checkpoint_purge import purge_old_checkpoints
 from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
 from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
+from src.api.dependencies import get_cached_templates
 from src.api.routes import auth, chat, learn, lessons, progress, review, voice
 from src.lessons.service import get_lesson_service
 
@@ -132,6 +137,74 @@ def create_app() -> FastAPI:
     app.include_router(review.router)
     app.include_router(learn.router, prefix="/learn", tags=["learn"])
     app.include_router(voice.router)
+
+    # --- Custom error pages ---
+
+    def _ensure_csp_nonce(request: Request) -> None:
+        """Ensure request.state.csp_nonce exists for template rendering."""
+        if not hasattr(request.state, "csp_nonce"):
+            request.state.csp_nonce = secrets.token_urlsafe(16)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> HTMLResponse:
+        # Let HTMX partial requests and API calls pass through as-is
+        # so frontend JS can handle errors inline (e.g. toast, retry).
+        if request.headers.get("HX-Request"):
+            return HTMLResponse(content=str(exc.detail), status_code=exc.status_code)
+
+        _ensure_csp_nonce(request)
+        templates = get_cached_templates()
+        status_code = exc.status_code
+
+        if status_code == 404:
+            return templates.TemplateResponse(
+                request=request,
+                name="errors/404.html",
+                context={},
+                status_code=404,
+            )
+
+        if 400 <= status_code < 500:
+            return templates.TemplateResponse(
+                request=request,
+                name="errors/400.html",
+                context={"detail": exc.detail},
+                status_code=status_code,
+            )
+
+        # 5xx errors
+        return templates.TemplateResponse(
+            request=request,
+            name="errors/500.html",
+            context={},
+            status_code=status_code,
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> HTMLResponse:
+        _ensure_csp_nonce(request)
+        templates = get_cached_templates()
+        return templates.TemplateResponse(
+            request=request,
+            name="errors/400.html",
+            context={"detail": "Invalid request parameters."},
+            status_code=422,
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+        logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+        _ensure_csp_nonce(request)
+        templates = get_cached_templates()
+        return templates.TemplateResponse(
+            request=request,
+            name="errors/500.html",
+            context={},
+            status_code=500,
+        )
+
     return app
 
 

@@ -891,28 +891,29 @@ class TestProgressUncoveredLines:
 
     # --- Line 54: not user or not sb_access_token guard in get_progress_page ---
 
-    async def test_progress_page_no_user_returns_guest_view(
+    async def test_progress_page_no_user_redirects_to_login(
         self,
         guest_client: AsyncClient,
     ) -> None:
-        """Progress page for guest returns zeroed stats (line 54)."""
-        response = await guest_client.get("/progress/")
-        assert response.status_code == 200
-        assert "Words: 0" in response.text
+        """Progress page for guest redirects to login."""
+        response = await guest_client.get("/progress/", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["location"] == "/auth/login"
 
-    async def test_progress_page_no_access_token(
+    async def test_progress_page_no_access_token_redirects(
         self,
         client: AsyncClient,
     ) -> None:
-        """Authenticated user without sb-access-token gets guest view (line 54).
+        """Authenticated user without sb-access-token redirects to login.
 
         The route checks `not user or not sb_access_token`. Even with a user,
-        missing sb_access_token triggers the guest path.
+        missing sb_access_token triggers the redirect.
         """
         # The client sends no sb-access-token cookie, so sb_access_token=None
-        response = await client.get("/progress/")
+        response = await client.get("/progress/", follow_redirects=False)
         # With sb_access_token=None, the guard triggers
-        assert response.status_code == 200
+        assert response.status_code == 302
+        assert response.headers["location"] == "/auth/login"
 
     # --- Lines 79-80: ReviewService exception in progress page ---
 
