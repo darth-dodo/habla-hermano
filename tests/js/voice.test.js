@@ -930,6 +930,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 expect(ws.url).toContain('/ws/speak');
@@ -943,6 +944,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.readyState = MockWebSocket.OPEN;
@@ -960,6 +962,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.readyState = MockWebSocket.OPEN;
@@ -980,6 +983,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.readyState = MockWebSocket.OPEN;
@@ -1018,6 +1022,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 globalThis.AudioContext = vi.fn(() => ctx);
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.readyState = MockWebSocket.OPEN;
@@ -1053,6 +1058,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 // WS closes before any audio was sent
@@ -1071,6 +1077,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.readyState = MockWebSocket.OPEN;
@@ -1110,6 +1117,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn2 = createSpeakButton('Buenos dias', 'es');
 
                 mod.handleSpeakClick(btn1);
+                await Promise.resolve();
 
                 var ws1 = MockWebSocket._lastInstance;
                 ws1.readyState = MockWebSocket.OPEN;
@@ -1137,6 +1145,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.onerror();
@@ -1152,6 +1161,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.onclose({ code: 1011, reason: '' });
@@ -1166,6 +1176,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.onclose({ code: 1008, reason: 'Bad voice param' });
@@ -1180,6 +1191,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
 
                 var ws = MockWebSocket._lastInstance;
                 ws.onclose({ code: 1006, reason: '' });
@@ -1211,6 +1223,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Guten Tag', 'de');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-julius-de'));
@@ -1222,6 +1235,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Bonjour', 'fr');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-hector-fr'));
@@ -1233,6 +1247,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hello', 'xx');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-nestor-es'));
@@ -1248,7 +1263,19 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             mod.handleSpeakClick(btn);
 
+            // resume() is called synchronously
             expect(mockCtx.resume).toHaveBeenCalled();
+
+            // WebSocket (streamTTS) is NOT created until resume resolves
+            var wsBefore = MockWebSocket._lastInstance;
+
+            await Promise.resolve();
+
+            // NOW streamTTS has been called and WebSocket created
+            var wsAfter = MockWebSocket._lastInstance;
+            expect(wsAfter).toBeTruthy();
+            expect(wsAfter).not.toBe(wsBefore);
+            expect(wsAfter.url).toContain('/ws/speak');
         });
     });
 
@@ -1279,6 +1306,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             var btn = createSpeakButton('Hola', 'es', { speed: 1.5 });
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1314,6 +1342,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             var btn = createSpeakButton('Hola', 'es', { speed: 5.0 });
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1349,6 +1378,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             var btn = createSpeakButton('Hola', 'es', { speed: 0.1 });
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1482,6 +1512,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1504,6 +1535,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1528,6 +1560,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1562,6 +1595,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1595,6 +1629,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;
@@ -1696,12 +1731,14 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
                 var ws1 = MockWebSocket._lastInstance;
                 ws1.onerror(); // error 1
 
                 // Start another TTS on same button (clears first)
                 btn.classList.remove('voice-loading', 'voice-playing');
                 mod.handleSpeakClick(btn);
+                await Promise.resolve();
                 var ws2 = MockWebSocket._lastInstance;
                 ws2.onerror(); // error 2
 
@@ -1839,6 +1876,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             // First TTS
             var btn1 = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn1);
+            await Promise.resolve();
 
             var ws1 = MockWebSocket._lastInstance;
             ws1.readyState = MockWebSocket.OPEN;
@@ -1853,6 +1891,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             // Second TTS -- should reuse the same AudioContext
             var btn2 = createSpeakButton('Adios', 'es');
             mod.handleSpeakClick(btn2);
+            await Promise.resolve();
 
             // Should NOT have created a new AudioContext
             expect(ctxCount).toBe(1);
@@ -1877,12 +1916,14 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
 
+            // Capture WS state before click
+            var wsBefore = MockWebSocket._lastInstance;
+
             mod.handleSpeakClick(btn);
 
-            // WebSocket should NOT be created yet (still waiting for resume)
-            var wsBeforeResume = MockWebSocket._lastInstance;
-            // The only WS that exists is from initVoice or a previous test — none from TTS
-            // Actually, handleSpeakClick hasn't called streamTTS yet
+            // resume() called but not yet resolved — streamTTS deferred
+            expect(ctx.resume).toHaveBeenCalled();
+            expect(MockWebSocket._lastInstance).toBe(wsBefore); // no new WS yet
             expect(btn.classList.contains('voice-loading')).toBe(true);
 
             // Resolve resume promise
@@ -1891,7 +1932,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             // NOW the WebSocket should be created
             var ws = MockWebSocket._lastInstance;
-            expect(ws).toBeTruthy();
+            expect(ws).not.toBe(wsBefore);
             expect(ws.url).toContain('/ws/speak');
         });
 
@@ -1936,6 +1977,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn1 = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn1);
             expect(ctxCount).toBe(1);
+            await Promise.resolve();
 
             // Cancel TTS to reset
             var ws1 = MockWebSocket._lastInstance;
@@ -2054,6 +2096,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Long text', 'es');
 
             mod.handleSpeakClick(btn);
+            await Promise.resolve();
 
             var ws = MockWebSocket._lastInstance;
             ws.readyState = MockWebSocket.OPEN;

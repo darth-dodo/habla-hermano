@@ -437,26 +437,21 @@ export function handleSpeakClick(btn) {
         silentSrc.buffer = silentBuf;
         silentSrc.connect(ctx.destination);
         silentSrc.start();
+        // ALWAYS await resume() before streaming — even when state reports
+        // 'running'. iOS Safari can report 'running' but silently refuse to
+        // produce audio through speakers (works on Bluetooth). resume() is a
+        // no-op on desktop but re-activates the iOS audio pipeline every time.
         var signal = ttsAbort.signal;
-        if (ctx.state === 'suspended') {
-            // iOS: new AudioContexts start 'suspended' — must await resume()
-            // before scheduling real audio, otherwise chunks play on a muted context.
-            ctx.resume().then(function() {
-                if (!signal.aborted) {
-                    streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
-                }
-            }).catch(function() {
-                // AudioContext resume rejected — fall back to REST TTS
-                if (!signal.aborted) {
-                    restTTS(btn, text, voice, speed, signal, ttsService, showError);
-                }
-            });
-        } else {
-            // Desktop / already-running: resume() is a no-op but re-activates
-            // the iOS audio pipeline after a previous session ends.
-            ctx.resume();
-            streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
-        }
+        ctx.resume().then(function() {
+            if (!signal.aborted) {
+                streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
+            }
+        }).catch(function() {
+            // AudioContext resume rejected — fall back to REST TTS
+            if (!signal.aborted) {
+                restTTS(btn, text, voice, speed, signal, ttsService, showError);
+            }
+        });
     } else {
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
     }
