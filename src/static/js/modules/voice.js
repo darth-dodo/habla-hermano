@@ -54,6 +54,13 @@ var micWrapper = null;
 // Shared TTS AudioContext (Safari limits to 4 instances)
 var sharedTtsCtx = null;
 
+// Whether we've already unlocked the iOS "playback" audio session.
+// iOS Safari's AudioContext uses the "ambient" session by default,
+// which respects the mute switch — audio is silenced through speakers
+// but still plays through Bluetooth. Playing via <audio> element first
+// forces the "playback" session, which ignores the mute switch.
+var iosPlaybackUnlocked = false;
+
 // TTS active button reference (the .voice-tts-row element)
 var ttsActiveBtn = null;
 
@@ -310,6 +317,7 @@ export function destroyVoice() {
         sharedTtsCtx.close().catch(function() {});
         sharedTtsCtx = null;
     }
+    iosPlaybackUnlocked = false;
 
     // 5. Defensive: stop mic stream tracks
     var stream = getStream();
@@ -406,6 +414,21 @@ export function handleSpeakClick(btn) {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
         var ctx = sharedTtsCtx;
+
+        // Force iOS "playback" audio session on first TTS click.
+        // AudioContext defaults to "ambient" session which obeys the mute switch
+        // (audio plays on Bluetooth but is silenced through speakers). Playing a
+        // tiny silent clip via <audio> element within the user gesture switches
+        // to the "playback" session, which ignores the mute switch.
+        if (!iosPlaybackUnlocked) {
+            iosPlaybackUnlocked = true;
+            try {
+                var a = new Audio();
+                a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAA=';
+                a.play().catch(function() {});
+            } catch (_) {}
+        }
+
         // Play a silent buffer within the user-gesture callstack to unlock
         // iOS Safari's AudioContext. resume() alone reports 'running' but
         // stays muted — actual audio output is required within the gesture.
