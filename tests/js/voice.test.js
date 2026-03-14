@@ -1041,12 +1041,13 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 // Still playing (buffers not done)
                 expect(btn.classList.contains('voice-playing')).toBe(true);
 
+                // sources[0] is the silent warmup buffer
                 // First TTS buffer finishes
-                sources[0].onended();
+                sources[1].onended();
                 expect(btn.classList.contains('voice-playing')).toBe(true);
 
                 // Last TTS buffer finishes
-                sources[1].onended();
+                sources[2].onended();
                 expect(btn.classList.contains('voice-playing')).toBe(false);
                 expect(btn.classList.contains('voice-loading')).toBe(false); // all TTS classes removed
             });
@@ -1315,7 +1316,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var pcm = new Int16Array([100]);
             ws.onmessage({ data: pcm.buffer });
 
-            expect(sources[0].playbackRate.value).toBe(1.5);
+            // sources[0] is the silent warmup buffer
+            expect(sources[1].playbackRate.value).toBe(1.5);
         });
 
         it('clamps speed above 2.0 to 2.0', async () => {
@@ -1350,7 +1352,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var pcm = new Int16Array([100]);
             ws.onmessage({ data: pcm.buffer });
 
-            expect(sources[0].playbackRate.value).toBe(2.0);
+            // sources[0] is the silent warmup buffer
+            expect(sources[1].playbackRate.value).toBe(2.0);
         });
 
         it('clamps speed below 0.25 to 0.25', async () => {
@@ -1385,7 +1388,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var pcm = new Int16Array([100]);
             ws.onmessage({ data: pcm.buffer });
 
-            expect(sources[0].playbackRate.value).toBe(0.25);
+            // sources[0] is the silent warmup buffer
+            expect(sources[1].playbackRate.value).toBe(0.25);
         });
 
         it('blocks speed chip clicks during playback (frozen state)', async () => {
@@ -1639,8 +1643,9 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var pcm = new Int16Array([100, 200]);
             ws.onmessage({ data: pcm.buffer });
 
-            // createBuffer should NOT be called for TTS data after cancel
-            expect(ctx.createBuffer).not.toHaveBeenCalled();
+            // createBuffer is called once for the silent warmup buffer,
+            // but should NOT be called again for TTS data after cancel
+            expect(ctx.createBuffer).toHaveBeenCalledTimes(1);
         });
 
         it('REST TTS passes signal to fetch for cancellation', async () => {
@@ -2103,8 +2108,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 ws.onmessage({ data: new Int16Array([100 * i]).buffer });
             }
 
-            // 5 TTS chunks
-            expect(sources.length).toBe(5);
+            // 5 TTS chunks + 1 silent warmup buffer
+            expect(sources.length).toBe(6);
             // Each source should have been started
             sources.forEach(function(src) {
                 expect(src.start).toHaveBeenCalled();

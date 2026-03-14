@@ -396,29 +396,21 @@ export function handleSpeakClick(btn) {
         showTooltipError(anchor, msg, errorTimeouts);
     }
 
-    // iOS Safari requires audio.play() inside a user gesture callstack.
-    // REST TTS calls play() after fetch completes (async, outside gesture).
-    // Unlock the audio session now (within the tap) so later plays work.
-    // Also use REST TTS on iOS to avoid AudioContext earpiece routing.
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-        || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
-
-    if (isIOS) {
-        // Play silent audio within gesture to unlock iOS audio session.
-        try {
-            var unlock = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAA=');
-            unlock.play().catch(function() {});
-        } catch (_) {}
-        restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
-        return;
-    }
-
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (Ctx) {
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
         var ctx = sharedTtsCtx;
+
+        // Play a silent buffer within the user-gesture callstack to unlock
+        // iOS Safari's AudioContext for audio output.
+        var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        var silentSrc = ctx.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(ctx.destination);
+        silentSrc.start();
+
         var signal = ttsAbort.signal;
         ctx.resume().then(function() {
             if (!signal.aborted) {
