@@ -396,17 +396,25 @@ export function handleSpeakClick(btn) {
         showTooltipError(anchor, msg, errorTimeouts);
     }
 
-    // iOS Safari routes AudioContext output through the earpiece after
-    // getUserMedia() has been called (STT), and sometimes refuses to play
-    // AudioContext audio at all without a prior getUserMedia unlock.
-    // The <audio> element uses the "playback" audio session which always
-    // routes to the loudspeaker. Use REST TTS on iOS for reliable output.
+    // iOS Safari requires audio.play() inside a user gesture callstack.
+    // REST TTS calls play() after fetch completes (async, outside gesture).
+    // Unlock the audio session now (within the tap) so later plays work.
+    // Also use REST TTS on iOS to avoid AudioContext earpiece routing.
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
 
+    if (isIOS) {
+        // Play silent audio within gesture to unlock iOS audio session.
+        try {
+            var unlock = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAA=');
+            unlock.play().catch(function() {});
+        } catch (_) {}
+        restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
+        return;
+    }
+
     var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx && !isIOS) {
-        // Desktop/Android: use WebSocket streaming TTS with AudioContext
+    if (Ctx) {
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
@@ -422,8 +430,6 @@ export function handleSpeakClick(btn) {
             }
         });
     } else {
-        // iOS + no-AudioContext fallback: REST TTS uses <audio> element
-        // which reliably plays through the loudspeaker.
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
     }
 }
