@@ -54,13 +54,6 @@ var micWrapper = null;
 // Shared TTS AudioContext (Safari limits to 4 instances)
 var sharedTtsCtx = null;
 
-// Whether we've already unlocked the iOS "playback" audio session.
-// iOS Safari's AudioContext uses the "ambient" session by default,
-// which respects the mute switch — audio is silenced through speakers
-// but still plays through Bluetooth. Playing via <audio> element first
-// forces the "playback" session, which ignores the mute switch.
-var iosPlaybackUnlocked = false;
-
 // TTS active button reference (the .voice-tts-row element)
 var ttsActiveBtn = null;
 
@@ -317,8 +310,6 @@ export function destroyVoice() {
         sharedTtsCtx.close().catch(function() {});
         sharedTtsCtx = null;
     }
-    iosPlaybackUnlocked = false;
-
     // 5. Defensive: stop mic stream tracks
     var stream = getStream();
     if (stream) {
@@ -405,54 +396,34 @@ export function handleSpeakClick(btn) {
         showTooltipError(anchor, msg, errorTimeouts);
     }
 
-    // Use WebSocket streaming TTS with AudioContext fallback check
+    // iOS Safari routes AudioContext output through the earpiece after
+    // getUserMedia() has been called (STT), and sometimes refuses to play
+    // AudioContext audio at all without a prior getUserMedia unlock.
+    // The <audio> element uses the "playback" audio session which always
+    // routes to the loudspeaker. Use REST TTS on iOS for reliable output.
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
     var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-        // Reuse shared TTS AudioContext (Safari limits to 4 instances per page).
-        // iOS uses 'interrupted' state during phone calls / Siri — needs replacement.
+    if (Ctx && !isIOS) {
+        // Desktop/Android: use WebSocket streaming TTS with AudioContext
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
         var ctx = sharedTtsCtx;
-
-        // Force iOS "playback" audio session on first TTS click.
-        // AudioContext defaults to "ambient" session which obeys the mute switch
-        // (audio plays on Bluetooth but is silenced through speakers). Playing a
-        // tiny silent clip via <audio> element within the user gesture switches
-        // to the "playback" session, which ignores the mute switch.
-        if (!iosPlaybackUnlocked) {
-            iosPlaybackUnlocked = true;
-            try {
-                var a = new Audio();
-                a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAESsAAABAAgAZGF0YQAAAAA=';
-                a.play().catch(function() {});
-            } catch (_) {}
-        }
-
-        // Play a silent buffer within the user-gesture callstack to unlock
-        // iOS Safari's AudioContext. resume() alone reports 'running' but
-        // stays muted — actual audio output is required within the gesture.
-        var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
-        var silentSrc = ctx.createBufferSource();
-        silentSrc.buffer = silentBuf;
-        silentSrc.connect(ctx.destination);
-        silentSrc.start();
-        // ALWAYS await resume() before streaming — even when state reports
-        // 'running'. iOS Safari can report 'running' but silently refuse to
-        // produce audio through speakers (works on Bluetooth). resume() is a
-        // no-op on desktop but re-activates the iOS audio pipeline every time.
         var signal = ttsAbort.signal;
         ctx.resume().then(function() {
             if (!signal.aborted) {
                 streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
             }
         }).catch(function() {
-            // AudioContext resume rejected — fall back to REST TTS
             if (!signal.aborted) {
                 restTTS(btn, text, voice, speed, signal, ttsService, showError);
             }
         });
     } else {
+        // iOS + no-AudioContext fallback: REST TTS uses <audio> element
+        // which reliably plays through the loudspeaker.
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
     }
 }
