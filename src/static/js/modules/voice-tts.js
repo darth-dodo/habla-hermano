@@ -68,6 +68,7 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
     ttsWs = ws;
 
     ws.onopen = function() {
+        console.log('[TTS-WS] connected, sending', textChunks.length, 'chunks');
         if (signal.aborted) {
             ws.close(1000, 'Cancelled');
             return;
@@ -110,6 +111,7 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
             source.start(startAt);
             nextStartTime = startAt + (audioBuffer.duration / speed);
             totalScheduled++;
+            console.log('[TTS-WS] audio chunk:', pcmData.length, 'samples, scheduled:', totalScheduled, 'ctx.state:', audioCtx.state, 'startAt:', startAt.toFixed(3));
 
             // Transition to playing on first chunk
             if (!started) {
@@ -143,13 +145,15 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
         }
     };
 
-    ws.onerror = function() {
+    ws.onerror = function(e) {
+        console.log('[TTS-WS] error:', e);
         if (signal.aborted) return;
         showError(btn, 'Could not play audio');
         ttsService.send('ERROR');
     };
 
     ws.onclose = function(event) {
+        console.log('[TTS-WS] closed, code:', event.code, 'reason:', event.reason, 'started:', started, 'scheduled:', totalScheduled);
         if (signal.aborted) return;
         // If no audio was ever received, show an error
         if (!started && event.code !== 1000) {

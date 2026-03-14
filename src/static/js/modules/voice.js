@@ -397,39 +397,49 @@ export function handleSpeakClick(btn) {
     }
 
     var Ctx = window.AudioContext || window.webkitAudioContext;
+    console.log('[TTS] AudioContext available:', !!Ctx);
     if (Ctx) {
-        if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
+        var isNew = !sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted';
+        if (isNew) {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
         var ctx = sharedTtsCtx;
+        console.log('[TTS] AudioContext state:', ctx.state, 'sampleRate:', ctx.sampleRate, 'new:', isNew);
 
-        // iOS Safari requires TWO unlocks within the user gesture:
-        // 1. <audio>.play() to activate the "playback" audio session
-        // 2. AudioContext silent buffer + resume() to unlock Web Audio
-        // Without (1), AudioContext stays silent on iOS speakers.
+        // Unlock 1: <audio>.play() to activate iOS playback session
         try {
             var iosUnlock = new Audio();
-            iosUnlock.muted = true;
-            iosUnlock.play().catch(function() {});
-        } catch (_) {}
+            iosUnlock.play().then(function() {
+                console.log('[TTS] Audio unlock: play() resolved');
+            }).catch(function(e) {
+                console.log('[TTS] Audio unlock: play() rejected:', e.message);
+            });
+        } catch (e) {
+            console.log('[TTS] Audio unlock: threw:', e.message);
+        }
 
+        // Unlock 2: silent buffer within gesture
         var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
         var silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
         silentSrc.connect(ctx.destination);
         silentSrc.start();
+        console.log('[TTS] Silent buffer started, ctx.state:', ctx.state);
 
         var signal = ttsAbort.signal;
         ctx.resume().then(function() {
+            console.log('[TTS] resume() resolved, ctx.state:', ctx.state);
             if (!signal.aborted) {
                 streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
             }
-        }).catch(function() {
+        }).catch(function(e) {
+            console.log('[TTS] resume() rejected:', e.message);
             if (!signal.aborted) {
                 restTTS(btn, text, voice, speed, signal, ttsService, showError);
             }
         });
     } else {
+        console.log('[TTS] No AudioContext, using REST fallback');
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
     }
 }
