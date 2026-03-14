@@ -14,7 +14,7 @@
 
 import { interpret } from './fsm.js';
 import {
-    VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
+    VOICES, DEFAULT_TTS_SPEED,
     WF_PLAY_ICON, WF_STOP_ICON, WF_SPEED_OPTIONS,
 } from './voice-constants.js';
 import {
@@ -401,24 +401,12 @@ export function handleSpeakClick(btn) {
     if (Ctx) {
         var isNew = !sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted';
         if (isNew) {
-            sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
+            sharedTtsCtx = new Ctx();
         }
         var ctx = sharedTtsCtx;
         console.log('[TTS] AudioContext state:', ctx.state, 'sampleRate:', ctx.sampleRate, 'new:', isNew);
 
-        // Unlock 1: <audio>.play() to activate iOS playback session
-        try {
-            var iosUnlock = new Audio();
-            iosUnlock.play().then(function() {
-                console.log('[TTS] Audio unlock: play() resolved');
-            }).catch(function(e) {
-                console.log('[TTS] Audio unlock: play() rejected:', e.message);
-            });
-        } catch (e) {
-            console.log('[TTS] Audio unlock: threw:', e.message);
-        }
-
-        // Unlock 2: silent buffer within gesture
+        // Silent buffer within gesture to unlock iOS AudioContext
         var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
         var silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
@@ -427,17 +415,11 @@ export function handleSpeakClick(btn) {
         console.log('[TTS] Silent buffer started, ctx.state:', ctx.state);
 
         var signal = ttsAbort.signal;
-        ctx.resume().then(function() {
-            console.log('[TTS] resume() resolved, ctx.state:', ctx.state);
-            if (!signal.aborted) {
-                streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
-            }
-        }).catch(function(e) {
-            console.log('[TTS] resume() rejected:', e.message);
-            if (!signal.aborted) {
-                restTTS(btn, text, voice, speed, signal, ttsService, showError);
-            }
-        });
+        ctx.resume();
+        console.log('[TTS] resume() called synchronously, ctx.state:', ctx.state);
+        if (!signal.aborted) {
+            streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
+        }
     } else {
         console.log('[TTS] No AudioContext, using REST fallback');
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);

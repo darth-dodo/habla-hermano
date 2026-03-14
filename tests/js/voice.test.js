@@ -1266,16 +1266,10 @@ describe('voice.js -- FSM-based Voice Module', () => {
             // resume() is called synchronously
             expect(mockCtx.resume).toHaveBeenCalled();
 
-            // WebSocket (streamTTS) is NOT created until resume resolves
-            var wsBefore = MockWebSocket._lastInstance;
-
-            await Promise.resolve();
-
-            // NOW streamTTS has been called and WebSocket created
-            var wsAfter = MockWebSocket._lastInstance;
-            expect(wsAfter).toBeTruthy();
-            expect(wsAfter).not.toBe(wsBefore);
-            expect(wsAfter.url).toContain('/ws/speak');
+            // streamTTS is called synchronously (no await on resume)
+            var ws = MockWebSocket._lastInstance;
+            expect(ws).toBeTruthy();
+            expect(ws.url).toContain('/ws/speak');
         });
     });
 
@@ -1903,61 +1897,26 @@ describe('voice.js -- FSM-based Voice Module', () => {
     // ============================================
 
     describe('iOS AudioContext suspended resume', () => {
-        it('awaits resume() before streaming when context is suspended', async () => {
+        it('calls resume() synchronously and streams immediately when suspended', async () => {
             setupVoiceDOM();
-            var resumeResolve;
             var ctx = createMockAudioContext();
             ctx.state = 'suspended';
-            ctx.resume = vi.fn(() => new Promise(function(resolve) {
-                resumeResolve = resolve;
-            }));
+            ctx.resume = vi.fn(() => Promise.resolve());
             globalThis.AudioContext = vi.fn(() => ctx);
 
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
 
-            // Capture WS state before click
-            var wsBefore = MockWebSocket._lastInstance;
-
             mod.handleSpeakClick(btn);
 
-            // resume() called but not yet resolved — streamTTS deferred
+            // resume() called synchronously
             expect(ctx.resume).toHaveBeenCalled();
-            expect(MockWebSocket._lastInstance).toBe(wsBefore); // no new WS yet
             expect(btn.classList.contains('voice-loading')).toBe(true);
 
-            // Resolve resume promise
-            resumeResolve();
-            await Promise.resolve(); // flush microtask
-
-            // NOW the WebSocket should be created
+            // streamTTS called immediately without awaiting resume
             var ws = MockWebSocket._lastInstance;
-            expect(ws).not.toBe(wsBefore);
+            expect(ws).toBeTruthy();
             expect(ws.url).toContain('/ws/speak');
-        });
-
-        it('falls back to REST TTS when resume() rejects', async () => {
-            setupVoiceDOM();
-            var ctx = createMockAudioContext();
-            ctx.state = 'suspended';
-            ctx.resume = vi.fn(() => Promise.reject(new Error('NotAllowedError')));
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            // Mock fetch so restTTS can call it
-            var mockResponse = { ok: true, blob: vi.fn(() => Promise.resolve(new Blob())) };
-            globalThis.fetch = vi.fn(() => Promise.resolve(mockResponse));
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush microtask for catch
-
-            // Should have made a REST fetch call instead of WebSocket
-            expect(globalThis.fetch).toHaveBeenCalledWith(
-                '/api/speak',
-                expect.objectContaining({ method: 'POST' })
-            );
         });
 
         it('creates new AudioContext when state is interrupted', async () => {
