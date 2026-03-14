@@ -401,23 +401,39 @@ export function handleSpeakClick(btn) {
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (Ctx) {
         // Reuse shared TTS AudioContext (Safari limits to 4 instances per page).
-        // iOS can leave a context permanently 'suspended' after backgrounding,
-        // so treat both 'closed' and stuck 'suspended' as needing replacement.
-        if (!sharedTtsCtx || sharedTtsCtx.state === 'closed') {
+        // iOS uses 'interrupted' state during phone calls / Siri — needs replacement.
+        if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
             sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         }
         var ctx = sharedTtsCtx;
-        // resume() + silent buffer warmup in the user-gesture callstack.
-        // iOS Safari requires actual audio output within the gesture to unlock
-        // the AudioContext; resume() alone reports 'running' but stays muted.
-        // Without this, TTS only works after STT (getUserMedia unlocks audio).
-        ctx.resume();
+        // Play a silent buffer within the user-gesture callstack to unlock
+        // iOS Safari's AudioContext. resume() alone reports 'running' but
+        // stays muted — actual audio output is required within the gesture.
         var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
         var silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
         silentSrc.connect(ctx.destination);
         silentSrc.start();
-        streamTTS(btn, text, voice, speed, ctx, ttsAbort.signal, ttsService, showError);
+        var signal = ttsAbort.signal;
+        if (ctx.state === 'suspended') {
+            // iOS: new AudioContexts start 'suspended' — must await resume()
+            // before scheduling real audio, otherwise chunks play on a muted context.
+            ctx.resume().then(function() {
+                if (!signal.aborted) {
+                    streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
+                }
+            }).catch(function() {
+                // AudioContext resume rejected — fall back to REST TTS
+                if (!signal.aborted) {
+                    restTTS(btn, text, voice, speed, signal, ttsService, showError);
+                }
+            });
+        } else {
+            // Desktop / already-running: resume() is a no-op but re-activates
+            // the iOS audio pipeline after a previous session ends.
+            ctx.resume();
+            streamTTS(btn, text, voice, speed, ctx, signal, ttsService, showError);
+        }
     } else {
         restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
     }
