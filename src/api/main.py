@@ -19,8 +19,8 @@ from starlette.middleware.cors import CORSMiddleware
 from src.agent.checkpoint_purge import purge_old_checkpoints
 from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
-from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
 from src.api.dependencies import get_cached_templates
+from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
 from src.api.routes import auth, chat, learn, lessons, progress, review, voice
 from src.lessons.service import get_lesson_service
 
@@ -182,7 +182,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
-        request: Request, exc: RequestValidationError
+        request: Request, _exc: RequestValidationError
     ) -> HTMLResponse:
         _ensure_csp_nonce(request)
         templates = get_cached_templates()
@@ -194,7 +194,7 @@ def create_app() -> FastAPI:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+    async def unhandled_exception_handler(request: Request, _exc: Exception) -> HTMLResponse:
         logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
         _ensure_csp_nonce(request)
         templates = get_cached_templates()

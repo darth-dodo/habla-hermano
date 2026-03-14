@@ -14,7 +14,7 @@ from fastapi import APIRouter, Cookie, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from postgrest.exceptions import APIError
 
-from src.api.auth import CurrentUserDep, OptionalUserDep
+from src.api.auth import OptionalUserDep
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import validate_days, validate_language
