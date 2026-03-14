@@ -192,7 +192,7 @@ export function streamTTS(btn, text, voice, speed, audioCtx, signal, ttsService,
  * @param {object} ttsService - FSM service to send events
  * @param {function(HTMLElement, string): void} showError - error display callback
  */
-export function restTTS(btn, text, voice, speed, signal, ttsService, showError, prewarmedAudio) {
+export function restTTS(btn, text, voice, speed, signal, ttsService, showError) {
     var textChunks = chunkTextForTTS(text);
     var allBlobs = [];
 
@@ -237,13 +237,8 @@ export function restTTS(btn, text, voice, speed, signal, ttsService, showError, 
         if (signal.aborted) return;
 
         var audioUrl = URL.createObjectURL(audioBlob);
-        // Reuse pre-warmed Audio element if provided (iOS gesture unlock),
-        // otherwise create a new one.
-        var audio = prewarmedAudio || new Audio();
-        audio.src = audioUrl;
+        var audio = new Audio(audioUrl);
         audio.playbackRate = speed;
-        audio.muted = false;
-        audio.volume = 1;
         currentAudio = audio;
         currentBlobUrl = audioUrl;
 

@@ -396,24 +396,6 @@ export function handleSpeakClick(btn) {
         showTooltipError(anchor, msg, errorTimeouts);
     }
 
-    // iOS Safari: AudioContext routes to earpiece after getUserMedia (STT)
-    // and won't play at all without a gesture-linked unlock. Use REST TTS
-    // with a pre-warmed <audio> element instead — it always uses the
-    // loudspeaker and doesn't need AudioContext.
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-        || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
-
-    if (isIOS) {
-        // Create and play an Audio element NOW (within tap gesture) to
-        // unlock iOS audio session. Muted so the user hears nothing.
-        // The same element is reused by restTTS when fetch completes.
-        var iosAudio = new Audio();
-        iosAudio.muted = true;
-        iosAudio.play().catch(function() {});
-        restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError, iosAudio);
-        return;
-    }
-
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (Ctx) {
         if (!sharedTtsCtx || sharedTtsCtx.state === 'closed' || sharedTtsCtx.state === 'interrupted') {
@@ -421,8 +403,16 @@ export function handleSpeakClick(btn) {
         }
         var ctx = sharedTtsCtx;
 
-        // Play a silent buffer within the user-gesture callstack to unlock
-        // iOS Safari's AudioContext for audio output.
+        // iOS Safari requires TWO unlocks within the user gesture:
+        // 1. <audio>.play() to activate the "playback" audio session
+        // 2. AudioContext silent buffer + resume() to unlock Web Audio
+        // Without (1), AudioContext stays silent on iOS speakers.
+        try {
+            var iosUnlock = new Audio();
+            iosUnlock.muted = true;
+            iosUnlock.play().catch(function() {});
+        } catch (_) {}
+
         var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
         var silentSrc = ctx.createBufferSource();
         silentSrc.buffer = silentBuf;
