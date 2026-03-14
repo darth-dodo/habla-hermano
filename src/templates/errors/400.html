@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Bad Request - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="min-h-full flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 safe-top">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <!-- Icon -->
+        <div class="flex justify-center">
+            <div class="w-20 h-20 rounded-3xl bg-error/10 flex items-center justify-center">
+                <svg class="w-12 h-12 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+            </div>
+        </div>
+
+        <p class="mt-6 text-6xl font-bold text-error">400</p>
+        <h1 class="mt-4 text-2xl font-bold text-text">Bad request</h1>
+        <p class="mt-3 text-text-muted">
+            {{ detail or "Something went wrong with your request. Please try again." }}
+        </p>
+
+        <!-- Actions -->
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/"
+               class="w-full sm:w-auto inline-flex justify-center items-center gap-2 py-3 px-6 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Back to Chat
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
