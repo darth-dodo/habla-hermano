@@ -54,6 +54,7 @@ from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
 from src.services.lesson_completion import complete_lesson_and_persist
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
+from src.services.threads import ThreadService
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +242,7 @@ async def send_message(
     message: Annotated[str, Form()],
     level: Annotated[str, Form()] = "A1",
     language: Annotated[str, Form()] = "es",
+    thread_id: Annotated[str | None, Form()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     conversation_version: Annotated[str | None, Cookie()] = None,
@@ -265,6 +267,7 @@ async def send_message(
         message: User's message from form data.
         level: CEFR level (A0, A1, A2, B1). Defaults to A1.
         language: Target language (es, de). Defaults to es (Spanish).
+        thread_id: Optional explicit thread ID for authenticated users.
         session_id: Session cookie for anonymous users.
 
     Returns:
@@ -292,14 +295,31 @@ async def send_message(
             f"Invalid language '{language}'. Must be one of: {', '.join(sorted(VALID_LANGUAGES))}."
         )
 
-    # Resolve identity for thread_id and effective user_id
-    thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
-        user, session_id, conversation_version
-    )
+    # Save the form param before it gets shadowed by the resolved thread_id
+    thread_id_param = thread_id
 
     # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
     # Only available for authenticated users with a valid access token
     user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+
+    # Resolve identity for thread_id and effective user_id
+    if user and user_client:
+        effective_user_id = user.id
+        new_session_id = None
+        if thread_id_param:
+            # Authenticated user with explicit thread — use directly
+            thread_id = thread_id_param
+        else:
+            # Authenticated user without thread — auto-create one
+            thread_svc = ThreadService(user_id=user.id, client=user_client)
+            new_thread = thread_svc.create_thread(language=language, level=level)
+            thread_id = new_thread.thread_id
+            thread_id_param = thread_id  # so touch is called after stream
+    else:
+        # Guest fallback — use existing cookie-based identity
+        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
+            user, session_id, conversation_version
+        )
 
     # Invoke LangGraph agent with checkpointing
     async with get_checkpointer() as checkpointer:
@@ -346,6 +366,14 @@ async def send_message(
         except APIError:
             logger.exception("Failed to capture chat activity for user %s", effective_user_id)
 
+    # Update thread timestamp
+    if thread_id_param and effective_user_id and user_client:
+        try:
+            thread_service = ThreadService(user_id=effective_user_id, client=user_client)
+            thread_service.touch(thread_id_param)
+        except Exception:
+            logger.exception("Failed to touch thread %s", thread_id_param)
+
     # Create template response
     template_response = templates.TemplateResponse(
         request=request,
@@ -387,6 +415,7 @@ async def stream_message(  # noqa: PLR0915
     language: Annotated[str, Form()] = "es",
     lesson_id: Annotated[str | None, Form()] = None,
     lesson_session: Annotated[str | None, Form()] = None,
+    thread_id: Annotated[str | None, Form()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     conversation_version: Annotated[str | None, Cookie()] = None,
@@ -475,19 +504,34 @@ async def stream_message(  # noqa: PLR0915
             media_type="text/event-stream",
         )
 
+    # Save form param before it gets shadowed by the resolved thread_id
+    thread_id_param = thread_id
+
+    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
+    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+
     # --- Resolve identity ---
     if lesson_id:
         effective_user_id = user.id if user else None
         thread_id, effective_user_id, new_session_id = _resolve_lesson_thread_id(
             effective_user_id, session_id, lesson_id, lesson_session
         )
+    elif user and user_client:
+        # Authenticated user — use explicit thread or auto-create
+        effective_user_id = user.id
+        new_session_id = None
+        if thread_id_param:
+            thread_id = thread_id_param
+        else:
+            thread_svc = ThreadService(user_id=user.id, client=user_client)
+            new_thread = thread_svc.create_thread(language=language, level=level)
+            thread_id = new_thread.thread_id
+            thread_id_param = thread_id  # so touch is called after stream
     else:
+        # Guest fallback — use existing cookie-based identity
         thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
             user, session_id, conversation_version
         )
-
-    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
-    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
 
     async def event_generator() -> AsyncGenerator[dict[str, str], None]:  # noqa: PLR0912
         """Wrap streaming with checkpointer lifecycle and post-stream actions."""
@@ -633,6 +677,14 @@ async def stream_message(  # noqa: PLR0915
                 )
             except APIError:
                 logger.exception("Failed to capture chat activity for user %s", effective_user_id)
+
+        # Update thread timestamp
+        if thread_id_param and effective_user_id and user_client:
+            try:
+                thread_service = ThreadService(user_id=effective_user_id, client=user_client)
+                thread_service.touch(thread_id_param)
+            except Exception:
+                logger.exception("Failed to touch thread %s", thread_id_param)
 
     headers: dict[str, str] = {"Cache-Control": "no-cache"}
     response = EventSourceResponse(
