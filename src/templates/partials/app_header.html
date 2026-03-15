@@ -14,7 +14,20 @@ Variables expected:
 <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 safe-top safe-x">
     <div class="max-w-3xl mx-auto flex items-center justify-between">
         <!-- Left: Hamburger Menu -->
-        <div class="relative" x-data="{ open: false }">
+        {% if user %}
+        <!-- Authenticated: toggle sidebar on mobile, hidden on desktop (sidebar visible) -->
+        <button
+            @click="$dispatch('sidebar-toggle')"
+            class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 btn-press md:hidden"
+            aria-label="Toggle sidebar"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        {% endif %}
+        <!-- Guest dropdown menu (or desktop-hidden for auth users) -->
+        <div class="relative {% if user %}hidden{% endif %}" x-data="{ open: false }">
             <button
                 @click="open = !open"
                 @click.away="open = false"

@@ -1,0 +1,181 @@
+{#
+Thread Sidebar - Shows conversation threads for authenticated users.
+Variables expected:
+  - threads: list[dict] (thread objects with id, thread_id, title, language, updated_at)
+  - active_thread_id: str | None (currently active thread's thread_id)
+  - user: AuthenticatedUser
+#}
+
+{% if user %}
+<div
+    x-data="{
+        collapsed: localStorage.getItem('sidebar-collapsed') === 'true',
+        mobileOpen: false,
+        toggleCollapse() {
+            this.collapsed = !this.collapsed;
+            localStorage.setItem('sidebar-collapsed', this.collapsed);
+        },
+        editingThread: null,
+        editTitle: '',
+        startRename(threadId, currentTitle) {
+            this.editingThread = threadId;
+            this.editTitle = currentTitle;
+            this.$nextTick(() => this.$refs['rename-' + threadId]?.focus());
+        }
+    }"
+    @sidebar-toggle.window="mobileOpen = !mobileOpen"
+    @keydown.escape.window="mobileOpen = false"
+>
+    <!-- Mobile backdrop -->
+    <div
+        x-show="mobileOpen"
+        x-transition:enter="transition-opacity ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="mobileOpen = false"
+        class="fixed inset-0 bg-black/40 z-40 md:hidden"
+    ></div>
+
+    <!-- Sidebar panel -->
+    <aside
+        :class="[
+            'flex flex-col bg-surface-elevated border-r border-border z-50 transition-all duration-200',
+            'fixed md:relative h-full',
+            mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+            collapsed ? 'md:w-12' : 'md:w-70',
+            'w-70'
+        ]"
+    >
+        <!-- Header: New Chat + Collapse -->
+        <div class="flex items-center gap-2 p-3 border-b border-border">
+            <button
+                x-show="!collapsed"
+                hx-post="/threads"
+                hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) { const data = JSON.parse(event.detail.xhr.responseText); window.location.href = '/?thread=' + data.thread_id; }"
+                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity btn-press"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New Chat</span>
+            </button>
+
+            <!-- Collapse toggle (desktop only) -->
+            <button
+                @click="toggleCollapse()"
+                class="hidden md:flex p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors"
+                :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+            >
+                <svg class="w-4 h-4 transition-transform" :class="collapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <!-- Collapsed: just show new chat icon -->
+            <button
+                x-show="collapsed"
+                hx-post="/threads"
+                hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) { const data = JSON.parse(event.detail.xhr.responseText); window.location.href = '/?thread=' + data.thread_id; }"
+                class="p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors"
+                aria-label="New Chat"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Thread list (hidden when collapsed on desktop) -->
+        <div x-show="!collapsed || mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-1">
+            {% if threads %}
+                {% for thread in threads %}
+                <a
+                    href="/?thread={{ thread.thread_id }}"
+                    class="group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 {{ 'bg-accent/10 text-accent' if thread.thread_id == active_thread_id else 'text-text hover:bg-surface-overlay' }}"
+                    @contextmenu.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
+                >
+                    <!-- Language flag -->
+                    <span class="flex-shrink-0 text-base">
+                        {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% endif %}
+                    </span>
+
+                    <!-- Title (or rename input) -->
+                    <template x-if="editingThread === '{{ thread.thread_id }}'">
+                        <form
+                            @submit.prevent="
+                                fetch('/threads/{{ thread.thread_id }}', {
+                                    method: 'PATCH',
+                                    headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                                    body: 'title=' + encodeURIComponent(editTitle)
+                                }).then(() => window.location.reload());
+                            "
+                            @click.stop
+                            class="flex-1"
+                        >
+                            <input
+                                x-ref="rename-{{ thread.thread_id }}"
+                                x-model="editTitle"
+                                @blur="editingThread = null"
+                                @keydown.escape="editingThread = null"
+                                class="w-full px-1.5 py-0.5 text-sm bg-surface rounded border border-border focus:border-accent focus:outline-none"
+                                maxlength="100"
+                            />
+                        </form>
+                    </template>
+                    <template x-if="editingThread !== '{{ thread.thread_id }}'">
+                        <span class="flex-1 truncate">{{ thread.title }}</span>
+                    </template>
+
+                    <!-- Delete button (visible on hover) -->
+                    <button
+                        x-show="editingThread !== '{{ thread.thread_id }}'"
+                        @click.prevent.stop="
+                            if(confirm('Delete this conversation?')) {
+                                fetch('/threads/{{ thread.thread_id }}', {
+                                    method: 'DELETE',
+                                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                                }).then(() => window.location.href = '/');
+                            }
+                        "
+                        class="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-all"
+                        aria-label="Delete thread"
+                    >
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="px-3 py-8 text-center text-text-muted text-sm">
+                    <p>No conversations yet</p>
+                    <p class="text-xs mt-1">Start a new chat to begin</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Bottom: Theme/Settings -->
+        <div x-show="!collapsed || mobileOpen" class="border-t border-border p-2">
+            <a href="/lessons/" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Lessons
+            </a>
+            <a href="/progress/" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Progress
+            </a>
+        </div>
+    </aside>
+</div>
+{% endif %}
