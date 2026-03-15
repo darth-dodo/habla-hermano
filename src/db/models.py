@@ -67,3 +67,23 @@ class LessonProgress(BaseModel):
     lesson_id: str
     completed_at: datetime | None = None
     score: int | None = None
+
+
+class ConversationThread(BaseModel):
+    """Conversation thread metadata for the sidebar thread list.
+
+    Stores metadata (title, language, timestamps) for each conversation
+    thread. Actual conversation data lives in LangGraph checkpoint tables;
+    the thread_id column bridges the two systems.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    thread_id: str
+    title: str = "New conversation"
+    language: str = "es"
+    level: str = "A1"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
