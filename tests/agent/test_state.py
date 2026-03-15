@@ -47,8 +47,8 @@ class TestConversationStateStructure:
         hints = get_type_hints(ConversationState, include_extras=True)
         assert "scaffolding" in hints
 
-    def test_state_has_exactly_eleven_fields(self) -> None:
-        """ConversationState should have exactly eleven fields.
+    def test_state_has_exactly_ten_fields(self) -> None:
+        """ConversationState should have exactly ten fields.
 
         Fields:
         - messages, level, language (core)
@@ -57,10 +57,9 @@ class TestConversationStateStructure:
         - scaffolding (Phase 3)
         - pronunciation_tips (Phase 11)
         - review_words_offered, review_words_used (Phase 12)
-        - supabase_client (codebase improvements)
         """
         hints = get_type_hints(ConversationState, include_extras=True)
-        assert len(hints) == 11
+        assert len(hints) == 10
 
     def test_state_has_pronunciation_tips_field(self) -> None:
         """ConversationState should have a pronunciation_tips field (Phase 11)."""

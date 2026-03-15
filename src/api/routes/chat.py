@@ -310,9 +310,11 @@ async def send_message(
                 "level": level,
                 "language": language,
                 "user_id": effective_user_id,  # Phase 12: For review word weaving
-                "supabase_client": user_client,  # User-scoped client for RLS
             },
-            config={"configurable": {"thread_id": thread_id}},
+            config={"configurable": {
+                "thread_id": thread_id,
+                "supabase_client": user_client,  # Runtime dep, not serialized
+            }},
         )
 
     # Extract AI response from graph result
@@ -490,7 +492,10 @@ async def stream_message(  # noqa: PLR0915
         result = StreamResult()
 
         async with get_checkpointer() as checkpointer:
-            graph_config: dict[str, Any] = {"configurable": {"thread_id": thread_id}}
+            graph_config: dict[str, Any] = {"configurable": {
+                "thread_id": thread_id,
+                "supabase_client": user_client,  # Runtime dep, not serialized
+            }}
 
             if lesson_id and lesson:
                 # --- Lesson mode ---
@@ -509,7 +514,6 @@ async def stream_message(  # noqa: PLR0915
                     inputs: dict[str, Any] = {
                         "messages": [HumanMessage(content=message)],
                         "user_id": effective_user_id,
-                        "supabase_client": user_client,
                     }
                 else:
                     inputs = {
@@ -517,7 +521,6 @@ async def stream_message(  # noqa: PLR0915
                         "level": level,
                         "language": language,
                         "user_id": effective_user_id,
-                        "supabase_client": user_client,
                         # Lesson-specific state — only on first invocation
                         "lesson_id": lesson_id,
                         "lesson_data": lesson.model_dump(),
@@ -603,7 +606,6 @@ async def stream_message(  # noqa: PLR0915
                     "level": level,
                     "language": language,
                     "user_id": effective_user_id,
-                    "supabase_client": user_client,
                 }
 
                 async for event in stream_chat_events(

@@ -360,7 +360,7 @@ class TestRespondNodeReviewWords:
                 "language": "es",
                 "user_id": "test-user-123",
             }
-            result = await respond_node(state)
+            result = await respond_node(state, {"configurable": {"supabase_client": None}})
 
             mock_get_words.assert_called_once_with(
                 user_id="test-user-123",
@@ -388,7 +388,7 @@ class TestRespondNodeReviewWords:
                 "level": "A1",
                 "language": "es",
             }
-            result = await respond_node(state)
+            result = await respond_node(state, {"configurable": {"supabase_client": None}})
             assert "review_words_offered" not in result
 
     async def test_respond_node_no_review_words_offered_key_when_empty(
@@ -415,7 +415,7 @@ class TestRespondNodeReviewWords:
                 "language": "es",
                 "user_id": "test-user-123",
             }
-            result = await respond_node(state)
+            result = await respond_node(state, {"configurable": {"supabase_client": None}})
             # Empty review_words should NOT add the key to result
             assert "review_words_offered" not in result
 
@@ -769,7 +769,7 @@ class TestAnalyzeNodeReviewWordTracking:
                 "user_id": "test-user-123",
                 "review_words_offered": offered_words,
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
 
             assert "review_words_used" in result
             assert len(result["review_words_used"]) == 1
@@ -797,7 +797,7 @@ class TestAnalyzeNodeReviewWordTracking:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             assert "review_words_used" not in result
 
 

@@ -1062,7 +1062,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            result = await update_sm2_node(state)
+            result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         assert result["current_word_index"] == 1
 
@@ -1081,7 +1081,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            result = await update_sm2_node(state)
+            result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         assert result["current_word_index"] == 4
 
@@ -1099,7 +1099,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            await update_sm2_node(state)
+            await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         mock_service.update_sm2.assert_called_once_with(vocab_id=42, quality=5)
 
@@ -1111,14 +1111,13 @@ class TestUpdateSm2Node:
             user_id="user-xyz-789",
             current_word={"id": 1, "word": "hola", "translation": "hello"},
             quality_score=5,
-            supabase_client=mock_user_client,
         )
 
         with patch("src.services.review.ReviewService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            await update_sm2_node(state)
+            await update_sm2_node(state, {"configurable": {"supabase_client": mock_user_client}})
 
         mock_service_cls.assert_called_once_with("user-xyz-789", client=mock_user_client)
 
@@ -1131,7 +1130,7 @@ class TestUpdateSm2Node:
         state_dict.pop("current_word", None)
         state_typed: ReviewState = state_dict  # type: ignore[assignment]
 
-        result = await update_sm2_node(state_typed)
+        result = await update_sm2_node(state_typed, {"configurable": {"supabase_client": None}})
 
         assert result["current_word_index"] == 3
 
@@ -1144,7 +1143,7 @@ class TestUpdateSm2Node:
         )
         # quality_score not set
 
-        result = await update_sm2_node(state)
+        result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         assert result["current_word_index"] == 2
 
@@ -1157,7 +1156,7 @@ class TestUpdateSm2Node:
             current_word_index=0,
         )
 
-        result = await update_sm2_node(state)
+        result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         assert result["current_word_index"] == 1
 
@@ -1180,7 +1179,7 @@ class TestUpdateSm2Node:
             mock_service_cls.return_value = mock_service
 
             # Should not raise
-            result = await update_sm2_node(state)
+            result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         # Index should still be incremented despite the error
         assert result["current_word_index"] == 1
@@ -1199,7 +1198,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            result = await update_sm2_node(state)
+            result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         # Service should be created with None client
         mock_service_cls.assert_called_once_with("test-user-abc", client=None)
@@ -1219,7 +1218,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            await update_sm2_node(state)
+            await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         mock_service.update_sm2.assert_called_once_with(vocab_id=42, quality=5)
 
@@ -1238,7 +1237,7 @@ class TestUpdateSm2Node:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
 
-            result = await update_sm2_node(state)
+            result = await update_sm2_node(state, {"configurable": {"supabase_client": None}})
 
         assert list(result.keys()) == ["current_word_index"]
 

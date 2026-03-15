@@ -11,6 +11,7 @@ import random
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
@@ -403,7 +404,7 @@ async def evaluate_answer_node(state: ReviewState) -> dict[str, Any]:
     }
 
 
-async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
+async def update_sm2_node(state: ReviewState, config: RunnableConfig) -> dict[str, Any]:
     """Update SM-2 scheduling for the reviewed word.
 
     Calls ReviewService.update_sm2() to persist the new interval
@@ -411,10 +412,14 @@ async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
 
     Args:
         state: Current review state with current_word and quality_score.
+        config: LangGraph config; supabase_client passed via config["configurable"].
 
     Returns:
         Dictionary with current_word_index incremented.
     """
+    configurable = config.get("configurable", {})
+    supabase_client = configurable.get("supabase_client")
+
     word = state.get("current_word")
     quality_score = state.get("quality_score")
     user_id = state["user_id"]
@@ -429,9 +434,8 @@ async def update_sm2_node(state: ReviewState) -> dict[str, Any]:
             # Import lazily to avoid circular imports
             from src.services.review import ReviewService
 
-            # Use user-scoped client passed through state for RLS compliance
-            client = state.get("supabase_client")
-            service = ReviewService(user_id, client=client)
+            # Use user-scoped client passed through config for RLS compliance
+            service = ReviewService(user_id, client=supabase_client)
             service.update_sm2(vocab_id=word_id, quality=quality_score)
         except APIError as e:
             # Log but don't fail the session
