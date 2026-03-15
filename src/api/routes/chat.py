@@ -311,10 +311,12 @@ async def send_message(
                 "language": language,
                 "user_id": effective_user_id,  # Phase 12: For review word weaving
             },
-            config={"configurable": {
-                "thread_id": thread_id,
-                "supabase_client": user_client,  # Runtime dep, not serialized
-            }},
+            config={
+                "configurable": {
+                    "thread_id": thread_id,
+                    "supabase_client": user_client,  # Runtime dep, not serialized
+                }
+            },
         )
 
     # Extract AI response from graph result
@@ -492,10 +494,12 @@ async def stream_message(  # noqa: PLR0915
         result = StreamResult()
 
         async with get_checkpointer() as checkpointer:
-            graph_config: dict[str, Any] = {"configurable": {
-                "thread_id": thread_id,
-                "supabase_client": user_client,  # Runtime dep, not serialized
-            }}
+            graph_config: dict[str, Any] = {
+                "configurable": {
+                    "thread_id": thread_id,
+                    "supabase_client": user_client,  # Runtime dep, not serialized
+                }
+            }
 
             if lesson_id and lesson:
                 # --- Lesson mode ---

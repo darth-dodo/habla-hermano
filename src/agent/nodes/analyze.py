@@ -330,9 +330,7 @@ async def analyze_node(state: ConversationState, config: RunnableConfig) -> dict
         if used_words:
             # Update SM-2 scheduling for correctly used words
             user_id = state.get("user_id")
-            await _update_sm2_for_used_words(
-                user_id, used_words, supabase_client=supabase_client
-            )
+            await _update_sm2_for_used_words(user_id, used_words, supabase_client=supabase_client)
             result["review_words_used"] = used_words
 
     # Build the analysis prompt
