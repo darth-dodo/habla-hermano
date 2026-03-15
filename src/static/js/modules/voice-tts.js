@@ -77,7 +77,10 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
     // session which routes audio to the speaker. The stream MUST stay
     // alive for the entire TTS playback — stopping tracks causes iOS to
     // deactivate the session and route audio back to the earpiece.
-    // The stream is released in cleanupTtsResources() when TTS ends.
+    //
+    // Fire getUserMedia in PARALLEL with the fetch to avoid adding latency.
+    // The stream only needs to be alive when playAudio() runs, and the
+    // Deepgram API round-trip is much slower than getUserMedia.
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
@@ -88,18 +91,15 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
                 // Keep stream alive — will be stopped in cleanupTtsResources()
                 releaseIosSessionStream();
                 iosSessionStream = stream;
-                doFetch(btn, text, voice, speed, signal, ttsService, showError);
             })
             .catch(function() {
-                // Mic permission denied or unavailable — proceed without activation.
-                // TTS will still work on non-iOS or with Bluetooth.
-                if (!signal.aborted) {
-                    doFetch(btn, text, voice, speed, signal, ttsService, showError);
-                }
+                // Mic permission denied or unavailable — TTS will still work
+                // on non-iOS or with Bluetooth.
             });
-    } else {
-        doFetch(btn, text, voice, speed, signal, ttsService, showError);
     }
+
+    // Start fetch immediately (parallel with getUserMedia)
+    doFetch(btn, text, voice, speed, signal, ttsService, showError);
 }
 
 function doFetch(btn, text, voice, speed, signal, ttsService, showError) {

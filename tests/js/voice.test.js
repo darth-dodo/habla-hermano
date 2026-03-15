@@ -951,7 +951,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
-                await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
                 expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                     method: 'POST',
@@ -969,7 +968,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
-                await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
                 var body = JSON.parse(fetch.mock.calls[0][1].body);
                 expect(body.text).toBe('Hola mundo');
@@ -1226,7 +1224,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Guten Tag', 'de');
 
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-julius-de');
@@ -1239,7 +1236,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Bonjour', 'fr');
 
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-hector-fr');
@@ -1252,7 +1248,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hello', 'xx');
 
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-nestor-es');
@@ -1270,7 +1265,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             // Verify fetch was called with POST /api/speak
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
@@ -1383,7 +1377,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                 method: 'POST',
@@ -1459,7 +1452,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0); // flush getUserMedia promise
 
             // Verify fetch was called with signal
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
