@@ -1,0 +1,18 @@
+{# Thread History - Renders preloaded messages when switching threads #}
+{% if messages %}
+{% for msg in messages %}
+{% if msg.role == 'human' %}
+<div class="flex justify-end mb-6" data-user-message>
+    <div class="bg-user rounded-2xl rounded-br-sm px-4 py-3 max-w-[80%] shadow-sm">
+        <p class="text-user-text whitespace-pre-wrap">{{ msg.content | e }}</p>
+    </div>
+</div>
+{% else %}
+<div class="flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
+        <div class="text-ai-text prose-chat">{{ msg.content | markdown }}</div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
