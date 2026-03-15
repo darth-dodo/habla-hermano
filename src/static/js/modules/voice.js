@@ -14,7 +14,7 @@
 
 import { interpret } from './fsm.js';
 import {
-    VOICES, DEFAULT_TTS_SPEED, TTS_SAMPLE_RATE,
+    VOICES, DEFAULT_TTS_SPEED,
     WF_PLAY_ICON, WF_STOP_ICON, WF_SPEED_OPTIONS,
 } from './voice-constants.js';
 import {
@@ -29,7 +29,8 @@ import {
     getAnalyser, resetTranscript, getStream,
 } from './voice-stt.js';
 import {
-    ttsMachine, streamTTS, restTTS, cleanupTtsResources,
+    ttsMachine, audioElementTTS, initTtsPlayer, cleanupTtsResources,
+    notifyMicUsed,
 } from './voice-tts.js';
 
 
@@ -50,9 +51,6 @@ var micButton = null;
 var chatInput = null;
 var sendButton = null;
 var micWrapper = null;
-
-// Shared TTS AudioContext (Safari limits to 4 instances)
-var sharedTtsCtx = null;
 
 // TTS active button reference (the .voice-tts-row element)
 var ttsActiveBtn = null;
@@ -77,6 +75,7 @@ function onSttChange(state, prev) {
     // --- entering connecting ---
     if (state === 'connecting' && prev === 'idle') {
         sttAbort = new AbortController();
+        notifyMicUsed();
         resetTranscript();
         startRecordingSession(
             sttAbort.signal,
@@ -226,6 +225,9 @@ export function initVoice() {
 
     if (!micButton) return; // Voice not enabled
 
+    // Initialize TTS hidden audio player (Deepgram pattern)
+    initTtsPlayer();
+
     // Use mic button's parent as wrapper for floating indicators (timer, processing pill).
     // The template already provides a positioned container around mic + send.
     micWrapper = micButton.parentNode;
@@ -270,10 +272,7 @@ export function initVoice() {
         }
     });
 
-    // Handle page visibility changes (background/foreground).
-    // iOS suspends AudioContext when backgrounded, leaving scheduled
-    // BufferSource nodes paused. Without cleanup they resume as "zombie
-    // audio" when the context is later unlocked (e.g. by getUserMedia).
+    // Handle page visibility changes — cancel active sessions when backgrounded.
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') {
             if (ttsService && !ttsService.matches('idle')) {
@@ -305,19 +304,13 @@ export function destroyVoice() {
     if (sttService) { sttService.stop(); sttService = null; }
     if (ttsService) { ttsService.stop(); ttsService = null; }
 
-    // 4. Close/suspend shared TTS AudioContext
-    if (sharedTtsCtx && sharedTtsCtx.state !== 'closed') {
-        sharedTtsCtx.close().catch(function() {});
-        sharedTtsCtx = null;
-    }
-
-    // 5. Defensive: stop mic stream tracks
+    // 4. Defensive: stop mic stream tracks
     var stream = getStream();
     if (stream) {
         stream.getTracks().forEach(function(t) { t.stop(); });
     }
 
-    // 6. Clear pending timeouts
+    // 5. Clear pending timeouts
     if (processingTimeout) {
         clearTimeout(processingTimeout);
         processingTimeout = null;
@@ -327,12 +320,12 @@ export function destroyVoice() {
     });
     errorTimeouts = {};
 
-    // 7. Clean up STT UI handles
+    // 6. Clean up STT UI handles
     stopTimer(timerHandle); timerHandle = null;
     if (levelHandle) { levelHandle.stop(); levelHandle = null; }
     hideProcessing(processingHandle); processingHandle = null;
 
-    // 8. Null out DOM refs
+    // 7. Null out DOM refs
     micButton = null;
     chatInput = null;
     sendButton = null;
@@ -397,30 +390,7 @@ export function handleSpeakClick(btn) {
         showTooltipError(anchor, msg, errorTimeouts);
     }
 
-    // Use WebSocket streaming TTS with AudioContext fallback check
-    var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
-        // Reuse shared TTS AudioContext (Safari limits to 4 instances per page).
-        // iOS can leave a context permanently 'suspended' after backgrounding,
-        // so treat both 'closed' and stuck 'suspended' as needing replacement.
-        if (!sharedTtsCtx || sharedTtsCtx.state === 'closed') {
-            sharedTtsCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
-        }
-        var ctx = sharedTtsCtx;
-        // resume() + silent buffer warmup in the user-gesture callstack.
-        // iOS Safari requires actual audio output within the gesture to unlock
-        // the AudioContext; resume() alone reports 'running' but stays muted.
-        // Without this, TTS only works after STT (getUserMedia unlocks audio).
-        ctx.resume();
-        var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
-        var silentSrc = ctx.createBufferSource();
-        silentSrc.buffer = silentBuf;
-        silentSrc.connect(ctx.destination);
-        silentSrc.start();
-        streamTTS(btn, text, voice, speed, ctx, ttsAbort.signal, ttsService, showError);
-    } else {
-        restTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
-    }
+    audioElementTTS(btn, text, voice, speed, ttsAbort.signal, ttsService, showError);
 }
 
 /**
