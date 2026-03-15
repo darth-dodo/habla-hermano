@@ -194,7 +194,7 @@ function insertFeedback(bubbleId, html) {
         window.Alpine.initTree(container);
     }
 
-    scrollToBottom();
+    scrollToBottom(true, { force: false });
 }
 
 // ============================================

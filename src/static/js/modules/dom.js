@@ -25,12 +25,28 @@ export function getLoadingIndicator() { return document.getElementById('loading-
 // ============================================
 
 /**
+ * Check if the chat container is scrolled near the bottom.
+ * @param {number} threshold - Pixel threshold to consider "near bottom"
+ * @returns {boolean}
+ */
+export function isNearBottom(threshold = 150) {
+    const chatContainer = getChatContainer();
+    if (!chatContainer) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+    return scrollHeight - scrollTop - clientHeight <= threshold;
+}
+
+/**
  * Scroll chat container to bottom
  * @param {boolean} smooth - Use smooth scrolling
+ * @param {object} [options]
+ * @param {boolean} [options.force=true] - If false, only scroll when already near bottom
  */
-export function scrollToBottom(smooth = true) {
+export function scrollToBottom(smooth = true, { force = true } = {}) {
     const chatContainer = getChatContainer();
     if (!chatContainer) return;
+
+    if (!force && !isNearBottom()) return;
 
     setTimeout(() => {
         chatContainer.scrollTo({
