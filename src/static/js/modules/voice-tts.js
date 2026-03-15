@@ -35,6 +35,10 @@ var ttsSource = null;
 // Current blob URL (must be revoked on cleanup)
 var currentBlobUrl = null;
 
+// iOS audio session stream — kept alive during TTS playback to prevent
+// iOS Safari from routing audio back to earpiece. Released on cleanup.
+var iosSessionStream = null;
+
 /**
  * Initialize TTS player references. Called once from voice.js initVoice().
  * Grabs the hidden <audio id="tts-player"> and <source id="tts-player-src">
@@ -69,6 +73,36 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
         return;
     }
 
+    // iOS Safari: getUserMedia() activates the "voice processing" audio
+    // session which routes audio to the speaker. The stream MUST stay
+    // alive for the entire TTS playback — stopping tracks causes iOS to
+    // deactivate the session and route audio back to the earpiece.
+    // The stream is released in cleanupTtsResources() when TTS ends.
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                if (signal.aborted) {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    return;
+                }
+                // Keep stream alive — will be stopped in cleanupTtsResources()
+                releaseIosSessionStream();
+                iosSessionStream = stream;
+                doFetch(btn, text, voice, speed, signal, ttsService, showError);
+            })
+            .catch(function() {
+                // Mic permission denied or unavailable — proceed without activation.
+                // TTS will still work on non-iOS or with Bluetooth.
+                if (!signal.aborted) {
+                    doFetch(btn, text, voice, speed, signal, ttsService, showError);
+                }
+            });
+    } else {
+        doFetch(btn, text, voice, speed, signal, ttsService, showError);
+    }
+}
+
+function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
     var textChunks = chunkTextForTTS(text);
     var allBlobs = [];
 
@@ -155,6 +189,17 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
 }
 
 /**
+ * Release iOS audio session stream if active.
+ * Stops all tracks to free the microphone resource.
+ */
+function releaseIosSessionStream() {
+    if (iosSessionStream) {
+        iosSessionStream.getTracks().forEach(function(t) { t.stop(); });
+        iosSessionStream = null;
+    }
+}
+
+/**
  * Revoke current blob URL if set.
  */
 function revokeBlobUrl() {
@@ -184,4 +229,8 @@ export function cleanupTtsResources(ttsAbort) {
     }
 
     revokeBlobUrl();
+
+    // Release iOS audio session stream — safe to stop tracks now that
+    // TTS playback has ended (or been cancelled).
+    releaseIosSessionStream();
 }
