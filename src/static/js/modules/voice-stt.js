@@ -106,6 +106,11 @@ export function startRecordingSession(signal, sttService, chatInput, showError, 
 
         // Create AudioContext for both PCM capture and level bars
         sttAudioCtx = new Ctx();
+        // iOS Safari: AudioContext created inside an async callback starts
+        // in "suspended" state. Resume it so audio processing nodes fire.
+        // getUserMedia success propagates user activation, so this resolves
+        // immediately on iOS; it's a no-op on browsers where state is "running".
+        sttAudioCtx.resume();
         var source = sttAudioCtx.createMediaStreamSource(stream);
         sttSource = source;
 

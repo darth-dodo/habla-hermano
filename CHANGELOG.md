@@ -8,12 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **iOS zombie TTS audio** (`voice.js`): TTS playback resumed unexpectedly when triggering STT because `getUserMedia()` unlocked a suspended AudioContext with stale scheduled `BufferSource` nodes. Now cancel any active TTS before starting STT and on page background (visibility change).
-- **TTS not cancelled on background** (`voice.js`): Added TTS cancellation to visibility change handler (STT already had this). Prevents iOS from leaving scheduled audio nodes in limbo when the page is backgrounded.
-- **Duplicate TTS cleanup** (`voice.js`): Consolidated identical `idle←loading` and `idle←playing` transition handlers into a single block.
+- **iOS STT silent recordings** (`voice-stt.js`): `AudioContext` created inside `getUserMedia().then()` starts in "suspended" state on iOS Safari — audio processing nodes never fired, sending zero bytes to Deepgram. Added `sttAudioCtx.resume()` after creation.
+- **iOS TTS earpiece routing** (`voice-tts.js`): After STT mic usage, iOS routes audio to the earpiece. TTS now calls `getUserMedia()` to reactivate the speaker audio session (only after mic was used, avoiding unnecessary permission prompts).
+- **iOS TTS AudioContext resume** (`voice-tts.js`): Added `await AudioContext.resume()` before TTS streaming on iOS to prevent silent playback (#63).
+- **iOS zombie TTS audio** (`voice.js`): TTS playback resumed unexpectedly when triggering STT because `getUserMedia()` unlocked a suspended AudioContext with stale scheduled `BufferSource` nodes. Now cancel any active TTS before starting STT and on page background (visibility change) (#61).
+- **TTS not cancelled on background** (`voice.js`): Added TTS cancellation to visibility change handler (STT already had this). Prevents iOS from leaving scheduled audio nodes in limbo when the page is backgrounded (#61).
+- **Duplicate TTS cleanup** (`voice.js`): Consolidated identical `idle←loading` and `idle←playing` transition handlers into a single block (#61).
+- **msgpack serialization error** (`state.py`, `chat.py`): Moved non-serializable `supabase_client` from LangGraph state to runtime config, fixing `TypeError` during checkpoint save for logged-in users (#64).
+- **CSP blocking TTS pre-warm** (`middleware.py`): Added `data:` to `media-src` CSP directive so the silent MP3 data URI used for iOS audio pre-warming is not blocked (#64).
+- **Word bank mic/send icon toggle** (`dom.js`): Word bank click-to-insert now dispatches an `input` event so the mic/send button swap triggers correctly (#65).
+- **Autoscroll on feedback insertion** (`dom.js`, `stream.js`): Word bank, pronunciation tips, and grammar tips no longer force-scroll to bottom when the user is reading above. Added `isNearBottom()` check with 150px threshold; only token streaming, user messages, and exercise results autoscroll unconditionally (#66).
+
+### Changed
+- **AudioWorklet chunk size** (`pcm-processor.js`): Buffered AudioWorklet output to ~80ms chunks (Deepgram's recommended size for Nova-3) instead of posting every 128-sample render quantum (~2.7ms). Reduces WebSocket message rate from ~370/sec to ~12/sec, matching the ScriptProcessor fallback. Flushes remaining buffer on stop to prevent clipped final words.
 
 ### Removed
-- **Dead WAV blob code** (`voice-tts.js`): Removed `assembleWavBlob()`, `pcmChunks` collection, `deliverBlob()`, and unused `onAudioReady` parameter from `streamTTS` and `restTTS` (~45 lines).
+- **Dead WAV blob code** (`voice-tts.js`): Removed `assembleWavBlob()`, `pcmChunks` collection, `deliverBlob()`, and unused `onAudioReady` parameter from `streamTTS` and `restTTS` (~45 lines) (#61).
 
 ## [0.25.0] - 2026-03-13
 
