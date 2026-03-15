@@ -30,6 +30,7 @@ import {
 } from './voice-stt.js';
 import {
     ttsMachine, audioElementTTS, initTtsPlayer, cleanupTtsResources,
+    notifyMicUsed,
 } from './voice-tts.js';
 
 
@@ -74,6 +75,7 @@ function onSttChange(state, prev) {
     // --- entering connecting ---
     if (state === 'connecting' && prev === 'idle') {
         sttAbort = new AbortController();
+        notifyMicUsed();
         resetTranscript();
         startRecordingSession(
             sttAbort.signal,

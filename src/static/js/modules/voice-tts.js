@@ -39,6 +39,10 @@ var currentBlobUrl = null;
 // iOS Safari from routing audio back to earpiece. Released on cleanup.
 var iosSessionStream = null;
 
+// Set to true after STT mic usage. Only then do we need getUserMedia
+// before TTS to counteract iOS earpiece routing.
+var micWasUsed = false;
+
 /**
  * Initialize TTS player references. Called once from voice.js initVoice().
  * Grabs the hidden <audio id="tts-player"> and <source id="tts-player-src">
@@ -47,6 +51,15 @@ var iosSessionStream = null;
 export function initTtsPlayer() {
     ttsPlayer = document.getElementById('tts-player');
     ttsSource = document.getElementById('tts-player-src');
+}
+
+/**
+ * Mark that the microphone was used (STT session started).
+ * After mic usage, iOS Safari routes audio to the earpiece, so TTS
+ * needs getUserMedia to reactivate the speaker audio session.
+ */
+export function notifyMicUsed() {
+    micWasUsed = true;
 }
 
 /**
@@ -73,15 +86,12 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
         return;
     }
 
-    // iOS Safari: getUserMedia() activates the "voice processing" audio
-    // session which routes audio to the speaker. The stream MUST stay
-    // alive for the entire TTS playback — stopping tracks causes iOS to
-    // deactivate the session and route audio back to the earpiece.
+    // iOS Safari: after getUserMedia (STT), audio routes to the earpiece.
+    // Reactivate the speaker session by requesting the mic again and keeping
+    // the stream alive during playback. Only needed after mic was used.
     //
-    // Fire getUserMedia in PARALLEL with the fetch to avoid adding latency.
-    // The stream only needs to be alive when playAudio() runs, and the
-    // Deepgram API round-trip is much slower than getUserMedia.
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Fires in PARALLEL with the fetch to avoid adding latency.
+    if (micWasUsed && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
                 if (signal.aborted) {
