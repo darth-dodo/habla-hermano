@@ -40,6 +40,9 @@ export function insertWord(word) {
     messageInput.focus();
     const newPos = start + insertText.length;
     messageInput.selectionStart = messageInput.selectionEnd = newPos;
+
+    // Notify listeners (e.g. mic/send button swap)
+    messageInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**
@@ -56,6 +59,9 @@ export function insertStarter(starter) {
     // Focus and place cursor at end
     messageInput.focus();
     messageInput.selectionStart = messageInput.selectionEnd = messageInput.value.length;
+
+    // Notify listeners (e.g. mic/send button swap)
+    messageInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 // ============================================
