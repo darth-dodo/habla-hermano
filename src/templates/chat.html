@@ -191,6 +191,17 @@
                  aria-atomic="true"
                  class="sr-only"></div>
 
+            {% if voice_enabled %}
+            <!-- Hidden audio element for TTS playback (Deepgram pattern).
+                 Pre-initialized with silent MP3 to prime iOS audio system.
+                 Source src/type are swapped dynamically by voice-tts.js. -->
+            <audio id="tts-player" style="display:none">
+                <source id="tts-player-src"
+                        src="data:audio/mpeg;base64,//NAxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEWwAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ=="
+                        type="audio/mpeg" />
+            </audio>
+            {% endif %}
+
             <!-- Helper Text -->
             <p class="mt-2 text-xs text-text-subtle text-center">
                 Press Enter to send

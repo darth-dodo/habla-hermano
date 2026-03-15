@@ -132,6 +132,7 @@ function setupVoiceDOM() {
                 <button id="send-btn" type="submit" class="hidden">Send</button>
             </div>
         </div>
+        <audio id="tts-player" preload="none"><source id="tts-player-src" src="" type="audio/mpeg" /></audio>
         <footer></footer>
     `;
 }
@@ -212,6 +213,11 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
         globalThis.matchMedia = vi.fn(() => ({ matches: false }));
         globalThis.fetch = vi.fn();
+
+        // Mock HTMLMediaElement methods (jsdom does not implement them)
+        HTMLMediaElement.prototype.play = vi.fn(() => Promise.resolve());
+        HTMLMediaElement.prototype.pause = vi.fn();
+        HTMLMediaElement.prototype.load = vi.fn();
     });
 
     afterEach(() => {
@@ -331,6 +337,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
         it('registers speaker click delegation on document', async () => {
             setupVoiceDOM();
+            globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
             await importVoice();
 
             var row = createSpeakButton('Hola', 'es');
@@ -913,9 +920,22 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
     describe('TTS State Machine', () => {
 
+        /**
+         * Helper: mock fetch to return an audio blob after resolving.
+         */
+        function mockFetchAudioBlob() {
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+            return audioBlob;
+        }
+
         describe('idle -> loading (PLAY)', () => {
             it('adds voice-loading class and sends PLAY on handleSpeakClick', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
@@ -924,180 +944,128 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(btn.classList.contains('voice-loading')).toBe(true);
             });
 
-            it('opens TTS WebSocket with correct voice URL', async () => {
+            it('fetches audio via POST to /api/speak', async () => {
                 setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
 
-                var ws = MockWebSocket._lastInstance;
-                expect(ws.url).toContain('/ws/speak');
-                expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-nestor-es'));
-                expect(ws.binaryType).toBe('arraybuffer');
+                expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                    method: 'POST',
+                    headers: expect.objectContaining({
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }),
+                }));
             });
 
-            it('sends text payload on WS open', async () => {
+            it('sends text and voice in POST body', async () => {
                 setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
 
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                expect(ws.send).toHaveBeenCalledWith(JSON.stringify({ text: 'Hola mundo' }));
+                var body = JSON.parse(fetch.mock.calls[0][1].body);
+                expect(body.text).toBe('Hola mundo');
+                expect(body.voice).toBe('aura-2-nestor-es');
             });
         });
 
         describe('loading -> playing (STREAMING)', () => {
-            it('transitions to playing on first audio chunk', async () => {
+            it('transitions to playing after fetch resolves and audio loads', async () => {
                 setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
 
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                // Send binary PCM data
-                var pcm = new Int16Array([1000, -1000, 500, -500]);
-                ws.onmessage({ data: pcm.buffer });
+                // After fetch resolves, source src is set and STREAMING is sent
+                var source = document.getElementById('tts-player-src');
+                expect(source.src).toContain('blob:');
 
                 expect(btn.classList.contains('voice-loading')).toBe(false);
                 expect(btn.classList.contains('voice-playing')).toBe(true);
             });
 
-            it('adds voice-playing class when audio starts', async () => {
+            it('sets blob URL on tts-player-src element', async () => {
                 setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
 
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
+                var source = document.getElementById('tts-player-src');
+                expect(source.src).toBe('blob:mock-url');
+            });
 
-                var pcm = new Int16Array([1000]);
-                ws.onmessage({ data: pcm.buffer });
+            it('calls load() and play() on tts-player', async () => {
+                setupVoiceDOM();
+                mockFetchAudioBlob();
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es');
 
-                // Button should have voice-playing class
-                expect(btn.classList.contains('voice-playing')).toBe(true);
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+
+                var player = document.getElementById('tts-player');
+                expect(player.load).toHaveBeenCalled();
+                expect(player.play).toHaveBeenCalled();
             });
         });
 
         describe('playing -> idle (ALL_ENDED)', () => {
-            it('cleans up after all buffers finish and WS is done', async () => {
+            it('cleans up after audio ends via onended', async () => {
                 setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                var sources = [];
-                var ctx = createMockAudioContext();
-                ctx.createBufferSource = vi.fn(() => {
-                    var src = {
-                        buffer: null,
-                        playbackRate: { value: 1 },
-                        connect: vi.fn(),
-                        start: vi.fn(),
-                        stop: vi.fn(),
-                        onended: null,
-                    };
-                    sources.push(src);
-                    return src;
-                });
-                // Override AudioContext to return our tracked mock
-                globalThis.AudioContext = vi.fn(() => ctx);
-
-                mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                // Send two audio chunks
-                var pcm1 = new Int16Array([100, 200]);
-                var pcm2 = new Int16Array([300, 400]);
-                ws.onmessage({ data: pcm1.buffer });
-                ws.onmessage({ data: pcm2.buffer });
-
-                // WS closes normally
-                ws.onclose({ code: 1000, reason: '' });
-
-                // Still playing (buffers not done)
-                expect(btn.classList.contains('voice-playing')).toBe(true);
-
-                // sources[0] is the silent warmup buffer
-                // First TTS buffer finishes
-                sources[1].onended();
-                expect(btn.classList.contains('voice-playing')).toBe(true);
-
-                // Last TTS buffer finishes
-                sources[2].onended();
-                expect(btn.classList.contains('voice-playing')).toBe(false);
-                expect(btn.classList.contains('voice-loading')).toBe(false); // all TTS classes removed
-            });
-
-            it('cleans up immediately on WS close when no buffers scheduled', async () => {
-                setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
 
-                var ws = MockWebSocket._lastInstance;
-                // WS closes before any audio was sent
-                ws.onclose({ code: 1000, reason: '' });
+                expect(btn.classList.contains('voice-playing')).toBe(true);
 
-                // Should not have playing class (went straight from loading to idle)
+                // Simulate audio ended
+                var player = document.getElementById('tts-player');
+                player.onended();
+
                 expect(btn.classList.contains('voice-playing')).toBe(false);
                 expect(btn.classList.contains('voice-loading')).toBe(false);
+            });
+
+            it('revokes blob URL after playback ends', async () => {
+                setupVoiceDOM();
+                mockFetchAudioBlob();
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es');
+
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+
+                var player = document.getElementById('tts-player');
+                player.onended();
+
+                expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
             });
         });
 
         describe('TTS Cancel (toggle off)', () => {
-            it('stops TTS when clicking the same button that is playing', async () => {
-                setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.readyState = MockWebSocket.OPEN;
-                ws.send = vi.fn();
-                ws.onopen();
-
-                // Start playing
-                var pcm = new Int16Array([100]);
-                ws.onmessage({ data: pcm.buffer });
-                expect(btn.classList.contains('voice-playing')).toBe(true);
-
-                // Click same button again -- should cancel
-                mod.handleSpeakClick(btn);
-
-                expect(btn.classList.contains('voice-playing')).toBe(false);
-                expect(btn.classList.contains('voice-loading')).toBe(false);
-            });
-
             it('stops TTS when clicking the same button that is loading', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
@@ -1110,22 +1078,34 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(btn.classList.contains('voice-loading')).toBe(false);
             });
 
+            it('stops TTS when clicking the same button that is playing', async () => {
+                setupVoiceDOM();
+                mockFetchAudioBlob();
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es');
+
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+                expect(btn.classList.contains('voice-playing')).toBe(true);
+
+                // Click same button again -- should cancel
+                mod.handleSpeakClick(btn);
+
+                expect(btn.classList.contains('voice-playing')).toBe(false);
+                expect(btn.classList.contains('voice-loading')).toBe(false);
+            });
+
             it('stops old TTS and starts new TTS when clicking a different button', async () => {
                 setupVoiceDOM();
+                mockFetchAudioBlob();
                 var mod = await importVoice();
                 var btn1 = createSpeakButton('Hola', 'es');
                 var btn2 = createSpeakButton('Buenos dias', 'es');
 
                 mod.handleSpeakClick(btn1);
-                await Promise.resolve();
-
-                var ws1 = MockWebSocket._lastInstance;
-                ws1.readyState = MockWebSocket.OPEN;
-                ws1.send = vi.fn();
-                ws1.onopen();
-
-                var pcm = new Int16Array([100]);
-                ws1.onmessage({ data: pcm.buffer });
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
                 expect(btn1.classList.contains('voice-playing')).toBe(true);
 
                 // Click different button
@@ -1139,65 +1119,85 @@ describe('voice.js -- FSM-based Voice Module', () => {
         });
 
         describe('TTS Error handling', () => {
-            it('shows tooltip and restores icon on WS error', async () => {
+            it('shows tooltip on fetch failure', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.onerror();
+                await vi.advanceTimersByTimeAsync(0);
 
                 expect(btn.classList.contains('voice-loading')).toBe(false);
                 var tooltip = document.querySelector('.voice-error-tooltip');
+                expect(tooltip).not.toBeNull();
                 expect(tooltip.textContent).toBe('Could not play audio');
             });
 
-            it('shows service error on WS close with code 1011 before audio', async () => {
+            it('shows "not configured" message on 503 error', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => Promise.reject(new Error('HTTP 503')));
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.onclose({ code: 1011, reason: '' });
+                await vi.advanceTimersByTimeAsync(0);
 
                 var tooltip = document.querySelector('.voice-error-tooltip');
-                expect(tooltip.textContent).toContain('Speech service error');
+                expect(tooltip.textContent).toBe('Speech service not configured');
             });
 
-            it('shows reason on TTS WS close with code 1008', async () => {
+            it('shows error on non-ok HTTP response', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => Promise.resolve({
+                    ok: false,
+                    status: 500,
+                }));
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.onclose({ code: 1008, reason: 'Bad voice param' });
+                await vi.advanceTimersByTimeAsync(0);
 
                 var tooltip = document.querySelector('.voice-error-tooltip');
-                expect(tooltip.textContent).toBe('Bad voice param');
-            });
-
-            it('shows generic error on unexpected TTS WS close code', async () => {
-                setupVoiceDOM();
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-                await Promise.resolve();
-
-                var ws = MockWebSocket._lastInstance;
-                ws.onclose({ code: 1006, reason: '' });
-
-                var tooltip = document.querySelector('.voice-error-tooltip');
+                expect(tooltip).not.toBeNull();
                 expect(tooltip.textContent).toBe('Could not play audio');
+            });
+
+            it('shows error when play() rejects', async () => {
+                setupVoiceDOM();
+                mockFetchAudioBlob();
+                HTMLMediaElement.prototype.play = vi.fn(() => Promise.reject(new Error('play failed')));
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es');
+
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+
+                var tooltip = document.querySelector('.voice-error-tooltip');
+                expect(tooltip).not.toBeNull();
+                expect(tooltip.textContent).toBe('Could not play audio');
+            });
+
+            it('shows error on audio element onerror', async () => {
+                setupVoiceDOM();
+                mockFetchAudioBlob();
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es');
+
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+
+                // Simulate audio element error
+                var player = document.getElementById('tts-player');
+                player.onerror();
+
+                var tooltip = document.querySelector('.voice-error-tooltip');
+                expect(tooltip).not.toBeNull();
+                expect(tooltip.textContent).toBe('Audio playback failed');
             });
         });
     });
@@ -1219,57 +1219,69 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
         it('uses correct voice for German (de)', async () => {
             setupVoiceDOM();
+            globalThis.fetch = vi.fn(() => new Promise(() => {}));
             var mod = await importVoice();
             var btn = createSpeakButton('Guten Tag', 'de');
 
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
 
-            var ws = MockWebSocket._lastInstance;
-            expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-julius-de'));
+            var body = JSON.parse(fetch.mock.calls[0][1].body);
+            expect(body.voice).toBe('aura-2-julius-de');
         });
 
         it('uses correct voice for French (fr)', async () => {
             setupVoiceDOM();
+            globalThis.fetch = vi.fn(() => new Promise(() => {}));
             var mod = await importVoice();
             var btn = createSpeakButton('Bonjour', 'fr');
 
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
 
-            var ws = MockWebSocket._lastInstance;
-            expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-hector-fr'));
+            var body = JSON.parse(fetch.mock.calls[0][1].body);
+            expect(body.voice).toBe('aura-2-hector-fr');
         });
 
         it('defaults to Spanish voice for unknown language', async () => {
             setupVoiceDOM();
+            globalThis.fetch = vi.fn(() => new Promise(() => {}));
             var mod = await importVoice();
             var btn = createSpeakButton('Hello', 'xx');
 
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
 
-            var ws = MockWebSocket._lastInstance;
-            expect(ws.url).toContain('voice=' + encodeURIComponent('aura-2-nestor-es'));
+            var body = JSON.parse(fetch.mock.calls[0][1].body);
+            expect(body.voice).toBe('aura-2-nestor-es');
         });
 
-        it('resumes AudioContext before streaming', async () => {
+        it('fetches audio via POST and plays through audio element', async () => {
             setupVoiceDOM();
-            var mockCtx = createMockAudioContext();
-            globalThis.AudioContext = vi.fn(() => mockCtx);
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
 
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
 
-            // resume() is called synchronously
-            expect(mockCtx.resume).toHaveBeenCalled();
+            // Verify fetch was called with POST /api/speak
+            expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                method: 'POST',
+            }));
 
-            // streamTTS is called synchronously (no await on resume)
-            var ws = MockWebSocket._lastInstance;
-            expect(ws).toBeTruthy();
-            expect(ws.url).toContain('/ws/speak');
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            // Verify tts-player-src got the blob URL
+            var source = document.getElementById('tts-player-src');
+            expect(source.src).toBe('blob:mock-url');
+
+            // Verify player was loaded and played
+            var player = document.getElementById('tts-player');
+            expect(player.load).toHaveBeenCalled();
+            expect(player.play).toHaveBeenCalled();
         });
     });
 
@@ -1278,112 +1290,54 @@ describe('voice.js -- FSM-based Voice Module', () => {
     // ============================================
 
     describe('TTS Speed', () => {
+        function mockFetchBlob() {
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+        }
+
         it('uses speed from button data-speed attribute', async () => {
             setupVoiceDOM();
+            mockFetchBlob();
             var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
 
             var btn = createSpeakButton('Hola', 'es', { speed: 1.5 });
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
 
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            // sources[0] is the silent warmup buffer
-            expect(sources[1].playbackRate.value).toBe(1.5);
+            var player = document.getElementById('tts-player');
+            expect(player.playbackRate).toBe(1.5);
         });
 
         it('clamps speed above 2.0 to 2.0', async () => {
             setupVoiceDOM();
+            mockFetchBlob();
             var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
 
             var btn = createSpeakButton('Hola', 'es', { speed: 5.0 });
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
 
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            // sources[0] is the silent warmup buffer
-            expect(sources[1].playbackRate.value).toBe(2.0);
+            var player = document.getElementById('tts-player');
+            expect(player.playbackRate).toBe(2.0);
         });
 
         it('clamps speed below 0.25 to 0.25', async () => {
             setupVoiceDOM();
+            mockFetchBlob();
             var mod = await importVoice();
-
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
 
             var btn = createSpeakButton('Hola', 'es', { speed: 0.1 });
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
 
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([100]);
-            ws.onmessage({ data: pcm.buffer });
-
-            // sources[0] is the silent warmup buffer
-            expect(sources[1].playbackRate.value).toBe(0.25);
+            var player = document.getElementById('tts-player');
+            expect(player.playbackRate).toBe(0.25);
         });
 
         it('blocks speed chip clicks during playback (frozen state)', async () => {
@@ -1411,20 +1365,16 @@ describe('voice.js -- FSM-based Voice Module', () => {
     // 9. TTS REST Fallback
     // ============================================
 
-    describe('TTS REST Fallback', () => {
-        it('uses REST API when AudioContext is unavailable', async () => {
+    describe('TTS Audio Element Playback', () => {
+        it('fetches audio via POST and plays through hidden audio element', async () => {
             setupVoiceDOM();
-            var mod = await importVoice();
-
-            delete globalThis.AudioContext;
-            delete globalThis.webkitAudioContext;
-
             var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
             globalThis.fetch = vi.fn(() => Promise.resolve({
                 ok: true,
                 blob: () => Promise.resolve(audioBlob),
             }));
 
+            var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
 
@@ -1435,17 +1385,22 @@ describe('voice.js -- FSM-based Voice Module', () => {
                     'X-Requested-With': 'XMLHttpRequest',
                 }),
             }));
+
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            var player = document.getElementById('tts-player');
+            var source = document.getElementById('tts-player-src');
+            expect(source.src).toBe('blob:mock-url');
+            expect(player.load).toHaveBeenCalled();
+            expect(player.play).toHaveBeenCalled();
         });
 
-        it('shows error on REST TTS fetch failure', async () => {
+        it('shows error on fetch failure', async () => {
             setupVoiceDOM();
-            var mod = await importVoice();
-
-            delete globalThis.AudioContext;
-            delete globalThis.webkitAudioContext;
-
             globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
 
+            var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
             await vi.advanceTimersByTimeAsync(0);
@@ -1457,13 +1412,9 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
         it('shows "not configured" message on 503 error', async () => {
             setupVoiceDOM();
-            var mod = await importVoice();
-
-            delete globalThis.AudioContext;
-            delete globalThis.webkitAudioContext;
-
             globalThis.fetch = vi.fn(() => Promise.reject(new Error('HTTP 503')));
 
+            var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
             await vi.advanceTimersByTimeAsync(0);
@@ -1474,15 +1425,11 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
         it('ignores AbortError from cancelled fetch', async () => {
             setupVoiceDOM();
-            var mod = await importVoice();
-
-            delete globalThis.AudioContext;
-            delete globalThis.webkitAudioContext;
-
             var abortErr = new Error('Aborted');
             abortErr.name = 'AbortError';
             globalThis.fetch = vi.fn(() => Promise.reject(abortErr));
 
+            var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
             await vi.advanceTimersByTimeAsync(0);
@@ -1492,165 +1439,17 @@ describe('voice.js -- FSM-based Voice Module', () => {
         });
     });
 
-    // ============================================
-    // 10. TTS WebSocket Message Handling
-    // ============================================
-
-    describe('TTS WebSocket Messages', () => {
-        it('decodes PCM audio to Float32 and schedules via AudioBufferSource', async () => {
-            setupVoiceDOM();
-            var ctx = createMockAudioContext();
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            var pcm = new Int16Array([1000, -1000, 500, -500]);
-            ws.onmessage({ data: pcm.buffer });
-
-            expect(ctx.createBuffer).toHaveBeenCalledWith(1, pcm.length, 24000);
-            expect(ctx.createBufferSource).toHaveBeenCalled();
-        });
-
-        it('handles Safari Blob data by converting to ArrayBuffer', async () => {
-            setupVoiceDOM();
-            var ctx = createMockAudioContext();
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            // Create mock Blob-like object
-            var pcm = new Int16Array([500, -500]);
-            var mockBlob = Object.create(Blob.prototype);
-            mockBlob.arrayBuffer = vi.fn(() => Promise.resolve(pcm.buffer));
-
-            ws.onmessage({ data: mockBlob });
-            await vi.advanceTimersByTimeAsync(0);
-
-            expect(mockBlob.arrayBuffer).toHaveBeenCalled();
-            expect(ctx.createBuffer).toHaveBeenCalled();
-        });
-
-        it('handles JSON control messages gracefully', async () => {
-            setupVoiceDOM();
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            // JSON metadata messages should not throw
-            expect(() => ws.onmessage({ data: JSON.stringify({ type: 'Flushed' }) })).not.toThrow();
-            expect(() => ws.onmessage({ data: JSON.stringify({ type: 'metadata' }) })).not.toThrow();
-            expect(() => ws.onmessage({ data: 'not-json-not-arraybuffer' })).not.toThrow();
-        });
-
-        it('uses fallback timeout on WS close when buffers still playing', async () => {
-            setupVoiceDOM();
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
-            });
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            ws.onmessage({ data: new Int16Array([100]).buffer });
-
-            // WS closes with buffers still scheduled
-            ws.onclose({ code: 1000, reason: '' });
-            expect(btn.classList.contains('voice-playing')).toBe(true);
-
-            // Fallback timeout fires
-            vi.advanceTimersByTime(1000);
-
-            expect(btn.classList.contains('voice-playing')).toBe(false);
-        });
-    });
 
     // ============================================
     // 11. TTS AbortController
     // ============================================
 
     describe('TTS AbortController', () => {
-        it('ignores WS messages after signal is aborted (CANCEL)', async () => {
+        it('passes AbortSignal to fetch for cancellation', async () => {
             setupVoiceDOM();
-            var ctx = createMockAudioContext();
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            // Cancel TTS
-            mod.stopAllTTS();
-
-            // Send PCM data after cancel -- should be ignored
-            var pcm = new Int16Array([100, 200]);
-            ws.onmessage({ data: pcm.buffer });
-
-            // createBuffer is called once for the silent warmup buffer,
-            // but should NOT be called again for TTS data after cancel
-            expect(ctx.createBuffer).toHaveBeenCalledTimes(1);
-        });
-
-        it('REST TTS passes signal to fetch for cancellation', async () => {
-            setupVoiceDOM();
-            var mod = await importVoice();
-
-            delete globalThis.AudioContext;
-            delete globalThis.webkitAudioContext;
-
             globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
 
+            var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
 
@@ -1658,6 +1457,30 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                 signal: expect.any(AbortSignal),
             }));
+        });
+
+        it('pauses player and revokes blob URL on cancel', async () => {
+            setupVoiceDOM();
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+            mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(btn.classList.contains('voice-playing')).toBe(true);
+
+            // Cancel via stopAllTTS
+            mod.stopAllTTS();
+
+            var player = document.getElementById('tts-player');
+            expect(player.pause).toHaveBeenCalled();
+            expect(URL.revokeObjectURL).toHaveBeenCalled();
         });
     });
 
@@ -1719,22 +1542,19 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             it('replaces existing tooltip for the same anchor', async () => {
                 setupVoiceDOM();
+                globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
                 var mod = await importVoice();
 
-                // Create two errors on speaker buttons
+                // Create a speaker button and trigger an error
                 var btn = createSpeakButton('Hola', 'es');
 
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
-                var ws1 = MockWebSocket._lastInstance;
-                ws1.onerror(); // error 1
+                await vi.advanceTimersByTimeAsync(0); // error 1
 
                 // Start another TTS on same button (clears first)
                 btn.classList.remove('voice-loading', 'voice-playing');
                 mod.handleSpeakClick(btn);
-                await Promise.resolve();
-                var ws2 = MockWebSocket._lastInstance;
-                ws2.onerror(); // error 2
+                await vi.advanceTimersByTimeAsync(0); // error 2
 
                 // Should only have one tooltip
                 var tooltips = document.querySelectorAll('.voice-error-tooltip');
@@ -1852,102 +1672,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
         });
     });
 
-    // ============================================
-    // 15. Shared TTS AudioContext
-    // ============================================
-
-    describe('Shared TTS AudioContext', () => {
-        it('reuses AudioContext across multiple TTS sessions', async () => {
-            setupVoiceDOM();
-            var ctxCount = 0;
-            globalThis.AudioContext = vi.fn(() => {
-                ctxCount++;
-                return createMockAudioContext();
-            });
-
-            var mod = await importVoice();
-
-            // First TTS
-            var btn1 = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn1);
-            await Promise.resolve();
-
-            var ws1 = MockWebSocket._lastInstance;
-            ws1.readyState = MockWebSocket.OPEN;
-            ws1.send = vi.fn();
-            ws1.onopen();
-            ws1.onmessage({ data: new Int16Array([100]).buffer });
-            ws1.onclose({ code: 1000, reason: '' });
-            vi.advanceTimersByTime(1000); // fallback timeout
-
-            expect(ctxCount).toBe(1);
-
-            // Second TTS -- should reuse the same AudioContext
-            var btn2 = createSpeakButton('Adios', 'es');
-            mod.handleSpeakClick(btn2);
-            await Promise.resolve();
-
-            // Should NOT have created a new AudioContext
-            expect(ctxCount).toBe(1);
-        });
-    });
-
-    // ============================================
-    // 15b. iOS AudioContext suspended resume
-    // ============================================
-
-    describe('iOS AudioContext suspended resume', () => {
-        it('calls resume() synchronously and streams immediately when suspended', async () => {
-            setupVoiceDOM();
-            var ctx = createMockAudioContext();
-            ctx.state = 'suspended';
-            ctx.resume = vi.fn(() => Promise.resolve());
-            globalThis.AudioContext = vi.fn(() => ctx);
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-
-            mod.handleSpeakClick(btn);
-
-            // resume() called synchronously
-            expect(ctx.resume).toHaveBeenCalled();
-            expect(btn.classList.contains('voice-loading')).toBe(true);
-
-            // streamTTS called immediately without awaiting resume
-            var ws = MockWebSocket._lastInstance;
-            expect(ws).toBeTruthy();
-            expect(ws.url).toContain('/ws/speak');
-        });
-
-        it('creates new AudioContext when state is interrupted', async () => {
-            setupVoiceDOM();
-            var ctxCount = 0;
-            globalThis.AudioContext = vi.fn(() => {
-                ctxCount++;
-                var ctx = createMockAudioContext();
-                // First context will be 'interrupted' (simulating iOS phone call)
-                if (ctxCount === 1) ctx.state = 'interrupted';
-                return ctx;
-            });
-
-            var mod = await importVoice();
-
-            // First click creates context with 'interrupted' state
-            var btn1 = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn1);
-            expect(ctxCount).toBe(1);
-            await Promise.resolve();
-
-            // Cancel TTS to reset
-            var ws1 = MockWebSocket._lastInstance;
-            ws1.onclose({ code: 1000, reason: '' });
-
-            // Second click should create NEW context because previous was 'interrupted'
-            var btn2 = createSpeakButton('Adios', 'es');
-            mod.handleSpeakClick(btn2);
-            expect(ctxCount).toBe(2);
-        });
-    });
 
     // ============================================
     // 16. Module exports
@@ -2033,47 +1757,36 @@ describe('voice.js -- FSM-based Voice Module', () => {
             // This verifies the cleanup worked
         });
 
-        it('multiple audio chunks schedule in sequence', async () => {
+        it('multiple text chunks are fetched sequentially and concatenated', async () => {
             setupVoiceDOM();
-            var sources = [];
-            var ctx = createMockAudioContext();
-            ctx.createBufferSource = vi.fn(() => {
-                var src = {
-                    buffer: null,
-                    playbackRate: { value: 1 },
-                    connect: vi.fn(),
-                    start: vi.fn(),
-                    stop: vi.fn(),
-                    onended: null,
-                };
-                sources.push(src);
-                return src;
+            var fetchCount = 0;
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => {
+                fetchCount++;
+                return Promise.resolve({
+                    ok: true,
+                    blob: () => Promise.resolve(audioBlob),
+                });
             });
-            globalThis.AudioContext = vi.fn(() => ctx);
 
             var mod = await importVoice();
-            var btn = createSpeakButton('Long text', 'es');
+            // Use a long text that will be chunked by chunkTextForTTS
+            var longText = Array.from({ length: 300 }, function(_, i) { return 'word' + i; }).join(' ');
+            var btn = createSpeakButton(longText, 'es');
 
             mod.handleSpeakClick(btn);
-            await Promise.resolve();
-
-            var ws = MockWebSocket._lastInstance;
-            ws.readyState = MockWebSocket.OPEN;
-            ws.send = vi.fn();
-            ws.onopen();
-
-            // Send 5 chunks
-            for (var i = 0; i < 5; i++) {
-                ws.onmessage({ data: new Int16Array([100 * i]).buffer });
+            // Flush all sequential fetches
+            for (var i = 0; i < 20; i++) {
+                await vi.advanceTimersByTimeAsync(0);
             }
 
-            // 5 TTS chunks + 1 silent warmup buffer
-            expect(sources.length).toBe(6);
-            // Each source should have been started
-            sources.forEach(function(src) {
-                expect(src.start).toHaveBeenCalled();
-                expect(src.connect).toHaveBeenCalled();
-            });
+            // Multiple chunks should have been fetched
+            expect(fetchCount).toBeGreaterThan(1);
+
+            // Player should have been loaded and played
+            var player = document.getElementById('tts-player');
+            expect(player.load).toHaveBeenCalled();
+            expect(player.play).toHaveBeenCalled();
         });
     });
 
