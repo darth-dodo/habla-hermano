@@ -13,6 +13,7 @@ from typing import Any, Literal, cast
 
 import anthropic
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
@@ -265,7 +266,7 @@ async def _update_sm2_for_used_words(
         logger.warning("Failed to update SM-2 for used words: %s", e)
 
 
-async def analyze_node(state: ConversationState) -> dict[str, Any]:
+async def analyze_node(state: ConversationState, config: RunnableConfig) -> dict[str, Any]:
     """
     Analyze the user's last message for grammar, vocabulary, and pronunciation.
 
@@ -282,11 +283,15 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
 
     Args:
         state: Current conversation state containing messages, level, and language.
+        config: LangGraph config; supabase_client passed via config["configurable"].
 
     Returns:
         Dictionary with grammar_feedback, new_vocabulary, pronunciation_tips,
         and review_words_used lists.
     """
+    configurable = config.get("configurable", {})
+    supabase_client = configurable.get("supabase_client")
+
     messages = state["messages"]
 
     # Initialize result with empty lists
@@ -325,9 +330,7 @@ async def analyze_node(state: ConversationState) -> dict[str, Any]:
         if used_words:
             # Update SM-2 scheduling for correctly used words
             user_id = state.get("user_id")
-            await _update_sm2_for_used_words(
-                user_id, used_words, supabase_client=state.get("supabase_client")
-            )
+            await _update_sm2_for_used_words(user_id, used_words, supabase_client=supabase_client)
             result["review_words_used"] = used_words
 
     # Build the analysis prompt

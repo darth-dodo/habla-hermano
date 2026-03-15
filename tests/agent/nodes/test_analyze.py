@@ -30,7 +30,7 @@ class TestAnalyzeNodeStructure:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -41,7 +41,7 @@ class TestAnalyzeNodeStructure:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert "grammar_feedback" in result
 
     @pytest.mark.asyncio
@@ -52,7 +52,7 @@ class TestAnalyzeNodeStructure:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert "new_vocabulary" in result
 
     @pytest.mark.asyncio
@@ -63,7 +63,7 @@ class TestAnalyzeNodeStructure:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result["grammar_feedback"], list)
 
     @pytest.mark.asyncio
@@ -74,7 +74,7 @@ class TestAnalyzeNodeStructure:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result["new_vocabulary"], list)
 
 
@@ -89,7 +89,7 @@ class TestAnalyzeNodeEmptyMessages:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert result["grammar_feedback"] == []
         assert result["new_vocabulary"] == []
 
@@ -102,7 +102,7 @@ class TestAnalyzeNodeEmptyMessages:
             "language": "es",
         }
         # Should not crash, should return empty or gracefully handle
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert "grammar_feedback" in result
         assert "new_vocabulary" in result
 
@@ -118,7 +118,7 @@ class TestAnalyzeNodeWithConversationHistory:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
         assert "grammar_feedback" in result
 
@@ -134,7 +134,7 @@ class TestAnalyzeNodeWithConversationHistory:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
         assert "grammar_feedback" in result
         assert "new_vocabulary" in result
@@ -161,7 +161,7 @@ class TestAnalyzeNodeWithConversationHistory:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             assert isinstance(result, dict)
 
 
@@ -177,7 +177,7 @@ class TestAnalyzeNodeLevels:
             "level": level,
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
         assert "grammar_feedback" in result
 
@@ -190,7 +190,7 @@ class TestAnalyzeNodeLevels:
             "language": "es",
         }
         # Should not crash
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
 
@@ -206,7 +206,7 @@ class TestAnalyzeNodeLanguages:
             "level": "A1",
             "language": language,
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
         assert "grammar_feedback" in result
 
@@ -219,7 +219,7 @@ class TestAnalyzeNodeLanguages:
             "language": "fr",  # Not supported
         }
         # Should not crash
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
 
@@ -234,7 +234,7 @@ class TestAnalyzeNodeCurrentStub:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         # Stub implementation returns empty lists
         assert result["grammar_feedback"] == []
 
@@ -246,7 +246,7 @@ class TestAnalyzeNodeCurrentStub:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         # Stub implementation returns empty lists
         assert result["new_vocabulary"] == []
 
@@ -306,7 +306,7 @@ class TestAnalyzeNodeEdgeCases:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -317,7 +317,7 @@ class TestAnalyzeNodeEdgeCases:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -328,7 +328,7 @@ class TestAnalyzeNodeEdgeCases:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -339,7 +339,7 @@ class TestAnalyzeNodeEdgeCases:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -351,7 +351,7 @@ class TestAnalyzeNodeEdgeCases:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert isinstance(result, dict)
 
 
@@ -494,7 +494,7 @@ class TestAnalyzeNodeAsync:
             "level": "A1",
             "language": "es",
         }
-        coro = analyze_node(state)
+        coro = analyze_node(state, {"configurable": {"supabase_client": None}})
         # Verify it's a coroutine
         assert asyncio.iscoroutine(coro)
         # Await it to complete the test
@@ -845,7 +845,7 @@ class TestAnalyzeNodeEmptyUserText:
             "level": "A1",
             "language": "es",
         }
-        result = await analyze_node(state)
+        result = await analyze_node(state, {"configurable": {"supabase_client": None}})
         assert result["grammar_feedback"] == []
         assert result["new_vocabulary"] == []
 
@@ -874,7 +874,7 @@ class TestAnalyzeNodeLLMResponse:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             # Should return empty lists when content is not string
             assert result["grammar_feedback"] == []
             assert result["new_vocabulary"] == []
@@ -909,7 +909,7 @@ class TestAnalyzeNodeLLMExceptions:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             # Should return empty lists on exception
             assert result["grammar_feedback"] == []
             assert result["new_vocabulary"] == []
@@ -933,7 +933,7 @@ class TestAnalyzeNodeLLMExceptions:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             assert result["grammar_feedback"] == []
             assert result["new_vocabulary"] == []
 
@@ -975,7 +975,7 @@ class TestAnalyzeNodeWithMockedLLMSuccess:
                 "level": "A1",
                 "language": "es",
             }
-            result = await analyze_node(state)
+            result = await analyze_node(state, {"configurable": {"supabase_client": None}})
             assert len(result["grammar_feedback"]) == 1
             assert result["grammar_feedback"][0]["original"] == "Yo es"
             assert len(result["new_vocabulary"]) == 1

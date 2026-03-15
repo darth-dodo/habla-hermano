@@ -93,13 +93,13 @@ class TestReviewStateOptionalFields:
         assert field in hints, f"Missing optional field: {field}"
 
     def test_has_exactly_seven_optional_fields(self) -> None:
-        """ReviewState should have exactly 7 optional fields.
+        """ReviewState should have exactly 6 optional fields.
 
         Optional: current_word, question_type, question_text,
-        user_answer, quality_score, feedback_text, supabase_client.
+        user_answer, quality_score, feedback_text.
         """
         optional = ReviewState.__optional_keys__
-        assert len(optional) == 7
+        assert len(optional) == 6
 
     def test_optional_keys_match_expected(self) -> None:
         """ReviewState optional keys should match the expected set."""
@@ -110,7 +110,6 @@ class TestReviewStateOptionalFields:
             "user_answer",
             "quality_score",
             "feedback_text",
-            "supabase_client",
         }
         assert ReviewState.__optional_keys__ == expected
 
@@ -118,10 +117,10 @@ class TestReviewStateOptionalFields:
 class TestReviewStateTotalFields:
     """Tests for total field count in ReviewState."""
 
-    def test_has_exactly_fourteen_fields(self) -> None:
-        """ReviewState should have exactly 14 fields (7 required + 7 optional)."""
+    def test_has_exactly_thirteen_fields(self) -> None:
+        """ReviewState should have exactly 13 fields (7 required + 6 optional)."""
         hints = get_type_hints(ReviewState, include_extras=True)
-        assert len(hints) == 14
+        assert len(hints) == 13
 
 
 class TestReviewStateFieldTypes:

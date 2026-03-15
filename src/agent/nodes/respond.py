@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from postgrest.exceptions import APIError
 
 from src.agent.llm import get_llm
@@ -178,7 +179,7 @@ If conversation allows, use them or prompt the user to use them.
 Do NOT force them awkwardly - conversation flow comes first."""
 
 
-async def respond_node(state: ConversationState) -> dict[str, Any]:
+async def respond_node(state: ConversationState, config: RunnableConfig) -> dict[str, Any]:
     """
     Generate an AI response appropriate to the user's level.
 
@@ -189,13 +190,17 @@ async def respond_node(state: ConversationState) -> dict[str, Any]:
     4. Returns the response and offered review words to be added to state
 
     Args:
-        state: Current conversation state containing messages, level, and language
+        state: Current conversation state containing messages, level, and language.
+        config: LangGraph config; supabase_client passed via config["configurable"].
 
     Returns:
         Dictionary with "messages" key containing the AI response,
         and "review_words_offered" for spaced repetition tracking.
         The add_messages reducer will append messages to existing list.
     """
+    configurable = config.get("configurable", {})
+    supabase_client = configurable.get("supabase_client")
+
     # Get level-appropriate system prompt
     prompt = get_prompt_for_level(
         language=state["language"],
@@ -211,7 +216,7 @@ async def respond_node(state: ConversationState) -> dict[str, Any]:
             user_id=user_id,
             language=state["language"],
             messages=state["messages"],
-            supabase_client=state.get("supabase_client"),
+            supabase_client=supabase_client,
             limit=5,
         )
 

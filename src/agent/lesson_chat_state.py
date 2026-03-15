@@ -55,7 +55,6 @@ class LessonChatState(TypedDict):
     - level: CEFR level (A0, A1, A2, B1)
     - language: Target language code (es, de, fr)
     - user_id: User UUID for database access
-    - supabase_client: User-scoped Supabase client for RLS-safe DB access
     - grammar_feedback: Grammar corrections from user's last message
     - new_vocabulary: Vocabulary words to highlight
     - scaffolding: ScaffoldingConfig.model_dump() for A0-A1 learners
@@ -80,7 +79,6 @@ class LessonChatState(TypedDict):
     level: str  # A0, A1, A2, B1
     language: str  # es, de, fr
     user_id: NotRequired[str]
-    supabase_client: NotRequired[Any]
     grammar_feedback: NotRequired[list[GrammarFeedback]]
     new_vocabulary: NotRequired[list[VocabWord]]
     scaffolding: NotRequired[dict[str, Any]]

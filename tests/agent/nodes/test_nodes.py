@@ -90,7 +90,7 @@ class TestRespondNodeBasic:
                     "level": "A1",
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -106,7 +106,7 @@ class TestRespondNodeBasic:
                     "level": "A1",
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert "messages" in result
 
     @pytest.mark.asyncio
@@ -122,7 +122,7 @@ class TestRespondNodeBasic:
                     "level": "A1",
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert isinstance(result["messages"], list)
 
     @pytest.mark.asyncio
@@ -138,7 +138,7 @@ class TestRespondNodeBasic:
                     "level": "A1",
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert len(result["messages"]) == 1
                 assert isinstance(result["messages"][0], AIMessage)
 
@@ -162,7 +162,7 @@ class TestRespondNodeLevels:
                     "level": level,
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert isinstance(result, dict)
                 assert "messages" in result
 
@@ -183,7 +183,7 @@ class TestRespondNodeLevels:
                         "level": "A2",
                         "language": "es",
                     }
-                    await respond_node(state)
+                    await respond_node(state, {"configurable": {"supabase_client": None}})
                     mock_prompt.assert_called_once_with(language="es", level="A2")
 
 
@@ -206,7 +206,7 @@ class TestRespondNodeLanguages:
                     "level": "A1",
                     "language": language,
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert isinstance(result, dict)
 
     @pytest.mark.asyncio
@@ -226,7 +226,7 @@ class TestRespondNodeLanguages:
                         "level": "A1",
                         "language": "de",
                     }
-                    await respond_node(state)
+                    await respond_node(state, {"configurable": {"supabase_client": None}})
                     mock_prompt.assert_called_once_with(language="de", level="A1")
 
 
@@ -252,7 +252,7 @@ class TestRespondNodeConversationHistory:
                     "level": "A1",
                     "language": "es",
                 }
-                result = await respond_node(state)
+                result = await respond_node(state, {"configurable": {"supabase_client": None}})
                 assert isinstance(result, dict)
 
                 # Verify all messages are passed to LLM
@@ -277,7 +277,7 @@ class TestRespondNodeConversationHistory:
                     "level": "A1",
                     "language": "es",
                 }
-                await respond_node(state)
+                await respond_node(state, {"configurable": {"supabase_client": None}})
 
                 call_args = mock_llm.ainvoke.call_args[0][0]
                 # Messages should be in order after system message
