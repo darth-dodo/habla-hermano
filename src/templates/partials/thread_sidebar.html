@@ -27,23 +27,17 @@ Variables expected:
                 el.classList.remove('text-accent', 'font-medium');
                 el.classList.add('text-text');
             });
-            const activeLink = document.querySelector('[data-thread-id="' + threadId + '"]');
+            const activeLink = [...document.querySelectorAll('[data-thread-id]')].find(el => el.dataset.threadId === threadId);
             if (activeLink) {
                 activeLink.closest('.group').classList.add('bg-accent/10');
                 activeLink.classList.add('text-accent', 'font-medium');
                 activeLink.classList.remove('text-text');
             }
 
-            // 2. Show skeleton while content loads
+            // 2. Dim content while loading (no inline HTML — avoids quote conflicts in x-data)
             const chatMessages = document.getElementById('chat-messages');
             if (chatMessages) {
-                chatMessages.innerHTML =
-                    '<div class="space-y-6 animate-pulse py-4">' +
-                    '<div class="flex justify-end mb-6"><div class="h-10 bg-surface-overlay rounded-2xl w-48 rounded-br-sm"></div></div>' +
-                    '<div class="flex justify-start mb-6"><div class="h-16 bg-surface-overlay rounded-2xl w-64 rounded-bl-sm"></div></div>' +
-                    '<div class="flex justify-end mb-6"><div class="h-10 bg-surface-overlay rounded-2xl w-40 rounded-br-sm"></div></div>' +
-                    '<div class="flex justify-start mb-6"><div class="h-24 bg-surface-overlay rounded-2xl w-72 rounded-bl-sm"></div></div>' +
-                    '</div>';
+                chatMessages.classList.add('opacity-30', 'pointer-events-none');
             }
 
             // 3. Set cookie, then fetch partial content
@@ -56,25 +50,20 @@ Variables expected:
                     return r.text().then(html => ({html, lang, level}));
                 })
                 .then(({html, lang, level}) => {
-                    // Swap message content
                     if (chatMessages) {
                         chatMessages.innerHTML = html;
-                        // Scroll to bottom of new thread
+                        chatMessages.classList.remove('opacity-30', 'pointer-events-none');
                         const container = document.getElementById('chat-container');
                         if (container) container.scrollTop = container.scrollHeight;
-                        // Re-init TTS buttons for loaded messages
                         if (window.hablaVoice && typeof window.hablaVoice.initTTSButtons === 'function') {
                             window.hablaVoice.initTTSButtons(chatMessages);
                         }
                     }
-                    // Update hidden thread_id form input
                     const input = document.getElementById('thread-id-input');
                     if (input) input.value = threadId;
-                    // Notify Alpine root component to update language/level
                     window.dispatchEvent(new CustomEvent('thread-switched', {detail: {language: lang, level: level}}));
                 })
                 .catch(() => {
-                    // Fallback: full reload if partial fetch fails
                     window.location.reload();
                 });
         },
@@ -241,7 +230,8 @@ Variables expected:
                                     }).then(() => {
                                         editingThread = null;
                                         $nextTick(() => {
-                                            const span = document.querySelector('[data-thread-id=\'' + tid + '\'] .truncate');
+                                            const link = [...document.querySelectorAll('[data-thread-id]')].find(el => el.dataset.threadId === tid);
+                                            const span = link ? link.querySelector('.truncate') : null;
                                             if (span) span.textContent = newTitle || 'New conversation';
                                         });
                                     });
