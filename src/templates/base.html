@@ -592,6 +592,16 @@
         /* Prevent 300ms tap delay */
         html { touch-action: manipulation; }
 
+        /* Touch devices: always show thread action buttons (rename + delete) at low opacity */
+        @media (hover: none) {
+            .group:has(a[data-thread-id]) .thread-action-btn {
+                opacity: 0.45;
+            }
+            .group:has(a[data-thread-id]):active .thread-action-btn {
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 640px) {
             body {
                 overscroll-behavior: none;

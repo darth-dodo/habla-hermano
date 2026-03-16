@@ -370,12 +370,12 @@ html { touch-action: manipulation; }
     ::-webkit-scrollbar { width: 0; height: 0; }
 }
 
-/* Touch device: always show thread delete buttons (no hover on touch) */
+/* Touch device: always show thread action buttons (rename + delete) — no hover on touch */
 @media (hover: none) {
-    .group:has(a[data-thread-id]) button[aria-label="Delete thread"] {
+    .group:has(a[data-thread-id]) .thread-action-btn {
         opacity: 0.5;
     }
-    .group:has(a[data-thread-id]):active button[aria-label="Delete thread"] {
+    .group:has(a[data-thread-id]):active .thread-action-btn {
         opacity: 1;
     }
 }

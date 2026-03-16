@@ -222,7 +222,6 @@ Variables expected:
                         data-thread-id="{{ thread.thread_id }}"
                         @click.prevent="mobileOpen = false; selectThread('{{ thread.thread_id }}')"
                         class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 {{ 'text-accent font-medium' if thread.thread_id == active_thread_id else 'text-text' }}"
-                        @contextmenu.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
                     >
                         <!-- Language flag -->
                         <span class="flex-shrink-0 text-base leading-none" aria-hidden="true">
@@ -265,18 +264,33 @@ Variables expected:
                         </template>
                     </a>
 
-                    <!-- Delete: trigger button — visible on hover (desktop) or always (mobile) -->
-                    <button
+                    <!-- Rename + Delete buttons — visible on hover (desktop) or touch-visible (mobile) -->
+                    <div
                         x-show="editingThread !== '{{ thread.thread_id }}' && confirmingDelete !== '{{ thread.thread_id }}'"
-                        @click.prevent.stop="confirmingDelete = '{{ thread.thread_id }}'"
-                        class="flex-shrink-0 mr-1.5 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer touch:opacity-60"
-                        aria-label="Delete thread"
-                        style="-webkit-tap-highlight-color: transparent;"
+                        class="flex items-center flex-shrink-0 mr-1 gap-0.5"
+                        @click.stop
                     >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
+                        <button
+                            @click.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
+                            class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            aria-label="Rename thread"
+                            style="-webkit-tap-highlight-color: transparent;"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        </button>
+                        <button
+                            @click.prevent="confirmingDelete = '{{ thread.thread_id }}'"
+                            class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            aria-label="Delete thread"
+                            style="-webkit-tap-highlight-color: transparent;"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
 
                     <!-- Delete: inline confirm/cancel -->
                     <template x-if="confirmingDelete === '{{ thread.thread_id }}'">
