@@ -85,6 +85,7 @@ Variables expected:
 
     <!-- Sidebar panel -->
     <aside
+        x-cloak
         :class="[
             'flex flex-col bg-surface-elevated border-r border-border z-50 transition-all duration-200',
             'fixed h-full w-70',
@@ -236,7 +237,7 @@ Variables expected:
                     >
                         <button
                             @click.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
-                            class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            class="p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-200 cursor-pointer thread-action-btn"
                             aria-label="Rename thread"
                             style="-webkit-tap-highlight-color: transparent;"
                         >
@@ -246,7 +247,7 @@ Variables expected:
                         </button>
                         <button
                             @click.prevent="confirmingDelete = '{{ thread.thread_id }}'"
-                            class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            class="p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer thread-action-btn"
                             aria-label="Delete thread"
                             style="-webkit-tap-highlight-color: transparent;"
                         >
