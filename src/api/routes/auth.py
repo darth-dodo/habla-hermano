@@ -198,7 +198,6 @@ async def signup(
                 "error": "Passwords do not match",
                 "email": email,
             },
-            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     # Validate password length
@@ -210,7 +209,6 @@ async def signup(
                 "error": "Password must be at least 8 characters",
                 "email": email,
             },
-            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     try:
@@ -231,7 +229,6 @@ async def signup(
                     "error": "Signup failed. Please try again.",
                     "email": email,
                 },
-                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if email confirmation is required
@@ -277,7 +274,6 @@ async def signup(
                 "error": error_message,
                 "email": email,
             },
-            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -324,7 +320,6 @@ async def login(
                     "error": "Invalid email or password",
                     "email": email,
                 },
-                status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
         # Set cookies and redirect via HTMX
@@ -358,7 +353,6 @@ async def login(
                 "error": error_message,
                 "email": email,
             },
-            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
 

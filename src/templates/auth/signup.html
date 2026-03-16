@@ -55,6 +55,9 @@
                 hx-target="closest div.bg-surface-elevated"
                 hx-indicator="#signup-indicator"
                 class="space-y-6"
+                x-data="{ loading: false }"
+                @htmx:before-request.camel="loading = true"
+                @htmx:after-request.camel="loading = false"
             >
                 <!-- Email Field -->
                 <div>
@@ -69,7 +72,7 @@
                             autocomplete="email"
                             required
                             value="{{ email or '' }}"
-                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200 {% if error %}border-red-500/50 focus:ring-red-500/30 focus:border-red-500/70{% endif %}"
                             placeholder="you@example.com"
                         >
                     </div>
@@ -88,7 +91,7 @@
                             autocomplete="new-password"
                             required
                             minlength="8"
-                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200 {% if error %}border-red-500/50 focus:ring-red-500/30 focus:border-red-500/70{% endif %}"
                             placeholder="At least 8 characters"
                         >
                     </div>
@@ -108,7 +111,7 @@
                             autocomplete="new-password"
                             required
                             minlength="8"
-                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200"
+                            class="w-full px-4 py-3 bg-surface-overlay border border-border rounded-xl text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all duration-200 {% if error %}border-red-500/50 focus:ring-red-500/30 focus:border-red-500/70{% endif %}"
                             placeholder="Enter password again"
                         >
                     </div>
@@ -118,9 +121,10 @@
                 <div>
                     <button
                         type="submit"
-                        class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-elevated"
+                        :disabled="loading"
+                        class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-surface-elevated disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        <span>Create account</span>
+                        <span x-text="loading ? 'Creating account…' : 'Create account'">Create account</span>
                         <!-- Loading indicator -->
                         <svg id="signup-indicator" class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
