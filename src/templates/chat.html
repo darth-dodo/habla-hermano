@@ -74,6 +74,7 @@
                     </div>
                 </div>
                 {% else %}
+                {% if not messages %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->
                 {% set due_count = review_stats.due_count %}
@@ -102,12 +103,9 @@
                     </div>
                 </div>
                 {% endif %}
-
-                {% if messages %}
-                    {% for msg in messages %}
-                        {% include "partials/message.html" %}
-                    {% endfor %}
                 {% endif %}
+
+                {% include "partials/thread_history.html" %}
                 {% endif %}
             </div>
 
@@ -139,6 +137,9 @@
                 <!-- Hidden inputs -->
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
+                {% if active_thread_id %}
+                <input type="hidden" name="thread_id" value="{{ active_thread_id }}">
+                {% endif %}
                 {% if lesson_id %}
                 <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
                 <input type="hidden" name="lesson_session" value="{{ lesson_session }}">

@@ -23,14 +23,10 @@ function handleKeyboardShortcuts(event) {
         }
     }
 
-    // Cmd/Ctrl + Shift + N to start new conversation
+    // Cmd/Ctrl + Shift + N: new conversation
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'N') {
         event.preventDefault();
-        // Find and click the new conversation button
-        const newChatBtn = document.querySelector('[hx-post="/new"]');
-        if (newChatBtn) {
-            htmx.trigger(newChatBtn, 'click');
-        }
+        window.location.href = '/';
     }
 
     // Escape to blur input

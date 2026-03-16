@@ -54,6 +54,8 @@ from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
 from src.services.lesson_completion import complete_lesson_and_persist
 from src.services.progress import ProgressService
 from src.services.review import ReviewService
+from src.services.thread_messages import get_thread_messages
+from src.services.thread_titling import generate_thread_title
 from src.services.threads import ThreadService
 
 logger = logging.getLogger(__name__)
@@ -72,7 +74,7 @@ def _make_error_html(error_message: str) -> HTMLResponse:
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
-async def chat_page(
+async def chat_page(  # noqa: PLR0912
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -83,6 +85,7 @@ async def chat_page(
     session_id: Annotated[str | None, Cookie()] = None,
     language: str = "es",
     lesson: Annotated[str | None, Query()] = None,
+    thread: Annotated[str | None, Query()] = None,
 ) -> HTMLResponse:
     """Render the main chat interface.
 
@@ -121,6 +124,9 @@ async def chat_page(
         "review_stats": None,
         "current_language": language,
         "voice_enabled": settings.voice_enabled,
+        "active_thread_id": None,
+        "threads": [],
+        "messages": [],
     }
 
     # Lesson mode: load lesson and add context for the template
@@ -137,6 +143,43 @@ async def chat_page(
         context["current_language"] = lesson_data.metadata.language
         # Fresh session UUID so each page load starts a clean checkpoint
         context["lesson_session"] = str(uuid.uuid4())
+
+    # Thread loading and sidebar for authenticated users (skip in lesson mode)
+    if user and not lesson:
+        sb_token = request.cookies.get("sb-access-token")
+        if sb_token:
+            user_client = get_supabase_for_user(sb_token)
+
+            # Load active thread if requested
+            if thread:
+                try:
+                    thread_service = ThreadService(user_id=user.id, client=user_client)
+                    active_thread = thread_service.get_thread(thread)
+                    if active_thread:
+                        context["active_thread_id"] = thread
+                        messages = await get_thread_messages(thread)
+                        context["messages"] = messages
+                        context["current_language"] = active_thread.language
+                except Exception:
+                    logger.exception("Failed to load thread %s for user %s", thread, user.id)
+
+            # Load thread list for sidebar
+            try:
+                thread_service = ThreadService(user_id=user.id, client=user_client)
+                threads = thread_service.list_threads()
+                context["threads"] = [
+                    {
+                        "id": t.id,
+                        "thread_id": t.thread_id,
+                        "title": t.title,
+                        "language": t.language,
+                        "level": t.level,
+                        "updated_at": t.updated_at.isoformat(),
+                    }
+                    for t in threads
+                ]
+            except Exception:
+                logger.exception("Failed to load thread list for user %s", user.id)
 
     # Review features only for authenticated users (skip in lesson mode)
     if user and not lesson:
@@ -234,7 +277,7 @@ def _resolve_lesson_thread_id(
 
 @router.post("/chat", response_class=HTMLResponse)
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
-async def send_message(
+async def send_message(  # noqa: PLR0912
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -511,6 +554,7 @@ async def stream_message(  # noqa: PLR0915
     user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
 
     # --- Resolve identity ---
+    auto_created_thread_id: str | None = None
     if lesson_id:
         effective_user_id = user.id if user else None
         thread_id, effective_user_id, new_session_id = _resolve_lesson_thread_id(
@@ -527,17 +571,25 @@ async def stream_message(  # noqa: PLR0915
             new_thread = thread_svc.create_thread(language=language, level=level)
             thread_id = new_thread.thread_id
             thread_id_param = thread_id  # so touch is called after stream
+            auto_created_thread_id = thread_id
     else:
         # Guest fallback — use existing cookie-based identity
         thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
             user, session_id, conversation_version
         )
 
-    async def event_generator() -> AsyncGenerator[dict[str, str], None]:  # noqa: PLR0912
+    async def event_generator() -> AsyncGenerator[dict[str, str], None]:  # noqa: PLR0912, PLR0915
         """Wrap streaming with checkpointer lifecycle and post-stream actions."""
         result = StreamResult()
 
         async with get_checkpointer() as checkpointer:
+            # Notify client of auto-created thread so it can update URL and form
+            if auto_created_thread_id:
+                yield {
+                    "event": "thread_created",
+                    "data": json.dumps({"thread_id": auto_created_thread_id}),
+                }
+
             graph_config: dict[str, Any] = {
                 "configurable": {
                     "thread_id": thread_id,
@@ -685,6 +737,28 @@ async def stream_message(  # noqa: PLR0915
                 thread_service.touch(thread_id_param)
             except Exception:
                 logger.exception("Failed to touch thread %s", thread_id_param)
+
+        # Auto-title new threads after first exchange
+        if (
+            not lesson_id
+            and thread_id_param
+            and effective_user_id
+            and user_client
+            and result.full_response
+        ):
+            try:
+                thread_service = ThreadService(user_id=effective_user_id, client=user_client)
+                thread = thread_service.get_thread(thread_id_param)
+                if thread and thread.title == "New conversation":
+                    title = await generate_thread_title(message, result.full_response)
+                    thread_service.update_title(thread_id_param, title)
+                    # Emit SSE event so sidebar updates
+                    yield {
+                        "event": "thread_title",
+                        "data": json.dumps({"thread_id": thread_id_param, "title": title}),
+                    }
+            except Exception:
+                logger.exception("Failed to auto-title thread %s", thread_id_param)
 
     headers: dict[str, str] = {"Cache-Control": "no-cache"}
     response = EventSourceResponse(

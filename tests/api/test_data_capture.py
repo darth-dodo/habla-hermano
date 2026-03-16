@@ -21,6 +21,7 @@ from src.api.auth import (
 )
 from src.api.dependencies import get_cached_templates
 from src.api.routes import chat
+from src.db.models import ConversationThread
 from src.lessons.models import (
     Lesson,
     LessonContent,
@@ -208,11 +209,19 @@ class TestChatDataCaptureAuthenticated:
 
         mock_user_client = MagicMock()
 
+        mock_thread_service = MagicMock()
+        mock_thread_service.create_thread.return_value = ConversationThread(
+            id="00000000-0000-0000-0000-000000000001",
+            user_id="test-user-123",
+            thread_id="user:test-user-123:test-uuid",
+        )
+
         with (
             patch("src.api.routes.chat.build_graph", return_value=mock_graph),
             patch("src.api.routes.chat.get_checkpointer", return_value=MockCheckpointerCtx()),
             patch("src.api.routes.chat.ProgressService") as MockProgressService,
             patch("src.api.routes.chat.get_supabase_for_user", return_value=mock_user_client),
+            patch("src.api.routes.chat.ThreadService", return_value=mock_thread_service),
         ):
             mock_service_instance = MagicMock()
             MockProgressService.return_value = mock_service_instance
@@ -387,11 +396,19 @@ class TestChatDataCaptureErrorResilience:
 
         mock_user_client = MagicMock()
 
+        mock_thread_service = MagicMock()
+        mock_thread_service.create_thread.return_value = ConversationThread(
+            id="00000000-0000-0000-0000-000000000001",
+            user_id="test-user-123",
+            thread_id="user:test-user-123:test-uuid",
+        )
+
         with (
             patch("src.api.routes.chat.build_graph", return_value=mock_graph),
             patch("src.api.routes.chat.get_checkpointer", return_value=MockCheckpointerCtx()),
             patch("src.api.routes.chat.ProgressService") as MockProgressService,
             patch("src.api.routes.chat.get_supabase_for_user", return_value=mock_user_client),
+            patch("src.api.routes.chat.ThreadService", return_value=mock_thread_service),
         ):
             mock_service_instance = MagicMock()
             mock_service_instance.record_chat_activity.side_effect = APIError(

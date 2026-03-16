@@ -255,6 +255,43 @@ function handleStreamEvent(event, dataStr, bubbleId) {
             showLessonComplete(data);
             break;
 
+        case 'thread_title': {
+            // Update the sidebar thread title if it exists
+            const threadLinks = document.querySelectorAll(`a[href="/?thread=${data.thread_id}"]`);
+            threadLinks.forEach(link => {
+                const titleSpan = link.querySelector('span.truncate');
+                if (titleSpan) {
+                    titleSpan.textContent = data.title;
+                }
+            });
+            break;
+        }
+
+        case 'thread_created': {
+            // Server auto-created a thread; update hidden input so subsequent
+            // messages go to the same thread.
+            if (data.thread_id) {
+                let threadInput = document.querySelector('input[name="thread_id"]');
+                if (threadInput) {
+                    threadInput.value = data.thread_id;
+                } else {
+                    const form = document.getElementById('chat-form');
+                    if (form) {
+                        threadInput = document.createElement('input');
+                        threadInput.type = 'hidden';
+                        threadInput.name = 'thread_id';
+                        threadInput.value = data.thread_id;
+                        form.prepend(threadInput);
+                    }
+                }
+                // Update URL without reload so bookmarks/refresh work
+                const url = new URL(window.location);
+                url.searchParams.set('thread', data.thread_id);
+                window.history.replaceState({}, '', url);
+            }
+            break;
+        }
+
         case 'done':
             finishStreaming();
             break;
