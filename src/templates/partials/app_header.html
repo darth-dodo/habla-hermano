@@ -26,8 +26,8 @@ Variables expected:
             </svg>
         </button>
         {% endif %}
-        <!-- Guest dropdown menu (or desktop-hidden for auth users) -->
-        <div class="relative {% if user %}hidden{% endif %}" x-data="{ open: false }">
+        <!-- Dropdown menu: guests see it always, auth users see it on desktop only (sidebar handles mobile nav) -->
+        <div class="relative {% if user %}hidden md:block{% endif %}" x-data="{ open: false }">
             <button
                 @click="open = !open"
                 @click.away="open = false"
