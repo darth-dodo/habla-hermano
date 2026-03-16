@@ -1,12 +1,11 @@
 {#
-Thread Sidebar - Shows conversation threads for authenticated users.
+Thread Sidebar - Drawer for all users (auth + guest).
 Variables expected:
-  - threads: list[dict] (thread objects with id, thread_id, title, language, updated_at)
-  - active_thread_id: str | None (currently active thread's thread_id)
-  - user: AuthenticatedUser
+  - threads: list[dict] (thread objects with id, thread_id, title, language, updated_at) — auth only
+  - active_thread_id: str | None (currently active thread's thread_id) — auth only
+  - user: AuthenticatedUser | None
 #}
 
-{% if user %}
 <div
     x-data="{
         mobileOpen: false,
@@ -92,7 +91,7 @@ Variables expected:
             mobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none',
         ]"
     >
-        <!-- Header: New Chat + Collapse -->
+        <!-- Header: New Chat (auth) or Start Chatting (guest) -->
         <div class="p-3 border-b border-border" x-data="{
             showPicker: false,
             newLang: localStorage.getItem('hermano-language') || 'es',
@@ -109,6 +108,11 @@ Variables expected:
                 }).then(r => r.json()).then(d => {
                     return fetch('/threads/select', {method: 'POST', headers: hdrs, body: 'thread_id=' + encodeURIComponent(d.thread_id)});
                 }).then(() => { window.location.href = '/'; });
+            },
+            startChatGuest() {
+                localStorage.setItem('hermano-language', this.newLang);
+                localStorage.setItem('hermano-level', this.newLevel);
+                window.location.href = '/';
             }
         }">
             <div class="flex items-center gap-2">
@@ -121,7 +125,6 @@ Variables expected:
                     </svg>
                     <span>New Chat</span>
                 </button>
-
             </div>
 
             <!-- Inline language/level picker -->
@@ -161,7 +164,7 @@ Variables expected:
 
                 <!-- Start button -->
                 <button
-                    @click="startChat()"
+                    @click="{% if user %}startChat(){% else %}startChatGuest(){% endif %}"
                     class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer btn-press"
                 >
                     <span x-text="flagFor(newLang)"></span>
@@ -171,8 +174,9 @@ Variables expected:
             </div>
         </div>
 
-        <!-- Thread list -->
+        <!-- Thread list (auth) / Guest nav -->
         <div x-show="mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+            {% if user %}
             {% if threads %}
                 {% for thread in threads %}
                 <div class="group relative flex items-center rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
@@ -298,6 +302,16 @@ Variables expected:
                     <p class="text-text-subtle text-xs mt-1">Start a new chat to begin practicing</p>
                 </div>
             {% endif %}
+            {% else %}
+            <!-- Guest: placeholder when no threads (New Chat button in header handles creation) -->
+            <div class="px-3 py-10 text-center">
+                <svg class="w-10 h-10 mx-auto text-text-subtle/40 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <p class="text-text-muted text-sm font-medium">Pick a language above</p>
+                <p class="text-text-subtle text-xs mt-1">to start a new conversation</p>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Bottom: Nav + Theme + Auth -->
@@ -308,12 +322,14 @@ Variables expected:
                 </svg>
                 Lessons
             </a>
+            {% if user %}
             <a href="/progress/" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Progress
             </a>
+            {% endif %}
 
             <!-- Theme picker -->
             <div x-data="{ themeOpen: false }">
@@ -342,14 +358,22 @@ Variables expected:
                 </div>
             </div>
 
-            <!-- Logout -->
+            <!-- Auth link: Logout (auth) or Login (guest) -->
+            {% if user %}
             <a href="/auth/logout" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Logout
             </a>
+            {% else %}
+            <a href="/auth/login" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-accent font-medium hover:bg-accent/10 transition-colors cursor-pointer">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Log in
+            </a>
+            {% endif %}
         </div>
     </aside>
 </div>
-{% endif %}

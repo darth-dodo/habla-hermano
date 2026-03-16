@@ -81,8 +81,6 @@ Authenticated users can maintain multiple independent conversations with Hermano
 
 <p align="center">
   <img src="docs/screenshots/threads-mobile-sidebar-open.png" alt="Thread sidebar open on mobile showing auto-titled threads" width="270"/>
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/threads-desktop-sidebar.png" alt="Thread sidebar open on desktop with conversation history" width="500"/>
 </p>
 
 - A sidebar drawer opens via the hamburger icon (available on all screen sizes)
