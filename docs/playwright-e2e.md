@@ -1388,9 +1388,10 @@ Added `pointer-events-none` when closed on mobile, `md:pointer-events-auto` for 
 13. ~~**Voice Conversation**: Test Deepgram STT/TTS integration (Phase 17)~~ ✅ Complete
 14. ~~**Conversational Lessons**: Test lesson chat phase machine (Phase 19)~~ ✅ Complete
 15. ~~**Conversation Threads**: Test sidebar picker, thread creation, read-only badges~~ ✅ Complete
-16. **Conversational Lesson Resumption**: Test checkpoint recovery for interrupted lesson chats
-16. **Cross-Browser Voice Testing**: Validate STT/TTS across Chrome, Firefox, Safari
-17. **Mobile Viewport E2E Testing**: Test on 375px viewport with safe areas and touch targets
-18. **German/French Lessons**: Test lesson content for additional languages
-19. **Authenticated User Progress**: Test progress sync with Supabase auth
-20. **Progress Data Migration**: Test guest-to-authenticated data transfer
+16. **Thread Sidebar Automated E2E**: Convert manual TC thread tests (17a–17u) to Playwright scripts covering create, rename, delete, and SPA switch flows
+17. **Conversational Lesson Resumption**: Test checkpoint recovery for interrupted lesson chats
+18. **Cross-Browser Voice Testing**: Validate STT/TTS across Chrome, Firefox, Safari
+19. **Mobile Viewport E2E Testing**: Test on 375px viewport with safe areas and touch targets
+20. **German/French Lessons**: Test lesson content for additional languages
+21. **Authenticated User Progress**: Test progress sync with Supabase auth
+22. **Progress Data Migration**: Test guest-to-authenticated data transfer

@@ -50,7 +50,7 @@
 | JS Stream | `tests/js/stream.test.js` | 29 | SSE parsing, streaming bubble, token append, TTS speaker buttons |
 | JS Voice | `tests/js/voice.test.js` | 112 | VoiceManager lifecycle, STT recording, TTS playback, error handling, voice sub-modules |
 | JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
-| JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape) |
+| JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape, Cmd+Shift+N) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
 | JS Lesson | `tests/js/lesson.test.js` | 45 | Lesson mode detection, progress bar, completion overlay |
 | JS Theme | `tests/js/theme.test.js` | 7 | Theme picker, localStorage persistence |
@@ -58,8 +58,12 @@
 | Chat Routes (Lesson) | `api/routes/test_chat.py` | 16 | Phase 23 unified chat routes: lesson mode, thread ID, streaming, resume |
 | Answer Normalization | `agent/nodes/test_lesson_chat.py` | 15 | Phase 23 normalize_answer, fill-blank, translate normalization |
 | LLM Translation Eval | `agent/nodes/test_lesson_chat.py` | 8 | Phase 23 LLM-based translation evaluation |
+| Thread API | `api/test_threads.py` | 9 | Phase 26 thread CRUD endpoints, auth enforcement, RLS boundary |
+| Thread Service | `services/test_threads.py` | 11 | Phase 26 ThreadService CRUD, thread ID format, `touch()` timestamp |
+| Thread Titling | `services/test_thread_titling.py` | 5 | Phase 26 auto-title via Claude Haiku, fallback, truncation, quote stripping |
+| Thread Messages | `services/test_thread_messages.py` | 5 | Phase 26 LangGraph checkpoint extraction, role mapping, empty/error handling |
 
-**Total**: ~2,437 tests (~2,196 Python + ~241 JavaScript) with 97% code coverage
+**Total**: ~2,466 tests (~2,196+ Python + ~238 JavaScript) with 97% code coverage
 
 ---
 
@@ -67,7 +71,7 @@
 
 ### Parallel Execution with pytest-xdist
 
-Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,196+ Python test suite.
+Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,196+ Python test suite (Phase 26 added ~30 more tests across the thread service and API layers).
 
 ```bash
 # Default: parallel execution (auto-detect cores)
@@ -841,11 +845,72 @@ Phase 23 merged lesson routes into the main chat endpoints. **16 test cases** co
 
 ---
 
+## Phase 26 Test Coverage
+
+Phase 26 introduced conversation threads, allowing authenticated users to maintain multiple independent chat histories. Thirty new tests cover the thread API routes, the ThreadService data layer, auto-title generation, and message history extraction from LangGraph checkpoints.
+
+### Thread API Tests (`tests/api/test_threads.py`)
+
+**9 test cases** covering the CRUD endpoints at `/threads/`.
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestThreadAuth` | 1 | Unauthenticated `GET /threads/` returns 401 |
+| `TestListThreads` | 2 | Empty list and populated list serialisation |
+| `TestCreateThread` | 2 | Default language/level, explicit params, 201 response |
+| `TestRenameThread` | 2 | Successful rename returns updated title; 404 when thread not found |
+| `TestDeleteThread` | 2 | 204 with empty body; idempotent delete of nonexistent thread |
+
+All tests use `CSRF_HEADERS` from `tests/conftest.py` and patch `_get_thread_service` to inject a pre-configured `MagicMock`, keeping tests free of database connections. Auth is overridden via FastAPI's dependency injection (`get_current_user`).
+
+### Thread Service Tests (`tests/services/test_threads.py`)
+
+**11 test cases** covering `ThreadService` CRUD with a mocked Supabase client.
+
+| Class | Tests | Purpose |
+|-------|-------|---------|
+| `TestCreateThread` | 3 | Returns `ConversationThread`, generates `user:{uid}:{uuid4}` thread ID, defaults language/level |
+| `TestListThreads` | 2 | Empty result; ordered list mapped to `ConversationThread` objects |
+| `TestGetThread` | 2 | Returns model when found; returns `None` when row absent |
+| `TestUpdateTitle` | 1 | Calls `update` with correct title and `updated_at` |
+| `TestTouch` | 1 | Updates `updated_at` only, no `title` key |
+| `TestDeleteThread` | 2 | Calls `delete` chain with `user_id` and `thread_id` eq filters |
+
+### Thread Titling Tests (`tests/services/test_thread_titling.py`)
+
+**5 test cases** covering `generate_thread_title`, an async function that calls Claude Haiku to produce a short conversation title.
+
+| Test | Purpose |
+|------|---------|
+| `test_generate_title_returns_string` | LLM response content becomes the title |
+| `test_generate_title_truncates_long_input` | Input messages are capped at 200 chars before the prompt is sent |
+| `test_generate_title_handles_error` | LLM exception falls back to `"New conversation"` |
+| `test_generate_title_strips_quotes` | Leading/trailing quotes are removed from the LLM output |
+| `test_generate_title_returns_default_on_empty` | Whitespace-only LLM response returns `"New conversation"` |
+
+All tests patch `src.services.thread_titling.ChatAnthropic` with an `AsyncMock` so no real API calls are made.
+
+### Thread Messages Tests (`tests/services/test_thread_messages.py`)
+
+**5 test cases** covering `get_thread_messages`, which reads the LangGraph checkpoint state for a given `thread_id` and returns a flat list of `{"role": ..., "content": ...}` dicts.
+
+| Test | Purpose |
+|------|---------|
+| `test_get_messages_empty_thread` | State with no `messages` key returns `[]` |
+| `test_get_messages_no_state` | `aget_state` returning `None` returns `[]` |
+| `test_get_messages_with_history` | Four-message conversation mapped to correct roles in order |
+| `test_get_messages_filters_system_messages` | `SystemMessage` objects are excluded; only `HumanMessage`/`AIMessage` pass through |
+| `test_get_messages_handles_error` | Checkpointer context manager exception returns `[]` without raising |
+
+Tests patch both `get_checkpointer` (as an async context manager) and `build_graph` to isolate the extraction logic from LangGraph internals.
+
+---
+
 ## JavaScript Test Suite
 
 **Framework**: Vitest 3.x + jsdom environment
 **Location**: `tests/js/`
-**Total**: 241 tests across 8 test files
+**Total**: 238 tests across 8 test files
 **Coverage**: ~90% on tested modules (dom, stream, voice, scaffold, lesson, theme)
 
 ### Running JavaScript Tests
@@ -869,6 +934,26 @@ The JavaScript test suite uses jsdom to simulate a browser DOM environment. Key 
 - **WebSocket mocking**: Custom WebSocket mock class for STT/TTS WebSocket testing
 - **AudioContext mocking**: Stubs for AudioContext, MediaRecorder, getUserMedia
 - **Module isolation**: Each test file imports only the module under test
+
+### Notable Shortcut Test Change (Phase 26)
+
+The `Cmd/Ctrl + Shift + N` test in `shortcuts.test.js` was updated in Phase 26. The shortcut now navigates to a new conversation by setting `window.location.href = '/'` instead of the previous approach of triggering an HTMX action on the new-chat button. Because jsdom prevents direct assignment to `window.location`, the test uses a `delete window.location` workaround before replacing it with a plain object:
+
+```javascript
+beforeEach(() => {
+    // jsdom prevents location.assign spy; replace with a plain mock instead
+    delete window.location;
+    window.location = { href: '' };
+    initKeyboardShortcuts();
+});
+
+it('navigates to / to start a new conversation', () => {
+    pressKey('N', { metaKey: true, shiftKey: true });
+    expect(window.location.href).toBe('/');
+});
+```
+
+This replaces the former pattern that relied on `htmx.trigger()` dispatching a click on `#new-chat-btn`.
 
 ### CI Integration
 
@@ -1107,6 +1192,27 @@ def base_state(self) -> ConversationState:
     }
 ```
 
+### Supabase Chain Mock (Thread Service Tests)
+
+The thread service tests (`tests/services/test_threads.py`) use a helper that builds a `MagicMock` for the Supabase PostgREST client. Every chained method (`select`, `insert`, `update`, `delete`, `eq`, `order`) returns the same `mock_table` object, so assertions can inspect any step in the chain. The `not_` property requires `PropertyMock` because Supabase exposes it as a property, not a method:
+
+```python
+def _make_mock_client(data=None):
+    mock_client = MagicMock()
+    mock_table = MagicMock()
+
+    for method in ("select", "insert", "update", "delete", "eq", "order"):
+        setattr(mock_table, method, MagicMock(return_value=mock_table))
+
+    mock_table.execute = MagicMock(return_value=MagicMock(data=data or []))
+    type(mock_table).not_ = PropertyMock(return_value=mock_table)
+    mock_client.table = MagicMock(return_value=mock_table)
+
+    return mock_client, mock_table
+```
+
+This mirrors the pattern established in the DB repository tests and is the standard approach for any service that calls `.table().select().eq().order().execute()`.
+
 ---
 
 ## Test Coverage Goals
@@ -1169,6 +1275,7 @@ tests/
 │   ├── test_supabase_client.py    # Client singleton tests
 │   ├── test_data_capture.py       # Vocabulary/session capture
 │   ├── test_persistence.py        # Auth + persistence integration
+│   ├── test_threads.py            # Phase 26 thread CRUD endpoints, auth, RLS boundary
 │   └── routes/                    # Route tests (mirrors src/api/routes/)
 │       ├── __init__.py
 │       ├── test_chat.py           # Chat endpoint tests + Phase 23 lesson mode
@@ -1195,7 +1302,10 @@ tests/
 │   ├── test_review.py             # Spaced repetition review service
 │   ├── test_paths.py              # Learning path service
 │   ├── test_levels.py             # CEFR level detection
-│   └── test_vocabulary.py         # Vocabulary tracking
+│   ├── test_vocabulary.py         # Vocabulary tracking
+│   ├── test_threads.py            # Phase 26 ThreadService CRUD, touch, thread ID format
+│   ├── test_thread_titling.py     # Phase 26 auto-title generation, fallback, truncation
+│   └── test_thread_messages.py    # Phase 26 LangGraph checkpoint message extraction
 └── js/                            # JavaScript tests (Vitest + jsdom)
     ├── dom.test.js                # DOM utilities, scroll, focus, escapeHtml
     ├── stream.test.js             # SSE parsing, streaming bubble, TTS buttons
