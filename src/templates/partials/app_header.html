@@ -15,10 +15,10 @@ Variables expected:
     <div class="max-w-3xl mx-auto flex items-center justify-between">
         <!-- Left: Hamburger Menu -->
         {% if user %}
-        <!-- Authenticated: toggle sidebar on mobile, hidden on desktop (sidebar visible) -->
+        <!-- Authenticated: toggle sidebar drawer on all screen sizes -->
         <button
             @click="$dispatch('sidebar-toggle')"
-            class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 cursor-pointer btn-press md:hidden"
+            class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 cursor-pointer btn-press"
             aria-label="Toggle sidebar"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -26,8 +26,8 @@ Variables expected:
             </svg>
         </button>
         {% endif %}
-        <!-- Dropdown menu: guests see it always, auth users see it on desktop only (sidebar handles mobile nav) -->
-        <div class="relative {% if user %}hidden md:block{% endif %}" x-data="{ open: false }">
+        <!-- Dropdown menu: guests only (authenticated users use sidebar for all navigation) -->
+        <div class="relative {% if user %}hidden{% endif %}" x-data="{ open: false }">
             <button
                 @click="open = !open"
                 @click.away="open = false"

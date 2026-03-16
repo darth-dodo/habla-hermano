@@ -9,12 +9,7 @@ Variables expected:
 {% if user %}
 <div
     x-data="{
-        collapsed: localStorage.getItem('sidebar-collapsed') === 'true',
         mobileOpen: false,
-        toggleCollapse() {
-            this.collapsed = !this.collapsed;
-            localStorage.setItem('sidebar-collapsed', this.collapsed);
-        },
         editingThread: null,
         editTitle: '',
         confirmingDelete: null,
@@ -86,17 +81,15 @@ Variables expected:
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         @click="mobileOpen = false"
-        class="fixed inset-0 bg-black/40 z-40 md:hidden"
+        class="fixed inset-0 bg-black/40 z-40"
     ></div>
 
     <!-- Sidebar panel -->
     <aside
         :class="[
             'flex flex-col bg-surface-elevated border-r border-border z-50 transition-all duration-200',
-            'fixed md:relative h-full',
-            mobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full md:translate-x-0 pointer-events-none md:pointer-events-auto',
-            collapsed ? 'md:w-12' : 'md:w-70',
-            'w-70'
+            'fixed h-full w-70',
+            mobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none',
         ]"
     >
         <!-- Header: New Chat + Collapse -->
@@ -120,7 +113,6 @@ Variables expected:
         }">
             <div class="flex items-center gap-2">
                 <button
-                    x-show="!collapsed"
                     @click="showPicker = !showPicker"
                     class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer btn-press"
                 >
@@ -130,28 +122,6 @@ Variables expected:
                     <span>New Chat</span>
                 </button>
 
-                <!-- Collapse toggle (desktop only) -->
-                <button
-                    @click="toggleCollapse()"
-                    class="hidden md:flex p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors cursor-pointer"
-                    :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                >
-                    <svg class="w-4 h-4 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
-                <!-- Collapsed: just show new chat icon -->
-                <button
-                    x-show="collapsed"
-                    @click="showPicker = !showPicker"
-                    class="p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors cursor-pointer"
-                    aria-label="New Chat"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </button>
             </div>
 
             <!-- Inline language/level picker -->
@@ -201,8 +171,8 @@ Variables expected:
             </div>
         </div>
 
-        <!-- Thread list (hidden when collapsed on desktop) -->
-        <div x-show="!collapsed || mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+        <!-- Thread list -->
+        <div x-show="mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
             {% if threads %}
                 {% for thread in threads %}
                 <div class="group relative flex items-center rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
@@ -331,7 +301,7 @@ Variables expected:
         </div>
 
         <!-- Bottom: Nav + Theme + Auth -->
-        <div x-show="!collapsed || mobileOpen" class="border-t border-border p-2 space-y-0.5">
+        <div x-show="mobileOpen" class="border-t border-border p-2 space-y-0.5">
             <a href="/lessons/" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -345,8 +315,8 @@ Variables expected:
                 Progress
             </a>
 
-            <!-- Theme picker (mobile only — desktop uses header dropdown) -->
-            <div class="md:hidden" x-data="{ themeOpen: false }">
+            <!-- Theme picker -->
+            <div x-data="{ themeOpen: false }">
                 <button
                     @click="themeOpen = !themeOpen"
                     class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer"
@@ -372,8 +342,8 @@ Variables expected:
                 </div>
             </div>
 
-            <!-- Logout (mobile only — desktop uses header dropdown) -->
-            <a href="/auth/logout" @click="mobileOpen = false" class="md:hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
+            <!-- Logout -->
+            <a href="/auth/logout" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
