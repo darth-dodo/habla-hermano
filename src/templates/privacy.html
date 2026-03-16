@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy & Security - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- Header with back to chat link -->
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-text-muted hover:text-text transition-colors" aria-label="Back to Chat">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back to Chat</span>
+            </a>
+            <h1 class="text-lg font-semibold text-text">Privacy & Security</h1>
+            <div class="w-20"></div>
+        </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto bg-surface">
+        <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+            <!-- Section A: How we protect your data -->
+            <section aria-label="How we protect your data">
+                <h2 class="text-base font-semibold text-text mb-4">How we protect your data</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Card 1: Encrypted at rest -->
+                    <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-text">Encrypted at rest</h3>
+                                <p class="text-sm text-text-muted mt-1">Your conversations and personal data are encrypted using AES-128 (Fernet).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Data isolation -->
+                    <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-text">Data isolation</h3>
+                                <p class="text-sm text-text-muted mt-1">Your data is isolated at the database level with row-level security. No user can access another user's data.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: No data selling -->
+                    <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-text">No data selling</h3>
+                                <p class="text-sm text-text-muted mt-1">We never sell, share, or monetize your learning data. Your conversations exist to help you learn, nothing else.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Open source -->
+                    <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-text">Open source</h3>
+                                <p class="text-sm text-text-muted mt-1">Habla Hermano is fully open source. You can inspect every line of code that handles your data.</p>
+                                <a href="https://github.com/abhishek/habla-hermano" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm text-accent hover:underline mt-2">
+                                    View on GitHub
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {% if user %}
+            <!-- Section B: Your data (authenticated only) -->
+            <section aria-label="Your data" x-data="{ showDeleteHistory: false }">
+                <h2 class="text-base font-semibold text-text mb-4">Your data</h2>
+                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-text">Conversation history</h3>
+                            <p class="text-sm text-text-muted mt-1">Delete all your conversation threads and message history.</p>
+                        </div>
+                        <button
+                            x-show="!showDeleteHistory"
+                            @click="showDeleteHistory = true"
+                            class="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium bg-red-500/15 text-red-500 hover:bg-red-500/25 transition-colors"
+                        >
+                            Delete history
+                        </button>
+                    </div>
+                    <!-- Confirmation UI -->
+                    <div x-show="showDeleteHistory" x-cloak class="mt-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20">
+                        <p class="text-sm text-text mb-3">This will permanently delete all your conversations. This cannot be undone.</p>
+                        <div class="flex items-center gap-3">
+                            <form method="post" action="/privacy/delete-history" hx-post="/privacy/delete-history">
+                                <button type="submit" class="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
+                                    Confirm delete
+                                </button>
+                            </form>
+                            <button
+                                @click="showDeleteHistory = false"
+                                class="px-4 py-2 rounded-xl text-sm font-medium bg-surface-overlay text-text-muted hover:text-text transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section C: Account (authenticated only) -->
+            <section aria-label="Account" x-data="{ showDeleteAccount: false, confirmText: '' }">
+                <h2 class="text-base font-semibold text-text mb-4">Account</h2>
+                <div class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-text">Delete account</h3>
+                            <p class="text-sm text-text-muted mt-1">Permanently delete your account and all associated data.</p>
+                        </div>
+                        <button
+                            x-show="!showDeleteAccount"
+                            @click="showDeleteAccount = true"
+                            class="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium bg-red-500/15 text-red-500 hover:bg-red-500/25 transition-colors"
+                        >
+                            Delete account
+                        </button>
+                    </div>
+                    <!-- Two-step confirmation UI -->
+                    <div x-show="showDeleteAccount" x-cloak class="mt-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20">
+                        <p class="text-sm text-text mb-3">This will permanently delete your account and all data. Type <strong class="text-red-500">DELETE</strong> to confirm.</p>
+                        <form method="post" action="/privacy/delete-account">
+                            <div class="flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    name="confirm"
+                                    x-model="confirmText"
+                                    placeholder="Type DELETE"
+                                    autocomplete="off"
+                                    class="px-3 py-2 rounded-xl text-sm bg-surface border border-border text-text placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-red-500/50 w-36"
+                                />
+                                <button
+                                    type="submit"
+                                    :disabled="confirmText !== 'DELETE'"
+                                    :class="confirmText === 'DELETE' ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-red-500/30 text-red-300 cursor-not-allowed'"
+                                    class="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                                >
+                                    Delete my account
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="showDeleteAccount = false; confirmText = ''"
+                                    class="px-4 py-2 rounded-xl text-sm font-medium bg-surface-overlay text-text-muted hover:text-text transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            {% else %}
+            <!-- Guest fallback -->
+            <section aria-label="Sign in prompt">
+                <div class="bg-surface-elevated rounded-2xl p-6 border border-border text-center">
+                    <p class="text-text-muted mb-4">Log in to manage your data and account.</p>
+                    <a href="/auth/login" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-accent text-accent-text hover:opacity-90 transition-opacity">
+                        Log in
+                    </a>
+                </div>
+            </section>
+            {% endif %}
+
+        </div>
+    </main>
+</div>
+{% endblock %}

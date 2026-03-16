@@ -331,6 +331,12 @@ Variables expected:
                 Progress
             </a>
             {% endif %}
+            <a href="/privacy/" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Privacy &amp; Security
+            </a>
 
             <!-- Theme picker -->
             <div x-data="{ themeOpen: false }">
