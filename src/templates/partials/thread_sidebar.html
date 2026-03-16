@@ -17,6 +17,7 @@ Variables expected:
         },
         editingThread: null,
         editTitle: '',
+        confirmingDelete: null,
         startRename(threadId, currentTitle) {
             this.editingThread = threadId;
             this.editTitle = currentTitle;
@@ -24,7 +25,7 @@ Variables expected:
         }
     }"
     @sidebar-toggle.window="mobileOpen = !mobileOpen"
-    @keydown.escape.window="mobileOpen = false"
+    @keydown.escape.window="mobileOpen = false; confirmingDelete = null; editingThread = null"
 >
     <!-- Mobile backdrop -->
     <div
@@ -44,145 +45,264 @@ Variables expected:
         :class="[
             'flex flex-col bg-surface-elevated border-r border-border z-50 transition-all duration-200',
             'fixed md:relative h-full',
-            mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+            mobileOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full md:translate-x-0 pointer-events-none md:pointer-events-auto',
             collapsed ? 'md:w-12' : 'md:w-70',
             'w-70'
         ]"
     >
         <!-- Header: New Chat + Collapse -->
-        <div class="flex items-center gap-2 p-3 border-b border-border">
-            <button
-                x-show="!collapsed"
-                hx-post="/threads"
-                hx-vals="js:{language: typeof language !== 'undefined' ? language : 'es', level: typeof level !== 'undefined' ? level : 'A1'}"
-                hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
-                hx-swap="none"
-                hx-on::after-request="if(event.detail.successful) { const data = JSON.parse(event.detail.xhr.responseText); window.location.href = '/?thread=' + data.thread_id; }"
-                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity btn-press"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>New Chat</span>
-            </button>
+        <div class="p-3 border-b border-border" x-data="{
+            showPicker: false,
+            newLang: localStorage.getItem('hermano-language') || 'es',
+            newLevel: localStorage.getItem('hermano-level') || 'A1',
+            flagFor(l) { return l === 'es' ? '🇪🇸' : l === 'de' ? '🇩🇪' : '🇫🇷' },
+            langName(l) { return l === 'es' ? 'Spanish' : l === 'de' ? 'German' : 'French' },
+            startChat() {
+                localStorage.setItem('hermano-language', this.newLang);
+                localStorage.setItem('hermano-level', this.newLevel);
+                const hdrs = {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'};
+                fetch('/threads', {
+                    method: 'POST', headers: hdrs,
+                    body: 'language=' + this.newLang + '&level=' + this.newLevel
+                }).then(r => r.json()).then(d => { window.location.href = '/?thread=' + d.thread_id; });
+            }
+        }">
+            <div class="flex items-center gap-2">
+                <button
+                    x-show="!collapsed"
+                    @click="showPicker = !showPicker"
+                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer btn-press"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>New Chat</span>
+                </button>
 
-            <!-- Collapse toggle (desktop only) -->
-            <button
-                @click="toggleCollapse()"
-                class="hidden md:flex p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors"
-                :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-            >
-                <svg class="w-4 h-4 transition-transform" :class="collapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7" />
-                </svg>
-            </button>
+                <!-- Collapse toggle (desktop only) -->
+                <button
+                    @click="toggleCollapse()"
+                    class="hidden md:flex p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors cursor-pointer"
+                    :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+                >
+                    <svg class="w-4 h-4 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7" />
+                    </svg>
+                </button>
 
-            <!-- Collapsed: just show new chat icon -->
-            <button
-                x-show="collapsed"
-                hx-post="/threads"
-                hx-vals="js:{language: typeof language !== 'undefined' ? language : 'es', level: typeof level !== 'undefined' ? level : 'A1'}"
-                hx-headers='{"X-Requested-With": "XMLHttpRequest"}'
-                hx-swap="none"
-                hx-on::after-request="if(event.detail.successful) { const data = JSON.parse(event.detail.xhr.responseText); window.location.href = '/?thread=' + data.thread_id; }"
-                class="p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors"
-                aria-label="New Chat"
-            >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
+                <!-- Collapsed: just show new chat icon -->
+                <button
+                    x-show="collapsed"
+                    @click="showPicker = !showPicker"
+                    class="p-2 rounded-lg hover:bg-surface-overlay text-text-muted transition-colors cursor-pointer"
+                    aria-label="New Chat"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Inline language/level picker -->
+            <div x-show="showPicker" x-transition class="mt-3 p-3 bg-surface rounded-xl border border-border space-y-3">
+                <!-- Language selector -->
+                <div>
+                    <label class="text-xs font-medium text-text-muted mb-1.5 block">Language</label>
+                    <div class="flex gap-1.5">
+                        {% for code, flag, name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French')] %}
+                        <button
+                            @click="newLang = '{{ code }}'"
+                            class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer"
+                            :class="newLang === '{{ code }}' ? 'bg-accent/15 text-accent ring-1 ring-accent/30 font-medium' : 'bg-surface-overlay text-text-muted hover:bg-border/50'"
+                        >
+                            <span class="text-base">{{ flag }}</span>
+                            <span class="hidden sm:inline text-xs">{{ name }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Level selector -->
+                <div>
+                    <label class="text-xs font-medium text-text-muted mb-1.5 block">Level</label>
+                    <div class="grid grid-cols-4 gap-1.5">
+                        {% for lvl, desc in [('A0', 'Beginner'), ('A1', 'Basic'), ('A2', 'Elementary'), ('B1', 'Intermediate')] %}
+                        <button
+                            @click="newLevel = '{{ lvl }}'"
+                            class="flex flex-col items-center px-1.5 py-2 rounded-lg text-xs transition-all duration-150 cursor-pointer"
+                            :class="newLevel === '{{ lvl }}' ? 'bg-accent/15 text-accent ring-1 ring-accent/30 font-medium' : 'bg-surface-overlay text-text-muted hover:bg-border/50'"
+                        >
+                            <span class="font-semibold">{{ lvl }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Start button -->
+                <button
+                    @click="startChat()"
+                    class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-accent text-accent-text rounded-xl text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer btn-press"
+                >
+                    <span x-text="flagFor(newLang)"></span>
+                    <span>Start <span x-text="langName(newLang)"></span> Chat</span>
+                    <span class="text-xs opacity-75" x-text="newLevel"></span>
+                </button>
+            </div>
         </div>
 
         <!-- Thread list (hidden when collapsed on desktop) -->
-        <div x-show="!collapsed || mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-1">
+        <div x-show="!collapsed || mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
             {% if threads %}
                 {% for thread in threads %}
-                <a
-                    href="/?thread={{ thread.thread_id }}"
-                    @click="mobileOpen = false"
-                    class="group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 {{ 'bg-accent/10 text-accent' if thread.thread_id == active_thread_id else 'text-text hover:bg-surface-overlay' }}"
-                    @contextmenu.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
-                >
-                    <!-- Language flag -->
-                    <span class="flex-shrink-0 text-base">
-                        {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% endif %}
-                    </span>
-
-                    <!-- Title (or rename input) -->
-                    <template x-if="editingThread === '{{ thread.thread_id }}'">
-                        <form
-                            @submit.prevent="
-                                fetch('/threads/{{ thread.thread_id }}', {
-                                    method: 'PATCH',
-                                    headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
-                                    body: 'title=' + encodeURIComponent(editTitle)
-                                }).then(() => window.location.reload());
-                            "
-                            @click.stop
-                            class="flex-1"
-                        >
-                            <input
-                                x-ref="rename-{{ thread.thread_id }}"
-                                x-model="editTitle"
-                                @blur="editingThread = null"
-                                @keydown.escape="editingThread = null"
-                                class="w-full px-1.5 py-0.5 text-sm bg-surface rounded border border-border focus:border-accent focus:outline-none"
-                                maxlength="100"
-                            />
-                        </form>
-                    </template>
-                    <template x-if="editingThread !== '{{ thread.thread_id }}'">
-                        <span class="flex-1 truncate">{{ thread.title }}</span>
-                    </template>
-
-                    <!-- Delete button (visible on hover) -->
-                    <button
-                        x-show="editingThread !== '{{ thread.thread_id }}'"
-                        @click.prevent.stop="
-                            if(confirm('Delete this conversation?')) {
-                                fetch('/threads/{{ thread.thread_id }}', {
-                                    method: 'DELETE',
-                                    headers: {'X-Requested-With': 'XMLHttpRequest'}
-                                }).then(() => {
-                                    if ('{{ thread.thread_id }}' === '{{ active_thread_id }}') {
-                                        window.location.href = '/';
-                                    } else {
-                                        $el.closest('a').remove();
-                                    }
-                                });
-                            }
-                        "
-                        class="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-all"
-                        aria-label="Delete thread"
+                <div class="group relative flex items-center rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
+                    <a
+                        href="/?thread={{ thread.thread_id }}"
+                        @click="mobileOpen = false"
+                        class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 {{ 'text-accent font-medium' if thread.thread_id == active_thread_id else 'text-text' }}"
+                        @contextmenu.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
                     >
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <!-- Language flag -->
+                        <span class="flex-shrink-0 text-base leading-none" aria-hidden="true">
+                            {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% else %}🇪🇸{% endif %}
+                        </span>
+
+                        <!-- Title (or rename input) -->
+                        <template x-if="editingThread === '{{ thread.thread_id }}'">
+                            <form
+                                @submit.prevent="
+                                    fetch('/threads/{{ thread.thread_id }}', {
+                                        method: 'PATCH',
+                                        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                                        body: 'title=' + encodeURIComponent(editTitle)
+                                    }).then(() => window.location.reload());
+                                "
+                                @click.stop
+                                class="flex-1 min-w-0"
+                            >
+                                <input
+                                    x-ref="rename-{{ thread.thread_id }}"
+                                    x-model="editTitle"
+                                    @blur="editingThread = null"
+                                    @keydown.escape="editingThread = null"
+                                    class="w-full px-2 py-1 text-sm bg-surface rounded-lg border border-border focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                    maxlength="100"
+                                />
+                            </form>
+                        </template>
+                        <template x-if="editingThread !== '{{ thread.thread_id }}'">
+                            <span class="flex-1 truncate">{{ thread.title }}</span>
+                        </template>
+                    </a>
+
+                    <!-- Delete: trigger button — visible on hover (desktop) or always (mobile) -->
+                    <button
+                        x-show="editingThread !== '{{ thread.thread_id }}' && confirmingDelete !== '{{ thread.thread_id }}'"
+                        @click.prevent.stop="confirmingDelete = '{{ thread.thread_id }}'"
+                        class="flex-shrink-0 mr-1.5 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer touch:opacity-60"
+                        aria-label="Delete thread"
+                        style="-webkit-tap-highlight-color: transparent;"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     </button>
-                </a>
+
+                    <!-- Delete: inline confirm/cancel -->
+                    <template x-if="confirmingDelete === '{{ thread.thread_id }}'">
+                        <div class="flex items-center gap-1 flex-shrink-0 mr-1.5" @click.prevent.stop>
+                            <button
+                                @click="
+                                    fetch('/threads/{{ thread.thread_id }}', {
+                                        method: 'DELETE',
+                                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                                    }).then(() => {
+                                        confirmingDelete = null;
+                                        if ('{{ thread.thread_id }}' === '{{ active_thread_id }}') {
+                                            window.location.href = '/';
+                                        } else {
+                                            $el.closest('.group').remove();
+                                        }
+                                    });
+                                "
+                                class="p-1.5 rounded-lg bg-red-500/15 text-red-500 hover:bg-red-500/25 transition-colors cursor-pointer"
+                                aria-label="Confirm delete"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </button>
+                            <button
+                                @click="confirmingDelete = null"
+                                class="p-1.5 rounded-lg bg-surface-overlay text-text-muted hover:text-text transition-colors cursor-pointer"
+                                aria-label="Cancel delete"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
                 {% endfor %}
             {% else %}
-                <div class="px-3 py-8 text-center text-text-muted text-sm">
-                    <p>No conversations yet</p>
-                    <p class="text-xs mt-1">Start a new chat to begin</p>
+                <div class="px-3 py-10 text-center">
+                    <svg class="w-10 h-10 mx-auto text-text-subtle/40 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <p class="text-text-muted text-sm font-medium">No conversations yet</p>
+                    <p class="text-text-subtle text-xs mt-1">Start a new chat to begin practicing</p>
                 </div>
             {% endif %}
         </div>
 
-        <!-- Bottom: Theme/Settings -->
-        <div x-show="!collapsed || mobileOpen" class="border-t border-border p-2">
-            <a href="/lessons/" @click="mobileOpen = false" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Bottom: Nav + Theme + Auth -->
+        <div x-show="!collapsed || mobileOpen" class="border-t border-border p-2 space-y-0.5">
+            <a href="/lessons/" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 Lessons
             </a>
-            <a href="/progress/" @click="mobileOpen = false" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="/progress/" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Progress
+            </a>
+
+            <!-- Theme picker (mobile only — desktop uses header dropdown) -->
+            <div class="md:hidden" x-data="{ themeOpen: false }">
+                <button
+                    @click="themeOpen = !themeOpen"
+                    class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer"
+                >
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    Theme
+                    <svg class="w-3 h-3 ml-auto text-text-muted transition-transform duration-200" :class="themeOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div x-show="themeOpen" x-transition class="pl-6 space-y-0.5 mt-0.5">
+                    {% for theme_id, theme_name in [('azulejo', 'Azulejo'), ('terracotta', 'Terracotta'), ('flamenco', 'Flamenco'), ('sangria', 'Sangria'), ('jardin', 'Jardín')] %}
+                    <button
+                        @click="setTheme('{{ theme_id }}'); themeOpen = false"
+                        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+                        :class="theme === '{{ theme_id }}' ? 'text-accent bg-accent/10' : 'text-text-muted hover:text-text hover:bg-surface-overlay'"
+                    >
+                        {{ theme_name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Logout (mobile only — desktop uses header dropdown) -->
+            <a href="/auth/logout" @click="mobileOpen = false" class="md:hidden flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-text hover:bg-surface-overlay transition-colors cursor-pointer">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
             </a>
         </div>
     </aside>

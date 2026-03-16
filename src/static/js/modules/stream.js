@@ -257,13 +257,10 @@ function handleStreamEvent(event, dataStr, bubbleId) {
 
         case 'thread_title': {
             // Update the sidebar thread title if it exists
-            const threadLinks = document.querySelectorAll(`a[href="/?thread=${data.thread_id}"]`);
-            threadLinks.forEach(link => {
-                const titleSpan = link.querySelector('span.truncate');
-                if (titleSpan) {
-                    titleSpan.textContent = data.title;
-                }
-            });
+            const titleSpan = document.querySelector(`a[href="/?thread=${data.thread_id}"] span.truncate`);
+            if (titleSpan) {
+                titleSpan.textContent = data.title;
+            }
             break;
         }
 
@@ -289,27 +286,31 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                 url.searchParams.set('thread', data.thread_id);
                 window.history.replaceState({}, '', url);
 
-                // Add the new thread to the sidebar
+                // Add the new thread to the sidebar (matches thread_sidebar.html structure)
                 const flagMap = { es: '\u{1F1EA}\u{1F1F8}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}' };
                 const flag = flagMap[data.language] || '\u{1F1EA}\u{1F1F8}';
-                const threadList = document.querySelector('.overflow-y-auto.p-2.space-y-1');
+                const threadList = document.querySelector('.overflow-y-auto.p-2.space-y-0\\.5');
                 if (threadList) {
                     // Remove "No conversations yet" placeholder if present
-                    const placeholder = threadList.querySelector('.text-center.text-neutral\\/50');
+                    const placeholder = threadList.querySelector('.text-center');
                     if (placeholder) placeholder.remove();
 
                     // Remove active styling from any previously active thread
-                    threadList.querySelectorAll('a').forEach(a => {
-                        a.classList.remove('bg-accent/10', 'text-accent');
-                        a.classList.add('hover:bg-accent/5', 'text-neutral/70', 'hover:text-accent');
+                    threadList.querySelectorAll(':scope > div').forEach(div => {
+                        div.classList.remove('bg-accent/10');
+                        div.classList.add('hover:bg-surface-overlay');
+                        const link = div.querySelector('a');
+                        if (link) {
+                            link.classList.remove('text-accent', 'font-medium');
+                            link.classList.add('text-text');
+                        }
                     });
 
-                    // Insert new thread link at the top
-                    const link = document.createElement('a');
-                    link.href = `/?thread=${data.thread_id}`;
-                    link.className = 'group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 bg-accent/10 text-accent';
-                    link.innerHTML = `<span class="flex-shrink-0 text-base">${flag}</span><span class="flex-1 truncate">New conversation</span>`;
-                    threadList.prepend(link);
+                    // Insert new thread (div wrapper + link, matching template structure)
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'group relative flex items-center rounded-xl transition-all duration-200 bg-accent/10';
+                    wrapper.innerHTML = `<a href="/?thread=${data.thread_id}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="flex-1 truncate">New conversation</span></a>`;
+                    threadList.prepend(wrapper);
                 }
             }
             break;

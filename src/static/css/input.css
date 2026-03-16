@@ -369,3 +369,13 @@ html { touch-action: manipulation; }
     /* Hide scrollbar on mobile (overlay scrollbars are native) */
     ::-webkit-scrollbar { width: 0; height: 0; }
 }
+
+/* Touch device: always show thread delete buttons (no hover on touch) */
+@media (hover: none) {
+    .group:has(a[href^="/?thread="]) button[aria-label="Delete thread"] {
+        opacity: 0.5;
+    }
+    .group:has(a[href^="/?thread="]):active button[aria-label="Delete thread"] {
+        opacity: 1;
+    }
+}

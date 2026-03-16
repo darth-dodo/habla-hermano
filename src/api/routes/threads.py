@@ -70,19 +70,22 @@ async def create_thread(
 
 
 @router.patch("/{thread_id}")
-async def rename_thread(
+async def update_thread(
     thread_id: str,
     user: CurrentUserDep,
-    title: Annotated[str, Form()],
+    title: Annotated[str | None, Form()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict[str, str]:
-    """Rename a conversation thread."""
+    """Update a conversation thread's title."""
     service = _get_thread_service(user.id, sb_access_token)
     existing = service.get_thread(thread_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Thread not found")
-    service.update_title(thread_id, title.strip()[:100])
-    return {"thread_id": thread_id, "title": title.strip()[:100]}
+    result: dict[str, str] = {"thread_id": thread_id}
+    if title is not None:
+        service.update_title(thread_id, title.strip()[:100])
+        result["title"] = title.strip()[:100]
+    return result
 
 
 @router.delete("/{thread_id}", status_code=204)

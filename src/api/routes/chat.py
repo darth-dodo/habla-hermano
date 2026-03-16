@@ -160,6 +160,7 @@ async def chat_page(  # noqa: PLR0912
                         messages = await get_thread_messages(thread)
                         context["messages"] = messages
                         context["current_language"] = active_thread.language
+                        context["current_level"] = active_thread.level
                 except Exception:
                     logger.exception("Failed to load thread %s for user %s", thread, user.id)
 
@@ -587,7 +588,7 @@ async def stream_message(  # noqa: PLR0915
             if auto_created_thread_id:
                 yield {
                     "event": "thread_created",
-                    "data": json.dumps({"thread_id": auto_created_thread_id, "language": language}),
+                    "data": json.dumps({"thread_id": auto_created_thread_id, "language": language, "level": level}),
                 }
 
             graph_config: dict[str, Any] = {

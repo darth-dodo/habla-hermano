@@ -79,6 +79,16 @@ class ThreadService:
             .execute()
         )
 
+    def update_language(self, thread_id: str, language: str) -> None:
+        """Update a thread's language."""
+        (
+            self._client.table(self.TABLE)
+            .update({"language": language, "updated_at": datetime.now(UTC).isoformat()})
+            .eq("user_id", self._user_id)
+            .eq("thread_id", thread_id)
+            .execute()
+        )
+
     def touch(self, thread_id: str) -> None:
         """Update updated_at timestamp (called on each message)."""
         (

@@ -18,7 +18,7 @@ Variables expected:
         <!-- Authenticated: toggle sidebar on mobile, hidden on desktop (sidebar visible) -->
         <button
             @click="$dispatch('sidebar-toggle')"
-            class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 btn-press md:hidden"
+            class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 cursor-pointer btn-press md:hidden"
             aria-label="Toggle sidebar"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,7 +31,7 @@ Variables expected:
             <button
                 @click="open = !open"
                 @click.away="open = false"
-                class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 btn-press"
+                class="p-2 rounded-xl bg-surface-overlay hover:bg-accent-muted text-text-muted hover:text-accent transition-all duration-200 cursor-pointer btn-press"
                 aria-label="Menu"
             >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,14 +183,27 @@ Variables expected:
                 <a href="/" class="text-xs text-text-muted hover:text-accent transition-colors duration-150">Exit</a>
             </div>
             {% else %}
-            <!-- Language Selector (shared between chat freeform and lessons page) -->
+            {% if user and page_name == 'chat' %}
+            <!-- Authenticated chat: read-only badges (language/level set per thread via sidebar) -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="flex items-center gap-1 px-2 py-2 bg-surface-overlay rounded-xl text-sm font-medium">
+                    <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
+                    <span x-show="language === 'de'" class="text-lg">🇩🇪</span>
+                    <span x-show="language === 'fr'" class="text-lg">🇫🇷</span>
+                </div>
+                <div class="flex items-center px-2 py-2 bg-surface-overlay rounded-xl text-sm font-medium">
+                    <span x-text="level" class="text-accent font-semibold"></span>
+                </div>
+            </div>
+            {% else %}
+            <!-- Guest chat / Lessons page: interactive language & level selectors -->
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <!-- Language Selector -->
                 <div class="relative" x-data="{ open: false }">
                     <button
                         @click="open = !open"
                         @click.away="open = false"
-                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         aria-label="Select language"
                     >
                         <span x-show="language === 'es'" class="text-lg">🇪🇸</span>
@@ -200,7 +213,6 @@ Variables expected:
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <!-- Language Dropdown -->
                     <div
                         x-show="open"
                         x-transition:enter="transition ease-out duration-150"
@@ -214,8 +226,8 @@ Variables expected:
                         <div class="p-2">
                             {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French')] %}
                             <button
-                                @click="language = '{{ lang_code }}'; open = false; onLanguageChange && onLanguageChange('{{ lang_code }}')"
-                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2"
+                                @click="language = '{{ lang_code }}'; open = false; if ($refs.languageInput) $refs.languageInput.value = '{{ lang_code }}'; localStorage.setItem('hermano-language', '{{ lang_code }}'); if (typeof onLanguageChange === 'function') onLanguageChange('{{ lang_code }}')"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2 cursor-pointer"
                                 :class="language === '{{ lang_code }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
                                 <span class="text-lg">{{ lang_flag }}</span>
@@ -227,12 +239,12 @@ Variables expected:
                 </div>
 
                 {% if page_name == 'chat' %}
-                <!-- Level Selector (chat freeform only) -->
+                <!-- Level Selector (guest chat only) -->
                 <div class="relative" x-data="{ open: false }">
                     <button
                         @click="open = !open"
                         @click.away="open = false"
-                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200"
+                        class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         aria-label="Select level"
                     >
                         <span x-text="level" class="text-accent font-semibold"></span>
@@ -240,7 +252,6 @@ Variables expected:
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <!-- Level Dropdown -->
                     <div
                         x-show="open"
                         x-transition:enter="transition ease-out duration-150"
@@ -254,8 +265,8 @@ Variables expected:
                         <div class="p-2">
                             {% for lvl, desc in [('A0', 'Complete Beginner'), ('A1', 'Beginner'), ('A2', 'Elementary'), ('B1', 'Intermediate')] %}
                             <button
-                                @click="level = '{{ lvl }}'; open = false; $refs.levelInput && ($refs.levelInput.value = '{{ lvl }}')"
-                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150"
+                                @click="level = '{{ lvl }}'; open = false; if ($refs.levelInput) $refs.levelInput.value = '{{ lvl }}'; localStorage.setItem('hermano-level', '{{ lvl }}')"
+                                class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 cursor-pointer"
                                 :class="level === '{{ lvl }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
                                 <span class="font-semibold">{{ lvl }}</span>
@@ -267,6 +278,7 @@ Variables expected:
                 </div>
                 {% endif %}
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>
