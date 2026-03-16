@@ -11,9 +11,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
+from src.api.auth import (
+    AuthenticatedUser,
+    get_current_user,
+    get_current_user_optional,
+)
 from tests.conftest import CSRF_HEADERS
-
 
 # =============================================================================
 # Helpers
@@ -209,7 +212,7 @@ class TestDeleteHistory:
         mock_supabase_user_client: tuple[MagicMock, MagicMock],
     ) -> None:
         """Deletes from checkpoint_writes, checkpoint_blobs, and checkpoints."""
-        user_client, mock_table = mock_supabase_user_client
+        user_client, _mock_table = mock_supabase_user_client
         resp = authed_client.post("/privacy/delete-history")
         assert resp.status_code == 200
 
@@ -228,7 +231,7 @@ class TestDeleteHistory:
         authed_client.post("/privacy/delete-history")
 
         expected_pattern = "user:test-user-123:%"
-        like_calls = [call for call in mock_table.like.call_args_list]
+        like_calls = list(mock_table.like.call_args_list)
         # 3 checkpoint tables should each call .like("thread_id", pattern)
         assert len(like_calls) == 3
         for call in like_calls:
@@ -247,10 +250,13 @@ class TestDeleteHistory:
         # Check that a Set-Cookie header clears the active_thread cookie
         set_cookie_headers = resp.headers.get_list("set-cookie")
         active_thread_cleared = any(
-            "active_thread" in cookie and ('""' in cookie or "max-age=0" in cookie or 'expires=' in cookie.lower())
+            "active_thread" in cookie
+            and ('""' in cookie or "max-age=0" in cookie or "expires=" in cookie.lower())
             for cookie in set_cookie_headers
         )
-        assert active_thread_cleared, f"Expected active_thread cookie to be cleared. Set-Cookie headers: {set_cookie_headers}"
+        assert active_thread_cleared, (
+            f"Expected active_thread cookie to be cleared. Set-Cookie headers: {set_cookie_headers}"
+        )
 
     def test_handles_supabase_error_gracefully(
         self,
@@ -323,7 +329,9 @@ class TestDeleteAccount:
         set_cookie_headers = resp.headers.get_list("set-cookie")
         # Check that sb-access-token cookie is cleared
         access_cleared = any("sb-access-token" in cookie for cookie in set_cookie_headers)
-        assert access_cleared, f"Expected sb-access-token to be cleared. Set-Cookie: {set_cookie_headers}"
+        assert access_cleared, (
+            f"Expected sb-access-token to be cleared. Set-Cookie: {set_cookie_headers}"
+        )
 
     def test_admin_error_returns_500(
         self,
