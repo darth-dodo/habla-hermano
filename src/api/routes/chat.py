@@ -587,7 +587,7 @@ async def stream_message(  # noqa: PLR0915
             if auto_created_thread_id:
                 yield {
                     "event": "thread_created",
-                    "data": json.dumps({"thread_id": auto_created_thread_id}),
+                    "data": json.dumps({"thread_id": auto_created_thread_id, "language": language}),
                 }
 
             graph_config: dict[str, Any] = {

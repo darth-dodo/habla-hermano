@@ -288,6 +288,29 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                 const url = new URL(window.location);
                 url.searchParams.set('thread', data.thread_id);
                 window.history.replaceState({}, '', url);
+
+                // Add the new thread to the sidebar
+                const flagMap = { es: '\u{1F1EA}\u{1F1F8}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}' };
+                const flag = flagMap[data.language] || '\u{1F1EA}\u{1F1F8}';
+                const threadList = document.querySelector('.overflow-y-auto.p-2.space-y-1');
+                if (threadList) {
+                    // Remove "No conversations yet" placeholder if present
+                    const placeholder = threadList.querySelector('.text-center.text-neutral\\/50');
+                    if (placeholder) placeholder.remove();
+
+                    // Remove active styling from any previously active thread
+                    threadList.querySelectorAll('a').forEach(a => {
+                        a.classList.remove('bg-accent/10', 'text-accent');
+                        a.classList.add('hover:bg-accent/5', 'text-neutral/70', 'hover:text-accent');
+                    });
+
+                    // Insert new thread link at the top
+                    const link = document.createElement('a');
+                    link.href = `/?thread=${data.thread_id}`;
+                    link.className = 'group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 bg-accent/10 text-accent';
+                    link.innerHTML = `<span class="flex-shrink-0 text-base">${flag}</span><span class="flex-1 truncate">New conversation</span>`;
+                    threadList.prepend(link);
+                }
             }
             break;
         }
