@@ -75,6 +75,22 @@ Beyond freeform chat, Hermano teaches bite-sized lessons through natural convers
 - LLM-evaluated answers with accent-preserving normalization
 - Checkpoint-aware resume -pick up where you left off
 
+### Conversation Threads
+
+Authenticated users can maintain multiple independent conversations with Hermano.
+
+<p align="center">
+  <img src="docs/screenshots/threads-mobile-sidebar-open.png" alt="Thread sidebar open on mobile showing auto-titled threads" width="270"/>
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/threads-desktop-sidebar.png" alt="Thread sidebar open on desktop with conversation history" width="500"/>
+</p>
+
+- A sidebar drawer opens via the hamburger icon (available on all screen sizes)
+- Each thread is auto-titled by Claude Haiku after the first exchange, so your history is readable at a glance
+- Rename or delete any thread inline from the sidebar
+- Switching between threads happens client-side with no page reload
+- Guests use a single session; thread management requires an account
+
 ### Learning Paths & Spaced Repetition
 
 Structured paths guide you from beginner to intermediate with clear progression through CEFR levels. The SM-2 spaced repetition algorithm tracks every word you learn and weaves due vocabulary back into conversations at optimal intervals -no flashcard decks, just natural reinforcement during chat.
@@ -238,7 +254,7 @@ src/
 ├── agent/           LangGraph graphs, nodes, prompts (freeform + lesson subgraphs)
 ├── api/             FastAPI routes, auth, middleware, streaming, rate limiting
 ├── db/              Supabase client, repository pattern, models, encryption
-├── services/        Business logic (review/SM-2, lesson completion, adaptive paths)
+├── services/        Business logic (review/SM-2, lesson completion, adaptive paths, thread management)
 ├── lessons/         Lesson models and YAML loader
 ├── templates/       Jinja2 with HTMX partials
 └── static/          CSS + 11 ES modules + AudioWorklet processor
@@ -338,5 +354,6 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | Voice FSM Refactor | [Phase 21](docs/design/phase21-voice-fsm-refactor.md) |
 | Message Encryption | [Phase 24](docs/design/phase24-message-encryption.md) |
 | Design System Revamp | [Phase 25](docs/design/phase25-design-system-revamp.md) |
+| Conversation Threads | [Phase 26](docs/design/phase26-conversation-threads.md) |
 
 </details>
