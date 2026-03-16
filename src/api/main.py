@@ -21,7 +21,7 @@ from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
 from src.api.dependencies import get_cached_templates
 from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
-from src.api.routes import auth, chat, learn, lessons, progress, review, voice
+from src.api.routes import auth, chat, learn, lessons, progress, review, threads, voice
 from src.lessons.service import get_lesson_service
 
 # Configure logging
@@ -136,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(review.router)
     app.include_router(learn.router, prefix="/learn", tags=["learn"])
+    app.include_router(threads.router)
     app.include_router(voice.router)
 
     # --- Custom error pages ---

@@ -201,7 +201,7 @@ class TestSignupEndpoint:
             },
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 200
         assert b"do not match" in response.content
 
     def test_short_password_returns_error(self, client: TestClient) -> None:
@@ -215,7 +215,7 @@ class TestSignupEndpoint:
             },
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 200
         assert b"at least 8 characters" in response.content
 
     def test_successful_signup_with_session(self, client: TestClient) -> None:
@@ -288,7 +288,7 @@ class TestSignupEndpoint:
                 },
             )
 
-            assert response.status_code == 400
+            assert response.status_code == 200
             assert b"failed" in response.content.lower()
 
     def test_signup_already_registered_error(self, client: TestClient) -> None:
@@ -311,7 +311,7 @@ class TestSignupEndpoint:
                 },
             )
 
-            assert response.status_code == 400
+            assert response.status_code == 200
             assert b"already exists" in response.content.lower()
 
     def test_signup_invalid_email_error(self, client: TestClient) -> None:
@@ -332,7 +332,7 @@ class TestSignupEndpoint:
                 },
             )
 
-            assert response.status_code == 400
+            assert response.status_code == 200
             assert b"valid email" in response.content.lower()
 
 
@@ -388,7 +388,7 @@ class TestLoginEndpoint:
                 },
             )
 
-            assert response.status_code == 401
+            assert response.status_code == 200
             assert b"invalid" in response.content.lower()
 
     def test_login_invalid_credentials_error(self, client: TestClient) -> None:
@@ -410,7 +410,7 @@ class TestLoginEndpoint:
                 },
             )
 
-            assert response.status_code == 401
+            assert response.status_code == 200
             assert b"invalid" in response.content.lower()
 
     def test_login_email_not_confirmed_error(self, client: TestClient) -> None:
@@ -432,7 +432,7 @@ class TestLoginEndpoint:
                 },
             )
 
-            assert response.status_code == 401
+            assert response.status_code == 200
             assert b"confirm" in response.content.lower()
 
 

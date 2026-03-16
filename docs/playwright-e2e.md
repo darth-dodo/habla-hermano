@@ -29,6 +29,27 @@
 | Guest Session Persistence | ✅ Pass | Guest lesson completion creates session cookie |
 | Guest Progress View | ✅ Pass | Guest can view their progress without login |
 | Guest Empty State | ✅ Pass | Empty state shown for guests with no session |
+| Guest Language Selector | ✅ Pass | Guest header has interactive language dropdown |
+| Guest Level Selector | ✅ Pass | Guest header has interactive level dropdown |
+| Lessons Language Redirect | ✅ Pass | Language switch on lessons page redirects correctly |
+| Auth Sidebar Picker | ✅ Pass | New Chat shows inline language/level picker |
+| Auth Picker Label Updates | ✅ Pass | Selecting language/level updates Start button dynamically |
+| Auth Thread Creation | ✅ Pass | Picking language/level creates thread and redirects |
+| Auth Read-Only Badges | ✅ Pass | Authenticated chat header shows read-only badges |
+| Auth Thread Switching | ✅ Pass | Click thread in sidebar loads correct language/level/welcome |
+| Auth Multi-Thread Sidebar | ✅ Pass | Multiple threads shown newest-first with correct flags |
+| Auth Delete Cancel | ✅ Pass | Cancel dismisses confirmation, thread preserved |
+| Auth Delete Confirm | ✅ Pass | Thread removed from sidebar after confirmation |
+| Auth Delete Active Thread | ✅ Pass | Deleting active thread redirects to `/` |
+| Auth Sidebar Collapse/Expand | ✅ Pass | Toggle preserves thread list |
+| Auth Thread Rename | ✅ Pass | Right-click triggers inline rename, Enter submits |
+| Auth Rename Cancel | ✅ Pass | Escape cancels rename, title reverts |
+| Mobile Hamburger Toggle | ✅ Pass | Sidebar open/close cycle with pointer-events fix |
+| Mobile Thread Creation | ✅ Pass | Picker works on mobile, sidebar auto-closes |
+| Mobile Escape Close | ✅ Pass | Escape key closes mobile sidebar |
+| Mobile Thread Switching | ✅ Pass | Navigate to thread + sidebar auto-close |
+| Mobile Backdrop Close | ✅ Pass | Clicking dark overlay closes sidebar |
+| Guest Language Switch | ✅ Pass | Interactive dropdown updates flag and welcome text |
 | SSE Token Streaming | 📋 Plan | Chat responses stream tokens via Server-Sent Events |
 | Streaming Cursor | 📋 Plan | Blinking cursor visible during token streaming |
 | Streaming Feedback Events | 📋 Plan | Grammar, pronunciation, scaffold events after stream |
@@ -56,8 +77,9 @@
 
 - **URL**: http://127.0.0.1:8000
 - **Browser**: Chromium (via Playwright MCP)
-- **Date**: 2026-03-09 (Phase 19)
-- **Previous Dates**: 2026-01-28 (Phase 7 + Phase 8), 2026-01-27 (Phase 6), 2025-01-18 (Phase 3), 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
+- **Date**: 2026-03-16 (Conversation Threads)
+- **Previous Dates**: 2026-03-09 (Phase 19), 2026-01-28 (Phase 7 + Phase 8), 2026-01-27 (Phase 6), 2025-01-18 (Phase 3), 2025-01-17 (Phase 2), 2025-01-16 (Phase 1)
+- **Test Credentials**: See `.env.e2e` (gitignored) for authenticated flow testing
 
 ---
 
@@ -1021,6 +1043,334 @@ Empty State Display:
 
 ---
 
+### Conversation Threads (Authenticated Flow)
+
+> **Prerequisites**: Log in via `/auth/login` with credentials from `.env.e2e`.
+> Language/level are per-thread properties, immutable after creation.
+> **Date**: 2026-03-16
+
+#### 17a. Guest Language Selector
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/ (not logged in)
+2. Click language selector in header
+3. Select German (🇩🇪)
+
+**Expected**:
+- Header shows interactive dropdown with chevron
+- Clicking German updates flag to 🇩🇪, welcome text updates
+- No page reload, instant Alpine.js update
+
+**Result**: ✅ Pass
+
+---
+
+#### 17b. Guest Level Selector
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/ (not logged in)
+2. Click level selector in header
+3. Select A2
+
+**Expected**:
+- Level dropdown is interactive with chevron
+- Selecting A2 updates badge to "A2"
+
+**Result**: ✅ Pass
+
+---
+
+#### 17c. Guest Language Switch (Full Verification)
+
+**Steps**:
+1. As guest, select French from language dropdown
+
+**Expected**:
+- Flag updates to 🇫🇷
+- Welcome says "Bonjour!"
+- Placeholder says "Type in French..."
+- No sidebar visible (guests don't have threads)
+
+**Result**: ✅ Pass
+
+---
+
+#### 17d. Lessons Page Language Redirect
+
+**Steps**:
+1. Navigate to http://127.0.0.1:8000/lessons/
+2. Click language selector, choose German
+
+**Expected**:
+- Page redirects to `/lessons/?language=de`
+- Lessons page shows German lessons
+
+**Result**: ✅ Pass
+
+---
+
+#### 17e. Auth: Sidebar Inline Language/Level Picker
+
+**Steps**:
+1. Log in with test credentials
+2. Click "New Chat" button in sidebar
+
+**Expected**:
+- Inline picker expands with:
+  - Language: 🇪🇸 Spanish, 🇩🇪 German, 🇫🇷 French buttons
+  - Level: A0, A1, A2, B1 grid buttons
+  - "Start [Language] Chat [Level]" button with flag
+- Defaults to last used language/level from localStorage
+
+**Result**: ✅ Pass
+
+---
+
+#### 17f. Auth: Picker Label Updates
+
+**Steps**:
+1. Open the New Chat picker
+2. Click German, then B1
+
+**Expected**:
+- Start button updates dynamically to "🇩🇪 Start German Chat B1"
+- Each language/level click immediately reflected in button label
+
+**Result**: ✅ Pass
+
+---
+
+#### 17g. Auth: Thread Creation with Language/Level
+
+**Steps**:
+1. Log in, click "New Chat"
+2. Select Spanish + A2
+3. Click "🇪🇸 Start Spanish Chat A2"
+
+**Expected**:
+- Thread created, URL stays at `/` (thread ID stored in httponly cookie, not exposed in URL)
+- Thread appears in sidebar with 🇪🇸 flag and title "New conversation"
+- Welcome message: "¡Hola! I'm your Spanish conversation partner. I'll match your A2 level."
+- Input placeholder: "Type in Spanish..."
+
+**Result**: ✅ Pass
+
+---
+
+#### 17h. Auth: Read-Only Header Badges
+
+**Steps**:
+1. Log in, open a conversation thread
+
+**Expected**:
+- Header shows language flag (e.g. 🇪🇸) and level (e.g. A2) as static badges
+- No dropdown chevrons, no click interaction
+- Badges reflect the thread's language/level, not localStorage
+
+**Result**: ✅ Pass
+
+---
+
+#### 17i. Auth: Thread Switching
+
+**Steps**:
+1. Create threads in different languages (e.g. Spanish A2, German B1)
+2. Click the Spanish thread in sidebar
+
+**Expected**:
+- URL stays at `/` (active thread set via `active_thread` cookie, not query param)
+- Header badges switch to 🇪🇸 A2
+- Welcome message and placeholder update to Spanish
+- Previous thread remains in sidebar
+
+**Result**: ✅ Pass
+
+---
+
+#### 17j. Auth: Multi-Thread Sidebar
+
+**Steps**:
+1. Create 3 threads (French A0, German B1, Spanish A2)
+
+**Expected**:
+- Sidebar shows all 3 threads ordered newest-first
+- Each thread displays correct language flag (🇫🇷, 🇩🇪, 🇪🇸)
+- Active thread highlighted with accent color
+
+**Result**: ✅ Pass
+
+---
+
+#### 17k. Auth: Delete Cancel
+
+**Steps**:
+1. Click delete button on a thread
+2. Click "Cancel delete"
+
+**Expected**:
+- Inline confirmation appears with Confirm/Cancel buttons
+- Cancel dismisses confirmation UI
+- Thread preserved, normal delete button reappears
+
+**Result**: ✅ Pass
+
+---
+
+#### 17l. Auth: Delete Confirm
+
+**Steps**:
+1. Click delete button on a non-active thread
+2. Click "Confirm delete"
+
+**Expected**:
+- Thread removed from sidebar immediately (SPA-style, no reload)
+- Other threads unaffected
+
+**Result**: ✅ Pass
+
+---
+
+#### 17m. Auth: Delete Active Thread
+
+**Steps**:
+1. While viewing a thread, delete it via sidebar
+
+**Expected**:
+- Thread removed from sidebar
+- Page redirects to `/` (no thread param)
+- Remaining threads still visible in sidebar
+
+**Result**: ✅ Pass
+
+---
+
+#### 17n. Auth: Sidebar Collapse/Expand
+
+**Steps**:
+1. Click "Collapse sidebar" button
+2. Click "Expand sidebar" button
+
+**Expected**:
+- Collapsed: shows only icon buttons (New Chat + Expand)
+- Expanded: full thread list, Lessons, Progress links visible
+- Thread list preserved across toggle
+
+**Result**: ✅ Pass
+
+---
+
+#### 17o. Auth: Thread Rename
+
+**Steps**:
+1. Right-click a thread title in sidebar
+2. Type "Mi primera charla" in the inline input
+3. Press Enter
+
+**Expected**:
+- Right-click triggers inline rename input (no browser context menu)
+- Input pre-filled with current title
+- Enter submits rename via PATCH `/threads/{id}`
+- Page reloads with updated title in sidebar
+
+**Result**: ✅ Pass
+
+---
+
+#### 17p. Auth: Rename Cancel
+
+**Steps**:
+1. Right-click a thread to start rename
+2. Press Escape
+
+**Expected**:
+- Rename input dismissed
+- Original title preserved unchanged
+
+**Result**: ✅ Pass
+
+---
+
+#### 17q. Mobile: Hamburger Toggle
+
+**Steps** (375x812 viewport):
+1. Load chat page on mobile
+2. Click hamburger button to open sidebar
+3. Verify sidebar is interactive
+4. Close via backdrop click
+5. Click hamburger again
+
+**Expected**:
+- Closed: sidebar off-screen with `pointer-events: none`, hamburger clickable
+- Open: sidebar slides in as overlay, all elements interactive
+- Backdrop click closes sidebar
+- Hamburger works on every toggle cycle
+
+**Bug Found & Fixed**: Closed sidebar was intercepting clicks on the hamburger button.
+Added `pointer-events-none` when closed on mobile, `md:pointer-events-auto` for desktop.
+
+**Result**: ✅ Pass (after fix)
+
+---
+
+#### 17r. Mobile: Thread Creation
+
+**Steps** (375x812 viewport):
+1. Open sidebar via hamburger
+2. Click "New Chat", select Spanish A1
+3. Click "Start Spanish Chat A1"
+
+**Expected**:
+- Inline picker works within mobile sidebar width
+- Thread created, page navigates to `/` (clean URL, no thread ID exposed)
+- Sidebar auto-closes after creation
+
+**Result**: ✅ Pass
+
+---
+
+#### 17s. Mobile: Escape Key Close
+
+**Steps** (375x812 viewport):
+1. Open sidebar via hamburger
+2. Press Escape
+
+**Expected**:
+- Sidebar closes
+- Hamburger button remains clickable (pointer-events disabled on sidebar)
+
+**Result**: ✅ Pass
+
+---
+
+#### 17t. Mobile: Thread Switching
+
+**Steps** (375x812 viewport):
+1. Open sidebar, click a different thread
+
+**Expected**:
+- Navigates to selected thread
+- Sidebar auto-closes (`@click="mobileOpen = false"` on thread links)
+- Header badges update to match selected thread
+
+**Result**: ✅ Pass
+
+---
+
+#### 17u. Mobile: Backdrop Close
+
+**Steps** (375x812 viewport):
+1. Open sidebar
+2. Click the dark overlay area (right of sidebar)
+
+**Expected**:
+- Sidebar closes
+- Backdrop fades out
+- Sidebar pointer-events disabled
+
+**Result**: ✅ Pass
+
+---
+
 ## Next Steps
 
 1. **Automated Test Suite**: Convert manual tests to Playwright test scripts
@@ -1037,9 +1387,11 @@ Empty State Display:
 12. ~~**SSE Streaming**: Test real-time token streaming (Phase 15)~~ ✅ Complete
 13. ~~**Voice Conversation**: Test Deepgram STT/TTS integration (Phase 17)~~ ✅ Complete
 14. ~~**Conversational Lessons**: Test lesson chat phase machine (Phase 19)~~ ✅ Complete
-15. **Conversational Lesson Resumption**: Test checkpoint recovery for interrupted lesson chats
-16. **Cross-Browser Voice Testing**: Validate STT/TTS across Chrome, Firefox, Safari
-17. **Mobile Viewport E2E Testing**: Test on 375px viewport with safe areas and touch targets
-18. **German/French Lessons**: Test lesson content for additional languages
-19. **Authenticated User Progress**: Test progress sync with Supabase auth
-20. **Progress Data Migration**: Test guest-to-authenticated data transfer
+15. ~~**Conversation Threads**: Test sidebar picker, thread creation, read-only badges~~ ✅ Complete
+16. **Thread Sidebar Automated E2E**: Convert manual TC thread tests (17a–17u) to Playwright scripts covering create, rename, delete, and SPA switch flows
+17. **Conversational Lesson Resumption**: Test checkpoint recovery for interrupted lesson chats
+18. **Cross-Browser Voice Testing**: Validate STT/TTS across Chrome, Firefox, Safari
+19. **Mobile Viewport E2E Testing**: Test on 375px viewport with safe areas and touch targets
+20. **German/French Lessons**: Test lesson content for additional languages
+21. **Authenticated User Progress**: Test progress sync with Supabase auth
+22. **Progress Data Migration**: Test guest-to-authenticated data transfer

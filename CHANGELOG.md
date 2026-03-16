@@ -25,6 +25,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **Dead WAV blob code** (`voice-tts.js`): Removed `assembleWavBlob()`, `pcmChunks` collection, `deliverBlob()`, and unused `onAudioReady` parameter from `streamTTS` and `restTTS` (~45 lines) (#61).
 
+## [0.26.0] - 2026-03-16
+
+### Added - Phase 26: Conversation Threads
+- **Conversation threads**: Persistent, named threads per authenticated user backed by a `conversation_threads` table with Row-Level Security
+- **Thread sidebar**: Fixed overlay drawer triggered by a hamburger button visible on all screen sizes; displays thread list with relative timestamps
+- **Auto-titling**: Claude Haiku generates a 3-5 word thread title after the first exchange via `generate_thread_title()`
+- **SPA thread switching**: `/chat/thread-content` partial endpoint swaps thread content via `innerHTML` with no page reload
+- **`active_thread` cookie**: httponly cookie carries the current thread ID — thread IDs are not exposed in URLs
+- **Thread message history**: Switching threads loads prior messages from the LangGraph checkpoint state for that thread
+- **Inline thread rename**: Pencil icon triggers edit-in-place rename for any thread
+- **Thread delete**: Delete action removes a thread and its associated checkpoint data
+- **`ThreadService`**: CRUD operations, `generate_thread_title()`, and `get_thread_messages()` service methods
+- **Thread API routes**: `GET /threads`, `POST /threads`, `PATCH /threads/{id}/title`, `DELETE /threads/{id}`
+- **717 new tests**: `test_threads.py`, `test_thread_titling.py`, `test_thread_messages.py`, `test_data_capture.py`
+- **Keyboard shortcut**: `Cmd/Ctrl+Shift+N` navigates to `/` to start a fresh conversation
+
+### Changed
+- **Desktop sidebar**: Unified with the mobile drawer — fixed overlay pattern with hamburger always visible; separate desktop collapse button removed
+- **`shortcuts.js`**: `Cmd/Ctrl+Shift+N` navigates to `/` directly instead of triggering an htmx action on a button
+
+### Fixed
+- **querySelector SyntaxError on UUID thread IDs**: CSS identifiers cannot start with a hex digit — replaced querySelector with `dataset.threadId` lookup
+- **mypy type errors**: Corrected type annotations in `thread_titling.py`, `threads.py`, `thread_messages.py`, and `chat.py`
+- **ruff TC006**: Removed quoted type expressions from `cast()` calls
+
 ## [0.25.0] - 2026-03-13
 
 ### Added - Phase 25: Design System Revamp

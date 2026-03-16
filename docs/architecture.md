@@ -31,6 +31,7 @@
 | **Phase 23** | Lesson Experience Revamp - unified chat routing, deleted lesson_player | ✅ Completed |
 | **Phase 24** | Message Encryption & Privacy - Fernet field encryption, checkpoint blob encryption, RLS policies | ✅ Completed |
 | **Phase 25** | Design System Revamp - 5th theme (Jardín), Plus Jakarta Sans, spacing tokens, SVG icons, WCAG AA | ✅ Completed |
+| **Phase 26** | Conversation Threads - Persistent thread sidebar, auto-titling, SPA thread switching, active_thread cookie | ✅ Completed |
 
 **Test Coverage**: 2,437+ tests (2,196 Python + 241 JavaScript) covering agent, API, database, auth, lessons, review, service, and encryption modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
@@ -237,7 +238,10 @@ habla-hermano/
 │   │   ├── review.py            # [Implemented] ReviewService with SM-2 algorithm (uses VocabularyRepository)
 │   │   ├── paths.py             # [Implemented] PathService for structured learning paths
 │   │   ├── adaptive.py          # [Implemented] AdaptiveService for daily recommendations
-│   │   └── lesson_completion.py # [Implemented] Extracted lesson completion logic (exercise validation, vocab upsert, persistence)
+│   │   ├── lesson_completion.py # [Implemented] Extracted lesson completion logic (exercise validation, vocab upsert, persistence)
+│   │   ├── threads.py           # [Implemented] ThreadService: CRUD for conversation_threads table
+│   │   ├── thread_titling.py    # [Implemented] generate_thread_title(): LLM-generated 3-5 word titles via Haiku
+│   │   └── thread_messages.py   # [Implemented] get_thread_messages(): loads checkpoint state for history rendering
 │   │
 │   ├── templates/               # [Implemented] All template files (mobile-responsive)
 │   │   ├── base.html            # [Implemented] Theme system (5 themes), CSS variables, safe areas, dynamic viewport
@@ -267,7 +271,9 @@ habla-hermano/
 │   │       ├── review_start.html    # [Implemented] Review session start UI
 │   │       ├── chat_warmup.html     # [Implemented] Review warmup prompt in chat
 │   │       ├── learn_unit.html        # [Implemented] Learning path unit card
-│   │       └── learn_recommendation.html # [Implemented] Adaptive recommendation card
+│   │       ├── learn_recommendation.html # [Implemented] Adaptive recommendation card
+│   │       ├── thread_sidebar.html    # [Implemented] Thread list drawer (Phase 26)
+│   │       └── app_header.html        # [Implemented] App header with hamburger toggle (Phase 26)
 │   │
 │   └── static/
 │       ├── css/
@@ -1861,6 +1867,32 @@ async def stream_message(..., lesson_id: str | None = Form(None)):
     Events: token, response_complete, scaffolding, grammar, pronunciation,
             lesson_progress, exercise_result, lesson_complete, done, error"""
     ...
+
+# Thread content partial (Phase 26) - SPA thread switching
+@router.get("/chat/thread-content")
+async def thread_content(thread_id: str, ...):
+    """Load message history for a thread and return as an HTML partial.
+    Called by stream.js when the user switches threads in the sidebar.
+    Reads LangGraph checkpoint state via get_thread_messages(), then
+    sets the active_thread httponly cookie to the new thread_id.
+    Dispatches a CustomEvent('thread-switched') so the chat UI can reset."""
+    ...
+
+# Thread management endpoints (Phase 26)
+@router.post("/chat/threads")
+async def create_thread(...):
+    """Create a new conversation thread via ThreadService."""
+    ...
+
+@router.get("/chat/threads")
+async def list_threads(...):
+    """Return thread sidebar HTML partial (used by HTMX on sidebar open)."""
+    ...
+
+@router.delete("/chat/threads/{thread_id}")
+async def delete_thread(thread_id: str, ...):
+    """Delete a thread's metadata row. Checkpoints are orphaned, not deleted."""
+    ...
 ```
 
 ### Level Selection
@@ -2094,6 +2126,39 @@ CREATE TABLE lesson_progress (
     PRIMARY KEY (user_id, lesson_id)
 );
 
+-- Conversation thread metadata (Phase 26)
+-- Stores title, language, and timestamps for each conversation thread.
+-- Actual message data lives in LangGraph checkpoint tables; thread_id bridges the two systems.
+CREATE TABLE conversation_threads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    thread_id TEXT NOT NULL UNIQUE,  -- LangGraph thread_id, format: user:{user_id}:{uuid4}
+    title TEXT,                       -- Auto-generated 3-5 word title (NULL until first exchange)
+    language TEXT,                    -- 'es', 'de', 'fr'
+    level TEXT,                       -- 'A0', 'A1', 'A2', 'B1'
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()  -- Touched on every message via ThreadService.touch()
+);
+
+-- RLS: users can only read/write their own thread rows
+ALTER TABLE conversation_threads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own threads"
+    ON conversation_threads FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own threads"
+    ON conversation_threads FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own threads"
+    ON conversation_threads FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own threads"
+    ON conversation_threads FOR DELETE
+    USING (auth.uid() = user_id);
+
 -- RLS Policies (example for vocabulary table)
 ALTER TABLE vocabulary ENABLE ROW LEVEL SECURITY;
 
@@ -2265,6 +2330,122 @@ The `src/services/lesson_completion.py` module extracts business logic that was 
 | `complete_lesson_and_persist()` | Resolves user identity, persists completion to `lesson_progress`, and determines the next lesson |
 
 This refactoring ensures the route handler focuses on HTTP concerns (request parsing, response formatting) while the service handles domain logic (validation rules, persistence orchestration, SM-2 initialization).
+
+---
+
+## Conversation Threads (Phase 26)
+
+Phase 26 adds persistent, named conversation threads. Users can start multiple independent conversations with Hermano, switch between them via a sidebar, and resume any thread exactly where they left off. The active thread ID is stored in an `active_thread` httponly cookie rather than in the URL, preserving the single-page feel of the chat UI.
+
+### Services
+
+#### `ThreadService` (`src/services/threads.py`)
+
+CRUD operations for the `conversation_threads` metadata table. Each `ThreadService` instance is scoped to a single authenticated user.
+
+| Method | Purpose |
+|--------|---------|
+| `create_thread(language, level)` | Inserts a new row with a generated `thread_id` (`user:{user_id}:{uuid4}`) |
+| `list_threads()` | Returns all threads for the user, ordered by `updated_at DESC` |
+| `get_thread(thread_id)` | Fetches a single thread by its LangGraph `thread_id` |
+| `update_title(thread_id, title)` | Renames a thread |
+| `update_language(thread_id, language)` | Updates the language tag |
+| `touch(thread_id)` | Updates `updated_at` to now; called after every message so the sidebar sort order stays current |
+| `delete_thread(thread_id)` | Removes the metadata row; checkpoint data is orphaned, not deleted |
+
+The `thread_id` format (`user:{user_id}:{uuid4}`) embeds the owner's UUID so the checkpoint RLS function `checkpoint_owner()` can extract it without a separate lookup.
+
+#### `generate_thread_title()` (`src/services/thread_titling.py`)
+
+After the first exchange in a new thread, this function calls Claude Haiku with a 30-token budget to produce a 3–5 word title summarizing the conversation topic. The prompt receives the first human message and the first AI response, each truncated to 200 characters. On any failure it returns `"New conversation"` rather than propagating the exception.
+
+```python
+async def generate_thread_title(human_message: str, ai_response: str) -> str:
+    """Generate a 3-5 word title via Claude Haiku (max_tokens=30, temperature=0.3).
+    Returns 'New conversation' on failure."""
+```
+
+The title is written back to the `conversation_threads` row via `ThreadService.update_title()` as a fire-and-forget step after the SSE stream completes.
+
+#### `get_thread_messages()` (`src/services/thread_messages.py`)
+
+Loads message history from a LangGraph checkpoint for rendering when the user switches threads.
+
+```python
+async def get_thread_messages(thread_id: str) -> list[dict[str, str]]:
+    """Extract HumanMessage/AIMessage pairs from checkpoint state.
+    Returns [{"role": "human"|"ai", "content": str}, ...].
+    Returns [] if no checkpoint exists or messages is empty."""
+```
+
+Internally it calls `graph.aget_state()` with the given `thread_id` and filters the `messages` list to `HumanMessage` and `AIMessage` instances. All exceptions are caught and logged; the caller always receives a list.
+
+### Thread Sidebar UX
+
+The thread sidebar is a fixed overlay drawer that appears on all screen sizes (mobile and desktop). It is not a traditional sidebar column — it slides in over the chat content so the chat layout does not reflow.
+
+| Aspect | Detail |
+|--------|--------|
+| **Toggle** | Header hamburger button (`app_header.html`); dispatches a CSS class toggle on the sidebar element |
+| **Layout** | Fixed overlay drawer rendered in `thread_sidebar.html`; z-index above chat content |
+| **Active thread** | Stored in an `active_thread` httponly cookie, not in the URL |
+| **Thread switching** | Clicking a thread calls `GET /chat/thread-content?thread_id=...` which returns an HTML partial; `stream.js` swaps the chat message container and dispatches `CustomEvent('thread-switched')` to reset input state |
+| **Real-time updates** | After each streaming response the sidebar thread item's title and timestamp are updated in-place without a full page reload |
+| **New thread** | "New conversation" button calls `POST /chat/threads`, creates a fresh `conversation_threads` row, and sets the `active_thread` cookie |
+
+### Thread Switching Flow
+
+```
+Browser
+  │
+  ├─ User clicks thread in sidebar
+  │
+  └─► GET /chat/thread-content?thread_id={id}
+        │
+        ├─► ThreadService.get_thread()       — validates ownership
+        ├─► get_thread_messages(thread_id)   — loads LangGraph checkpoint state
+        │     └─► graph.aget_state({"configurable": {"thread_id": ...}})
+        │           └─► extracts HumanMessage / AIMessage pairs
+        │
+        ├─► Set active_thread cookie (httponly)
+        └─► Return HTML partial
+              │
+              └─► stream.js swaps #chat-messages container
+                  dispatches CustomEvent('thread-switched')
+```
+
+### Phase 26 Implementation Summary
+
+| Deliverable | File(s) |
+|-------------|---------|
+| Thread CRUD service | `src/services/threads.py` |
+| LLM title generation | `src/services/thread_titling.py` |
+| Checkpoint message extraction | `src/services/thread_messages.py` |
+| Thread sidebar template | `src/templates/partials/thread_sidebar.html` |
+| App header with hamburger | `src/templates/partials/app_header.html` |
+| Thread routes | `src/api/routes/threads.py`, `src/api/routes/chat.py` |
+| Data model | `src/db/models.py` (`ConversationThread` Pydantic model) |
+| DB migration | `migrations/005_conversation_threads.sql` |
+
+### System Diagram
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant F as FastAPI
+    participant S as ThreadService
+    participant G as LangGraph checkpoint
+
+    B->>F: GET /chat/thread-content?thread_id={id}
+    F->>S: get_thread(thread_id)
+    S-->>F: ConversationThread (ownership confirmed)
+    F->>G: graph.aget_state({"thread_id": id})
+    G-->>F: checkpoint state (HumanMessage / AIMessage list)
+    F->>F: Set active_thread httponly cookie
+    F-->>B: HTML partial (rendered message history)
+    B->>B: Swap #chat-messages container
+    B->>B: dispatch CustomEvent('thread-switched')
+```
 
 ---
 
@@ -2693,3 +2874,14 @@ asyncio_mode = "auto"
 5. **B7 - Lesson Completion Service**: Business logic extracted from `src/api/routes/lessons.py` (817 to 468 lines) into `src/services/lesson_completion.py`
 6. Middleware stack ordering: SecurityHeaders -> CSRF -> CORS
 7. Old import paths preserved via thin re-export shims for backward compatibility
+
+### Phase 26: Conversation Threads - COMPLETED
+1. `conversation_threads` table with RLS (`migrations/005_conversation_threads.sql`)
+2. `ThreadService` (`src/services/threads.py`): full CRUD, `touch()` on each message
+3. `generate_thread_title()` (`src/services/thread_titling.py`): Haiku, 30-token budget, fire-and-forget after first exchange
+4. `get_thread_messages()` (`src/services/thread_messages.py`): checkpoint state extraction for history rendering
+5. Thread routes (`src/api/routes/threads.py`): create, list, delete
+6. `GET /chat/thread-content` partial for SPA thread switching (sets `active_thread` cookie)
+7. Thread sidebar overlay drawer (`thread_sidebar.html`, `app_header.html`)
+8. `stream.js` extended: post-stream title update, `CustomEvent('thread-switched')` handling
+9. Real-time sidebar updates after each message (title and timestamp in-place)

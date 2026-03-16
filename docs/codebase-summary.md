@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 2.4 | **Tests**: 2,437 (2,196 Python + 241 JS) | **Coverage**: 97% | **Date**: March 2026
+**Version**: 2.6 | **Tests**: 2,675 (2,196+ Python + 238 JS) | **Coverage**: 97% | **Date**: March 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -28,7 +28,7 @@ block-beta
         Q["Lessons"] R["YAML micro-lessons with exercises (60 across 3 languages)"]
         S["UI"] T["Hamburger menu, unified chat (freeform + lesson modes)"]
         U["Voice"] V["Deepgram STT (Nova-3) + TTS (Aura-2)"]
-        W["JS Testing"] X["Vitest + jsdom (241 tests, ~90% coverage)"]
+        W["JS Testing"] X["Vitest + jsdom (238 tests, ~90% coverage)"]
         Y["Lesson Chat"] Z["Phase machine: intro→teaching→exercise→complete (unified in chat.py)"]
     end
 ```
@@ -43,7 +43,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2,437 tests (2,196 Python + 241 JS) with 97% coverage, strict typing
+- ✅ 2,675+ tests (2,196+ Python + 238 JS) with 97% coverage, strict typing
 - ✅ 5 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria, Jardin
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -57,7 +57,7 @@ block-beta
 - ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
 - ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
 - ✅ Voice conversation: Deepgram STT/TTS via WebSocket proxy with graceful degradation
-- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (241 tests)
+- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (238 tests)
 - ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
 - ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
 - ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
@@ -65,6 +65,7 @@ block-beta
 - ✅ Lesson experience revamp: unified chat handles freeform + lesson modes, removed separate lesson player (Phase 23)
 - ✅ Message encryption & privacy: Fernet field-level encryption, checkpoint blob encryption, RLS on checkpoint tables, PBKDF2 key derivation (Phase 24)
 - ✅ Design system revamp: Jardin theme, Plus Jakarta Sans typography, spacing tokens, SVG lesson icons, WCAG AA compliance (Phase 25)
+- ✅ Conversation threads: per-thread language/level, thread sidebar with SPA switching, auto-titling via Claude Haiku, `active_thread` httponly cookie, 717 new Python tests (Phase 26)
 
 ---
 
@@ -215,7 +216,8 @@ habla-hermano/
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │       ├── review.py             # Spaced repetition review sessions (auth-only)
 │   │       ├── learn.py              # Learning paths & adaptive recommendations
-│   │       └── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
+│   │       ├── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
+│   │       └── threads.py            # Thread CRUD: list, create, rename (PATCH), delete (Phase 26)
 │   │
 │   ├── agent/                        # LangGraph conversation engine
 │   │   ├── graph.py                  # StateGraph with routing
@@ -255,7 +257,10 @@ habla-hermano/
 │   │   ├── review.py                 # ReviewService: spaced repetition (SM-2)
 │   │   ├── paths.py                  # PathService: structured learning paths per language
 │   │   ├── adaptive.py               # AdaptiveService: daily adaptive recommendations
-│   │   └── lesson_completion.py      # Lesson completion logic (ExerciseFeedback, CompletionResult, check_exercise_answer, complete_lesson_and_persist)
+│   │   ├── lesson_completion.py      # Lesson completion logic (ExerciseFeedback, CompletionResult, check_exercise_answer, complete_lesson_and_persist)
+│   │   ├── threads.py                # ThreadService: CRUD for conversation_threads table (Phase 26)
+│   │   ├── thread_titling.py         # Auto-title generation via Claude Haiku, 30-token budget, 3–5 words (Phase 26)
+│   │   └── thread_messages.py        # Message history extraction from LangGraph checkpoint state (Phase 26)
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
@@ -271,7 +276,10 @@ habla-hermano/
 │   │       ├── lesson_complete.html  # Completion celebration
 │   │       ├── progress_vocab.html   # Vocabulary list partial
 │   │       ├── stats_summary.html    # Stats card partial
-│   │       └── learn_recommendation.html # Adaptive recommendation partial (HTMX)
+│   │       ├── learn_recommendation.html # Adaptive recommendation partial (HTMX)
+│   │       ├── thread_sidebar.html   # Sidebar drawer with thread list, rename/delete controls, New Chat picker (Phase 26)
+│   │       ├── thread_content.html   # SPA partial returned by /chat/thread-content on thread switch (Phase 26)
+│   │       └── thread_history.html   # Preloaded message history rendered when switching threads (Phase 26)
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
@@ -286,7 +294,7 @@ habla-hermano/
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
 │               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
 │
-├── tests/                            # 2,437 tests (2,196 Python + 241 JS), 97% coverage
+├── tests/                            # 2,675+ tests (2,196+ Python + 238 JS), 97% coverage
 │   ├── conftest.py                   # Fixtures
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
@@ -318,6 +326,7 @@ habla-hermano/
 │   │       ├── test_review.py        # Review route tests
 │   │       ├── test_validation.py    # Validation tests
 │   │       ├── test_voice.py         # Voice STT/TTS route tests
+│   │       ├── test_threads.py       # Thread CRUD route tests (Phase 26)
 │   │       └── test_e2e.py           # End-to-end route tests
 │   ├── db/
 │   │   ├── test_models.py            # Database model tests
@@ -332,7 +341,10 @@ habla-hermano/
 │       ├── test_review.py            # ReviewService tests
 │       ├── test_paths.py             # PathService tests
 │       ├── test_levels.py            # Level detection tests
-│       └── test_vocabulary.py        # Vocabulary tracking tests
+│       ├── test_vocabulary.py        # Vocabulary tracking tests
+│       ├── test_threads.py           # ThreadService CRUD tests (Phase 26)
+│       ├── test_thread_titling.py    # Auto-title generation tests (Phase 26)
+│       └── test_thread_messages.py   # Message history extraction tests (Phase 26)
 │
 ├── docs/
 │   ├── architecture.md
@@ -622,6 +634,11 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 | DELETE | `/progress/vocabulary/{id}` | Remove word from vocabulary |
 | GET | `/learn/` | Learning paths overview page |
 | GET | `/learn/recommendation` | Adaptive recommendation partial (HTMX) |
+| GET | `/threads/` | List all threads for the authenticated user |
+| POST | `/threads/` | Create a new thread (language + level required) |
+| PATCH | `/threads/{id}` | Rename a thread |
+| DELETE | `/threads/{id}` | Delete a thread and its checkpoints |
+| GET | `/chat/thread-content` | SPA partial for thread switching (returns thread history + new welcome) |
 
 ### Chat Request/Response
 
@@ -687,6 +704,18 @@ user_id: UUID
 lesson_id: TEXT
 completed_at: TIMESTAMP
 score: INT
+```
+
+**conversation_threads** (Phase 26)
+```sql
+id: UUID PRIMARY KEY
+user_id: UUID (FK to auth.users)
+thread_id: TEXT UNIQUE    -- format: user:{user_id}:{uuid4}, bridges metadata ↔ LangGraph checkpoints
+title: TEXT               -- auto-generated via Claude Haiku (30-token budget, 3–5 words) after first exchange
+language: TEXT            -- immutable after creation (es, de, fr)
+level: TEXT               -- immutable after creation (A0, A1, A2, B1)
+created_at: TIMESTAMP
+updated_at: TIMESTAMP
 ```
 
 ---
@@ -801,7 +830,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2,437 tests: 2,196 Python + 241 JS)
+### Coverage: 97% (2,675+ tests: 2,196+ Python + 238 JS)
 
 ### Test Categories
 
@@ -810,10 +839,10 @@ class Settings(BaseSettings):
 | Agent | `tests/agent/` | LangGraph nodes, state, routing, checkpointer |
 | Agent Nodes | `tests/agent/nodes/` | Individual node tests (analyze, scaffold, review) |
 | API | `tests/api/` | Auth, config, CSRF, session, supabase client |
-| API Routes | `tests/api/routes/` | Chat, auth, learn, lessons, progress, review, e2e |
+| API Routes | `tests/api/routes/` | Chat, auth, learn, lessons, progress, review, threads, e2e |
 | Database | `tests/db/` | Models, repository |
 | Lessons | `tests/lessons/` | Lesson models, lesson service |
-| Services | `tests/services/` | Adaptive, coverage, progress, review, paths, levels, vocabulary |
+| Services | `tests/services/` | Adaptive, coverage, progress, review, paths, levels, vocabulary, threads, thread_titling, thread_messages |
 
 ### Key Fixtures
 
@@ -961,4 +990,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v2.4 — Habla Hermano (2,437 tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience + Message Encryption + Design System)*
+*Crash Course v2.6 — Habla Hermano (2,675+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience + Message Encryption + Design System + Conversation Threads)*

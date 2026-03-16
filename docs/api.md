@@ -31,6 +31,7 @@ The API uses two cookie-based identity mechanisms:
 | Chat - Lesson mode (`/?lesson=...`, `/chat/stream` with `lesson_id`) | Optional (`OptionalUserDep`) | Full lesson chat access. Score persistence requires authentication. |
 | Progress (`/progress/*`) | Required for data (`OptionalUserDep`) | Returns empty/zero stats with `is_guest: True` |
 | Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
+| Threads (`/threads/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Lessons (`/lessons/`) | Optional | Full access to browse lessons |
 | Voice (`/ws/transcribe`, `/ws/speak`) | Required (`sb-access-token` JWT cookie) | WebSocket rejected with close code `4001` |
 | Voice (`/api/speak`) | Optional (`OptionalUserDep`) + CSRF header | Full access when voice configured |
@@ -350,6 +351,255 @@ while (true) {
   const chunk = decoder.decode(value);
   // Parse SSE events from chunk
 }
+```
+
+---
+
+## Threads
+
+Conversation threads allow authenticated users to maintain multiple named chat sessions across languages and levels. Thread metadata (title, language, level, timestamps) is stored in the database; the actual conversation history lives in LangGraph checkpoints. Threads are displayed in a collapsible sidebar and support real-time title editing and deletion.
+
+**Authentication**: All thread endpoints require a valid `sb-access-token` cookie (`CurrentUserDep`). Unauthenticated requests return `401 Unauthorized`.
+
+**CSRF**: All state-changing requests (POST, PATCH, DELETE) must include a CSRF header — either `HX-Request: true` (sent automatically by HTMX) or `X-Requested-With: XMLHttpRequest`.
+
+---
+
+### GET /threads/
+
+List all conversation threads for the authenticated user, ordered by `updated_at` descending (most recently active first).
+
+**Authentication**: Required (`CurrentUserDep`). Returns 401 if the `sb-access-token` cookie is absent or invalid.
+
+**Response**: JSON array of thread objects.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Database row UUID |
+| `thread_id` | string | LangGraph checkpoint thread identifier |
+| `title` | string | Display title (auto-generated or user-renamed) |
+| `language` | string | Target language code: `es`, `de`, `fr` |
+| `level` | string | CEFR level: `A0`, `A1`, `A2`, `B1` |
+| `created_at` | string | ISO 8601 timestamp |
+| `updated_at` | string | ISO 8601 timestamp |
+
+**Example**:
+```bash
+curl http://localhost:8000/threads/ \
+  -H "Cookie: sb-access-token=<jwt>"
+```
+
+**Example Response**:
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "thread_id": "user:abc123:1",
+    "title": "Ordering coffee",
+    "language": "es",
+    "level": "A1",
+    "created_at": "2026-03-16T10:00:00Z",
+    "updated_at": "2026-03-16T10:30:00Z"
+  }
+]
+```
+
+---
+
+### POST /threads/
+
+Create a new conversation thread for the authenticated user. Returns a JSON object describing the new thread with HTTP 201 Created.
+
+**Authentication**: Required (`CurrentUserDep`). Returns 401 if the `sb-access-token` cookie is absent or invalid.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `language` | string | No | `es` | Target language code: `es`, `de`, `fr` |
+| `level` | string | No | `A1` | CEFR proficiency level: `A0`, `A1`, `A2`, `B1` |
+
+**Response** (`201 Created`): JSON object for the newly created thread (same shape as the list items above).
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/threads/ \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true" \
+  -d "language=es" \
+  -d "level=A1"
+```
+
+**Example Response**:
+```json
+{
+  "id": "661f9511-f3ac-52e5-b827-557766551111",
+  "thread_id": "user:abc123:2",
+  "title": "New conversation",
+  "language": "es",
+  "level": "A1",
+  "created_at": "2026-03-16T11:00:00Z",
+  "updated_at": "2026-03-16T11:00:00Z"
+}
+```
+
+---
+
+### PATCH /threads/{thread_id}
+
+Rename an existing thread. The `title` is stripped of leading/trailing whitespace and truncated to 100 characters. Returns the updated `thread_id` and `title` as JSON.
+
+**Authentication**: Required (`CurrentUserDep`). The service enforces ownership via RLS — only the thread owner can rename it.
+
+**Path Parameter**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `thread_id` | string | LangGraph thread identifier (from the thread object's `thread_id` field) |
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Constraints | Description |
+|-----------|------|----------|-------------|-------------|
+| `title` | string | Yes | Max 100 chars after trimming | New display name for the thread |
+
+**Response** (`200 OK`): JSON object confirming the rename.
+
+```json
+{
+  "thread_id": "user:abc123:1",
+  "title": "Ordering coffee at a cafe"
+}
+```
+
+**Error Responses**:
+
+| Status | Cause |
+|--------|-------|
+| `401` | Missing or invalid `sb-access-token` |
+| `404` | Thread not found or does not belong to the authenticated user |
+
+**Example**:
+```bash
+curl -X PATCH http://localhost:8000/threads/user:abc123:1 \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true" \
+  -d "title=Ordering coffee at a cafe"
+```
+
+---
+
+### DELETE /threads/{thread_id}
+
+Delete a thread's metadata record. This is idempotent — deleting a thread that does not exist or has already been deleted succeeds silently. If the deleted thread is the currently active thread (tracked via the `active_thread` cookie), that cookie is cleared from the response.
+
+**Note**: LangGraph checkpoints associated with the thread are orphaned, not deleted. Conversation history is not recoverable after deletion.
+
+**Authentication**: Required (`CurrentUserDep`). The service enforces ownership via RLS.
+
+**Path Parameter**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `thread_id` | string | LangGraph thread identifier (from the thread object's `thread_id` field) |
+
+**Response** (`204 No Content`): Empty body. Clears the `active_thread` cookie if it matches the deleted thread.
+
+**Error Responses**:
+
+| Status | Cause |
+|--------|-------|
+| `401` | Missing or invalid `sb-access-token` |
+
+**Example**:
+```bash
+curl -X DELETE http://localhost:8000/threads/user:abc123:1 \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true"
+```
+
+---
+
+### POST /threads/select
+
+Set the active thread by writing a signed `active_thread` cookie. This keeps the thread identifier server-side and out of the URL. After selecting a thread, call `GET /chat/thread-content` to load its message history into the chat UI.
+
+**Authentication**: Required (`CurrentUserDep`). Returns 404 if the thread does not exist or does not belong to the user.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `thread_id` | string | Yes | LangGraph thread identifier to activate |
+
+**Response** (`200 OK`): Sets a signed `active_thread` cookie (30-day expiry) and returns:
+```json
+{"status": "ok"}
+```
+
+**Error Responses**:
+
+| Status | Cause |
+|--------|-------|
+| `401` | Missing or invalid `sb-access-token` |
+| `404` | Thread not found or does not belong to the authenticated user |
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/threads/select \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true" \
+  -d "thread_id=user:abc123:1"
+```
+
+---
+
+### GET /chat/thread-content
+
+Return the chat message area for the currently active thread as an HTML partial. Used by the sidebar's client-side thread switching to update the conversation view without a full page reload. The active thread is read from the signed `active_thread` cookie set by `POST /threads/select`.
+
+**Authentication**: Optional (`OptionalUserDep`). Returns an empty partial (200 with empty body) when the user is not authenticated, no `active_thread` cookie is present, or the thread cannot be found.
+
+**Cookies**:
+
+| Cookie | Description |
+|--------|-------------|
+| `active_thread` | Signed thread identifier, set by `POST /threads/select` |
+| `sb-access-token` | Supabase JWT, required to load thread data from the database |
+
+**Response** (`200 OK`): HTML partial (`partials/thread_content.html`) containing the conversation history for the active thread. Includes two custom response headers that allow the client to sync Alpine.js state without a round-trip:
+
+| Response Header | Description |
+|-----------------|-------------|
+| `X-Thread-Language` | Language code of the active thread (e.g. `es`) |
+| `X-Thread-Level` | CEFR level of the active thread (e.g. `A1`) |
+
+When the user is unauthenticated or the thread cannot be resolved, returns an empty `200` response with default headers `X-Thread-Language: es` and `X-Thread-Level: A1`.
+
+**HTMX Integration**:
+```javascript
+// Sidebar calls POST /threads/select, then swaps in the updated message area:
+async function switchThread(threadId) {
+  await fetch('/threads/select', {
+    method: 'POST',
+    headers: { 'HX-Request': 'true', 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `thread_id=${encodeURIComponent(threadId)}`
+  });
+
+  const res = await fetch('/chat/thread-content');
+  const html = await res.text();
+  document.getElementById('chat-messages').innerHTML = html;
+
+  // Sync Alpine.js language/level state from response headers
+  Alpine.store('chat').language = res.headers.get('X-Thread-Language') ?? 'es';
+  Alpine.store('chat').level    = res.headers.get('X-Thread-Level')    ?? 'A1';
+}
+```
+
+**Example**:
+```bash
+curl http://localhost:8000/chat/thread-content \
+  -H "Cookie: sb-access-token=<jwt>; active_thread=<signed-value>"
 ```
 
 ---

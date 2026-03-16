@@ -136,31 +136,25 @@ describe('Cmd/Ctrl + Shift + N shortcut', () => {
     beforeEach(() => {
         setupDOM();
         vi.useFakeTimers();
-        // Mock the global htmx object
-        window.htmx = { trigger: vi.fn() };
+        // jsdom prevents location.assign spy; replace with a plain mock instead
+        delete window.location;
+        window.location = { href: '' };
         initKeyboardShortcuts();
     });
     afterEach(() => {
         vi.useRealTimers();
-        delete window.htmx;
     });
 
-    it('triggers click on the new conversation button', () => {
-        const newChatBtn = document.querySelector('[hx-post="/new"]');
-
+    it('navigates to / to start a new conversation', () => {
         pressKey('N', { metaKey: true, shiftKey: true });
 
-        expect(window.htmx.trigger).toHaveBeenCalledWith(newChatBtn, 'click');
+        expect(window.location.href).toBe('/');
     });
 
-    it('does nothing when the new conversation button is missing', () => {
-        document.getElementById('new-chat-btn').remove();
-
+    it('does nothing unexpected when triggered', () => {
         expect(() => {
             pressKey('N', { metaKey: true, shiftKey: true });
         }).not.toThrow();
-
-        expect(window.htmx.trigger).not.toHaveBeenCalled();
     });
 });
 

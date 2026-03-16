@@ -113,6 +113,15 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
 }
 
 function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
+    // Unlock the audio element for iOS Safari and strict autoplay policies.
+    // play() must be called within the synchronous user-gesture call stack.
+    // Calling play() + pause() here "activates" the element so that the
+    // later async play() (after fetch completes) is allowed by the browser.
+    if (ttsPlayer) {
+        ttsPlayer.play().catch(function() {});
+        ttsPlayer.pause();
+    }
+
     var textChunks = chunkTextForTTS(text);
     var allBlobs = [];
 

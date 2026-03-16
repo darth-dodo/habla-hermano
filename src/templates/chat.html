@@ -3,24 +3,27 @@
 {% block title %}{% if lesson_mode %}{{ lesson_title }} - Habla Hermano{% else %}Chat - Habla Hermano{% endif %}{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{
+<div class="flex h-full" x-data="{
     {% if lesson_mode %}
     language: '{{ lesson_language or 'es' }}',
     level: '{{ lesson_level or 'A1' }}',
+    {% elif active_thread_id %}
+    language: '{{ current_language or 'es' }}',
+    level: '{{ current_level or 'A1' }}',
     {% else %}
     language: localStorage.getItem('hermano-language') || '{{ current_language or 'es' }}',
     level: localStorage.getItem('hermano-level') || '{{ current_level or 'A1' }}',
     {% endif %}
     menuOpen: false,
-    reviewMode: {{ 'true' if review_mode else 'false' }},
-    onLanguageChange(lang) {
-        if (this.$refs.languageInput) this.$refs.languageInput.value = lang;
-        {% if not lesson_mode %}localStorage.setItem('hermano-language', lang);{% endif %}
-    }
-}" x-init="{% if not lesson_mode %}
-    $watch('level', val => localStorage.setItem('hermano-level', val));
-{% endif %}"
+    reviewMode: {{ 'true' if review_mode else 'false' }}
+}"
+    @thread-switched.window="
+        language = $event.detail.language;
+        level = $event.detail.level;
+    "
 >
+    {% include "partials/thread_sidebar.html" %}
+    <div class="flex-1 flex flex-col min-w-0">
     {% set page_name = 'chat' %}
     {% include "partials/app_header.html" %}
 
@@ -72,6 +75,7 @@
                     </div>
                 </div>
                 {% else %}
+                {% if not messages %}
                 {% if show_warmup and review_stats %}
                 <!-- Warmup Prompt - Show when words are due -->
                 {% set due_count = review_stats.due_count %}
@@ -100,12 +104,9 @@
                     </div>
                 </div>
                 {% endif %}
-
-                {% if messages %}
-                    {% for msg in messages %}
-                        {% include "partials/message.html" %}
-                    {% endfor %}
                 {% endif %}
+
+                {% include "partials/thread_history.html" %}
                 {% endif %}
             </div>
 
@@ -137,6 +138,7 @@
                 <!-- Hidden inputs -->
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
+                <input type="hidden" name="thread_id" id="thread-id-input" value="{{ active_thread_id or '' }}">
                 {% if lesson_id %}
                 <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
                 <input type="hidden" name="lesson_session" value="{{ lesson_session }}">
@@ -161,7 +163,7 @@
                     <button
                         type="button"
                         id="mic-btn"
-                        class="p-3 bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-accent rounded-xl transition-all duration-150"
+                        class="p-3 bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-accent rounded-xl transition-all duration-150 cursor-pointer"
                         aria-label="Record voice message"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -175,7 +177,7 @@
                     <button
                         type="submit"
                         id="send-btn"
-                        class="{% if voice_enabled %}hidden {% endif %}flex-shrink-0 p-3 bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="{% if voice_enabled %}hidden {% endif %}flex-shrink-0 p-3 bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Send message"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -208,6 +210,7 @@
             </p>
         </div>
     </footer>
+    </div>{# end flex-1 chat column #}
 </div>
 {% endblock %}
 

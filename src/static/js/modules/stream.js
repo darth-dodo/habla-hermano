@@ -255,6 +255,73 @@ function handleStreamEvent(event, dataStr, bubbleId) {
             showLessonComplete(data);
             break;
 
+        case 'thread_title': {
+            // Update the sidebar thread title if it exists (use data-thread-id, not href)
+            const titleSpan = document.querySelector(`[data-thread-id="${data.thread_id}"] span.truncate`);
+            if (titleSpan) {
+                titleSpan.textContent = data.title;
+            }
+            break;
+        }
+
+        case 'thread_created': {
+            // Server auto-created a thread; update hidden input so subsequent
+            // messages go to the same thread.
+            if (data.thread_id) {
+                let threadInput = document.querySelector('input[name="thread_id"]');
+                if (threadInput) {
+                    threadInput.value = data.thread_id;
+                } else {
+                    const form = document.getElementById('chat-form');
+                    if (form) {
+                        threadInput = document.createElement('input');
+                        threadInput.type = 'hidden';
+                        threadInput.name = 'thread_id';
+                        threadInput.value = data.thread_id;
+                        form.prepend(threadInput);
+                    }
+                }
+
+                // Persist selection via cookie (keeps thread_id out of URL)
+                fetch('/threads/select', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                    body: 'thread_id=' + encodeURIComponent(data.thread_id),
+                }).catch(() => {}); // fire-and-forget
+
+                // Keep URL clean — no thread_id in query string
+                window.history.replaceState({}, '', '/');
+
+                // Add the new thread to the sidebar (matches thread_sidebar.html structure)
+                const flagMap = { es: '\u{1F1EA}\u{1F1F8}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}' };
+                const flag = flagMap[data.language] || '\u{1F1EA}\u{1F1F8}';
+                const threadList = document.querySelector('.overflow-y-auto.p-2.space-y-0\\.5');
+                if (threadList) {
+                    // Remove "No conversations yet" placeholder if present
+                    const placeholder = threadList.querySelector('.text-center');
+                    if (placeholder) placeholder.remove();
+
+                    // Remove active styling from any previously active thread
+                    threadList.querySelectorAll(':scope > div').forEach(div => {
+                        div.classList.remove('bg-accent/10');
+                        div.classList.add('hover:bg-surface-overlay');
+                        const link = div.querySelector('a');
+                        if (link) {
+                            link.classList.remove('text-accent', 'font-medium');
+                            link.classList.add('text-text');
+                        }
+                    });
+
+                    // Insert new thread — href="/" so clicking re-selects via cookie
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'group relative flex items-center rounded-xl transition-all duration-200 bg-accent/10';
+                    wrapper.innerHTML = `<a href="/" data-thread-id="${escapeHtml(data.thread_id)}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="flex-1 truncate">New conversation</span></a>`;
+                    threadList.prepend(wrapper);
+                }
+            }
+            break;
+        }
+
         case 'done':
             finishStreaming();
             break;
