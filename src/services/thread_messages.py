@@ -31,9 +31,7 @@ async def get_thread_messages(thread_id: str) -> list[dict[str, str]]:
     try:
         async with get_checkpointer() as checkpointer:
             graph = build_graph(checkpointer=checkpointer)
-            state = await graph.aget_state(
-                RunnableConfig(configurable={"thread_id": thread_id})
-            )
+            state = await graph.aget_state(RunnableConfig(configurable={"thread_id": thread_id}))
             if not state or not state.values.get("messages"):
                 return []
             return [
