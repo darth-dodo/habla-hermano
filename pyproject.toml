@@ -208,4 +208,5 @@ show_missing = true
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "ruff>=0.14.11",
 ]

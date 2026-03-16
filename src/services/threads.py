@@ -43,7 +43,7 @@ class ThreadService:
             "level": level,
         }
         result = self._client.table(self.TABLE).insert(data).execute()
-        return ConversationThread(**cast(dict[str, Any], result.data[0]))
+        return ConversationThread(**cast("dict[str, Any]", result.data[0]))
 
     def list_threads(self) -> list[ConversationThread]:
         """List all threads for user, ordered by updated_at DESC."""
@@ -54,7 +54,7 @@ class ThreadService:
             .order("updated_at", desc=True)
             .execute()
         )
-        return [ConversationThread(**cast(dict[str, Any], row)) for row in result.data]
+        return [ConversationThread(**cast("dict[str, Any]", row)) for row in result.data]
 
     def get_thread(self, thread_id: str) -> ConversationThread | None:
         """Get a single thread by its LangGraph thread_id."""
@@ -67,7 +67,7 @@ class ThreadService:
         )
         if not result.data:
             return None
-        return ConversationThread(**cast(dict[str, Any], result.data[0]))
+        return ConversationThread(**cast("dict[str, Any]", result.data[0]))
 
     def update_title(self, thread_id: str, title: str) -> None:
         """Rename a thread."""
