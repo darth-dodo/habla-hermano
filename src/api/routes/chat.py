@@ -276,6 +276,58 @@ def _resolve_lesson_thread_id(
     return f"lesson:{new_id}:{lesson_id}:{suffix}", None, new_id
 
 
+@router.get("/chat/thread-content", response_class=HTMLResponse, response_model=None)
+async def thread_content_partial(
+    request: Request,
+    templates: TemplatesDep,
+    settings: SettingsDep,
+    user: OptionalUserDep,
+    active_thread: Annotated[str | None, Cookie()] = None,
+) -> Response:
+    """Return the message area HTML for the active thread (SPA-style thread switching).
+
+    Reads the active_thread cookie set by POST /threads/select and returns only
+    the inner content of #chat-messages, avoiding a full page reload when switching
+    threads. Thread language/level are passed back in X-Thread-* response headers
+    so the client can update Alpine.js state without a round-trip.
+    """
+    empty = HTMLResponse("", headers={"X-Thread-Language": "es", "X-Thread-Level": "A1"})
+
+    if not user or not active_thread:
+        return empty
+
+    sb_token = request.cookies.get("sb-access-token")
+    if not sb_token:
+        return empty
+
+    try:
+        user_client = get_supabase_for_user(sb_token)
+        thread_service = ThreadService(user_id=user.id, client=user_client)
+        thread_data = thread_service.get_thread(active_thread)
+        if not thread_data:
+            return empty
+
+        messages = await get_thread_messages(active_thread)
+    except Exception:
+        logger.exception("Failed to load thread content for %s", active_thread)
+        return empty
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/thread_content.html",
+        context={
+            "messages": messages,
+            "current_language": thread_data.language,
+            "current_level": thread_data.level,
+            "voice_enabled": settings.voice_enabled,
+        },
+        headers={
+            "X-Thread-Language": thread_data.language,
+            "X-Thread-Level": thread_data.level,
+        },
+    )
+
+
 @router.post("/chat", response_class=HTMLResponse)
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
 async def send_message(  # noqa: PLR0912

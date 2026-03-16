@@ -19,9 +19,64 @@ Variables expected:
         editTitle: '',
         confirmingDelete: null,
         selectThread(threadId) {
+            // 1. Optimistic sidebar highlight — instant feedback before network
+            document.querySelectorAll('[data-thread-id]').forEach(el => {
+                const grp = el.closest('.group');
+                if (!grp) return;
+                grp.classList.remove('bg-accent/10');
+                el.classList.remove('text-accent', 'font-medium');
+                el.classList.add('text-text');
+            });
+            const activeLink = document.querySelector('[data-thread-id="' + threadId + '"]');
+            if (activeLink) {
+                activeLink.closest('.group').classList.add('bg-accent/10');
+                activeLink.classList.add('text-accent', 'font-medium');
+                activeLink.classList.remove('text-text');
+            }
+
+            // 2. Show skeleton while content loads
+            const chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.innerHTML =
+                    '<div class="space-y-6 animate-pulse py-4">' +
+                    '<div class="flex justify-end mb-6"><div class="h-10 bg-surface-overlay rounded-2xl w-48 rounded-br-sm"></div></div>' +
+                    '<div class="flex justify-start mb-6"><div class="h-16 bg-surface-overlay rounded-2xl w-64 rounded-bl-sm"></div></div>' +
+                    '<div class="flex justify-end mb-6"><div class="h-10 bg-surface-overlay rounded-2xl w-40 rounded-br-sm"></div></div>' +
+                    '<div class="flex justify-start mb-6"><div class="h-24 bg-surface-overlay rounded-2xl w-72 rounded-bl-sm"></div></div>' +
+                    '</div>';
+            }
+
+            // 3. Set cookie, then fetch partial content
             const hdrs = {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'};
             fetch('/threads/select', {method: 'POST', headers: hdrs, body: 'thread_id=' + encodeURIComponent(threadId)})
-                .then(() => { window.location.reload(); });
+                .then(() => fetch('/chat/thread-content', {headers: {'X-Requested-With': 'XMLHttpRequest'}}))
+                .then(r => {
+                    const lang = r.headers.get('X-Thread-Language') || 'es';
+                    const level = r.headers.get('X-Thread-Level') || 'A1';
+                    return r.text().then(html => ({html, lang, level}));
+                })
+                .then(({html, lang, level}) => {
+                    // Swap message content
+                    if (chatMessages) {
+                        chatMessages.innerHTML = html;
+                        // Scroll to bottom of new thread
+                        const container = document.getElementById('chat-container');
+                        if (container) container.scrollTop = container.scrollHeight;
+                        // Re-init TTS buttons for loaded messages
+                        if (window.hablaVoice && typeof window.hablaVoice.initTTSButtons === 'function') {
+                            window.hablaVoice.initTTSButtons(chatMessages);
+                        }
+                    }
+                    // Update hidden thread_id form input
+                    const input = document.getElementById('thread-id-input');
+                    if (input) input.value = threadId;
+                    // Notify Alpine root component to update language/level
+                    window.dispatchEvent(new CustomEvent('thread-switched', {detail: {language: lang, level: level}}));
+                })
+                .catch(() => {
+                    // Fallback: full reload if partial fetch fails
+                    window.location.reload();
+                });
         },
         startRename(threadId, currentTitle) {
             this.editingThread = threadId;
@@ -178,11 +233,19 @@ Variables expected:
                         <template x-if="editingThread === '{{ thread.thread_id }}'">
                             <form
                                 @submit.prevent="
+                                    const tid = editingThread;
+                                    const newTitle = editTitle.trim().substring(0, 100);
                                     fetch('/threads/{{ thread.thread_id }}', {
                                         method: 'PATCH',
                                         headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
-                                        body: 'title=' + encodeURIComponent(editTitle)
-                                    }).then(() => window.location.reload());
+                                        body: 'title=' + encodeURIComponent(newTitle)
+                                    }).then(() => {
+                                        editingThread = null;
+                                        $nextTick(() => {
+                                            const span = document.querySelector('[data-thread-id=\'' + tid + '\'] .truncate');
+                                            if (span) span.textContent = newTitle || 'New conversation';
+                                        });
+                                    });
                                 "
                                 @click.stop
                                 class="flex-1 min-w-0"

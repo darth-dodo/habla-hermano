@@ -1,0 +1,33 @@
+{#
+Thread Content Partial — returned by GET /chat/thread-content for SPA-style thread switching.
+Variables:
+  - messages: list of message dicts (role, content)
+  - current_language: str
+  - current_level: str
+  - voice_enabled: bool
+#}
+{% if messages %}
+{% include "partials/thread_history.html" %}
+{% else %}
+<!-- Welcome message — Alpine x-show directives reference parent component's language/level vars -->
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
+        <p class="text-ai-text leading-relaxed">
+            <span class="font-semibold text-accent">
+                <span x-show="language === 'es'">¡Hola!</span>
+                <span x-show="language === 'de'">Hallo!</span>
+                <span x-show="language === 'fr'">Bonjour!</span>
+            </span>
+            I'm your
+            <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span>
+            conversation partner. I'll match your
+            <span class="font-medium text-accent" x-text="level"></span> level.
+        </p>
+        <p class="text-text-muted mt-2 text-sm">
+            <span x-show="language === 'es'">Start typing in Spanish or ask me anything.</span>
+            <span x-show="language === 'de'">Start typing in German or ask me anything.</span>
+            <span x-show="language === 'fr'">Start typing in French or ask me anything.</span>
+        </p>
+    </div>
+</div>
+{% endif %}

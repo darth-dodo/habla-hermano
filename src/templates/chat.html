@@ -17,6 +17,10 @@
     menuOpen: false,
     reviewMode: {{ 'true' if review_mode else 'false' }}
 }"
+    @thread-switched.window="
+        language = $event.detail.language;
+        level = $event.detail.level;
+    "
 >
     {% if user %}{% include "partials/thread_sidebar.html" %}{% endif %}
     <div class="flex-1 flex flex-col min-w-0">
@@ -134,9 +138,7 @@
                 <!-- Hidden inputs -->
                 <input type="hidden" name="level" x-ref="levelInput" :value="level">
                 <input type="hidden" name="language" x-ref="languageInput" :value="language">
-                {% if active_thread_id %}
-                <input type="hidden" name="thread_id" value="{{ active_thread_id }}">
-                {% endif %}
+                <input type="hidden" name="thread_id" id="thread-id-input" value="{{ active_thread_id or '' }}">
                 {% if lesson_id %}
                 <input type="hidden" name="lesson_id" value="{{ lesson_id }}">
                 <input type="hidden" name="lesson_session" value="{{ lesson_session }}">
