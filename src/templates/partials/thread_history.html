@@ -11,6 +11,17 @@
 <div class="flex justify-start mb-6">
     <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%] shadow-sm">
         <div class="text-ai-text prose-chat">{{ msg.content | markdown }}</div>
+        {% if voice_enabled %}
+        <div class="voice-tts-row mt-2"
+             data-text="{{ msg.content | e }}"
+             data-language="{{ current_language or 'es' }}"
+             data-speed="{{ {'A0': '0.75', 'A1': '0.85', 'A2': '1.0', 'B1': '1.0'}.get(current_level, '1.0') }}">
+            <button type="button" class="voice-tts-play" aria-label="Play audio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </button>
+            <button type="button" class="voice-tts-speed" aria-label="Playback speed">{{ {'A0': '0.75', 'A1': '0.85', 'A2': '1.0', 'B1': '1.0'}.get(current_level, '1') }}×</button>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
