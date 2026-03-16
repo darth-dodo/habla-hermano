@@ -372,10 +372,10 @@ html { touch-action: manipulation; }
 
 /* Touch device: always show thread delete buttons (no hover on touch) */
 @media (hover: none) {
-    .group:has(a[href^="/?thread="]) button[aria-label="Delete thread"] {
+    .group:has(a[data-thread-id]) button[aria-label="Delete thread"] {
         opacity: 0.5;
     }
-    .group:has(a[href^="/?thread="]):active button[aria-label="Delete thread"] {
+    .group:has(a[data-thread-id]):active button[aria-label="Delete thread"] {
         opacity: 1;
     }
 }

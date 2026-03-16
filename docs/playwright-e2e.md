@@ -1148,7 +1148,7 @@ Empty State Display:
 3. Click "🇪🇸 Start Spanish Chat A2"
 
 **Expected**:
-- Thread created, URL changes to `/?thread={id}`
+- Thread created, URL stays at `/` (thread ID stored in httponly cookie, not exposed in URL)
 - Thread appears in sidebar with 🇪🇸 flag and title "New conversation"
 - Welcome message: "¡Hola! I'm your Spanish conversation partner. I'll match your A2 level."
 - Input placeholder: "Type in Spanish..."
@@ -1178,7 +1178,7 @@ Empty State Display:
 2. Click the Spanish thread in sidebar
 
 **Expected**:
-- URL updates to the Spanish thread ID
+- URL stays at `/` (active thread set via `active_thread` cookie, not query param)
 - Header badges switch to 🇪🇸 A2
 - Welcome message and placeholder update to Spanish
 - Previous thread remains in sidebar
@@ -1321,7 +1321,7 @@ Added `pointer-events-none` when closed on mobile, `md:pointer-events-auto` for 
 
 **Expected**:
 - Inline picker works within mobile sidebar width
-- Thread created, page redirects to new thread URL
+- Thread created, page navigates to `/` (clean URL, no thread ID exposed)
 - Sidebar auto-closes after creation
 
 **Result**: ✅ Pass

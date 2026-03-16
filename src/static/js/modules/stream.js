@@ -256,8 +256,8 @@ function handleStreamEvent(event, dataStr, bubbleId) {
             break;
 
         case 'thread_title': {
-            // Update the sidebar thread title if it exists
-            const titleSpan = document.querySelector(`a[href="/?thread=${data.thread_id}"] span.truncate`);
+            // Update the sidebar thread title if it exists (use data-thread-id, not href)
+            const titleSpan = document.querySelector(`[data-thread-id="${data.thread_id}"] span.truncate`);
             if (titleSpan) {
                 titleSpan.textContent = data.title;
             }
@@ -281,10 +281,16 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                         form.prepend(threadInput);
                     }
                 }
-                // Update URL without reload so bookmarks/refresh work
-                const url = new URL(window.location);
-                url.searchParams.set('thread', data.thread_id);
-                window.history.replaceState({}, '', url);
+
+                // Persist selection via cookie (keeps thread_id out of URL)
+                fetch('/threads/select', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                    body: 'thread_id=' + encodeURIComponent(data.thread_id),
+                }).catch(() => {}); // fire-and-forget
+
+                // Keep URL clean — no thread_id in query string
+                window.history.replaceState({}, '', '/');
 
                 // Add the new thread to the sidebar (matches thread_sidebar.html structure)
                 const flagMap = { es: '\u{1F1EA}\u{1F1F8}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}' };
@@ -306,10 +312,10 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                         }
                     });
 
-                    // Insert new thread (div wrapper + link, matching template structure)
+                    // Insert new thread — href="/" so clicking re-selects via cookie
                     const wrapper = document.createElement('div');
                     wrapper.className = 'group relative flex items-center rounded-xl transition-all duration-200 bg-accent/10';
-                    wrapper.innerHTML = `<a href="/?thread=${data.thread_id}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="flex-1 truncate">New conversation</span></a>`;
+                    wrapper.innerHTML = `<a href="/" data-thread-id="${escapeHtml(data.thread_id)}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="flex-1 truncate">New conversation</span></a>`;
                     threadList.prepend(wrapper);
                 }
             }

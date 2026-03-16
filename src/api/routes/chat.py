@@ -83,9 +83,9 @@ async def chat_page(  # noqa: PLR0912
     mode: str | None = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
+    active_thread: Annotated[str | None, Cookie()] = None,
     language: str = "es",
     lesson: Annotated[str | None, Query()] = None,
-    thread: Annotated[str | None, Query()] = None,
 ) -> HTMLResponse:
     """Render the main chat interface.
 
@@ -150,19 +150,19 @@ async def chat_page(  # noqa: PLR0912
         if sb_token:
             user_client = get_supabase_for_user(sb_token)
 
-            # Load active thread if requested
-            if thread:
+            # Load active thread from cookie
+            if active_thread:
                 try:
                     thread_service = ThreadService(user_id=user.id, client=user_client)
-                    active_thread = thread_service.get_thread(thread)
-                    if active_thread:
-                        context["active_thread_id"] = thread
-                        messages = await get_thread_messages(thread)
+                    thread_data = thread_service.get_thread(active_thread)
+                    if thread_data:
+                        context["active_thread_id"] = active_thread
+                        messages = await get_thread_messages(active_thread)
                         context["messages"] = messages
-                        context["current_language"] = active_thread.language
-                        context["current_level"] = active_thread.level
+                        context["current_language"] = thread_data.language
+                        context["current_level"] = thread_data.level
                 except Exception:
-                    logger.exception("Failed to load thread %s for user %s", thread, user.id)
+                    logger.exception("Failed to load thread %s for user %s", active_thread, user.id)
 
             # Load thread list for sidebar
             try:

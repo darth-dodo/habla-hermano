@@ -10,6 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Cookie, Form, HTTPException, Response
 
 from src.api.auth import CurrentUserDep
+from src.api.cookies import set_secure_cookie
 from src.api.supabase_client import get_supabase_for_user
 from src.services.threads import ThreadService
 
@@ -92,9 +93,29 @@ async def update_thread(
 async def delete_thread(
     thread_id: str,
     user: CurrentUserDep,
+    response: Response,
+    active_thread: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> Response:
-    """Delete a conversation thread (idempotent)."""
+    """Delete a conversation thread (idempotent). Clears active_thread cookie if it matches."""
     service = _get_thread_service(user.id, sb_access_token)
     service.delete_thread(thread_id)
+    if active_thread == thread_id:
+        response.delete_cookie("active_thread")
     return Response(status_code=204)
+
+
+@router.post("/select")
+async def select_thread(
+    response: Response,
+    user: CurrentUserDep,
+    thread_id: Annotated[str, Form()],
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+) -> dict[str, str]:
+    """Set the active thread via a signed cookie (keeps thread IDs out of URLs)."""
+    service = _get_thread_service(user.id, sb_access_token)
+    thread = service.get_thread(thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    set_secure_cookie(response, key="active_thread", value=thread_id, max_age=60 * 60 * 24 * 30)
+    return {"status": "ok"}

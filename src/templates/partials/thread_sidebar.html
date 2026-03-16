@@ -18,6 +18,11 @@ Variables expected:
         editingThread: null,
         editTitle: '',
         confirmingDelete: null,
+        selectThread(threadId) {
+            const hdrs = {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'};
+            fetch('/threads/select', {method: 'POST', headers: hdrs, body: 'thread_id=' + encodeURIComponent(threadId)})
+                .then(() => { window.location.reload(); });
+        },
         startRename(threadId, currentTitle) {
             this.editingThread = threadId;
             this.editTitle = currentTitle;
@@ -64,7 +69,9 @@ Variables expected:
                 fetch('/threads', {
                     method: 'POST', headers: hdrs,
                     body: 'language=' + this.newLang + '&level=' + this.newLevel
-                }).then(r => r.json()).then(d => { window.location.href = '/?thread=' + d.thread_id; });
+                }).then(r => r.json()).then(d => {
+                    return fetch('/threads/select', {method: 'POST', headers: hdrs, body: 'thread_id=' + encodeURIComponent(d.thread_id)});
+                }).then(() => { window.location.href = '/'; });
             }
         }">
             <div class="flex items-center gap-2">
@@ -156,8 +163,9 @@ Variables expected:
                 {% for thread in threads %}
                 <div class="group relative flex items-center rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
                     <a
-                        href="/?thread={{ thread.thread_id }}"
-                        @click="mobileOpen = false"
+                        href="#"
+                        data-thread-id="{{ thread.thread_id }}"
+                        @click.prevent="mobileOpen = false; selectThread('{{ thread.thread_id }}')"
                         class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 {{ 'text-accent font-medium' if thread.thread_id == active_thread_id else 'text-text' }}"
                         @contextmenu.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
                     >
