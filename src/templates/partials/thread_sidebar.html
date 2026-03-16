@@ -179,15 +179,15 @@ Variables expected:
             {% if user %}
             {% if threads %}
                 {% for thread in threads %}
-                <div class="group relative flex items-center rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
+                <div class="group relative flex items-start rounded-xl transition-all duration-200 {{ 'bg-accent/10' if thread.thread_id == active_thread_id else 'hover:bg-surface-overlay' }}">
                     <a
                         href="#"
                         data-thread-id="{{ thread.thread_id }}"
                         @click.prevent="mobileOpen = false; selectThread('{{ thread.thread_id }}')"
-                        class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 {{ 'text-accent font-medium' if thread.thread_id == active_thread_id else 'text-text' }}"
+                        class="flex-1 flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 {{ 'text-accent font-medium' if thread.thread_id == active_thread_id else 'text-text' }}"
                     >
                         <!-- Language flag -->
-                        <span class="flex-shrink-0 text-base leading-none" aria-hidden="true">
+                        <span class="flex-shrink-0 text-base leading-none mt-0.5" aria-hidden="true">
                             {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% else %}🇪🇸{% endif %}
                         </span>
 
@@ -205,7 +205,7 @@ Variables expected:
                                         editingThread = null;
                                         $nextTick(() => {
                                             const link = [...document.querySelectorAll('[data-thread-id]')].find(el => el.dataset.threadId === tid);
-                                            const span = link ? link.querySelector('.truncate') : null;
+                                            const span = link ? link.querySelector('.thread-title') : null;
                                             if (span) span.textContent = newTitle || 'New conversation';
                                         });
                                     });
@@ -224,14 +224,14 @@ Variables expected:
                             </form>
                         </template>
                         <template x-if="editingThread !== '{{ thread.thread_id }}'">
-                            <span class="flex-1 truncate">{{ thread.title }}</span>
+                            <span class="thread-title flex-1 break-words leading-snug">{{ thread.title }}</span>
                         </template>
                     </a>
 
                     <!-- Rename + Delete buttons — visible on hover (desktop) or touch-visible (mobile) -->
                     <div
                         x-show="editingThread !== '{{ thread.thread_id }}' && confirmingDelete !== '{{ thread.thread_id }}'"
-                        class="flex items-center flex-shrink-0 mr-1 gap-0.5"
+                        class="flex items-center flex-shrink-0 mr-1 gap-0.5 mt-1.5"
                         @click.stop
                     >
                         <button
@@ -258,7 +258,7 @@ Variables expected:
 
                     <!-- Delete: inline confirm/cancel -->
                     <template x-if="confirmingDelete === '{{ thread.thread_id }}'">
-                        <div class="flex items-center gap-1 flex-shrink-0 mr-1.5" @click.prevent.stop>
+                        <div class="flex items-center gap-1 flex-shrink-0 mr-1.5 mt-1.5" @click.prevent.stop>
                             <button
                                 @click="
                                     fetch('/threads/{{ thread.thread_id }}', {
