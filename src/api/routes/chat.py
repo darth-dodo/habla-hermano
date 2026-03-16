@@ -413,7 +413,7 @@ async def send_message(  # noqa: PLR0912
             thread_id_param = thread_id  # so touch is called after stream
     else:
         # Guest fallback — use existing cookie-based identity
-        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
+        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(  # type: ignore[assignment]
             user, session_id, conversation_version
         )
 
@@ -627,7 +627,7 @@ async def stream_message(  # noqa: PLR0915
             auto_created_thread_id = thread_id
     else:
         # Guest fallback — use existing cookie-based identity
-        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(
+        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(  # type: ignore[assignment]
             user, session_id, conversation_version
         )
 

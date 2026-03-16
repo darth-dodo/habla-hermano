@@ -204,3 +204,8 @@ exclude_lines = [
 ]
 fail_under = 70
 show_missing = true
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+]

@@ -37,7 +37,7 @@ async def get_thread_messages(thread_id: str) -> list[dict[str, str]]:
             return [
                 {
                     "role": "human" if isinstance(m, HumanMessage) else "ai",
-                    "content": m.content,
+                    "content": m.content if isinstance(m.content, str) else "",
                 }
                 for m in state.values["messages"]
                 if isinstance(m, (HumanMessage, AIMessage))

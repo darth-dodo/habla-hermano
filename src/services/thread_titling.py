@@ -32,7 +32,7 @@ async def generate_thread_title(human_message: str, ai_response: str) -> str:
     """
     try:
         settings = get_settings()
-        llm = ChatAnthropic(
+        llm = ChatAnthropic(  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
             model="claude-haiku-4-5-20251001",
             anthropic_api_key=settings.ANTHROPIC_API_KEY,
             max_tokens=30,
@@ -43,7 +43,8 @@ async def generate_thread_title(human_message: str, ai_response: str) -> str:
             ai_response=ai_response[:200],
         )
         result = await llm.ainvoke(prompt)
-        title = result.content.strip().strip('"').strip("'")[:50]
+        content = result.content if isinstance(result.content, str) else ""
+        title = content.strip().strip('"').strip("'")[:50]
         return title if title else "New conversation"
     except Exception:
         logger.exception("Failed to generate thread title")
