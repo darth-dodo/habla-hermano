@@ -3,6 +3,16 @@
 Contains all FastAPI routers for the application.
 """
 
-from src.api.routes import auth, chat, voice
+from src.api.routes import auth, chat, learn, lessons, privacy, progress, review, threads, voice
 
-__all__ = ["auth", "chat", "voice"]
+__all__ = [
+    "auth",
+    "chat",
+    "learn",
+    "lessons",
+    "privacy",
+    "progress",
+    "review",
+    "threads",
+    "voice",
+]
