@@ -9,7 +9,7 @@
     <title>{% block title %}Habla Hermano{% endblock %}</title>
 
     <!-- Theme FOUC prevention: set data-theme before any CSS paints -->
-    <script>
+    <script nonce="{{ request.state.csp_nonce }}">
     (function(){var t=localStorage.getItem('hermano-theme');if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='terracotta';if(t)document.documentElement.setAttribute('data-theme',t)})();
     </script>
 
