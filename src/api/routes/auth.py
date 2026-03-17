@@ -195,7 +195,7 @@ async def signup(
     """
     # Validate passwords match
     if password != confirm_password:
-        response = templates.TemplateResponse(
+        response: Response = templates.TemplateResponse(
             request=request,
             name="auth/signup.html",
             context={
@@ -327,7 +327,7 @@ async def login(
         )
 
         if auth_response.session is None:
-            response = templates.TemplateResponse(
+            response: Response = templates.TemplateResponse(
                 request=request,
                 name="auth/login.html",
                 context={

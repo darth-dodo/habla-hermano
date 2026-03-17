@@ -6,15 +6,13 @@ another user to /chat or /chat/stream (horizontal privilege escalation).
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.api.auth import AuthenticatedUser, get_current_user_optional
-from src.api.dependencies import get_cached_templates, get_lesson_service
+from src.api.dependencies import get_lesson_service
 from src.db.models import ConversationThread
 from tests.conftest import CSRF_HEADERS
-
 
 # =============================================================================
 # Helpers

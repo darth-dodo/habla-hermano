@@ -94,7 +94,7 @@ def _make_error_html(error_message: str) -> HTMLResponse:
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
-async def chat_page(  # noqa: PLR0912
+async def chat_page(  # noqa: PLR0912, PLR0915
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -542,7 +542,7 @@ async def send_message(  # noqa: PLR0912
 
 @router.post("/chat/stream")
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
-async def stream_message(  # noqa: PLR0915
+async def stream_message(  # noqa: PLR0911, PLR0912, PLR0915
     request: Request,  # noqa: ARG001 — kept for FastAPI DI consistency with other endpoints
     templates: TemplatesDep,
     user: OptionalUserDep,

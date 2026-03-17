@@ -231,7 +231,7 @@ class TestDeleteHistory:
         authed_client.post("/privacy/delete-history")
 
         like_calls = list(mock_table.like.call_args_list)
-        # 3 checkpoint tables × 2 patterns (user + lesson) = 6 calls
+        # 3 checkpoint tables x 2 patterns (user + lesson) = 6 calls
         assert len(like_calls) == 6
         user_pattern = "user:test-user-123:%"
         lesson_pattern = "lesson:test-user-123:%"

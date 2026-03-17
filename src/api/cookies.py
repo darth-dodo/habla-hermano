@@ -171,7 +171,7 @@ def unsign_session_id(
     try:
         data: Any = serializer.loads(raw_value, max_age=max_age_seconds)
         if isinstance(data, dict) and isinstance(data.get("id"), str):
-            return data["id"]
+            return str(data["id"])
         return None
     except BadSignature:
         pass  # Fall through to backward-compat check

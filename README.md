@@ -149,7 +149,7 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
 | **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,437 tests (2,196 Python + 241 JS), strict mypy, ruff linting |
+| **Testing** | pytest + Vitest | 2,511 tests (2,270 Python + 241 JS), strict mypy, ruff linting |
 
 ### System Overview
 
@@ -258,7 +258,7 @@ src/
 └── static/          CSS + 11 ES modules + AudioWorklet processor
 
 data/lessons/        60 YAML lesson files (es/, de/, fr/)
-tests/               2,196 pytest + 241 Vitest tests
+tests/               2,270 pytest + 241 Vitest tests
 docs/                Architecture, API reference, design docs, ADRs
 ```
 
@@ -277,7 +277,9 @@ docs/                Architecture, API reference, design docs, ADRs
 | **Rate Limiting** | Decorator-based for REST, sliding-window per-connection for WebSocket |
 | **XSS** | `nh3` sanitization + `markupsafe.escape()` for all user content |
 | **Cookies** | Signed with `itsdangerous`, environment-aware `Secure` flag |
-| **Headers** | HSTS, X-Frame-Options, X-Content-Type-Options, Cache-Control |
+| **Headers** | HSTS, X-Frame-Options, X-Content-Type-Options, `Cache-Control: no-store` on auth pages |
+| **CORS** | Explicit `allow_headers` allowlist — no wildcard |
+| **Thread ownership** | `thread_id` ownership verified server-side before any chat operation |
 
 See [Architecture → Security](docs/architecture.md) for the full threat model.
 
@@ -286,7 +288,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 <details>
 <summary><strong>Testing</strong></summary>
 
-**2,196 Python tests** (pytest) + **241 JavaScript tests** (Vitest) with CI on every push.
+**2,270 Python tests** (pytest) + **241 JavaScript tests** (Vitest) with CI on every push.
 
 | Domain | What's Tested |
 |--------|---------------|
@@ -295,7 +297,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 | Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
 | Database | Repository pattern, encryption boundary (encrypt-on-write, decrypt-on-read) |
 | JavaScript | All 11 ES modules: DOM, streaming, scaffolding, shortcuts, voice (FSM + sub-modules) |
-| Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip |
+| Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip, thread ownership, auth cache headers |
 | Integration | Voice WebSocket transport, SSE streaming end-to-end |
 
 </details>
@@ -334,7 +336,7 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | [Design System](docs/design/design-system.md) | Token architecture, typography, spacing, themes, animations |
 | [Testing](docs/testing.md) | Test strategy, mock patterns, coverage targets |
 | [Codebase Summary](docs/codebase-summary.md) | Onboarding guide for the full codebase |
-| [Changelog](CHANGELOG.md) | Release history across 25 phases |
+| [Changelog](CHANGELOG.md) | Release history across 26 phases + security audit remediation |
 
 #### Design Documents
 
