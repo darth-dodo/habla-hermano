@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-03-17 — General Release Audit
+## [0.2.0] - 2026-03-17 — Audit
 
 Comprehensive 8-domain audit and remediation.
 Full audit report: `docs/plans/2026-03-17-release-audit.md`
