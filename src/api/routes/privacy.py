@@ -77,13 +77,17 @@ async def delete_history(
     except Exception:
         logger.exception("Failed to delete conversation threads for user %s", user.id)
 
-    # Delete checkpoint data from all 3 checkpoint tables (RLS scopes to user)
-    thread_pattern = f"user:{user.id}:%"
-    for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
-        try:
-            user_client.table(table).delete().like("thread_id", thread_pattern).execute()
-        except Exception:
-            logger.exception("Failed to delete %s for user %s", table, user.id)
+    # Delete checkpoint data from all 3 checkpoint tables (RLS scopes to user).
+    # Covers both freeform conversation threads (user:{id}:%) and lesson threads
+    # (lesson:{id}:%) to ensure complete erasure for GDPR right-to-erasure.
+    for pattern in (f"user:{user.id}:%", f"lesson:{user.id}:%"):
+        for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+            try:
+                user_client.table(table).delete().like("thread_id", pattern).execute()
+            except Exception:
+                logger.exception(
+                    "Failed to delete %s (pattern %s) for user %s", table, pattern, user.id
+                )
 
     # Clear the active_thread cookie since threads are gone
     response = Response(status_code=200)

@@ -226,16 +226,19 @@ class TestDeleteHistory:
         authed_client: TestClient,
         mock_supabase_user_client: tuple[MagicMock, MagicMock],
     ) -> None:
-        """Checkpoint deletions use .like('thread_id', 'user:{id}:%')."""
+        """Checkpoint deletions use .like('thread_id', ...) for both user and lesson patterns."""
         _, mock_table = mock_supabase_user_client
         authed_client.post("/privacy/delete-history")
 
-        expected_pattern = "user:test-user-123:%"
         like_calls = list(mock_table.like.call_args_list)
-        # 3 checkpoint tables should each call .like("thread_id", pattern)
-        assert len(like_calls) == 3
-        for call in like_calls:
-            assert call.args == ("thread_id", expected_pattern)
+        # 3 checkpoint tables × 2 patterns (user + lesson) = 6 calls
+        assert len(like_calls) == 6
+        user_pattern = "user:test-user-123:%"
+        lesson_pattern = "lesson:test-user-123:%"
+        user_calls = [c for c in like_calls if c.args == ("thread_id", user_pattern)]
+        lesson_calls = [c for c in like_calls if c.args == ("thread_id", lesson_pattern)]
+        assert len(user_calls) == 3
+        assert len(lesson_calls) == 3
 
     def test_response_has_hx_redirect_header(self, authed_client: TestClient) -> None:
         """Response includes HX-Redirect header pointing to '/'."""
@@ -270,6 +273,33 @@ class TestDeleteHistory:
         # Should still return 200 with HX-Redirect (errors are logged, not raised)
         assert resp.status_code == 200
         assert resp.headers.get("hx-redirect") == "/"
+
+
+# =============================================================================
+# POST /privacy/delete-history — Lesson Checkpoint Tests
+# =============================================================================
+
+
+class TestDeleteHistoryLessonCheckpoints:
+    """Ensure delete-history also removes lesson-prefixed checkpoint data."""
+
+    def test_delete_history_also_deletes_lesson_checkpoints(
+        self,
+        authed_client: TestClient,
+        mock_supabase_user_client: tuple[MagicMock, MagicMock],
+    ) -> None:
+        """Checkpoint deletions also cover the lesson:{user_id}:% pattern."""
+        _, mock_table = mock_supabase_user_client
+        authed_client.post("/privacy/delete-history")
+
+        lesson_pattern = "lesson:test-user-123:%"
+        like_calls = list(mock_table.like.call_args_list)
+        lesson_calls = [c for c in like_calls if c.args == ("thread_id", lesson_pattern)]
+        # One .like() call per checkpoint table for the lesson pattern
+        assert len(lesson_calls) == 3, (
+            f"Expected 3 like() calls with lesson pattern, got {len(lesson_calls)}. "
+            f"All like calls: {like_calls}"
+        )
 
 
 # =============================================================================

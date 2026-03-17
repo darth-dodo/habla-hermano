@@ -7,16 +7,30 @@ Threads store metadata; actual conversation data lives in LangGraph checkpoints.
 import logging
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Cookie, Form, HTTPException, Response
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 
 from src.api.auth import CurrentUserDep
 from src.api.cookies import set_secure_cookie
 from src.api.supabase_client import get_supabase_for_user
+from src.api.validation import VALID_LANGUAGES, VALID_LEVELS
 from src.services.threads import ThreadService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/threads", tags=["threads"])
+
+
+def _get_access_token(
+    request: Request,
+    sb_access_token: str | None,
+) -> str | None:
+    """Extract access token from cookie or Authorization: Bearer header."""
+    if sb_access_token:
+        return sb_access_token
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:]
+    return None
 
 
 def _get_thread_service(user_id: str, access_token: str | None) -> ThreadService:
@@ -29,11 +43,12 @@ def _get_thread_service(user_id: str, access_token: str | None) -> ThreadService
 
 @router.get("/")
 async def list_threads(
+    request: Request,
     user: CurrentUserDep,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> list[dict[str, Any]]:
     """List user's conversation threads, ordered by most recent."""
-    service = _get_thread_service(user.id, sb_access_token)
+    service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     threads = service.list_threads()
     return [
         {
@@ -51,13 +66,18 @@ async def list_threads(
 
 @router.post("/", status_code=201)
 async def create_thread(
+    request: Request,
     user: CurrentUserDep,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
     language: Annotated[str, Form()] = "es",
     level: Annotated[str, Form()] = "A1",
 ) -> dict[str, Any]:
     """Create a new conversation thread."""
-    service = _get_thread_service(user.id, sb_access_token)
+    if language not in VALID_LANGUAGES:
+        raise HTTPException(status_code=422, detail=f"Invalid language '{language}'")
+    if level not in VALID_LEVELS:
+        raise HTTPException(status_code=422, detail=f"Invalid level '{level}'")
+    service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     thread = service.create_thread(language=language, level=level)
     return {
         "id": thread.id,
@@ -73,12 +93,13 @@ async def create_thread(
 @router.patch("/{thread_id}")
 async def update_thread(
     thread_id: str,
+    request: Request,
     user: CurrentUserDep,
     title: Annotated[str | None, Form()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict[str, str]:
     """Update a conversation thread's title."""
-    service = _get_thread_service(user.id, sb_access_token)
+    service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     existing = service.get_thread(thread_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Thread not found")
@@ -92,13 +113,14 @@ async def update_thread(
 @router.delete("/{thread_id}", status_code=204)
 async def delete_thread(
     thread_id: str,
+    request: Request,
     user: CurrentUserDep,
     response: Response,
     active_thread: Annotated[str | None, Cookie()] = None,
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> Response:
     """Delete a conversation thread (idempotent). Clears active_thread cookie if it matches."""
-    service = _get_thread_service(user.id, sb_access_token)
+    service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     service.delete_thread(thread_id)
     if active_thread == thread_id:
         response.delete_cookie("active_thread")
@@ -107,13 +129,14 @@ async def delete_thread(
 
 @router.post("/select")
 async def select_thread(
+    request: Request,
     response: Response,
     user: CurrentUserDep,
     thread_id: Annotated[str, Form()],
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict[str, str]:
     """Set the active thread via a signed cookie (keeps thread IDs out of URLs)."""
-    service = _get_thread_service(user.id, sb_access_token)
+    service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     thread = service.get_thread(thread_id)
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")

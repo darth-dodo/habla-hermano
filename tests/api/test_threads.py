@@ -231,3 +231,109 @@ class TestDeleteThread:
         # delete_thread doesn't raise when thread doesn't exist
         resp = client.delete("/threads/nonexistent-thread")
         assert resp.status_code == 204
+
+
+# =============================================================================
+# M7 — language/level validation
+# =============================================================================
+
+
+class TestCreateThreadValidation:
+    """POST /threads/ validates language and level against allowed sets."""
+
+    def test_create_thread_rejects_invalid_language(
+        self, client: TestClient, mock_thread_service: MagicMock
+    ) -> None:
+        """POST /threads/ with invalid language returns 422."""
+        resp = client.post("/threads/", data={"language": "xx", "level": "A1"})
+        assert resp.status_code == 422
+
+    def test_create_thread_rejects_invalid_level(
+        self, client: TestClient, mock_thread_service: MagicMock
+    ) -> None:
+        """POST /threads/ with invalid level returns 422."""
+        resp = client.post("/threads/", data={"language": "es", "level": "Z9"})
+        assert resp.status_code == 422
+
+    def test_create_thread_accepts_valid_language_and_level(
+        self, client: TestClient, mock_thread_service: MagicMock
+    ) -> None:
+        """POST /threads/ with valid params returns 201."""
+        resp = client.post("/threads/", data={"language": "es", "level": "A1"})
+        assert resp.status_code == 201
+
+    def test_create_thread_rejects_sql_injection_language(
+        self, client: TestClient, mock_thread_service: MagicMock
+    ) -> None:
+        """POST /threads/ rejects SQL injection attempt in language."""
+        resp = client.post("/threads/", data={"language": "'; DROP TABLE--", "level": "A1"})
+        assert resp.status_code == 422
+
+    def test_create_thread_rejects_long_language(
+        self, client: TestClient, mock_thread_service: MagicMock
+    ) -> None:
+        """POST /threads/ rejects excessively long language string."""
+        resp = client.post("/threads/", data={"language": "x" * 1000, "level": "A1"})
+        assert resp.status_code == 422
+
+
+# =============================================================================
+# M3 — Bearer token support
+# =============================================================================
+
+
+class TestBearerTokenSupport:
+    """Thread endpoints should accept Authorization: Bearer token when no cookie is set."""
+
+    def test_list_threads_with_bearer_token(
+        self, mock_user: AuthenticatedUser, mock_thread_service: MagicMock
+    ) -> None:
+        """GET /threads/ with Bearer token (no cookie) should return 200, not 401."""
+        mock_supabase_client = MagicMock()
+
+        async def override_auth():
+            return mock_user
+
+        with patch(
+            "src.api.routes.threads.get_supabase_for_user",
+            return_value=mock_supabase_client,
+        ):
+            with patch(
+                "src.api.routes.threads.ThreadService",
+                return_value=mock_thread_service,
+            ):
+                from src.api.main import create_app
+
+                application = create_app()
+                application.dependency_overrides[get_current_user] = override_auth
+                try:
+                    with TestClient(
+                        application,
+                        headers={**CSRF_HEADERS, "Authorization": "Bearer test-token"},
+                    ) as c:
+                        resp = c.get("/threads/")
+                        assert resp.status_code == 200
+                finally:
+                    application.dependency_overrides.pop(get_current_user, None)
+
+    def test_list_threads_no_token_returns_401(
+        self, mock_user: AuthenticatedUser
+    ) -> None:
+        """GET /threads/ with no token (cookie or Bearer) returns 401."""
+        async def override_auth():
+            return mock_user
+
+        with patch(
+            "src.api.routes.threads.get_supabase_for_user",
+            return_value=None,
+        ):
+            from src.api.main import create_app
+
+            application = create_app()
+            application.dependency_overrides[get_current_user] = override_auth
+            try:
+                with TestClient(application, headers=CSRF_HEADERS) as c:
+                    resp = c.get("/threads/")
+                    assert resp.status_code == 401
+            finally:
+                application.dependency_overrides.pop(get_current_user, None)

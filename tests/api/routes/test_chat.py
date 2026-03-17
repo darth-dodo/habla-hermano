@@ -103,8 +103,13 @@ class TestChatPageEndpoint:
         assert "Habla Hermano" in response.text
 
     def test_chat_page_sets_session_cookie_for_guests(self, test_client: TestClient) -> None:
-        """GET / should set session_id cookie for guest users so voice WebSocket auth works."""
+        """GET / should set session_id cookie for guest users so voice WebSocket auth works.
+
+        The cookie value is now a signed token (Finding H5) rather than a plain UUID,
+        so we verify it using unsign_session_id instead of parsing it as a UUID directly.
+        """
         from src.api.auth import get_current_user_optional
+        from src.api.cookies import unsign_session_id
 
         app = test_client.app
 
@@ -117,12 +122,14 @@ class TestChatPageEndpoint:
             response = test_client.get("/")
             assert response.status_code == 200
             assert "session_id" in response.cookies
-            # Should be a valid UUID v4
+            # Cookie value is a signed token — unsign_session_id must return a UUID string
+            session_val = response.cookies["session_id"]
+            session_uuid = unsign_session_id(session_val)
+            assert session_uuid is not None, "session_id cookie must be a valid signed token"
             import uuid
 
-            session_val = response.cookies["session_id"]
-            parsed = uuid.UUID(session_val, version=4)
-            assert str(parsed) == session_val
+            parsed = uuid.UUID(session_uuid, version=4)
+            assert str(parsed) == session_uuid
         finally:
             app.dependency_overrides.pop(get_current_user_optional, None)
 
