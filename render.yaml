@@ -87,6 +87,24 @@ services:
         sync: false  # Must be set manually in Render dashboard
 
       # -----------------------------------------------------------------------
+      # Security Configuration
+      # -----------------------------------------------------------------------
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a strong random value
+
+      - key: ENCRYPTION_SALT
+        generateValue: true  # Render auto-generates a unique salt
+
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false  # Set to your domain, e.g. "https://habla-hermano.onrender.com"
+
+      # -----------------------------------------------------------------------
+      # Voice Features (Optional)
+      # -----------------------------------------------------------------------
+      - key: DEEPGRAM_API_KEY
+        sync: false  # Optional: set for voice STT/TTS features
+
+      # -----------------------------------------------------------------------
       # Python Runtime Configuration
       # -----------------------------------------------------------------------
       - key: PYTHON_VERSION

@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-17 — Audit
+
+Comprehensive 8-domain audit and remediation.
+Full audit report: `docs/plans/2026-03-17-release-audit.md`
+
+### Security
+- **P0 — Fail-fast on insecure defaults** (`config.py`): App refuses to start in production (DEBUG=False) with default SECRET_KEY or ALLOW_UNVERIFIED_JWT=true
+- **P0 — SECURITY DEFINER → INVOKER** (`migrations/007`): All vocabulary RPC functions changed from SECURITY DEFINER to SECURITY INVOKER, preventing cross-user data mutation via direct PostgREST calls
+- **P1 — WebSocket session auth bypass** (`voice.py`): Guest session cookies now verified via `unsign_session_id()` instead of accepting raw UUIDs
+- **P1 — LLM call timeouts** (`llm.py`): All ChatAnthropic instances now have explicit 60s timeout (15s for titling) to prevent indefinite hangs
+- **P2 — Server-side logout** (`auth.py`): Logout now calls `supabase.auth.sign_out()` to invalidate refresh tokens server-side
+- **P2 — Auth logging noise** (`auth.py`): Expected auth errors (wrong password, duplicate email) downgraded from `logger.exception` to `logger.warning`
+
+### Added
+- **LICENSE** (MIT) — required for open-source release
+- **CONTRIBUTING.md** — fork/clone, dev setup, testing, PR guidelines
+- **docs/setup.md** — Supabase project setup, migration order, Render deployment
+- **.dockerignore** — prevents secrets, tests, and tooling from entering Docker images
+- **`decrypt_field_safe()`** (`encryption.py`): Graceful decryption fallback returning placeholder instead of crashing on corrupted data
+- **Deep health check** (`main.py`): `/health` now reports database connectivity status (healthy/degraded/unhealthy)
+- **render.yaml**: SECRET_KEY and ENCRYPTION_SALT with `generateValue: true`, CORS_ALLOWED_ORIGINS, DEEPGRAM_API_KEY
+- **"titling" LLM profile** (`llm.py`): Dedicated profile for thread auto-titling (temp=0.3, max_tokens=30, timeout=15s)
+
+### Changed
+- **chat.py split** (`chat.py` → `chat.py` + `chat_stream.py`): 937-line god file split into page rendering (577 lines) and SSE streaming (393 lines)
+- **Thread deletion order** (`threads.py`): Checkpoints deleted before metadata so failed partial deletes can be retried
+- **Thread titling** (`thread_titling.py`): Uses cached `get_llm("titling")` instead of creating a new ChatAnthropic per call
+- **Lesson chat** (`lesson_chat.py`): Removed duplicate `_get_language_name`, uses canonical `get_language_name` from `src.validation`; extracted `_build_full_prompt` helper replacing 5 repeated prompt composition blocks
+- **Dockerfile**: Pinned uv to v0.6 instead of `:latest`
+- **pyproject.toml**: Removed placeholder email from authors
+
+### Accessibility
+- **P0 — Sidebar** (`thread_sidebar.html`): Added `role="dialog"`, `aria-label`, `aria-modal`, focus trap, `@keydown.escape`
+- **P0 — Dropdowns** (`app_header.html`): Added `aria-expanded`, `role="listbox"/"option"`, `aria-selected`, arrow key + Escape keyboard navigation
+- **P0 — Theme picker**: Added `role="radiogroup"/"radio"` with `aria-checked`
+- **P0 — Lessons page** (`lessons.html`): Added `<main>` landmark, fixed `aria-labelledby` IDs
+- **P1 — Chat messages** (`chat.html`): Added `role="log"`, `aria-live="polite"`, loading indicator `role="status"`
+- **P1 — Auth errors** (`login.html`, `signup.html`): Added `role="alert"`, stable `hx-target` IDs
+- **P1 — Feedback buttons** (`message.html`): Added `focus-within:opacity-100` for keyboard visibility
+- **P2 — Theme FOUC** (`base.html`): Inline `<script>` in `<head>` reads localStorage before CSS loads
+- **P2 — Skip-to-content** (`base.html`): Added visually-hidden skip link
+- **P2 — Dark mode detection** (`base.html`): Defaults to `terracotta` theme when OS prefers dark
+- **P2 — Touch targets** (`thread_sidebar.html`): Rename/delete buttons increased from `p-1.5` to `p-2.5`
+- **P2 — Progress errors** (`progress.html`): Added `hx-on::response-error` fallback for failed data loads
+- **P2 — Privacy buttons** (`privacy.html`): Added `flex-wrap` to prevent overflow on narrow screens
+
+### Fixed
+- **JS error colors** (`stream.js`, `htmx-handlers.js`): Replaced hardcoded dark-theme Tailwind classes with CSS variable inline styles visible on all 5 themes
+- **JS thread title selector** (`stream.js`): Changed `span.truncate` to `span.thread-title` matching actual sidebar markup
+- **JS lesson progress** (`stream.js`): Rewrote `updateLessonProgress` to update segment classes instead of setting width on a flex container
+- **JS lesson complete button** (`stream.js`): Replaced hardcoded `text-white` with `var(--accent-text)`
+
+### Repository Hygiene
+- Deleted 40+ untracked development screenshots from repo root
+- Added `.claude/`, `.serena/`, `.agentic-framework/`, `.playwright-mcp/` to `.gitignore`
+
 ### Security
 - **C1 — Thread ownership** (`chat.py`): `POST /chat` and `POST /chat/stream` now verify the supplied `thread_id` belongs to the calling user via `ThreadService.get_thread()` before processing — prevents horizontal privilege escalation
 - **H1 — Lesson checkpoint erasure gap** (`privacy.py`): Delete-history now also deletes checkpoint data matching the `lesson:{user_id}:%` pattern, closing a GDPR erasure gap for lesson threads

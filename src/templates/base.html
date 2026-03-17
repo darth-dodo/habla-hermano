@@ -8,6 +8,11 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <title>{% block title %}Habla Hermano{% endblock %}</title>
 
+    <!-- Theme FOUC prevention: set data-theme before any CSS paints -->
+    <script nonce="{{ request.state.csp_nonce }}">
+    (function(){var t=localStorage.getItem('hermano-theme');if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='terracotta';if(t)document.documentElement.setAttribute('data-theme',t)})();
+    </script>
+
     <!-- Animate.css CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
@@ -266,7 +271,7 @@
             --paper-texture: none;
         }
 
-        /* Jardín Theme - Living Garden: Learning indigo, progress green, mint cream */
+        /* Jardin Theme - Living Garden: Learning indigo, progress green, mint cream */
         [data-theme="jardin"] {
             --surface: #F0FDF4;
             --surface-elevated: #FFFFFF;
@@ -846,13 +851,13 @@
     {% block head %}{% endblock %}
 </head>
 <body class="h-full antialiased font-sans" x-data="{
-    theme: localStorage.getItem('hermano-theme') || 'azulejo',
+    theme: localStorage.getItem('hermano-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'terracotta' : 'azulejo'),
     themes: [
         { id: 'azulejo', label: 'Azulejo' },
         { id: 'terracotta', label: 'Terracotta' },
         { id: 'flamenco', label: 'Flamenco' },
         { id: 'sangria', label: 'Sangria' },
-        { id: 'jardin', label: 'Jardín' },
+        { id: 'jardin', label: 'Jardin' },
     ],
     setTheme(newTheme) {
         this.theme = newTheme;
@@ -862,7 +867,8 @@
         setTimeout(() => document.body.classList.remove('theme-transition'), 300);
     }
 }" x-init="document.documentElement.setAttribute('data-theme', theme)">
-    <div id="app" class="h-dvh flex flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-accent focus:text-accent-text focus:rounded">Skip to main content</a>
+    <div id="main-content" class="h-dvh flex flex-col">
         {% block content %}{% endblock %}
     </div>
 

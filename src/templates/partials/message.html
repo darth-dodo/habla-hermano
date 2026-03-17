@@ -1,5 +1,5 @@
 {#
-Message partial template - Café con Leche Design
+Message partial template - Cafe con Leche Design
 Renders a single message exchange (user message + AI response)
 Variables expected:
   - user_message: string (the user's input)
@@ -38,7 +38,7 @@ Variables expected:
 
         {# AI response feedback #}
         {% if ai_response %}
-        <div class="flex items-center gap-1 mt-2 opacity-0 hover:opacity-100 transition-opacity duration-200" aria-label="Was this response helpful?">
+        <div class="flex items-center gap-1 mt-2 opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200" aria-label="Was this response helpful?">
             <button type="button"
                     class="p-1 rounded text-text-subtle hover:text-success hover:bg-success-muted transition-colors duration-150 cursor-pointer"
                     aria-label="Helpful"

@@ -176,7 +176,9 @@ def unsign_session_id(
     except BadSignature:
         pass  # Fall through to backward-compat check
 
-    # Backward compat: accept plain UUID v4 (existing cookies)
+    # DEPRECATED: Backward compat for plain UUID v4 cookies set before signing
+    # was introduced. Remove this fallback ~14 days after public launch (exceeds
+    # the 7-day cookie max_age, so all old cookies will have expired by then).
     import uuid as _uuid  # noqa: PLC0415
 
     try:

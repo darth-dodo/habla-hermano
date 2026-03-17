@@ -63,6 +63,8 @@ Variables expected:
                     <button
                         @click="open = !open"
                         @click.away="open = false"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         aria-label="Select language"
                     >
@@ -75,6 +77,9 @@ Variables expected:
                     </button>
                     <div
                         x-show="open"
+                        @keydown.escape="open = false"
+                        @keydown.arrow-down.prevent="$event.target.nextElementSibling ? $event.target.nextElementSibling.focus() : $event.target.parentElement.firstElementChild.focus()"
+                        @keydown.arrow-up.prevent="$event.target.previousElementSibling ? $event.target.previousElementSibling.focus() : $event.target.parentElement.lastElementChild.focus()"
                         x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
                         x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
@@ -82,11 +87,15 @@ Variables expected:
                         x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
                         x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
                         class="absolute right-0 mt-2 w-40 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                        role="listbox"
+                        aria-label="Select language"
                     >
                         <div class="p-2">
                             {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French')] %}
                             <button
                                 @click="language = '{{ lang_code }}'; open = false; if ($refs.languageInput) $refs.languageInput.value = '{{ lang_code }}'; localStorage.setItem('hermano-language', '{{ lang_code }}'); if (typeof onLanguageChange === 'function') onLanguageChange('{{ lang_code }}')"
+                                role="option"
+                                :aria-selected="language === '{{ lang_code }}'"
                                 class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 flex items-center gap-2 cursor-pointer"
                                 :class="language === '{{ lang_code }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >
@@ -104,6 +113,8 @@ Variables expected:
                     <button
                         @click="open = !open"
                         @click.away="open = false"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1 px-2 py-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         aria-label="Select level"
                     >
@@ -114,6 +125,9 @@ Variables expected:
                     </button>
                     <div
                         x-show="open"
+                        @keydown.escape="open = false"
+                        @keydown.arrow-down.prevent="$event.target.nextElementSibling ? $event.target.nextElementSibling.focus() : $event.target.parentElement.firstElementChild.focus()"
+                        @keydown.arrow-up.prevent="$event.target.previousElementSibling ? $event.target.previousElementSibling.focus() : $event.target.parentElement.lastElementChild.focus()"
                         x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="transform opacity-0 scale-95 -translate-y-2"
                         x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
@@ -121,11 +135,15 @@ Variables expected:
                         x-transition:leave-start="transform opacity-100 scale-100 translate-y-0"
                         x-transition:leave-end="transform opacity-0 scale-95 -translate-y-2"
                         class="absolute right-0 mt-2 w-48 bg-surface-elevated rounded-2xl shadow-xl border border-border overflow-hidden z-50"
+                        role="listbox"
+                        aria-label="Select level"
                     >
                         <div class="p-2">
                             {% for lvl, desc in [('A0', 'Complete Beginner'), ('A1', 'Beginner'), ('A2', 'Elementary'), ('B1', 'Intermediate')] %}
                             <button
                                 @click="level = '{{ lvl }}'; open = false; if ($refs.levelInput) $refs.levelInput.value = '{{ lvl }}'; localStorage.setItem('hermano-level', '{{ lvl }}')"
+                                role="option"
+                                :aria-selected="level === '{{ lvl }}'"
                                 class="w-full px-3 py-2 text-left rounded-xl transition-all duration-150 cursor-pointer"
                                 :class="level === '{{ lvl }}' ? 'bg-accent/10 text-accent' : 'text-text hover:bg-surface-overlay'"
                             >

@@ -15,14 +15,14 @@
     {% set page_name = 'lessons' %}
     {% include "partials/app_header.html" %}
 
-    <div class="flex-1 overflow-y-auto bg-surface">
+    <main class="flex-1 overflow-y-auto bg-surface">
         <div class="max-w-4xl mx-auto px-4 py-6">
             <!-- Lesson Categories -->
             <div class="space-y-8">
                 <!-- Beginner Section -->
                 <section aria-labelledby="beginner-heading">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="inline-flex items-center px-2.5 py-1 bg-success-muted text-success text-xs font-medium rounded-full">
+                        <span id="beginner-heading" class="inline-flex items-center px-2.5 py-1 bg-success-muted text-success text-xs font-medium rounded-full">
                             Beginner
                         </span>
                         <span class="text-sm text-text-muted">A0-A1</span>
@@ -59,7 +59,7 @@
                 <!-- Intermediate Section -->
                 <section aria-labelledby="intermediate-heading">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="inline-flex items-center px-2.5 py-1 bg-accent-muted text-accent text-xs font-medium rounded-full">
+                        <span id="intermediate-heading" class="inline-flex items-center px-2.5 py-1 bg-accent-muted text-accent text-xs font-medium rounded-full">
                             Intermediate
                         </span>
                         <span class="text-sm text-text-muted">A2-B1</span>
@@ -108,6 +108,6 @@
                 </a>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 {% endblock %}
