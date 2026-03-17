@@ -14,16 +14,19 @@ Dev mode (MemorySaver):
     context is maintained between HTTP requests but lost on server restart.
 
 Production mode (AsyncPostgresSaver):
-    A single AsyncPostgresSaver is created once at application startup via
-    init_checkpointer() and reused for all requests. The connection pool
-    and DDL setup happen exactly once, eliminating ~50-100ms overhead per
-    request. The instance is closed during shutdown via close_checkpointer().
+    An AsyncConnectionPool (psycopg_pool) is created at application startup
+    via init_checkpointer() and wrapped in AsyncPostgresSaver. The pool
+    allows concurrent graph operations without connection conflicts. DDL
+    setup happens exactly once. Shutdown via close_checkpointer().
 """
 
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, cast
+
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
@@ -43,9 +46,8 @@ CheckpointerType = AsyncPostgresSaver | MemorySaver
 _state: dict[str, Any] = {
     "memory_saver": None,
     "postgres_saver": None,
-    # The context manager object returned by from_conn_string(), needed for
-    # proper shutdown via __aexit__.
-    "postgres_cm": None,
+    # The AsyncConnectionPool, closed during shutdown via close_checkpointer().
+    "postgres_pool": None,
 }
 
 
@@ -84,10 +86,10 @@ def _is_valid_db_url(db_url: str) -> bool:
 async def init_checkpointer() -> None:
     """Initialise the persistent Postgres checkpointer at application startup.
 
-    Creates a single ``AsyncPostgresSaver`` connection pool and runs DDL
-    (``CREATE TABLE IF NOT EXISTS``) exactly once.  Subsequent calls to
-    :func:`get_checkpointer` will reuse this instance without any setup
-    overhead.
+    Creates an ``AsyncConnectionPool`` (min 2, max 20 connections) and wraps
+    it in ``AsyncPostgresSaver``.  Using a pool instead of a single connection
+    allows concurrent ``graph.astream()`` calls without "another command is
+    already in progress" errors.  DDL runs exactly once.
 
     If ``SUPABASE_DB_URL`` is not configured or is a placeholder, this
     function is a no-op (the MemorySaver path does not need initialisation).
@@ -100,15 +102,23 @@ async def init_checkpointer() -> None:
         return
 
     logger.info("Initialising persistent Postgres checkpointer")
-    # from_conn_string returns an async context manager; we enter it manually
-    # so the connection pool stays open for the lifetime of the application.
+    # Use AsyncConnectionPool instead of from_conn_string() (which creates a
+    # single AsyncConnection).  A pool lets concurrent requests each get their
+    # own connection, avoiding "another command is already in progress" errors
+    # when multiple graph.astream() calls overlap.
     encrypted_serde = _get_encrypted_serde()
-    cm = AsyncPostgresSaver.from_conn_string(db_url, serde=encrypted_serde)
-    saver = await cm.__aenter__()
+    pool = AsyncConnectionPool(
+        conninfo=db_url,
+        max_size=20,
+        min_size=2,
+        kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row},
+    )
+    await pool.open()
+    saver = AsyncPostgresSaver(conn=pool, serde=encrypted_serde)
     await saver.setup()
-    _state["postgres_cm"] = cm
+    _state["postgres_pool"] = pool
     _state["postgres_saver"] = saver
-    logger.info("Postgres checkpointer ready (checkpoint encryption enabled)")
+    logger.info("Postgres checkpointer ready (pool max_size=20, encryption enabled)")
 
 
 async def close_checkpointer() -> None:
@@ -118,12 +128,12 @@ async def close_checkpointer() -> None:
     which closes the underlying connection pool.  Safe to call even if the
     checkpointer was never initialised (e.g. MemorySaver path).
     """
-    cm = _state.get("postgres_cm")
-    if cm is not None:
+    pool = _state.get("postgres_pool")
+    if pool is not None:
         logger.info("Closing Postgres checkpointer connection pool")
-        await cm.__aexit__(None, None, None)
+        await pool.close()
         _state["postgres_saver"] = None
-        _state["postgres_cm"] = None
+        _state["postgres_pool"] = None
         logger.info("Postgres checkpointer closed")
 
 
