@@ -19,6 +19,7 @@ from typing import Annotated
 import httpx
 import jwt as pyjwt
 from fastapi import Depends, HTTPException, Request, Response, status
+from supabase_auth.errors import AuthApiError
 
 from src.api.config import get_settings
 from src.api.supabase_client import SupabaseClient, get_supabase, get_supabase_admin
@@ -204,7 +205,7 @@ def _verify_token_via_supabase(token: str) -> AuthenticatedUser:
         response = client.auth.get_user(token)
     except ValueError:
         raise
-    except httpx.HTTPError as e:
+    except (httpx.HTTPError, AuthApiError) as e:
         logger.warning("Supabase token verification failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -347,20 +348,37 @@ async def get_current_user_optional(
 ) -> AuthenticatedUser | None:
     """FastAPI dependency to optionally get the current user.
 
-    Unlike get_current_user, this does not raise an exception if no user
-    is authenticated. Useful for routes that work both with and without auth.
+    Returns None only when no token is present (true guest). If a token IS
+    present but invalid/expired, attempts a refresh via the refresh token
+    cookie before giving up with a 401.
 
     Args:
         request: FastAPI request object.
         response: FastAPI response object (for setting refreshed cookies).
 
     Returns:
-        AuthenticatedUser if authenticated, None otherwise.
+        AuthenticatedUser if authenticated, None if no token present.
+
+    Raises:
+        HTTPException: 401 if token is invalid and refresh fails.
     """
+    token = _get_token_from_request(request)
+    if not token:
+        return None
     try:
         return await get_current_user(request, response)
     except HTTPException:
-        return None
+        # Token is invalid/expired — attempt refresh before giving up
+        refresh_token = _get_refresh_token_from_request(request)
+        if refresh_token:
+            new_token = _try_refresh_token(refresh_token, response)
+            if new_token:
+                # Retry with the refreshed token
+                try:
+                    return _verify_token_via_supabase(new_token)
+                except (HTTPException, AuthApiError):
+                    pass
+        raise
 
 
 # Type aliases for FastAPI dependency injection
