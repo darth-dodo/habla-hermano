@@ -1344,7 +1344,7 @@ class TestTTSWebSocketVoiceParam:
         ws_cookies: dict[str, str],
         mock_settings_with_deepgram: MagicMock,
     ) -> None:
-        """The Deepgram TTS URL includes encoding=linear16 and sample_rate=24000."""
+        """The Deepgram TTS URL includes encoding=mp3."""
         mock_connect = _make_websockets_connect_mock()
         mock_ws_module = _make_websockets_module(mock_connect)
 
@@ -1356,8 +1356,8 @@ class TestTTSWebSocketVoiceParam:
 
         connect_call = mock_connect.call_args
         url = connect_call[0][0]
-        assert "encoding=linear16" in url
-        assert "sample_rate=24000" in url
+        assert "encoding=mp3" in url
+        assert "sample_rate" not in url
 
     def test_estrella_voice_accepted(
         self,
