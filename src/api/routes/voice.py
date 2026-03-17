@@ -12,7 +12,6 @@ import asyncio
 import contextlib
 import json
 import logging
-import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -24,6 +23,7 @@ from starlette.websockets import WebSocketState
 
 from src.api.auth import EffectiveUserDep
 from src.api.config import get_settings
+from src.api.cookies import unsign_session_id
 from src.api.rate_limit import (
     VOICE_RATE_LIMIT_CALLS,
     VOICE_RATE_LIMIT_PERIOD,
@@ -98,18 +98,24 @@ def _decode_jwt_unverified(token: str) -> str | None:
 
 
 async def _authenticate_websocket(websocket: WebSocket) -> str | None:
-    """Extract and validate user identity from WebSocket cookies.
+    """Extract and validate user identity from WebSocket cookies or query param.
 
     WebSocket endpoints cannot use FastAPI's Depends() for auth, so we
     manually extract the identity from cookies before accepting the
     connection.  Checks JWT (``sb-access-token``) first, then falls back
     to a guest session UUID (``session_id``).
 
+    As a final fallback, accepts a signed ``token`` query parameter for
+    browsers that do not send cookies with WebSocket upgrade requests
+    (notably iOS Safari and Chrome, which use WebKit and may omit
+    httponly cookies from the WS handshake).
+
     Security:
     - Production (Supabase configured): JWT is verified server-side via
       Supabase auth.get_user(), mirroring the HTTP auth path.
     - Local dev (ALLOW_UNVERIFIED_JWT=true): Falls back to unverified
       JWT decode with a WARNING log.
+    - Query-param token: Verified via itsdangerous (same as cookie).
     - Neither configured: Returns None (denies access).
 
     Returns:
@@ -143,15 +149,21 @@ async def _authenticate_websocket(websocket: WebSocket) -> str | None:
                 "ALLOW_UNVERIFIED_JWT is not enabled"
             )
 
-    # Fall back to guest session cookie
+    # Fall back to guest session cookie (verify signature)
     session_id = websocket.cookies.get("session_id")
     if session_id:
-        try:
-            parsed = uuid.UUID(session_id, version=4)
-            if str(parsed) == session_id:
-                return session_id
-        except (ValueError, AttributeError):
-            pass
+        verified = unsign_session_id(session_id)
+        if verified:
+            return verified
+
+    # Final fallback: signed token query parameter.
+    # iOS Safari/Chrome (WebKit) may not send httponly cookies with WS upgrades.
+    ws_token = websocket.query_params.get("token")
+    if ws_token:
+        verified = unsign_session_id(ws_token)
+        if verified:
+            logger.debug("WebSocket authenticated via query-param token fallback")
+            return verified
 
     return None
 

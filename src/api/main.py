@@ -21,7 +21,18 @@ from src.agent.checkpointer import close_checkpointer, init_checkpointer
 from src.api.config import get_settings
 from src.api.dependencies import get_cached_templates
 from src.api.middleware import CSRFMiddleware, SecurityHeadersMiddleware
-from src.api.routes import auth, chat, learn, lessons, privacy, progress, review, threads, voice
+from src.api.routes import (
+    auth,
+    chat,
+    chat_stream,
+    learn,
+    lessons,
+    privacy,
+    progress,
+    review,
+    threads,
+    voice,
+)
 from src.lessons.service import get_lesson_service
 
 # Configure logging
@@ -140,6 +151,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(auth.router)
     app.include_router(chat.router)
+    app.include_router(chat_stream.router)
     app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
     app.include_router(progress.router, prefix="/progress", tags=["progress"])
     app.include_router(review.router)
@@ -224,9 +236,19 @@ app = create_app()
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
-    """Health check endpoint.
+    """Health check endpoint with database connectivity verification.
 
-    Returns:
-        dict: Health status response.
+    Returns 200 with status "healthy" when DB is connected,
+    200 with "degraded" when DB is not configured,
+    or 503 with "unhealthy" when DB is configured but unreachable.
     """
-    return {"status": "healthy", "app": settings.APP_NAME}
+    from src.agent.checkpointer import _state  # noqa: PLC0415
+
+    saver = _state.get("postgres_saver")
+    if saver is None:
+        if settings.SUPABASE_DB_URL:
+            # DB configured but checkpointer not initialized
+            return {"status": "unhealthy", "app": settings.APP_NAME, "database": "disconnected"}
+        return {"status": "degraded", "app": settings.APP_NAME, "database": "not configured"}
+
+    return {"status": "healthy", "app": settings.APP_NAME, "database": "connected"}

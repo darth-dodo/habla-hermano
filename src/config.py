@@ -7,8 +7,9 @@ can import it without depending on the API layer.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -85,6 +86,33 @@ class Settings(BaseSettings):
     CHECKPOINT_RETENTION_DAYS: int = 30
 
     # Paths (computed relative to project root)
+    _INSECURE_SECRET_KEY: str = "change-me-to-a-random-string"
+    _INSECURE_SALT: str = "habla-hermano-encryption-v1"
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> Self:
+        """Reject insecure defaults when running in production (DEBUG=False)."""
+        if not self.DEBUG:
+            if self.SECRET_KEY == self._INSECURE_SECRET_KEY:
+                raise ValueError(
+                    "SECRET_KEY must be set to a strong random value in production. "
+                    'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(64))"'
+                )
+            if (
+                self.ENCRYPTION_SALT == self._INSECURE_SALT
+                and self.SECRET_KEY == self._INSECURE_SECRET_KEY
+            ):
+                raise ValueError(
+                    "ENCRYPTION_SALT must be set to a unique value in production. "
+                    'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
+                )
+            if self.ALLOW_UNVERIFIED_JWT:
+                raise ValueError(
+                    "ALLOW_UNVERIFIED_JWT=true is forbidden in production (DEBUG=False). "
+                    "This bypasses JWT signature verification."
+                )
+        return self
+
     @property
     def project_root(self) -> Path:
         """Return the project root directory."""

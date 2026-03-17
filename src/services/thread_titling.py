@@ -6,9 +6,7 @@ title summarizing the conversation topic.
 
 import logging
 
-from langchain_anthropic import ChatAnthropic
-
-from src.config import get_settings
+from src.agent.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +29,7 @@ async def generate_thread_title(human_message: str, ai_response: str) -> str:
         A 3-5 word title string, or "New conversation" on failure.
     """
     try:
-        settings = get_settings()
-        llm = ChatAnthropic(  # type: ignore[call-arg]  # langchain-anthropic lacks stubs
-            model="claude-haiku-4-5-20251001",
-            anthropic_api_key=settings.ANTHROPIC_API_KEY,
-            max_tokens=30,
-            temperature=0.3,
-        )
+        llm = get_llm("titling")
         prompt = TITLE_PROMPT.format(
             human_message=human_message[:200],
             ai_response=ai_response[:200],
