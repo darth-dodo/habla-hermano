@@ -39,8 +39,8 @@ function onResponseError(event) {
     if (chatMessages) {
         const errorHtml = `
             <div class="message-enter flex justify-start mb-6">
-                <div class="rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]" style="background: var(--error-muted); border: 1px solid var(--error); color: var(--text-primary)">
-                    <p>
+                <div class="bg-red-900/50 border border-red-700 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
+                    <p class="text-red-200">
                         Sorry, there was an error processing your message. Please try again.
                     </p>
                 </div>

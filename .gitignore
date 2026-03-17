@@ -106,7 +106,3 @@ Thumbs.db
 tmp/
 temp/
 .worktrees/
-.claude/
-.serena/
-.agentic-framework/
-.playwright-mcp/

@@ -20,15 +20,13 @@ from langchain_anthropic import ChatAnthropic
 
 # Profile configurations: (temperature, max_tokens)
 # A None temperature means "use the value from application settings".
-_PROFILES: dict[str, tuple[float | None, int, int]] = {
-    # Each entry: (temperature, max_tokens, timeout_seconds)
-    "default": (None, 1024, 60),
-    "conversational": (None, 1024, 60),
-    "analysis": (0.3, 1024, 60),
-    "structured": (0.3, 512, 60),
-    "creative": (0.7, 512, 60),
-    "enhancement": (0.7, 1024, 60),
-    "titling": (0.3, 30, 15),
+_PROFILES: dict[str, tuple[float | None, int]] = {
+    "default": (None, 1024),
+    "conversational": (None, 1024),
+    "analysis": (0.3, 1024),
+    "structured": (0.3, 512),
+    "creative": (0.7, 512),
+    "enhancement": (0.7, 1024),
 }
 
 
@@ -57,7 +55,7 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
             f"Unknown LLM profile '{profile}'. Valid profiles: {', '.join(sorted(_PROFILES))}"
         )
 
-    temperature_override, max_tokens, timeout = _PROFILES[profile]
+    temperature_override, max_tokens = _PROFILES[profile]
 
     # Import here to avoid circular import through src.api.config
     from src.config import get_settings  # noqa: PLC0415
@@ -73,7 +71,6 @@ def get_llm(profile: str = "default") -> ChatAnthropic:
         "temperature": temperature,
         "max_tokens": max_tokens,
         "api_key": settings.ANTHROPIC_API_KEY,
-        "timeout": timeout,
     }
 
     if settings.ANTHROPIC_ZERO_RETENTION:

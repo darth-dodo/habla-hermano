@@ -27,7 +27,7 @@ from src.agent.prompts_lesson_chat import (
     get_teaching_adjustments,
 )
 from src.lessons.models import FillBlankExercise, TranslateExercise
-from src.validation import get_language_name
+from src.validation import LANGUAGE_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +84,9 @@ def _get_exercises(lesson_data: dict[str, Any]) -> list[dict[str, Any]]:
     return exercises
 
 
-def _build_full_prompt(language: str, level: str, phase_prompt: str) -> str:
-    """Compose the full system prompt from base personality + phase-specific prompt."""
-    return get_prompt_for_level(language, level) + "\n\n" + phase_prompt
+def _get_language_name(language: str) -> str:
+    """Resolve language code to display name."""
+    return LANGUAGE_NAMES.get(language, language)
 
 
 def _build_lesson_ui(
@@ -178,7 +178,7 @@ async def _handle_intro(state: LessonChatState) -> dict[str, Any]:
     exercises = _get_exercises(lesson_data)
 
     system_prompt = LESSON_INTRO_PROMPT.format(
-        language_name=get_language_name(language),
+        language_name=_get_language_name(language),
         level=level,
         lesson_title=metadata.get("title", ""),
         lesson_description=metadata.get("description", ""),
@@ -188,7 +188,8 @@ async def _handle_intro(state: LessonChatState) -> dict[str, Any]:
     )
 
     # Prepend the base level prompt for Hermano personality
-    full_prompt = _build_full_prompt(language, level, system_prompt)
+    base_prompt = get_prompt_for_level(language, level)
+    full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
     logger.info("Lesson %s: intro -> teaching", state.get("lesson_id", "?"))
@@ -227,7 +228,7 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
     step_numbers = f"{step_index + 1}-{batch_end} of {total_steps}"
 
     system_prompt = LESSON_TEACHING_PROMPT.format(
-        language_name=get_language_name(language),
+        language_name=_get_language_name(language),
         level=level,
         lesson_title=lesson_data.get("metadata", {}).get("title", ""),
         steps_content=steps_content,
@@ -235,7 +236,8 @@ async def _handle_teaching(state: LessonChatState) -> dict[str, Any]:
         teaching_adjustments=get_teaching_adjustments(level),
     )
 
-    full_prompt = _build_full_prompt(language, level, system_prompt)
+    base_prompt = get_prompt_for_level(language, level)
+    full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
 
@@ -290,7 +292,7 @@ async def _handle_exercise_ask(state: LessonChatState) -> dict[str, Any]:
     exercise_content = format_exercise_for_prompt(exercise_data)
 
     system_prompt = LESSON_EXERCISE_ASK_PROMPT.format(
-        language_name=get_language_name(language),
+        language_name=_get_language_name(language),
         level=level,
         exercise_type=exercise_data.get("type", "unknown"),
         exercise_content=exercise_content,
@@ -298,7 +300,8 @@ async def _handle_exercise_ask(state: LessonChatState) -> dict[str, Any]:
         teaching_adjustments=get_teaching_adjustments(level),
     )
 
-    full_prompt = _build_full_prompt(language, level, system_prompt)
+    base_prompt = get_prompt_for_level(language, level)
+    full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
     logger.info(
@@ -380,7 +383,7 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
     )
 
     # Build evaluation prompt
-    language_name = get_language_name(language)
+    language_name = _get_language_name(language)
     is_correct_str = (
         "pending (use your judgment)" if is_correct is None else ("Yes" if is_correct else "No")
     )
@@ -396,7 +399,8 @@ async def _handle_exercise_eval(state: LessonChatState) -> dict[str, Any]:
         teaching_adjustments=get_teaching_adjustments(level),
     )
 
-    full_prompt = _build_full_prompt(language, level, system_prompt)
+    base_prompt = get_prompt_for_level(language, level)
+    full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
 
@@ -467,7 +471,7 @@ async def _handle_complete(state: LessonChatState) -> dict[str, Any]:
                 vocab_count += len(vocab_items)
 
     system_prompt = LESSON_COMPLETE_PROMPT.format(
-        language_name=get_language_name(language),
+        language_name=_get_language_name(language),
         level=level,
         lesson_title=lesson_data.get("metadata", {}).get("title", ""),
         score=score,
@@ -477,7 +481,8 @@ async def _handle_complete(state: LessonChatState) -> dict[str, Any]:
         has_next_lesson="true",  # Placeholder — route layer resolves this
     )
 
-    full_prompt = _build_full_prompt(language, level, system_prompt)
+    base_prompt = get_prompt_for_level(language, level)
+    full_prompt = base_prompt + "\n\n" + system_prompt
 
     response = await _call_llm(full_prompt, state)
     logger.info(

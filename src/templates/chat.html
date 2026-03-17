@@ -57,7 +57,7 @@
         </div>
         {% endif %}
         <div class="max-w-3xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
-            <div id="chat-messages" class="space-y-6" role="log" aria-live="polite" aria-label="Chat messages">
+            <div id="chat-messages" class="space-y-6">
                 {% if review_mode and review_stats %}
                 <!-- Review Mode - Show session start selector -->
                 {% set due_count = review_stats.due_count %}
@@ -111,7 +111,7 @@
             </div>
 
             <!-- Loading Indicator -->
-            <div id="loading-indicator" class="hidden mt-4" role="status" aria-live="polite">
+            <div id="loading-indicator" class="hidden mt-4">
                 <div class="flex justify-start">
                     <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-3 border border-border">
                         <div class="flex items-center gap-2">
@@ -165,7 +165,6 @@
                         id="mic-btn"
                         class="p-3 bg-surface-overlay hover:bg-border/50 text-text-muted hover:text-accent rounded-xl transition-all duration-150 cursor-pointer"
                         aria-label="Record voice message"
-                        {% if ws_token %}data-ws-token="{{ ws_token }}"{% endif %}
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
