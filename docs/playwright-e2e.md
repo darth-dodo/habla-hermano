@@ -50,6 +50,28 @@
 | Mobile Thread Switching | ✅ Pass | Navigate to thread + sidebar auto-close |
 | Mobile Backdrop Close | ✅ Pass | Clicking dark overlay closes sidebar |
 | Guest Language Switch | ✅ Pass | Interactive dropdown updates flag and welcome text |
+| Guest Multi-Language Chat | ✅ Pass | A0 German chat returns English-heavy beginner response |
+| Auth Login Valid | ✅ Pass | Valid credentials redirect to chat with read-only badges |
+| Auth Login Invalid | ✅ Pass | Bad credentials return error response |
+| Auth Signup Password Mismatch | ✅ Pass | Mismatched passwords show error, Cache-Control: no-store set |
+| Auth Signup Short Password | ✅ Pass | Short password rejected with validation error |
+| Auth Logout | ✅ Pass | GET /auth/logout clears session and redirects to login |
+| Auth Guest State Post-Logout | ✅ Pass | Language/level dropdowns interactive again after logout |
+| Privacy Page Guest | ✅ Pass | Guest sees info cards only, no data management controls |
+| Privacy Page Authenticated | ✅ Pass | Authenticated user sees "Your data" and "Account" sections |
+| Privacy Delete History Confirmation | ✅ Pass | Confirmation prompt shown before deletion |
+| Privacy Delete History Cancel | ✅ Pass | Cancel restores Delete button, no deletion occurs |
+| Privacy Delete Account Gated | ✅ Pass | Delete account button disabled until "DELETE" typed |
+| Privacy Delete Account Cancel | ✅ Pass | Cancel restores Delete account button |
+| Progress Dashboard | ✅ Pass | Stats (words, sessions, lessons, streak), charts, vocab list |
+| Progress Vocabulary Tracking | ✅ Pass | Words from chat session appear in vocabulary list |
+| Theme Switcher | ✅ Pass | 5 themes in picker; Sangria dark theme applies immediately |
+| CSRF Protection | ✅ Pass | POST without HX-Request header returns 403 |
+| Cache-Control No-Store Auth | ✅ Pass | Auth HTML responses include Cache-Control: no-store |
+| CSP Connect-Src WSS Only | ✅ Pass | connect-src contains wss: only (no ws:) in production |
+| X-XSS-Protection Removed | ✅ Pass | Deprecated X-XSS-Protection header absent from responses |
+| Security Headers Present | ✅ Pass | X-Frame-Options: DENY, X-Content-Type-Options: nosniff, HSTS |
+| 404 Custom Page | ✅ Pass | Unknown routes render custom 404 with Back to Chat link |
 | SSE Token Streaming | 📋 Plan | Chat responses stream tokens via Server-Sent Events |
 | Streaming Cursor | 📋 Plan | Blinking cursor visible during token streaming |
 | Streaming Feedback Events | 📋 Plan | Grammar, pronunciation, scaffold events after stream |
