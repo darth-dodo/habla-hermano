@@ -9,7 +9,6 @@ standard text / varchar columns.
 """
 
 import base64
-import logging
 from functools import lru_cache
 
 from cryptography.fernet import Fernet
@@ -17,8 +16,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from src.config import get_settings
-
-logger = logging.getLogger(__name__)
 
 
 def _derive_key(secret: str, salt: str) -> bytes:
@@ -95,28 +92,6 @@ def decrypt_field(ciphertext: str | None) -> str | None:
 
     fernet = _get_fernet()
     return fernet.decrypt(ciphertext.encode("utf-8")).decode("utf-8")
-
-
-def decrypt_field_safe(ciphertext: str | None) -> str | None:
-    """Decrypt a field, returning a placeholder on failure instead of raising.
-
-    Use this in batch contexts (e.g., listing vocabulary) where one corrupted
-    row should not crash the entire request.
-
-    Args:
-        ciphertext: The encrypted value, or None.
-
-    Returns:
-        Decrypted plaintext, or ``"[encrypted]"`` if decryption fails.
-    """
-    if ciphertext is None or ciphertext == "":
-        return ciphertext
-
-    try:
-        return decrypt_field(ciphertext)
-    except Exception:
-        logger.warning("Failed to decrypt field — returning placeholder")
-        return "[encrypted]"
 
 
 class FernetCipher:

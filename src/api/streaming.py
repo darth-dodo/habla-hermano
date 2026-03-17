@@ -10,23 +10,14 @@ LLM token callbacks from within nodes without modifying node code.
 
 import json
 import logging
-from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any
 
 from starlette.templating import Jinja2Templates
 
 from src.api.sanitize import render_markdown
 
 logger = logging.getLogger(__name__)
-
-
-class StreamableGraph(Protocol):
-    """Protocol for LangGraph compiled graphs that support async streaming."""
-
-    def astream(
-        self, input: dict[str, Any], config: dict[str, Any], stream_mode: list[str]
-    ) -> AsyncIterator[tuple[str, Any]]: ...
 
 
 @dataclass
@@ -37,9 +28,9 @@ class StreamResult:
     allowing the caller to perform vocabulary capture after the stream ends.
     """
 
-    new_vocabulary: list[dict[str, str]] = field(default_factory=list)
-    review_words_offered: list[dict[str, str]] = field(default_factory=list)
-    review_words_used: list[dict[str, str]] = field(default_factory=list)
+    new_vocabulary: list[Any] = field(default_factory=list)
+    review_words_offered: list[Any] = field(default_factory=list)
+    review_words_used: list[Any] = field(default_factory=list)
     full_response: str = ""
 
 
@@ -75,13 +66,13 @@ def _make_sse_event(event: str, data: dict[str, Any]) -> dict[str, str]:
 
 
 async def stream_chat_events(  # noqa: PLR0912
-    graph: StreamableGraph,
+    graph: Any,
     inputs: dict[str, Any],
     config: dict[str, Any],
     templates: Jinja2Templates,
     level: str,
     result: StreamResult,
-) -> AsyncIterator[dict[str, str]]:
+) -> Any:
     """Async generator that streams chat events as SSE data.
 
     Yields SSE events in four phases:

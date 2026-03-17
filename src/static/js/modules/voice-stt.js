@@ -156,16 +156,9 @@ export function startRecordingSession(signal, sttService, chatInput, showError, 
 
         // Open WebSocket for STT
         var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        var wsUrl = wsProtocol + '//' + location.host + '/ws/transcribe?language=' + encodeURIComponent(language);
-        // iOS Safari/Chrome (WebKit) may not send httponly cookies with WS
-        // upgrade requests. Pass the signed session token as a query param
-        // so the server can authenticate the connection as a fallback.
-        var micBtn = document.getElementById('mic-btn');
-        var wsToken = micBtn && micBtn.dataset.wsToken;
-        if (wsToken) {
-            wsUrl += '&token=' + encodeURIComponent(wsToken);
-        }
-        sttWs = new WebSocket(wsUrl);
+        sttWs = new WebSocket(
+            wsProtocol + '//' + location.host + '/ws/transcribe?language=' + encodeURIComponent(language)
+        );
 
         sttWs.onopen = function() {
             if (signal.aborted) {

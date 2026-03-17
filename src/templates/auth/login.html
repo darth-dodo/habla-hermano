@@ -23,10 +23,10 @@
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div id="auth-form-container" class="bg-surface-elevated py-8 px-4 shadow-lg border border-border rounded-3xl sm:px-10">
+        <div class="bg-surface-elevated py-8 px-4 shadow-lg border border-border rounded-3xl sm:px-10">
             <!-- Error Message -->
             {% if error %}
-            <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl" role="alert">
+            <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
                 <div class="flex items-center gap-3">
                     <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -40,7 +40,7 @@
             <form
                 hx-post="/auth/login"
                 hx-swap="innerHTML"
-                hx-target="#auth-form-container"
+                hx-target="closest div.bg-surface-elevated"
                 hx-indicator="#login-indicator"
                 class="space-y-6"
                 x-data="{ loading: false, success: false }"

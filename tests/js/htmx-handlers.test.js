@@ -157,8 +157,8 @@ describe('htmx:responseError handler', () => {
         // Loading indicator should be hidden
         expect(loadingIndicator.classList.contains('hidden')).toBe(true);
 
-        // Error message should be inserted (uses inline CSS variable styles)
-        const errorMsg = chatMessages.querySelector('[style*="--error"]');
+        // Error message should be inserted
+        const errorMsg = chatMessages.querySelector('.text-red-200');
         expect(errorMsg).not.toBeNull();
         expect(errorMsg.textContent).toContain('Sorry, there was an error');
 

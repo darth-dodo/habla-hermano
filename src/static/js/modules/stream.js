@@ -257,7 +257,7 @@ function handleStreamEvent(event, dataStr, bubbleId) {
 
         case 'thread_title': {
             // Update the sidebar thread title if it exists (use data-thread-id, not href)
-            const titleSpan = document.querySelector(`[data-thread-id="${data.thread_id}"] span.thread-title`);
+            const titleSpan = document.querySelector(`[data-thread-id="${data.thread_id}"] span.truncate`);
             if (titleSpan) {
                 titleSpan.textContent = data.title;
             }
@@ -454,8 +454,8 @@ function showStreamError(message) {
 
     const errorHtml = `
         <div class="message-enter flex justify-start mb-6">
-            <div class="rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]" style="background: var(--error-muted); border: 1px solid var(--error); color: var(--text-primary)">
-                <p>${escapeHtml(message)}</p>
+            <div class="bg-red-900/50 border border-red-700 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
+                <p class="text-red-200">${escapeHtml(message)}</p>
             </div>
         </div>
     `;
@@ -473,35 +473,9 @@ function showStreamError(message) {
  */
 function updateLessonProgress(data) {
     const progressBar = document.getElementById('lesson-progress-bar');
-    if (!progressBar) return;
 
-    // Phase-to-index mapping matching chat.html template segments
-    const phaseIndex = { intro: 1, teaching: 2, exercise: 3, complete: 4 };
-    const currentIndex = data.phase ? (phaseIndex[data.phase] || 1) : null;
-
-    if (currentIndex !== null) {
-        // Update each segment bar and label based on current phase
-        const segments = progressBar.querySelectorAll(':scope > div');
-        segments.forEach((segment, i) => {
-            const idx = i + 1;
-            const bar = segment.querySelector('div');
-            const label = segment.querySelector('span');
-            if (bar) {
-                bar.classList.toggle('bg-accent', idx <= currentIndex);
-                bar.classList.toggle('bg-border', idx > currentIndex);
-            }
-            if (label) {
-                label.classList.toggle('text-accent', idx <= currentIndex);
-                label.classList.toggle('text-text-subtle', idx > currentIndex);
-            }
-        });
-    }
-
-    // Update ARIA attributes for accessibility
-    if (data.progress !== undefined) {
-        progressBar.setAttribute('aria-valuenow', Math.round(data.progress / 25));
-    } else if (currentIndex !== null) {
-        progressBar.setAttribute('aria-valuenow', currentIndex);
+    if (progressBar && data.progress !== undefined) {
+        progressBar.style.width = data.progress + '%';
     }
 }
 
@@ -535,8 +509,9 @@ function showExerciseResult(data) {
  * @param {Object} data - lesson_complete SSE data
  */
 function showLessonComplete(data) {
-    // Update progress bar to complete (all segments filled)
-    updateLessonProgress({ phase: 'complete' });
+    // Update progress bar to 100%
+    const progressBar = document.getElementById('lesson-progress-bar');
+    if (progressBar) progressBar.style.width = '100%';
 
     const chatMessages = getChatMessages();
     if (!chatMessages) return;
@@ -552,7 +527,7 @@ function showLessonComplete(data) {
         <p class="text-lg font-semibold text-text mb-2">${correctCount}/${totalExercises} correct · ${vocabCount} words learned</p>
         <div class="flex gap-3 justify-center mt-3">
             <a href="/lessons" class="px-4 py-2 text-sm border border-border rounded-lg hover:bg-surface-overlay transition-colors">More Lessons</a>
-            <a href="/" class="px-4 py-2 text-sm bg-accent rounded-lg hover:bg-accent/80 transition-colors" style="color: var(--accent-text, white)">Free Chat</a>
+            <a href="/" class="px-4 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors">Free Chat</a>
         </div>
     `;
     chatMessages.appendChild(card);

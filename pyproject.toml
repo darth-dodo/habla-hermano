@@ -5,7 +5,7 @@ description = "AI language tutor: A0 to B1 with LangGraph"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Abhishek" }]
+authors = [{ name = "Abhishek", email = "abhishek@example.com" }]
 
 dependencies = [
     # Web framework
