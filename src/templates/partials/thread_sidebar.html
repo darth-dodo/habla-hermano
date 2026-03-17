@@ -69,6 +69,17 @@ Variables expected:
     }"
     @sidebar-toggle.window="mobileOpen = !mobileOpen"
     @keydown.escape.window="mobileOpen = false; confirmingDelete = null; editingThread = null"
+    @keydown.tab.window="
+        if (!mobileOpen) return;
+        const aside = $el.querySelector('aside');
+        if (!aside) return;
+        const focusable = [...aside.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\'-1\'])')];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if ($event.shiftKey && document.activeElement === first) { $event.preventDefault(); last.focus(); }
+        else if (!$event.shiftKey && document.activeElement === last) { $event.preventDefault(); first.focus(); }
+    "
 >
     <!-- Mobile backdrop -->
     <div
@@ -86,6 +97,9 @@ Variables expected:
     <!-- Sidebar panel -->
     <aside
         x-cloak
+        role="dialog"
+        aria-label="Navigation sidebar"
+        :aria-modal="mobileOpen"
         :class="[
             'flex flex-col bg-surface-elevated border-r border-border z-50 transition-all duration-200',
             'fixed h-full w-70',
@@ -237,7 +251,7 @@ Variables expected:
                     >
                         <button
                             @click.prevent="startRename('{{ thread.thread_id }}', '{{ thread.title | e }}')"
-                            class="p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            class="p-2.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-200 cursor-pointer thread-action-btn"
                             aria-label="Rename thread"
                             style="-webkit-tap-highlight-color: transparent;"
                         >
@@ -247,7 +261,7 @@ Variables expected:
                         </button>
                         <button
                             @click.prevent="confirmingDelete = '{{ thread.thread_id }}'"
-                            class="p-1.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer thread-action-btn"
+                            class="p-2.5 rounded-lg opacity-60 sm:opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-200 cursor-pointer thread-action-btn"
                             aria-label="Delete thread"
                             style="-webkit-tap-highlight-color: transparent;"
                         >
@@ -352,10 +366,12 @@ Variables expected:
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div x-show="themeOpen" x-transition class="pl-6 space-y-0.5 mt-0.5">
+                <div x-show="themeOpen" x-transition class="pl-6 space-y-0.5 mt-0.5" role="radiogroup" aria-label="Theme selection">
                     {% for theme_id, theme_name in [('azulejo', 'Azulejo'), ('terracotta', 'Terracotta'), ('flamenco', 'Flamenco'), ('sangria', 'Sangria'), ('jardin', 'Jardín')] %}
                     <button
                         @click="setTheme('{{ theme_id }}'); themeOpen = false"
+                        role="radio"
+                        :aria-checked="theme === '{{ theme_id }}'"
                         class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer"
                         :class="theme === '{{ theme_id }}' ? 'text-accent bg-accent/10' : 'text-text-muted hover:text-text hover:bg-surface-overlay'"
                     >
@@ -374,12 +390,15 @@ Variables expected:
                 Logout
             </a>
             {% else %}
-            <a href="/auth/login" @click="mobileOpen = false" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-accent font-medium hover:bg-accent/10 transition-colors cursor-pointer">
-                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                Log in
-            </a>
+            <div class="mx-3 my-2 p-3 rounded-xl bg-accent/5 border border-accent/15">
+                <p class="text-xs text-text-muted leading-relaxed mb-2">Save your progress, track vocabulary, and pick up right where you left off.</p>
+                <a href="/auth/login" @click="mobileOpen = false" class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm text-white bg-accent hover:bg-accent/90 font-medium transition-colors cursor-pointer">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Log in / Sign up
+                </a>
+            </div>
             {% endif %}
         </div>
     </aside>

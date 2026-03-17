@@ -13,11 +13,10 @@ async def test_generate_title_returns_string():
     mock_result = MagicMock()
     mock_result.content = "Ordering at a restaurant"
 
-    with patch("src.services.thread_titling.ChatAnthropic") as mock_llm_class:
-        mock_llm = AsyncMock()
-        mock_llm.ainvoke.return_value = mock_result
-        mock_llm_class.return_value = mock_llm
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.return_value = mock_result
 
+    with patch("src.services.thread_titling.get_llm", return_value=mock_llm):
         title = await generate_thread_title("Hola", "¡Hola! ¿Cómo estás?")
         assert title == "Ordering at a restaurant"
 
@@ -31,11 +30,10 @@ async def test_generate_title_truncates_long_input():
     long_message = "x" * 500
     long_response = "y" * 500
 
-    with patch("src.services.thread_titling.ChatAnthropic") as mock_llm_class:
-        mock_llm = AsyncMock()
-        mock_llm.ainvoke.return_value = mock_result
-        mock_llm_class.return_value = mock_llm
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.return_value = mock_result
 
+    with patch("src.services.thread_titling.get_llm", return_value=mock_llm):
         title = await generate_thread_title(long_message, long_response)
         assert title == "Long conversation topic"
 
@@ -49,11 +47,10 @@ async def test_generate_title_truncates_long_input():
 @pytest.mark.asyncio
 async def test_generate_title_handles_error():
     """Returns 'New conversation' when LLM call fails."""
-    with patch("src.services.thread_titling.ChatAnthropic") as mock_llm_class:
-        mock_llm = AsyncMock()
-        mock_llm.ainvoke.side_effect = RuntimeError("API error")
-        mock_llm_class.return_value = mock_llm
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.side_effect = RuntimeError("API error")
 
+    with patch("src.services.thread_titling.get_llm", return_value=mock_llm):
         title = await generate_thread_title("Hola", "¡Hola!")
         assert title == "New conversation"
 
@@ -64,11 +61,10 @@ async def test_generate_title_strips_quotes():
     mock_result = MagicMock()
     mock_result.content = '"Spanish greetings practice"'
 
-    with patch("src.services.thread_titling.ChatAnthropic") as mock_llm_class:
-        mock_llm = AsyncMock()
-        mock_llm.ainvoke.return_value = mock_result
-        mock_llm_class.return_value = mock_llm
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.return_value = mock_result
 
+    with patch("src.services.thread_titling.get_llm", return_value=mock_llm):
         title = await generate_thread_title("Hola", "¡Hola!")
         assert title == "Spanish greetings practice"
 
@@ -79,10 +75,9 @@ async def test_generate_title_returns_default_on_empty():
     mock_result = MagicMock()
     mock_result.content = "   "
 
-    with patch("src.services.thread_titling.ChatAnthropic") as mock_llm_class:
-        mock_llm = AsyncMock()
-        mock_llm.ainvoke.return_value = mock_result
-        mock_llm_class.return_value = mock_llm
+    mock_llm = AsyncMock()
+    mock_llm.ainvoke.return_value = mock_result
 
+    with patch("src.services.thread_titling.get_llm", return_value=mock_llm):
         title = await generate_thread_title("Hola", "¡Hola!")
         assert title == "New conversation"

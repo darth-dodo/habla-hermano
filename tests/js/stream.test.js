@@ -454,7 +454,7 @@ describe('stream.js — initStreamingForm', () => {
         ]);
 
         const chatMessages = document.getElementById('chat-messages');
-        const errorBubble = chatMessages.querySelector('.bg-red-900\\/50');
+        const errorBubble = chatMessages.querySelector('[style*="--error"]');
         expect(errorBubble).not.toBeNull();
         expect(errorBubble.textContent).toContain('Rate limit exceeded');
     });
@@ -481,7 +481,7 @@ describe('stream.js — initStreamingForm', () => {
         await vi.advanceTimersByTimeAsync(200);
 
         const chatMessages = document.getElementById('chat-messages');
-        const errorBubble = chatMessages.querySelector('.bg-red-900\\/50');
+        const errorBubble = chatMessages.querySelector('[style*="--error"]');
         expect(errorBubble).not.toBeNull();
         expect(errorBubble.textContent).toContain('Connection lost');
     });
@@ -507,7 +507,7 @@ describe('stream.js — initStreamingForm', () => {
         await vi.advanceTimersByTimeAsync(200);
 
         const chatMessages = document.getElementById('chat-messages');
-        const errorBubble = chatMessages.querySelector('.bg-red-900\\/50');
+        const errorBubble = chatMessages.querySelector('[style*="--error"]');
         expect(errorBubble).not.toBeNull();
         expect(errorBubble.textContent).toContain('offline');
 
@@ -641,9 +641,9 @@ describe('stream.js — initStreamingForm', () => {
         expect(card.textContent).toContain('3/4 correct');
         expect(card.textContent).toContain('8 words learned');
 
-        // Progress bar should be 100%
+        // Progress bar should have aria-valuenow set on complete
         const bar = document.getElementById('lesson-progress-bar');
-        expect(bar.style.width).toBe('100%');
+        expect(bar.getAttribute('aria-valuenow')).toBe('4');
     });
 });
 

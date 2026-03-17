@@ -115,7 +115,7 @@
                     <!-- Confirmation UI -->
                     <div x-show="showDeleteHistory" x-cloak class="mt-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20">
                         <p class="text-sm text-text mb-3">This will permanently delete all your conversations. This cannot be undone.</p>
-                        <div class="flex items-center gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
                             <form method="post" action="/privacy/delete-history" hx-post="/privacy/delete-history">
                                 <button type="submit" class="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors">
                                     Confirm delete
@@ -153,7 +153,7 @@
                     <div x-show="showDeleteAccount" x-cloak class="mt-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20">
                         <p class="text-sm text-text mb-3">This will permanently delete your account and all data. Type <strong class="text-red-500">DELETE</strong> to confirm.</p>
                         <form method="post" action="/privacy/delete-account">
-                            <div class="flex items-center gap-3">
+                            <div class="flex flex-wrap items-center gap-3">
                                 <input
                                     type="text"
                                     name="confirm"

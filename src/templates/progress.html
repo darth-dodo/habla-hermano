@@ -32,6 +32,7 @@
                  hx-get="/progress/stats"
                  hx-trigger="load"
                  hx-swap="innerHTML"
+                 hx-on::response-error="this.innerHTML = '<div class=\'p-4 bg-error-muted rounded-2xl border border-error/30 text-center\'><p class=\'text-sm text-error\'>Failed to load statistics. Please refresh the page.</p></div>'"
                  role="region"
                  aria-label="Learning statistics">
                 <!-- Loading skeleton -->
@@ -77,6 +78,7 @@
                  hx-get="/progress/vocabulary"
                  hx-trigger="load"
                  hx-swap="innerHTML"
+                 hx-on::response-error="this.innerHTML = '<div class=\'p-4 bg-error-muted rounded-2xl border border-error/30 text-center\'><p class=\'text-sm text-error\'>Failed to load vocabulary. Please refresh the page.</p></div>'"
                  role="region"
                  aria-label="Vocabulary list">
                 <div class="bg-surface-elevated rounded-2xl p-5 border border-border animate-pulse">

@@ -208,11 +208,11 @@ class TestStreamThreadOwnership:
         app = _make_app(mock_user, mock_graph)
 
         with (
-            patch("src.api.routes.chat.build_lesson_chat_graph", return_value=mock_graph),
-            patch("src.api.routes.chat.build_graph", return_value=mock_graph),
-            patch("src.api.routes.chat.get_checkpointer", return_value=_Ctx()),
-            patch("src.api.routes.chat.ThreadService", return_value=mock_thread_service),
-            patch("src.api.routes.chat.get_supabase_for_user", return_value=MagicMock()),
+            patch("src.api.routes.chat_stream.build_lesson_chat_graph", return_value=mock_graph),
+            patch("src.api.routes.chat_stream.build_graph", return_value=mock_graph),
+            patch("src.api.routes.chat_stream.get_checkpointer", return_value=_Ctx()),
+            patch("src.api.routes.chat_stream.ThreadService", return_value=mock_thread_service),
+            patch("src.api.routes.chat_stream.get_supabase_for_user", return_value=MagicMock()),
         ):
             with TestClient(app, headers=CSRF_HEADERS) as client:
                 client.cookies.set("sb-access-token", "test-token")

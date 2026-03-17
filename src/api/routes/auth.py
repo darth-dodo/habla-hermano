@@ -270,7 +270,7 @@ async def signup(
         return response
 
     except AuthApiError as e:
-        logger.exception("Signup error")
+        logger.warning("Signup error: %s", e)
         error_message = str(e)
 
         # Parse common Supabase errors
@@ -353,7 +353,7 @@ async def login(
         return response
 
     except AuthApiError as e:
-        logger.exception("Login error")
+        logger.warning("Login error: %s", e)
         error_message = str(e)
 
         # Parse common Supabase errors
@@ -375,17 +375,31 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(response: Response) -> Response:
-    """Log out the current user by clearing the auth cookies.
+async def logout(request: Request, response: Response) -> Response:
+    """Log out the current user by invalidating the session and clearing cookies.
 
-    Uses HTMX redirect to send user to the login page.
+    Attempts to sign out server-side via Supabase (invalidating the refresh
+    token) before clearing client-side cookies. If server-side sign-out fails,
+    cookies are still cleared.
 
     Args:
+        request: FastAPI request object.
         response: FastAPI response object.
 
     Returns:
         Response: Empty response with HX-Redirect header.
     """
+    # Attempt server-side session invalidation
+    try:
+        access_token = request.cookies.get("sb-access-token")
+        if access_token:
+            from src.db.client import get_supabase_for_user  # noqa: PLC0415
+
+            client = get_supabase_for_user(access_token)
+            client.auth.sign_out()
+    except Exception:
+        logger.debug("Server-side sign-out failed (token may already be expired)")
+
     clear_auth_cookie(response)
     response.headers["HX-Redirect"] = "/auth/login"
     response.status_code = status.HTTP_200_OK

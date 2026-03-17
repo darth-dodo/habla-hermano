@@ -20,7 +20,7 @@
 FROM python:3.12-slim
 
 # Copy uv from the official image for fast dependency management
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 
 # Set working directory
 WORKDIR /app
