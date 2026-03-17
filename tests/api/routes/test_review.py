@@ -618,18 +618,18 @@ class TestStartReviewSession:
         assert session_data["current_index"] == 0
         assert session_data["results"] == []
 
-    async def test_start_with_count_query_param(
+    async def test_start_with_count_form_param(
         self, client: AsyncClient, mock_review_service: MagicMock
     ) -> None:
-        """Count query parameter limits the number of due words."""
-        await client.post("/review/start?count=5")
+        """Count form parameter limits the number of due words."""
+        await client.post("/review/start", data={"count": "5"})
         mock_review_service.get_due_words.assert_called_once_with(language="es", limit=5)
 
     async def test_start_with_count_all(
         self, client: AsyncClient, mock_review_service: MagicMock
     ) -> None:
         """Count 'all' passes None as limit."""
-        await client.post("/review/start?count=all")
+        await client.post("/review/start", data={"count": "all"})
         mock_review_service.get_due_words.assert_called_once_with(language="es", limit=None)
 
     async def test_start_returns_empty_when_no_words_due(
@@ -647,11 +647,11 @@ class TestStartReviewSession:
         response = await unauth_client.post("/review/start")
         assert response.status_code == 401
 
-    async def test_start_with_language_query_param(
+    async def test_start_with_language_form_param(
         self, client: AsyncClient, mock_review_service: MagicMock
     ) -> None:
-        """Language query parameter is forwarded to the service."""
-        await client.post("/review/start?language=de")
+        """Language form parameter is forwarded to the service."""
+        await client.post("/review/start", data={"language": "de"})
         mock_review_service.get_due_words.assert_called_once_with(language="de", limit=10)
 
 

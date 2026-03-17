@@ -1,0 +1,67 @@
+{#
+Review Summary - Session summary after completing or ending review
+Shows feedback on last answer, stats, and next actions
+Variables expected:
+  - feedback: str (Hermano's feedback on last answer)
+  - is_correct: bool (whether last answer was correct)
+  - total: int (total words reviewed)
+  - correct_count: int (words answered correctly)
+  - results: list[dict] (list of review results)
+  - ended_early: bool (optional, True if session ended early)
+  - remaining: int (optional, remaining words if ended early)
+#}
+
+<div class="text-center py-8 animate-fade-in">
+    <!-- Last Answer Feedback -->
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-4 py-4 sm:px-5 max-w-full sm:max-w-[85%] mx-auto mb-6 border border-border text-left message-enter">
+        <p class="text-ai-text leading-relaxed">
+            {% if is_correct %}
+                <span class="font-semibold text-success">Correct!</span>
+            {% else %}
+                <span class="font-semibold text-accent">Good try!</span>
+            {% endif %}
+            {{ feedback }}
+        </p>
+    </div>
+
+    <!-- Stats -->
+    {% set incorrect_count = total - correct_count %}
+    <div class="flex justify-center gap-6 mb-8">
+        <div class="text-center">
+            <div class="text-3xl font-bold text-text">{{ total }}</div>
+            <div class="text-sm text-text-muted">Reviewed</div>
+        </div>
+        <div class="text-center">
+            <div class="text-3xl font-bold text-success">{{ correct_count }}</div>
+            <div class="text-sm text-text-muted">Correct</div>
+        </div>
+        {% if incorrect_count > 0 %}
+        <div class="text-center">
+            <div class="text-3xl font-bold text-accent">{{ incorrect_count }}</div>
+            <div class="text-sm text-text-muted">Practicing</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Early Exit Note -->
+    {% if ended_early and remaining %}
+    <div class="bg-surface-elevated border border-border rounded-xl px-4 py-3 mb-6 max-w-xs mx-auto text-left">
+        <p class="text-sm text-text-muted">
+            <span class="font-medium text-text">{{ remaining }}</span> word{{ 's' if remaining != 1 else '' }} left for next time.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="space-y-3 max-w-xs mx-auto">
+        <a href="/" class="w-full px-6 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 btn-press">
+            Continue Chatting
+        </a>
+        <a href="/progress/" class="w-full px-6 py-3 border border-border text-text hover:bg-surface-overlay font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2">
+            View Progress
+        </a>
+        <button onclick="location.reload()" class="w-full px-6 py-3 text-text-muted hover:text-text text-sm transition-colors">
+            I'm done for now
+        </button>
+    </div>
+</div>
