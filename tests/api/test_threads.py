@@ -316,10 +316,9 @@ class TestBearerTokenSupport:
                 finally:
                     application.dependency_overrides.pop(get_current_user, None)
 
-    def test_list_threads_no_token_returns_401(
-        self, mock_user: AuthenticatedUser
-    ) -> None:
+    def test_list_threads_no_token_returns_401(self, mock_user: AuthenticatedUser) -> None:
         """GET /threads/ with no token (cookie or Bearer) returns 401."""
+
         async def override_auth():
             return mock_user
 
