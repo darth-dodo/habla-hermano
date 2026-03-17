@@ -15,6 +15,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from src.agent.checkpoint_purge import purge_old_checkpoints
 from src.agent.checkpointer import close_checkpointer, init_checkpointer
@@ -113,9 +114,14 @@ def create_app() -> FastAPI:
     )
 
     # Security middleware (applied in reverse order — last added runs first)
-    # 1. SecurityHeaders runs last (outermost): adds security headers to responses
-    # 2. CSRF runs before route handlers: rejects forged state-changing requests
-    # 3. CORS runs first (innermost): handles preflight OPTIONS and origin checks
+    # 1. ProxyHeaders runs first (outermost): trusts X-Forwarded-Proto/For from reverse proxy
+    # 2. SecurityHeaders: adds security headers to responses
+    # 3. CSRF runs before route handlers: rejects forged state-changing requests
+    # 4. CORS runs innermost: handles preflight OPTIONS and origin checks
+    app.add_middleware(
+        ProxyHeadersMiddleware,
+        trusted_hosts=["*"],  # Render/Cloudflare always proxy; trust X-Forwarded-Proto
+    )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(
