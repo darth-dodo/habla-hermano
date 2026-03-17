@@ -6,17 +6,18 @@
  */
 
 import {
-    MIC_ICON, LEVEL_BARS_HTML, SPINNER_HTML,
+    MIC_ICON, SPINNER_HTML,
 } from './voice-constants.js';
 
 /**
- * Show mic button in recording state (level bars).
+ * Show mic button in recording state (pulsing red circle with mic icon).
  */
 export function showMicRecording(micButton) {
     if (!micButton) return;
-    micButton.classList.add('voice-recording');
+    micButton.classList.remove('rounded-xl');
+    micButton.classList.add('voice-recording', 'rounded-full');
     micButton.setAttribute('aria-label', 'Stop recording');
-    micButton.innerHTML = LEVEL_BARS_HTML;
+    micButton.innerHTML = MIC_ICON;
 }
 
 /**
@@ -24,7 +25,8 @@ export function showMicRecording(micButton) {
  */
 export function restoreMicIcon(micButton) {
     if (!micButton) return;
-    micButton.classList.remove('voice-recording');
+    micButton.classList.remove('voice-recording', 'rounded-full');
+    micButton.classList.add('rounded-xl');
     micButton.setAttribute('aria-label', 'Record voice message');
     micButton.innerHTML = MIC_ICON;
 }
@@ -150,7 +152,8 @@ export function startLevelAnimation(analyser, micButton, isRecording) {
 export function showProcessing(micButton, micWrapper) {
     if (!micButton) return null;
 
-    micButton.classList.remove('voice-recording');
+    micButton.classList.remove('voice-recording', 'rounded-full');
+    micButton.classList.add('rounded-xl');
     micButton.innerHTML = SPINNER_HTML;
     micButton.setAttribute('aria-label', 'Processing speech\u2026');
 
