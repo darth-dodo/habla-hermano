@@ -90,6 +90,16 @@ class MockWebSocket {
         this.onclose = null;
         MockWebSocket._lastInstance = this;
         MockWebSocket._instances.push(this);
+
+        // TTS WebSocket connections (/ws/speak) should fail immediately
+        // so that voice-tts.js falls back to REST fetch in tests.
+        var self = this;
+        if (url && url.indexOf('/ws/speak') !== -1) {
+            Promise.resolve().then(function() {
+                self.readyState = MockWebSocket.CLOSED;
+                if (self.onerror) self.onerror(new Event('error'));
+            });
+        }
     }
 
     send() {}
@@ -383,7 +393,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(chatInput.readOnly).toBe(true);
                 expect(micBtn.classList.contains('voice-recording')).toBe(true);
                 expect(micBtn.getAttribute('aria-label')).toBe('Stop recording');
-                expect(micBtn.innerHTML).toContain('voice-level-bars');
+                expect(micBtn.innerHTML).toContain('svg');
             });
 
             it('creates timer element', async () => {
@@ -951,6 +961,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
                 expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                     method: 'POST',
@@ -968,6 +979,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
                 var body = JSON.parse(fetch.mock.calls[0][1].body);
                 expect(body.text).toBe('Hola mundo');
@@ -1224,6 +1236,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Guten Tag', 'de');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-julius-de');
@@ -1236,6 +1249,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Bonjour', 'fr');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-hector-fr');
@@ -1248,6 +1262,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hello', 'xx');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-nestor-es');
@@ -1265,6 +1280,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             // Verify fetch was called with POST /api/speak
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
@@ -1377,6 +1393,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                 method: 'POST',
@@ -1452,6 +1469,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             // Verify fetch was called with signal
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
