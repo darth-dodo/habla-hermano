@@ -120,7 +120,7 @@ def create_app() -> FastAPI:
     # 4. CORS runs innermost: handles preflight OPTIONS and origin checks
     app.add_middleware(
         ProxyHeadersMiddleware,
-        trusted_hosts=[settings.HOST, "127.0.0.1", "localhost"],
+        trusted_hosts=["*"],  # Render/Cloudflare always proxy; trust X-Forwarded-Proto
     )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(CSRFMiddleware)
