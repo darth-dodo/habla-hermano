@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **C1 — Thread ownership** (`chat.py`): `POST /chat` and `POST /chat/stream` now verify the supplied `thread_id` belongs to the calling user via `ThreadService.get_thread()` before processing — prevents horizontal privilege escalation
+- **H1 — Lesson checkpoint erasure gap** (`privacy.py`): Delete-history now also deletes checkpoint data matching the `lesson:{user_id}:%` pattern, closing a GDPR erasure gap for lesson threads
+- **H2 — CORS headers wildcard** (`main.py`): `allow_headers` changed from `"*"` to an explicit allowlist (`Content-Type`, `HX-Request`, `Authorization`, etc.)
+- **H4 — Thread delete orphans checkpoints** (`services/threads.py`): `delete_thread()` now cascades deletes across all three checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`)
+- **H5 — Guest session expiry** (`cookies.py`, `auth.py`): Guest sessions now use signed `URLSafeTimedSerializer` tokens enforcing a 7-day server-side expiry; backward-compatible with existing plain UUID4 cookies
+- **H6 — CSP `ws:` in production** (`middleware.py`): CSP `connect-src` now includes `ws:` only in DEBUG mode; production uses `wss:` only
+- **M1 — `active_thread` cookie validation** (`chat.py`): Cookie value validated against `^user:[^:]+:[0-9a-f-]{36}$` before use; invalid values are ignored
+- **M2 — Cookie deletion without security attributes** (`chat.py`, `cookies.py`): All cookie deletions now use `delete_secure_cookie()` to set `Secure`, `HttpOnly`, and `SameSite` attributes
+- **M3 — Bearer token support** (`routes/threads.py`): Thread endpoints now accept `Authorization: Bearer <token>` header as an alternative to the `sb-access-token` cookie
+- **M7 — Language/level validation** (`routes/threads.py`): Thread creation validates `language` and `level` against `VALID_LANGUAGES` / `VALID_LEVELS` constants
+- **M8 — Deprecated X-XSS-Protection header** (`middleware.py`): Removed `X-XSS-Protection: 1; mode=block` — modern browsers ignore it and some versions cause security issues
+- **M9 — Auth page caching** (`routes/auth.py`): All auth endpoint HTML responses (`/auth/login`, `/auth/signup`, `/auth/logout`) now include `Cache-Control: no-store` to prevent sensitive form data being served from cache
+
 ### Fixed
 - **iOS STT silent recordings** (`voice-stt.js`): `AudioContext` created inside `getUserMedia().then()` starts in "suspended" state on iOS Safari — audio processing nodes never fired, sending zero bytes to Deepgram. Added `sttAudioCtx.resume()` after creation.
 - **iOS TTS earpiece routing** (`voice-tts.js`): After STT mic usage, iOS routes audio to the earpiece. TTS now calls `getUserMedia()` to reactivate the speaker audio session (only after mic was used, avoiding unnecessary permission prompts).

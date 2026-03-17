@@ -127,13 +127,15 @@ async def login_page(
     Returns:
         HTMLResponse: Rendered login page.
     """
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="auth/login.html",
         context={
             "app_name": settings.APP_NAME,
         },
     )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.get("/signup", response_class=HTMLResponse)
@@ -152,13 +154,15 @@ async def signup_page(
     Returns:
         HTMLResponse: Rendered signup page.
     """
-    return templates.TemplateResponse(
+    response = templates.TemplateResponse(
         request=request,
         name="auth/signup.html",
         context={
             "app_name": settings.APP_NAME,
         },
     )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.post("/signup", response_class=HTMLResponse)
@@ -191,7 +195,7 @@ async def signup(
     """
     # Validate passwords match
     if password != confirm_password:
-        return templates.TemplateResponse(
+        response: Response = templates.TemplateResponse(
             request=request,
             name="auth/signup.html",
             context={
@@ -199,10 +203,12 @@ async def signup(
                 "email": email,
             },
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     # Validate password length
     if len(password) < 8:
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request=request,
             name="auth/signup.html",
             context={
@@ -210,6 +216,8 @@ async def signup(
                 "email": email,
             },
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     try:
         supabase = get_supabase_client()
@@ -222,7 +230,7 @@ async def signup(
 
         # Check if signup was successful
         if auth_response.user is None:
-            return templates.TemplateResponse(
+            response = templates.TemplateResponse(
                 request=request,
                 name="auth/signup.html",
                 context={
@@ -230,11 +238,13 @@ async def signup(
                     "email": email,
                 },
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Check if email confirmation is required
         if auth_response.session is None:
             # Email confirmation required - show success message
-            return templates.TemplateResponse(
+            response = templates.TemplateResponse(
                 request=request,
                 name="auth/signup.html",
                 context={
@@ -242,6 +252,8 @@ async def signup(
                     "email": email,
                 },
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Session created - set cookies and redirect
         response = Response(status_code=status.HTTP_200_OK)
@@ -267,7 +279,7 @@ async def signup(
         elif "invalid email" in error_message.lower():
             error_message = "Please enter a valid email address"
 
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request=request,
             name="auth/signup.html",
             context={
@@ -275,6 +287,8 @@ async def signup(
                 "email": email,
             },
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -313,7 +327,7 @@ async def login(
         )
 
         if auth_response.session is None:
-            return templates.TemplateResponse(
+            response: Response = templates.TemplateResponse(
                 request=request,
                 name="auth/login.html",
                 context={
@@ -321,6 +335,8 @@ async def login(
                     "email": email,
                 },
             )
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
         # Set cookies and redirect via HTMX
         response = Response(status_code=status.HTTP_200_OK)
@@ -346,7 +362,7 @@ async def login(
         elif "email not confirmed" in error_message.lower():
             error_message = "Please confirm your email address before logging in"
 
-        return templates.TemplateResponse(
+        response = templates.TemplateResponse(
             request=request,
             name="auth/login.html",
             context={
@@ -354,6 +370,8 @@ async def login(
                 "email": email,
             },
         )
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 @router.post("/logout")
@@ -385,4 +403,5 @@ async def logout_get() -> RedirectResponse:
     """
     response = RedirectResponse(url="/auth/login", status_code=status.HTTP_302_FOUND)
     clear_auth_cookie(response)
+    response.headers["Cache-Control"] = "no-store"
     return response

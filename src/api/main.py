@@ -115,7 +115,15 @@ def create_app() -> FastAPI:
         or [f"https://{settings.HOST}"],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["*"],
+        allow_headers=[
+            "Content-Type",
+            "HX-Request",
+            "HX-Current-URL",
+            "HX-Target",
+            "HX-Trigger",
+            "Authorization",
+            "X-Requested-With",
+        ],
     )
 
     # Mount static files

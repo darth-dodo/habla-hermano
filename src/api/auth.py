@@ -406,13 +406,16 @@ async def get_effective_user(
     if user is not None:
         return EffectiveUser(id=user.id, is_guest=False, email=user.email)
 
-    session_id = request.cookies.get("session_id")
-    if session_id:
-        if _is_valid_session_id(session_id):
-            return EffectiveUser(id=session_id, is_guest=True)
+    session_id_raw = request.cookies.get("session_id")
+    if session_id_raw:
+        from src.api.cookies import unsign_session_id  # noqa: PLC0415
+
+        session_uuid = unsign_session_id(session_id_raw)
+        if session_uuid:
+            return EffectiveUser(id=session_uuid, is_guest=True)
         logger.warning(
-            "Rejected invalid session_id cookie (not UUID v4): %r",
-            session_id[:64],  # Truncate to prevent log injection
+            "Rejected expired or invalid session_id cookie: %r",
+            session_id_raw[:64],  # Truncate to prevent log injection
         )
 
     return None

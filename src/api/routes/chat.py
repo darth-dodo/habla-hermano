@@ -29,6 +29,7 @@ Guest users get:
 
 import json
 import logging
+import re
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Annotated, Any
@@ -45,7 +46,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.agent.lesson_chat_graph import build_lesson_chat_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
-from src.api.cookies import set_secure_cookie
+from src.api.cookies import delete_secure_cookie, set_secure_cookie, sign_session_id
 from src.api.dependencies import LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.streaming import StreamResult, stream_chat_events
@@ -66,6 +67,25 @@ router = APIRouter(tags=["chat"])
 # --- Cookie expiry ---
 _CONVERSATION_VERSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
+# --- Thread ID validation (Finding M1) ---
+# Accepts: user:<uuid>:<any up to 100 chars>  or  lesson:<uuid>:<any up to 100 chars>
+_THREAD_ID_RE = re.compile(r"^(user|lesson):[0-9a-f-]{36}:.{1,100}$")
+
+
+def _is_valid_thread_id(value: str) -> bool:
+    """Validate that a thread_id cookie matches the expected format.
+
+    Rejects obviously invalid values (10KB strings, SQL injection attempts,
+    unknown prefixes) before they reach the database layer.
+
+    Args:
+        value: Raw cookie value to validate.
+
+    Returns:
+        True if the value looks like a legitimate thread_id, False otherwise.
+    """
+    return bool(_THREAD_ID_RE.match(value))
+
 
 def _make_error_html(error_message: str) -> HTMLResponse:
     """Return an HTMX-compatible HTML error fragment."""
@@ -74,7 +94,7 @@ def _make_error_html(error_message: str) -> HTMLResponse:
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
-async def chat_page(  # noqa: PLR0912
+async def chat_page(  # noqa: PLR0912, PLR0915
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -150,6 +170,14 @@ async def chat_page(  # noqa: PLR0912
         if sb_token:
             user_client = get_supabase_for_user(sb_token)
 
+            # Validate active_thread cookie format before use (Finding M1)
+            if active_thread and not _is_valid_thread_id(active_thread):
+                logger.warning(
+                    "Ignoring active_thread cookie with invalid format: %r",
+                    active_thread[:64],
+                )
+                active_thread = None
+
             # Load active thread from cookie
             if active_thread:
                 try:
@@ -205,12 +233,13 @@ async def chat_page(  # noqa: PLR0912
     )
 
     # Set session cookie on page load for guests so voice WebSocket auth works
-    # before they send their first message
+    # before they send their first message. Sign the value so the server can
+    # enforce expiry independently of the browser's cookie max_age (Finding H5).
     if not user and not session_id:
         set_secure_cookie(
             response,
             key="session_id",
-            value=str(uuid.uuid4()),
+            value=sign_session_id(str(uuid.uuid4())),
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -294,6 +323,14 @@ async def thread_content_partial(
     empty = HTMLResponse("", headers={"X-Thread-Language": "es", "X-Thread-Level": "A1"})
 
     if not user or not active_thread:
+        return empty
+
+    # Validate active_thread cookie format before use (Finding M1)
+    if not _is_valid_thread_id(active_thread):
+        logger.warning(
+            "Ignoring active_thread cookie with invalid format in thread_content_partial: %r",
+            active_thread[:64],
+        )
         return empty
 
     sb_token = request.cookies.get("sb-access-token")
@@ -403,7 +440,10 @@ async def send_message(  # noqa: PLR0912
         effective_user_id = user.id
         new_session_id = None
         if thread_id_param:
-            # Authenticated user with explicit thread — use directly
+            # Verify the thread belongs to this user before using it (C1)
+            thread_svc = ThreadService(user_id=user.id, client=user_client)
+            if not thread_svc.get_thread(thread_id_param):
+                return _make_error_html("Thread not found.")
             thread_id = thread_id_param
         else:
             # Authenticated user without thread — auto-create one
@@ -487,12 +527,13 @@ async def send_message(  # noqa: PLR0912
         },
     )
 
-    # Set session cookie on the actual response being returned (not the injected one)
+    # Set session cookie on the actual response being returned (not the injected one).
+    # Sign the value for server-side expiry enforcement (Finding H5).
     if new_session_id:
         set_secure_cookie(
             template_response,
             key="session_id",
-            value=new_session_id,
+            value=sign_session_id(new_session_id),
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -501,7 +542,7 @@ async def send_message(  # noqa: PLR0912
 
 @router.post("/chat/stream")
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
-async def stream_message(  # noqa: PLR0915
+async def stream_message(  # noqa: PLR0911, PLR0912, PLR0915
     request: Request,  # noqa: ARG001 — kept for FastAPI DI consistency with other endpoints
     templates: TemplatesDep,
     user: OptionalUserDep,
@@ -618,6 +659,13 @@ async def stream_message(  # noqa: PLR0915
         effective_user_id = user.id
         new_session_id = None
         if thread_id_param:
+            # Verify the thread belongs to this user before using it (C1)
+            thread_svc = ThreadService(user_id=user.id, client=user_client)
+            if not thread_svc.get_thread(thread_id_param):
+                return EventSourceResponse(
+                    content=_stream_error("Thread not found."),
+                    media_type="text/event-stream",
+                )
             thread_id = thread_id_param
         else:
             thread_svc = ThreadService(user_id=user.id, client=user_client)
@@ -822,12 +870,13 @@ async def stream_message(  # noqa: PLR0915
         send_timeout=60,
     )
 
-    # Set session cookie for first-time anonymous users
+    # Set session cookie for first-time anonymous users.
+    # Sign the value for server-side expiry enforcement (Finding H5).
     if new_session_id:
         set_secure_cookie(
             response,
             key="session_id",
-            value=new_session_id,
+            value=sign_session_id(new_session_id),
             max_age=60 * 60 * 24 * 7,  # 7 days
         )
 
@@ -876,8 +925,11 @@ async def new_conversation(
             max_age=60 * 60 * 24 * 30,  # 30 days (A24: reduced from 1 year)
         )
     else:
-        # For anonymous users, delete the session cookie to start fresh
-        response.delete_cookie(key="session_id")
+        # For anonymous users, delete the session cookie to start fresh.
+        # Use delete_secure_cookie so samesite/secure/path match the original
+        # set_secure_cookie call — otherwise browsers silently ignore the
+        # deletion in production (Finding M2).
+        delete_secure_cookie(response, key="session_id")
 
     response.headers["HX-Redirect"] = "/"
     response.status_code = 200

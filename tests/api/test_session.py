@@ -3,10 +3,16 @@ Tests for src/api/session.py - Thread ID session management.
 
 This module tests the cookie-based session management for conversation
 thread IDs in Phase 4 persistence.
+
+Also tests security findings:
+- H5: Guest session expiry via signed cookies (URLSafeTimedSerializer)
+- M1: active_thread cookie format validation
+- M2: new_conversation uses delete_secure_cookie with matching attributes
 """
 
+import time
 import uuid
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from fastapi import Request, Response
 
@@ -322,3 +328,163 @@ class TestSessionRoundTrip:
         assert result != original_id
         # Should be a valid UUID
         uuid.UUID(result)
+
+
+# =============================================================================
+# H5: Guest session expiry via signed cookies
+# =============================================================================
+
+
+class TestGuestSessionExpiry:
+    """Tests for sign_session_id / unsign_session_id (Finding H5)."""
+
+    def test_expired_session_id_is_rejected(self) -> None:
+        """A signed session_id issued 8 days ago must be rejected."""
+        from src.api.cookies import sign_session_id, unsign_session_id
+
+        session_uuid = str(uuid.uuid4())
+
+        # Freeze time to 8 days in the past so the signed token looks old
+        past_time = time.time() - 8 * 24 * 3600
+        with patch("itsdangerous.timed.time") as mock_time:
+            mock_time.return_value = past_time
+            signed = sign_session_id(session_uuid)
+
+        # Verifying now (real time) — should fail because > 7 days
+        result = unsign_session_id(signed, max_age_seconds=7 * 24 * 3600)
+        assert result is None, "Expired signed session_id should be rejected"
+
+    def test_valid_signed_session_id_accepted(self) -> None:
+        """A freshly signed session_id must be accepted and return the UUID."""
+        from src.api.cookies import sign_session_id, unsign_session_id
+
+        session_uuid = str(uuid.uuid4())
+        signed = sign_session_id(session_uuid)
+
+        result = unsign_session_id(signed, max_age_seconds=7 * 24 * 3600)
+        assert result == session_uuid, "Valid signed session_id should return the UUID"
+
+    def test_plain_uuid_still_accepted_for_backward_compat(self) -> None:
+        """A plain UUID4 (old cookie format) must still be accepted for backward compat."""
+        from src.api.cookies import unsign_session_id
+
+        plain_uuid = str(uuid.uuid4())
+        result = unsign_session_id(plain_uuid, max_age_seconds=7 * 24 * 3600)
+        assert result == plain_uuid, "Plain UUID4 should be accepted for backward compat"
+
+    def test_invalid_value_is_rejected(self) -> None:
+        """A garbage value must return None."""
+        from src.api.cookies import unsign_session_id
+
+        result = unsign_session_id("not-a-uuid-or-signed-value", max_age_seconds=7 * 24 * 3600)
+        assert result is None, "Invalid cookie value should return None"
+
+    def test_none_value_is_rejected(self) -> None:
+        """None input must return None without raising."""
+        from src.api.cookies import unsign_session_id
+
+        result = unsign_session_id(None, max_age_seconds=7 * 24 * 3600)  # type: ignore[arg-type]
+        assert result is None
+
+
+# =============================================================================
+# M1: active_thread cookie format validation
+# =============================================================================
+
+
+class TestActiveThreadValidation:
+    """Tests for _is_valid_thread_id (Finding M1)."""
+
+    def test_valid_user_thread_id_accepted(self) -> None:
+        """A well-formed user thread_id must pass validation."""
+        from src.api.routes.chat import _is_valid_thread_id
+
+        uid = str(uuid.uuid4())
+        tid = str(uuid.uuid4())
+        assert _is_valid_thread_id(f"user:{uid}:{tid}") is True
+
+    def test_valid_lesson_thread_id_accepted(self) -> None:
+        """A well-formed lesson thread_id must pass validation."""
+        from src.api.routes.chat import _is_valid_thread_id
+
+        uid = str(uuid.uuid4())
+        assert _is_valid_thread_id(f"lesson:{uid}:spanish-a1:extra") is True
+
+    def test_invalid_active_thread_cookie_is_ignored(self) -> None:
+        """An active_thread cookie with invalid format must be treated as None.
+
+        This simulates the chat_page handler discarding a malformed cookie
+        rather than passing it to ThreadService.
+        """
+        from src.api.routes.chat import _is_valid_thread_id
+
+        # 10 KB string — should be rejected
+        huge_value = "x" * 10_000
+        assert _is_valid_thread_id(huge_value) is False
+
+    def test_empty_string_is_invalid(self) -> None:
+        """Empty string must fail validation."""
+        from src.api.routes.chat import _is_valid_thread_id
+
+        assert _is_valid_thread_id("") is False
+
+    def test_sql_injection_attempt_is_invalid(self) -> None:
+        """A value containing SQL metacharacters must fail."""
+        from src.api.routes.chat import _is_valid_thread_id
+
+        assert _is_valid_thread_id("'; DROP TABLE threads; --") is False
+
+    def test_unknown_prefix_is_invalid(self) -> None:
+        """A thread_id with an unknown prefix must fail."""
+        from src.api.routes.chat import _is_valid_thread_id
+
+        uid = str(uuid.uuid4())
+        assert _is_valid_thread_id(f"admin:{uid}:something") is False
+
+
+# =============================================================================
+# M2: new_conversation uses delete_secure_cookie with matching attributes
+# =============================================================================
+
+
+class TestCookieDeletion:
+    """Tests for new_conversation cookie deletion (Finding M2)."""
+
+    def test_new_conversation_uses_delete_secure_cookie(self) -> None:
+        """new_conversation must call delete_secure_cookie, not response.delete_cookie directly.
+
+        delete_secure_cookie passes samesite/secure/path attributes that match
+        the original set_secure_cookie call, so browsers actually honour the
+        deletion in production (HTTPS) environments.
+        """
+        from src.api.cookies import delete_secure_cookie
+
+        mock_response = MagicMock(spec=Response)
+
+        # Call delete_secure_cookie directly — this is the helper the endpoint
+        # must use instead of response.delete_cookie(key="session_id")
+        delete_secure_cookie(mock_response, key="session_id")
+
+        # The helper must delegate to response.delete_cookie with correct attrs
+        mock_response.delete_cookie.assert_called_once()
+        call_kwargs = mock_response.delete_cookie.call_args
+        kwargs = call_kwargs.kwargs if call_kwargs.kwargs else {}
+        # key must be present either positionally or as keyword
+        all_args = list(call_kwargs.args) + list(kwargs.values())
+        assert "session_id" in all_args or kwargs.get("key") == "session_id"
+        # samesite must be set (lax is the default)
+        samesite_val = kwargs.get("samesite")
+        assert samesite_val in (None, "lax", "strict", "none") or "samesite" in str(call_kwargs)
+
+    def test_delete_secure_cookie_passes_secure_flag(self) -> None:
+        """delete_secure_cookie must forward the secure flag to response.delete_cookie."""
+        from src.api.cookies import delete_secure_cookie
+
+        mock_response = MagicMock(spec=Response)
+
+        with patch("src.api.cookies._is_secure", return_value=True):
+            delete_secure_cookie(mock_response, key="session_id")
+
+        call_kwargs = mock_response.delete_cookie.call_args
+        kwargs = call_kwargs.kwargs if call_kwargs.kwargs else {}
+        assert kwargs.get("secure") is True

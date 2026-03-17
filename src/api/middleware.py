@@ -135,7 +135,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     Headers applied:
     - X-Frame-Options: DENY
     - X-Content-Type-Options: nosniff
-    - X-XSS-Protection: 1; mode=block
     - Referrer-Policy: strict-origin-when-cross-origin
     - Permissions-Policy: camera=(), microphone=(self), geolocation=()
     - Content-Security-Policy: (allows HTMX, Alpine.js, Tailwind CDN)
@@ -161,7 +160,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         # microphone=(self) needed for voice STT feature
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
@@ -169,6 +167,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # CSP: Nonce-based script allowlisting with CDN origins.
         # 'unsafe-eval' remains required because Tailwind CDN uses eval() internally;
         # full removal requires a build-time CSS migration (deferred).
+        # In production, only wss: is allowed for WebSocket connections — ws: (unencrypted)
+        # is only permitted in DEBUG mode to allow local development over plain HTTP.
+        _ws_origins = "ws: wss:" if settings.DEBUG else "wss:"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
@@ -176,7 +177,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "media-src 'self' blob: data:; "
-            "connect-src 'self' ws: wss:"
+            f"connect-src 'self' {_ws_origins}"
         )
 
         # HSTS only in production (HTTPS)

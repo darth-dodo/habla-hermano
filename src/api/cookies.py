@@ -128,6 +128,68 @@ def sign_cookie_value(data: dict[str, Any]) -> str:
     return serializer.dumps(data)  # type: ignore[no-any-return]
 
 
+def sign_session_id(session_uuid: str) -> str:
+    """Sign a guest session UUID for tamper-proof, time-limited storage.
+
+    Embeds a timestamp so the server can enforce max_age server-side,
+    independent of the browser's cookie expiry (Finding H5).
+
+    Args:
+        session_uuid: A UUID v4 string to embed in the signed token.
+
+    Returns:
+        Signed token safe for use as a ``session_id`` cookie value.
+    """
+    serializer = URLSafeTimedSerializer(get_settings().SECRET_KEY, salt="habla-session")
+    return serializer.dumps({"id": session_uuid})  # type: ignore[no-any-return]
+
+
+def unsign_session_id(
+    raw_value: str | None,
+    max_age_seconds: int = 7 * 24 * 3600,
+) -> str | None:
+    """Verify a signed session_id and return the embedded UUID, or None.
+
+    Accepts both:
+    - Signed tokens produced by :func:`sign_session_id` (new format).
+    - Plain UUID v4 strings (old cookies set before signing was introduced,
+      backward-compatibility requirement).
+
+    Args:
+        raw_value: Raw cookie string, or None if the cookie is absent.
+        max_age_seconds: Maximum token age in seconds. Tokens older than
+            this are rejected. Defaults to 7 days.
+
+    Returns:
+        The UUID string on success, None if missing / expired / invalid.
+    """
+    if not raw_value:
+        return None
+
+    # Try signed format first
+    serializer = URLSafeTimedSerializer(get_settings().SECRET_KEY, salt="habla-session")
+    try:
+        data: Any = serializer.loads(raw_value, max_age=max_age_seconds)
+        if isinstance(data, dict) and isinstance(data.get("id"), str):
+            return str(data["id"])
+        return None
+    except BadSignature:
+        pass  # Fall through to backward-compat check
+
+    # Backward compat: accept plain UUID v4 (existing cookies)
+    import uuid as _uuid  # noqa: PLC0415
+
+    try:
+        parsed = _uuid.UUID(raw_value, version=4)
+        if str(parsed) == raw_value:
+            return raw_value
+    except (ValueError, AttributeError):
+        pass
+
+    logger.warning("Rejected session_id cookie: not a valid signed token or UUID v4")
+    return None
+
+
 def unsign_json_cookie(raw_value: str | None, max_age: int | None = None) -> dict[str, Any] | None:
     """Verify and deserialize a signed JSON cookie, or return None.
 

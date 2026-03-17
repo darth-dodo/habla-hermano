@@ -84,7 +84,6 @@ class TestCSPNonce:
         response = test_client.get("/health")
         assert response.headers["X-Frame-Options"] == "DENY"
         assert response.headers["X-Content-Type-Options"] == "nosniff"
-        assert response.headers["X-XSS-Protection"] == "1; mode=block"
         assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert "microphone=(self)" in response.headers["Permissions-Policy"]
 
@@ -150,3 +149,69 @@ class TestCacheControlHeaders:
         """HTML pages served by route handlers should not get Cache-Control."""
         response = test_client.get("/")
         assert "Cache-Control" not in response.headers
+
+
+class TestCORSHeaders:
+    """Tests for CORS allow_headers configuration (Finding H2)."""
+
+    def test_allow_headers_is_explicit_not_wildcard(self, test_client: TestClient) -> None:
+        """CORS preflight must NOT allow arbitrary headers.
+
+        With allow_headers=["*"], Starlette echoes back ANY header name given in
+        Access-Control-Request-Headers. With an explicit list, only configured
+        headers are allowed — an unlisted header must NOT be reflected back.
+
+        We request "X-Evil-Header" which is not in the explicit allowlist;
+        after the fix it should not appear in Access-Control-Allow-Headers.
+        """
+        resp = test_client.options(
+            "/chat",
+            headers={
+                "Origin": "http://localhost:8000",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "X-Evil-Header",
+            },
+        )
+        allow_headers = resp.headers.get("Access-Control-Allow-Headers", "")
+        assert "x-evil-header" not in allow_headers.lower(), (
+            f"CORS should not allow arbitrary headers when using explicit list, "
+            f"got Access-Control-Allow-Headers: {allow_headers!r}"
+        )
+
+
+class TestCSPWebSocket:
+    """Tests for CSP connect-src WebSocket directive (Finding H6)."""
+
+    def test_production_csp_only_allows_wss(self, test_client: TestClient) -> None:
+        """In production (DEBUG=False), connect-src should only allow wss:, not ws:."""
+        from src.api.config import Settings
+
+        prod_settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            SECRET_KEY="test",
+            DEBUG=False,
+        )
+        with patch("src.api.middleware.get_settings", return_value=prod_settings):
+            response = test_client.get("/health")
+        csp = response.headers.get("Content-Security-Policy", "")
+        connect_src_match = re.search(r"connect-src\s+([^;]+)", csp)
+        assert connect_src_match is not None, f"No connect-src in CSP: {csp}"
+        connect_src = connect_src_match.group(1)
+        assert "ws:" not in connect_src, (
+            f"Production connect-src must not include plain ws:, got: {connect_src!r}"
+        )
+        assert "wss:" in connect_src, (
+            f"Production connect-src must include wss:, got: {connect_src!r}"
+        )
+
+
+class TestXSSProtectionHeader:
+    """Tests for X-XSS-Protection header removal (Finding M8)."""
+
+    def test_xss_protection_header_removed(self, test_client: TestClient) -> None:
+        """X-XSS-Protection should NOT be present — it is deprecated and exploitable."""
+        response = test_client.get("/health")
+        assert "X-XSS-Protection" not in response.headers, (
+            "X-XSS-Protection header is deprecated and should be removed"
+        )

@@ -100,7 +100,8 @@ class ThreadService:
         )
 
     def delete_thread(self, thread_id: str) -> None:
-        """Delete thread metadata row. Checkpoints are orphaned, not deleted."""
+        """Delete thread metadata row and all associated checkpoint data."""
+        # Delete thread metadata
         (
             self._client.table(self.TABLE)
             .delete()
@@ -108,3 +109,11 @@ class ThreadService:
             .eq("thread_id", thread_id)
             .execute()
         )
+        # Delete checkpoint data (LangGraph checkpoint tables).
+        # RLS on these tables uses checkpoint_owner() which validates ownership via the
+        # user JWT already present in self._client, so no additional user_id filter needed.
+        for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+            try:
+                self._client.table(table).delete().eq("thread_id", thread_id).execute()
+            except Exception:
+                logger.exception("Failed to delete %s for thread %s", table, thread_id)

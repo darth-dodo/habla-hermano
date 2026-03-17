@@ -238,9 +238,40 @@ class TestDeleteThread:
         svc = ThreadService(USER_ID, mock_client)
         svc.delete_thread(tid)
 
-        mock_table.delete.assert_called_once()
-        mock_table.execute.assert_called_once()
-        # Verify eq was called for both user_id and thread_id filtering
+        # delete is called for the metadata row AND the 3 checkpoint tables
+        assert mock_table.delete.call_count >= 1
+        # Verify eq was called for both user_id and thread_id filtering on the metadata row
         eq_calls = [call[0] for call in mock_table.eq.call_args_list]
         assert ("user_id", USER_ID) in eq_calls
         assert ("thread_id", tid) in eq_calls
+
+
+# =============================================================================
+# Delete — checkpoint cleanup
+# =============================================================================
+
+
+class TestDeleteThreadCleansCheckpoints:
+    """Tests that delete_thread also removes associated LangGraph checkpoint rows."""
+
+    def test_delete_thread_also_deletes_checkpoint_tables(self) -> None:
+        """Deleting a thread also purges checkpoint_writes, checkpoint_blobs, checkpoints."""
+        mock_client, mock_table = _make_mock_client()
+        tid = "user:test-user-123:abc-def"
+
+        svc = ThreadService(USER_ID, mock_client)
+        svc.delete_thread(tid)
+
+        # Collect every table name passed to mock_client.table(...)
+        table_calls = [call[0][0] for call in mock_client.table.call_args_list]
+        assert "checkpoint_writes" in table_calls
+        assert "checkpoint_blobs" in table_calls
+        assert "checkpoints" in table_calls
+
+        # For each checkpoint table, verify .eq("thread_id", tid) was called
+        eq_calls = [call[0] for call in mock_table.eq.call_args_list]
+        # There should be at least 3 eq("thread_id", tid) calls — one per checkpoint table
+        thread_id_eq_calls = [c for c in eq_calls if c == ("thread_id", tid)]
+        assert len(thread_id_eq_calls) >= 3, (
+            f"Expected eq('thread_id', tid) at least 3 times, got: {thread_id_eq_calls}"
+        )
