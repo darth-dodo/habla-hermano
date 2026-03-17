@@ -113,7 +113,7 @@ async def init_checkpointer() -> None:
         kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row},
     )
     await pool.open()
-    saver = AsyncPostgresSaver(conn=pool, serde=encrypted_serde)
+    saver = AsyncPostgresSaver(conn=pool, serde=encrypted_serde)  # type: ignore[arg-type]  # row_factory=dict_row in kwargs satisfies runtime contract
     await saver.setup()
     _state["postgres_pool"] = pool
     _state["postgres_saver"] = saver
