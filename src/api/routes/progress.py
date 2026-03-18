@@ -72,7 +72,6 @@ async def get_progress_page(
         context={
             "total_words": stats.total_words,
             "sessions_count": stats.total_sessions,
-            "current_streak": stats.current_streak,
             "lessons_completed": stats.lessons_completed,
             "vocabulary": [],  # Loaded via HTMX partial
             "user": user,
@@ -131,6 +130,7 @@ async def get_stats(
     templates: TemplatesDep,
     user: OptionalUserDep,
     access_token: AccessTokenDep,
+    language: str = "es",
 ) -> HTMLResponse:
     """Render session statistics summary.
 
@@ -143,6 +143,7 @@ async def get_stats(
         templates: Jinja2 template engine.
         user: Authenticated user or None.
         access_token: Effective access token (refreshed if needed).
+        language: Target language to filter stats by. Defaults to "es".
 
     Returns:
         HTMLResponse: Rendered stats partial with session metrics.
@@ -155,7 +156,6 @@ async def get_stats(
                 "total_words": 0,
                 "total_sessions": 0,
                 "lessons_completed": 0,
-                "current_streak": 0,
                 "accuracy_rate": 0.0,
                 "words_learned_today": 0,
                 "messages_today": 0,
@@ -165,7 +165,7 @@ async def get_stats(
     # Use user-authenticated client for RLS to work with auth.uid()
     user_client = get_supabase_for_user(access_token)
     service = ProgressService(user.id, client=user_client)
-    stats = service.get_dashboard_stats()
+    stats = service.get_dashboard_stats(language=validate_language(language))
 
     return templates.TemplateResponse(
         request=request,
@@ -174,7 +174,6 @@ async def get_stats(
             "total_words": stats.total_words,
             "total_sessions": stats.total_sessions,
             "lessons_completed": stats.lessons_completed,
-            "current_streak": stats.current_streak,
             "accuracy_rate": stats.accuracy_rate,
             "words_learned_today": stats.words_learned_today,
             "messages_today": stats.messages_today,

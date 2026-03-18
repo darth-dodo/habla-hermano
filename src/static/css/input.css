@@ -108,6 +108,20 @@
     .correction-fixed {
         @apply text-green-400;
     }
+
+    /* Interactive press effect for buttons */
+    .btn-press {
+        @apply active:scale-[0.97] transition-transform;
+    }
+
+    /* Lift effect on hover for cards */
+    .hover-lift {
+        @apply transition-all duration-200;
+    }
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.08));
+    }
 }
 
 /* ============================================
