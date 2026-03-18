@@ -41,7 +41,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.cookies import delete_secure_cookie, set_secure_cookie, sign_session_id
-from src.api.dependencies import LessonServiceDep, SettingsDep, TemplatesDep
+from src.api.dependencies import AccessTokenDep, LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
@@ -150,6 +150,7 @@ async def chat_page(  # noqa: PLR0912, PLR0915
     settings: SettingsDep,
     user: OptionalUserDep,
     lesson_service: LessonServiceDep,
+    sb_token: AccessTokenDep,
     mode: str | None = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
@@ -216,7 +217,6 @@ async def chat_page(  # noqa: PLR0912, PLR0915
 
     # Thread loading and sidebar for authenticated users (skip in lesson mode)
     if user and not lesson:
-        sb_token = request.cookies.get("sb-access-token")
         if sb_token:
             user_client = get_supabase_for_user(sb_token)
 
@@ -320,6 +320,7 @@ async def thread_content_partial(
     templates: TemplatesDep,
     settings: SettingsDep,
     user: OptionalUserDep,
+    sb_token: AccessTokenDep,
     active_thread: Annotated[str | None, Cookie()] = None,
 ) -> Response:
     """Return the message area HTML for the active thread (SPA-style thread switching).
@@ -342,7 +343,6 @@ async def thread_content_partial(
         )
         return empty
 
-    sb_token = request.cookies.get("sb-access-token")
     if not sb_token:
         return empty
 

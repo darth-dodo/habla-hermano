@@ -321,6 +321,11 @@ async def get_current_user(request: Request, response: Response) -> Authenticate
                 if new_token:
                     token = new_token
 
+        # Store the (potentially refreshed) token on request.state so
+        # the EffectiveAccessTokenDep dependency returns the fresh token
+        # instead of the stale cookie value.
+        request.state.sb_access_token = token
+
         # Production path: verify token server-side via Supabase
         return _verify_token_via_supabase(token)
 
@@ -373,6 +378,8 @@ async def get_current_user_optional(
         if refresh_token:
             new_token = _try_refresh_token(refresh_token, response)
             if new_token:
+                # Store refreshed token for downstream DB queries
+                request.state.sb_access_token = new_token
                 # Retry with the refreshed token
                 try:
                     return _verify_token_via_supabase(new_token)

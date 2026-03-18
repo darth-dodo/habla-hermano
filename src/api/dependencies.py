@@ -6,8 +6,10 @@ Provides reusable dependencies for routes including settings, templates,
 session management, and LangGraph checkpointing.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import markupsafe
 from fastapi import Depends, Request
@@ -16,7 +18,11 @@ from fastapi.templating import Jinja2Templates
 from src.api.config import Settings, get_settings
 from src.api.sanitize import render_markdown, sanitize_html
 from src.api.session import get_thread_id as _get_thread_id
+from src.api.supabase_client import get_supabase_for_user
 from src.lessons.service import LessonService, get_lesson_service
+
+if TYPE_CHECKING:
+    from supabase import Client as SupabaseClient
 
 
 def _sanitize_filter(value: str) -> markupsafe.Markup:
@@ -125,9 +131,41 @@ def get_deepgram_api_key() -> str:
     return api_key
 
 
+def get_effective_access_token(request: Request) -> str | None:
+    """Return the effective Supabase access token for the current request.
+
+    Prefers the refreshed token stored on ``request.state`` by the auth
+    layer (when a near-expiry or expired token was successfully refreshed)
+    over the original cookie value which may be stale.
+
+    Returns:
+        Access token string, or None if the user is unauthenticated.
+    """
+    return getattr(request.state, "sb_access_token", None) or request.cookies.get(
+        "sb-access-token"
+    )
+
+
+def get_user_supabase_client(request: Request) -> SupabaseClient | None:
+    """Return a user-scoped Supabase client using the effective access token.
+
+    Uses the potentially-refreshed token from the auth layer so that
+    DB queries succeed even when the original cookie was expired.
+
+    Returns:
+        User-authenticated Supabase client, or None if no token.
+    """
+    token = get_effective_access_token(request)
+    if not token:
+        return None
+    return get_supabase_for_user(token)
+
+
 # Type aliases for dependency injection
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 TemplatesDep = Annotated[Jinja2Templates, Depends(get_cached_templates)]
 ThreadIdDep = Annotated[str, Depends(get_thread_id_dep)]
 LessonServiceDep = Annotated[LessonService, Depends(get_lesson_service)]
 DeepgramKeyDep = Annotated[str, Depends(get_deepgram_api_key)]
+AccessTokenDep = Annotated[str | None, Depends(get_effective_access_token)]
+UserClientDep = Annotated["SupabaseClient | None", Depends(get_user_supabase_client)]
