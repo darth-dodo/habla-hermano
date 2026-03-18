@@ -148,7 +148,8 @@ async def delete_account(
     # Clear all auth cookies and redirect
     from src.api.routes.auth import clear_auth_cookie  # noqa: PLC0415
 
-    response = RedirectResponse(url="/", status_code=302)
+    response = Response(status_code=200)
+    response.headers["HX-Redirect"] = "/"
     clear_auth_cookie(response)
     delete_secure_cookie(response, key="active_thread")
     delete_secure_cookie(response, key="session_id")

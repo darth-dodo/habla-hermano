@@ -152,7 +152,7 @@
                     <!-- Two-step confirmation UI -->
                     <div x-show="showDeleteAccount" x-cloak class="mt-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20">
                         <p class="text-sm text-text mb-3">This will permanently delete your account and all data. Type <strong class="text-red-500">DELETE</strong> to confirm.</p>
-                        <form method="post" action="/privacy/delete-account">
+                        <form method="post" action="/privacy/delete-account" hx-post="/privacy/delete-account">
                             <div class="flex flex-wrap items-center gap-3">
                                 <input
                                     type="text"
