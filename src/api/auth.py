@@ -353,19 +353,17 @@ async def get_current_user_optional(
 ) -> AuthenticatedUser | None:
     """FastAPI dependency to optionally get the current user.
 
-    Returns None only when no token is present (true guest). If a token IS
-    present but invalid/expired, attempts a refresh via the refresh token
-    cookie before giving up with a 401.
+    Returns None when no token is present OR when the token is invalid
+    and cannot be refreshed. This allows pages using OptionalUserDep to
+    gracefully degrade to guest mode instead of returning 401.
 
     Args:
         request: FastAPI request object.
         response: FastAPI response object (for setting refreshed cookies).
 
     Returns:
-        AuthenticatedUser if authenticated, None if no token present.
-
-    Raises:
-        HTTPException: 401 if token is invalid and refresh fails.
+        AuthenticatedUser if authenticated, None if unauthenticated or
+        token is invalid/expired and refresh fails.
     """
     token = _get_token_from_request(request)
     if not token:
@@ -385,7 +383,9 @@ async def get_current_user_optional(
                     return _verify_token_via_supabase(new_token)
                 except (HTTPException, AuthApiError):
                     pass
-        raise
+        # Token invalid and refresh failed — degrade to guest
+        logger.debug("Optional auth: token invalid and refresh failed, treating as guest")
+        return None
 
 
 # Type aliases for FastAPI dependency injection

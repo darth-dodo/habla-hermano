@@ -393,51 +393,41 @@ class TestGetCurrentUserOptional:
         assert user is None
 
     @pytest.mark.asyncio
-    async def test_raises_401_when_invalid_token_no_refresh(
+    async def test_returns_none_when_invalid_token_no_refresh(
         self,
         mock_settings_no_supabase: MagicMock,
         mock_response: Response,
     ) -> None:
-        """Test get_current_user_optional raises 401 for invalid token with no refresh token."""
-        from fastapi import HTTPException
-
+        """Test get_current_user_optional returns None for invalid token with no refresh token."""
         request = MagicMock()
         request.cookies.get.side_effect = lambda k: (
             "invalid-token" if k == "sb-access-token" else None
         )
         request.headers.get.return_value = None
 
-        with (
-            patch("src.api.auth.get_settings", return_value=mock_settings_no_supabase),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await get_current_user_optional(request, mock_response)
+        with patch("src.api.auth.get_settings", return_value=mock_settings_no_supabase):
+            result = await get_current_user_optional(request, mock_response)
 
-        assert exc_info.value.status_code == 401
+        assert result is None
 
     @pytest.mark.asyncio
-    async def test_raises_401_when_expired_token_no_refresh(
+    async def test_returns_none_when_expired_token_no_refresh(
         self,
         expired_token: str,
         mock_settings_no_supabase: MagicMock,
         mock_response: Response,
     ) -> None:
-        """Test get_current_user_optional raises 401 for expired token with no refresh token."""
-        from fastapi import HTTPException
-
+        """Test get_current_user_optional returns None for expired token with no refresh token."""
         request = MagicMock()
         request.cookies.get.side_effect = lambda k: (
             expired_token if k == "sb-access-token" else None
         )
         request.headers.get.return_value = None
 
-        with (
-            patch("src.api.auth.get_settings", return_value=mock_settings_no_supabase),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await get_current_user_optional(request, mock_response)
+        with patch("src.api.auth.get_settings", return_value=mock_settings_no_supabase):
+            result = await get_current_user_optional(request, mock_response)
 
-        assert exc_info.value.status_code == 401
+        assert result is None
 
 
 # =============================================================================

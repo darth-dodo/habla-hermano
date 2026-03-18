@@ -8,14 +8,13 @@ Requires authentication - unauthenticated users see a sign-up prompt.
 """
 
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
-from src.api.dependencies import TemplatesDep
+from src.api.dependencies import AccessTokenDep, TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import validate_days, validate_language
 from src.db.repository import VocabularyRepository
@@ -32,8 +31,8 @@ async def get_progress_page(
     request: Request,
     templates: TemplatesDep,
     user: OptionalUserDep,
+    access_token: AccessTokenDep,
     language: str = "es",
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse | RedirectResponse:
     """Render the progress overview page with learning statistics.
 
@@ -44,17 +43,18 @@ async def get_progress_page(
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user or None.
+        access_token: Effective access token (refreshed if needed).
         language: Target language for review stats. Defaults to "es".
 
     Returns:
         HTMLResponse: Rendered progress page with stats and vocabulary.
         RedirectResponse: Redirect to login if not authenticated.
     """
-    if not user or not sb_access_token:
+    if not user or not access_token:
         return RedirectResponse(url="/auth/login", status_code=302)
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token)
+    user_client = get_supabase_for_user(access_token)
     service = ProgressService(user.id, client=user_client)
     stats = service.get_dashboard_stats()
 
@@ -87,8 +87,8 @@ async def get_vocabulary(
     request: Request,
     templates: TemplatesDep,
     user: OptionalUserDep,
+    access_token: AccessTokenDep,
     language: str = "es",
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Render the vocabulary list with learned words.
 
@@ -100,13 +100,13 @@ async def get_vocabulary(
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user or None.
+        access_token: Effective access token (refreshed if needed).
         language: Target language to filter vocabulary by. Defaults to "es".
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: Rendered vocabulary partial.
     """
-    if not user or not sb_access_token:
+    if not user or not access_token:
         return templates.TemplateResponse(
             request=request,
             name="partials/progress_vocab.html",
@@ -114,7 +114,7 @@ async def get_vocabulary(
         )
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token)
+    user_client = get_supabase_for_user(access_token)
     repo = VocabularyRepository(user.id, client=user_client)
     vocabulary = repo.get_all(language=validate_language(language))
 
@@ -130,7 +130,7 @@ async def get_stats(
     request: Request,
     templates: TemplatesDep,
     user: OptionalUserDep,
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+    access_token: AccessTokenDep,
 ) -> HTMLResponse:
     """Render session statistics summary.
 
@@ -142,12 +142,12 @@ async def get_stats(
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user or None.
-        sb_access_token: User's Supabase access token from cookie.
+        access_token: Effective access token (refreshed if needed).
 
     Returns:
         HTMLResponse: Rendered stats partial with session metrics.
     """
-    if not user or not sb_access_token:
+    if not user or not access_token:
         return templates.TemplateResponse(
             request=request,
             name="partials/stats_summary.html",
@@ -163,7 +163,7 @@ async def get_stats(
         )
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token)
+    user_client = get_supabase_for_user(access_token)
     service = ProgressService(user.id, client=user_client)
     stats = service.get_dashboard_stats()
 
@@ -185,9 +185,9 @@ async def get_stats(
 @router.get("/chart-data")
 async def get_chart_data(
     user: OptionalUserDep,
+    access_token: AccessTokenDep,
     language: str = "es",
     days: int = 30,
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> JSONResponse:
     """Return chart data as JSON for frontend chart rendering.
 
@@ -198,18 +198,18 @@ async def get_chart_data(
 
     Args:
         user: Authenticated user or None.
+        access_token: Effective access token (refreshed if needed).
         language: Target language to filter by. Defaults to "es".
         days: Number of days of history to include. Defaults to 30.
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         JSONResponse: Chart data with vocab_growth and accuracy_trend arrays.
     """
-    if not user or not sb_access_token:
+    if not user or not access_token:
         return JSONResponse(content={"vocab_growth": [], "accuracy_trend": []})
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token)
+    user_client = get_supabase_for_user(access_token)
     service = ProgressService(user.id, client=user_client)
     chart = service.get_chart_data(language=validate_language(language), days=validate_days(days))
     return JSONResponse(content=chart.to_dict())
@@ -218,8 +218,8 @@ async def get_chart_data(
 @router.delete("/vocabulary/{word_id}", response_class=HTMLResponse)
 async def remove_vocabulary_word(
     user: OptionalUserDep,
+    access_token: AccessTokenDep,
     word_id: int,
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Remove a word from the learned vocabulary list.
 
@@ -230,17 +230,17 @@ async def remove_vocabulary_word(
 
     Args:
         user: Authenticated user or None.
+        access_token: Effective access token (refreshed if needed).
         word_id: Database ID of the vocabulary word to remove.
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: Empty response for HTMX swap removal.
     """
-    if not user or not sb_access_token:
+    if not user or not access_token:
         return HTMLResponse(content="", status_code=200)
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token)
+    user_client = get_supabase_for_user(access_token)
     repo = VocabularyRepository(user.id, client=user_client)
     repo.delete(word_id)
     return HTMLResponse(content="", status_code=200)
