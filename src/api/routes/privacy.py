@@ -103,11 +103,11 @@ async def delete_account(
     confirm: Annotated[str, Form()] = "",
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> Response:
-    """Delete the user's account entirely.
+    """Delete the user's account and all associated data.
 
-    Requires the user to type 'DELETE' as confirmation. Uses the Supabase
-    admin client to delete the auth user; ON DELETE CASCADE handles all
-    related data cleanup.
+    Requires the user to type 'DELETE' as confirmation. Explicitly deletes
+    vocabulary, sessions, lesson progress, and checkpoint data (which lack
+    FK cascades), then removes the auth user via the Supabase admin client.
 
     Args:
         request: FastAPI request object.
@@ -127,16 +127,39 @@ async def delete_account(
             status_code=422,
         )
 
-    # Use admin client to delete auth user (cascades to all user data)
-    try:
-        settings = get_settings()
-        if not settings.SUPABASE_SERVICE_KEY:
-            return HTMLResponse(
-                content='<div class="text-red-500 text-sm p-2">Account deletion is not available at this time.</div>',
-                status_code=503,
-            )
+    # Verify admin client is available before starting cleanup
+    settings = get_settings()
+    if not settings.SUPABASE_SERVICE_KEY:
+        return HTMLResponse(
+            content='<div class="text-red-500 text-sm p-2">Account deletion is not available at this time.</div>',
+            status_code=503,
+        )
 
+    # Delete all user data before removing the auth user.
+    # Tables without FK to auth.users won't cascade, so we clean them
+    # explicitly using the admin client (user's token becomes invalid
+    # after auth user deletion).
+    try:
         admin_client = get_supabase_admin()
+
+        # Delete vocabulary, learning sessions, and lesson progress
+        for table in ("vocabulary", "learning_sessions", "lesson_progress"):
+            try:
+                admin_client.table(table).delete().eq("user_id", user.id).execute()
+            except Exception:
+                logger.exception("Failed to delete %s for user %s", table, user.id)
+
+        # Delete checkpoint data (freeform + lesson threads)
+        for pattern in (f"user:{user.id}:%", f"lesson:{user.id}:%"):
+            for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+                try:
+                    admin_client.table(table).delete().like("thread_id", pattern).execute()
+                except Exception:
+                    logger.exception(
+                        "Failed to delete %s (pattern %s) for user %s", table, pattern, user.id
+                    )
+
+        # Finally, delete the auth user (cascades user_profiles + conversation_threads)
         admin_client.auth.admin.delete_user(user.id)
     except Exception:
         logger.exception("Failed to delete account for user %s", user.id)
