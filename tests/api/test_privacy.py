@@ -344,8 +344,8 @@ class TestDeleteAccount:
             data={"confirm": "DELETE"},
             follow_redirects=False,
         )
-        assert resp.status_code == 302
-        assert resp.headers["location"] == "/"
+        assert resp.status_code == 200
+        assert resp.headers["HX-Redirect"] == "/"
         admin_client.auth.admin.delete_user.assert_called_once_with("test-user-123")
 
     def test_auth_cookies_cleared_on_success(self, authed_client: TestClient) -> None:
@@ -355,7 +355,7 @@ class TestDeleteAccount:
             data={"confirm": "DELETE"},
             follow_redirects=False,
         )
-        assert resp.status_code == 302
+        assert resp.status_code == 200
         set_cookie_headers = resp.headers.get_list("set-cookie")
         # Check that sb-access-token cookie is cleared
         access_cleared = any("sb-access-token" in cookie for cookie in set_cookie_headers)
