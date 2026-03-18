@@ -6,14 +6,17 @@ Provides the lesson listing page. The conversational lesson system
 
 import contextlib
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Cookie
 from fastapi.responses import HTMLResponse
 from starlette.requests import Request
 
 from src.api.auth import OptionalUserDep
-from src.api.dependencies import LessonServiceDep, TemplatesDep
+from src.api.dependencies import AccessTokenDep, LessonServiceDep, TemplatesDep
+from src.db.client import get_supabase_for_user
 from src.lessons.models import LessonLevel
+from src.services.threads import ThreadService
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +34,10 @@ async def get_lessons_page(
     templates: TemplatesDep,
     user: OptionalUserDep,
     lesson_service: LessonServiceDep,
+    sb_token: AccessTokenDep,
     language: str = "es",
     level: str | None = None,
+    active_thread: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Render the lessons overview page with available micro-lessons.
 
@@ -61,13 +66,37 @@ async def get_lessons_page(
         ],
     }
 
+    context: dict[str, object] = {
+        "lessons": lessons_grouped,
+        "language": language,
+        "level": level or "A1",
+        "user": user,
+        "threads": [],
+        "active_thread_id": active_thread,
+    }
+
+    # Load thread list for sidebar (authenticated users only)
+    if user and sb_token:
+        try:
+            user_client = get_supabase_for_user(sb_token)
+            thread_service = ThreadService(user_id=user.id, client=user_client)
+            threads = thread_service.list_threads()
+            context["threads"] = [
+                {
+                    "id": t.id,
+                    "thread_id": t.thread_id,
+                    "title": t.title,
+                    "language": t.language,
+                    "level": t.level,
+                    "updated_at": t.updated_at.isoformat(),
+                }
+                for t in threads
+            ]
+        except Exception:
+            logger.exception("Failed to load threads for lessons sidebar")
+
     return templates.TemplateResponse(
         request=request,
         name="lessons.html",
-        context={
-            "lessons": lessons_grouped,
-            "language": language,
-            "level": level or "A1",
-            "user": user,
-        },
+        context=context,
     )
