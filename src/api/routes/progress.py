@@ -184,7 +184,6 @@ async def get_stats(
 
 @router.get("/chart-data")
 async def get_chart_data(
-    request: Request,
     user: OptionalUserDep,
     access_token: AccessTokenDep,
     language: str = "es",
@@ -198,7 +197,6 @@ async def get_chart_data(
     Requires authentication. Unauthenticated users receive empty arrays.
 
     Args:
-        request: FastAPI request object.
         user: Authenticated user or None.
         access_token: Effective access token (refreshed if needed).
         language: Target language to filter by. Defaults to "es".
@@ -219,7 +217,6 @@ async def get_chart_data(
 
 @router.delete("/vocabulary/{word_id}", response_class=HTMLResponse)
 async def remove_vocabulary_word(
-    request: Request,
     user: OptionalUserDep,
     access_token: AccessTokenDep,
     word_id: int,
@@ -232,7 +229,6 @@ async def remove_vocabulary_word(
     current user (enforced at database level via RLS).
 
     Args:
-        request: FastAPI request object.
         user: Authenticated user or None.
         access_token: Effective access token (refreshed if needed).
         word_id: Database ID of the vocabulary word to remove.
