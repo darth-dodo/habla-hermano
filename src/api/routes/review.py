@@ -229,8 +229,8 @@ async def start_review_session(
     request: Request,
     templates: TemplatesDep,
     user: CurrentUserDep,
-    count: int | Literal["all"] = 10,
-    language: str = "es",
+    count: int | Literal["all"] = Form(10),
+    language: str = Form("es"),
     sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Initialize a review session and return the first question.

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 from postgrest.exceptions import APIError
 
 from src.db.client import get_supabase
-from src.db.encryption import decrypt_field, encrypt_field
+from src.db.encryption import decrypt_field_safe, encrypt_field
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
@@ -48,7 +48,7 @@ class UserProfileRepository:
         response = self._client.table("user_profiles").select("*").eq("id", self._user_id).execute()
         if response.data:
             row = response.data[0]
-            row["display_name"] = decrypt_field(row.get("display_name"))
+            row["display_name"] = decrypt_field_safe(row.get("display_name"))
             return UserProfile(**row)
         return None
 
@@ -85,7 +85,7 @@ class UserProfileRepository:
         )
         if response.data:
             row = response.data[0]
-            row["display_name"] = decrypt_field(row.get("display_name"))
+            row["display_name"] = decrypt_field_safe(row.get("display_name"))
             return UserProfile(**row)
         return None
 
@@ -106,7 +106,7 @@ class VocabularyRepository:
 
     def _decrypt_vocabulary_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """Decrypt encrypted fields in a vocabulary row before model construction."""
-        data["translation"] = decrypt_field(data.get("translation"))
+        data["translation"] = decrypt_field_safe(data.get("translation"))
         return data
 
     def get_all(self, language: str | None = None) -> list[Vocabulary]:

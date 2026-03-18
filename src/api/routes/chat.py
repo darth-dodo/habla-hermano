@@ -41,7 +41,7 @@ from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.cookies import delete_secure_cookie, set_secure_cookie, sign_session_id
-from src.api.dependencies import LessonServiceDep, SettingsDep, TemplatesDep
+from src.api.dependencies import AccessTokenDep, LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
@@ -150,6 +150,7 @@ async def chat_page(  # noqa: PLR0912, PLR0915
     settings: SettingsDep,
     user: OptionalUserDep,
     lesson_service: LessonServiceDep,
+    sb_token: AccessTokenDep,
     mode: str | None = None,
     warmup_dismissed: Annotated[str | None, Cookie()] = None,
     session_id: Annotated[str | None, Cookie()] = None,
@@ -215,50 +216,48 @@ async def chat_page(  # noqa: PLR0912, PLR0915
         context["lesson_session"] = str(uuid.uuid4())
 
     # Thread loading and sidebar for authenticated users (skip in lesson mode)
-    if user and not lesson:
-        sb_token = request.cookies.get("sb-access-token")
-        if sb_token:
-            user_client = get_supabase_for_user(sb_token)
+    if user and not lesson and sb_token:
+        user_client = get_supabase_for_user(sb_token)
 
-            # Validate active_thread cookie format before use (Finding M1)
-            if active_thread and not _is_valid_thread_id(active_thread):
-                logger.warning(
-                    "Ignoring active_thread cookie with invalid format: %r",
-                    active_thread[:64],
-                )
-                active_thread = None
+        # Validate active_thread cookie format before use (Finding M1)
+        if active_thread and not _is_valid_thread_id(active_thread):
+            logger.warning(
+                "Ignoring active_thread cookie with invalid format: %r",
+                active_thread[:64],
+            )
+            active_thread = None
 
-            # Load active thread from cookie
-            if active_thread:
-                try:
-                    thread_service = ThreadService(user_id=user.id, client=user_client)
-                    thread_data = thread_service.get_thread(active_thread)
-                    if thread_data:
-                        context["active_thread_id"] = active_thread
-                        messages = await get_thread_messages(active_thread)
-                        context["messages"] = messages
-                        context["current_language"] = thread_data.language
-                        context["current_level"] = thread_data.level
-                except Exception:
-                    logger.exception("Failed to load thread %s for user %s", active_thread, user.id)
-
-            # Load thread list for sidebar
+        # Load active thread from cookie
+        if active_thread:
             try:
                 thread_service = ThreadService(user_id=user.id, client=user_client)
-                threads = thread_service.list_threads()
-                context["threads"] = [
-                    {
-                        "id": t.id,
-                        "thread_id": t.thread_id,
-                        "title": t.title,
-                        "language": t.language,
-                        "level": t.level,
-                        "updated_at": t.updated_at.isoformat(),
-                    }
-                    for t in threads
-                ]
+                thread_data = thread_service.get_thread(active_thread)
+                if thread_data:
+                    context["active_thread_id"] = active_thread
+                    messages = await get_thread_messages(active_thread)
+                    context["messages"] = messages
+                    context["current_language"] = thread_data.language
+                    context["current_level"] = thread_data.level
             except Exception:
-                logger.exception("Failed to load thread list for user %s", user.id)
+                logger.exception("Failed to load thread %s for user %s", active_thread, user.id)
+
+        # Load thread list for sidebar
+        try:
+            thread_service = ThreadService(user_id=user.id, client=user_client)
+            threads = thread_service.list_threads()
+            context["threads"] = [
+                {
+                    "id": t.id,
+                    "thread_id": t.thread_id,
+                    "title": t.title,
+                    "language": t.language,
+                    "level": t.level,
+                    "updated_at": t.updated_at.isoformat(),
+                }
+                for t in threads
+            ]
+        except Exception:
+            logger.exception("Failed to load thread list for user %s", user.id)
 
     # Review features only for authenticated users (skip in lesson mode)
     if user and not lesson:
@@ -320,6 +319,7 @@ async def thread_content_partial(
     templates: TemplatesDep,
     settings: SettingsDep,
     user: OptionalUserDep,
+    sb_token: AccessTokenDep,
     active_thread: Annotated[str | None, Cookie()] = None,
 ) -> Response:
     """Return the message area HTML for the active thread (SPA-style thread switching).
@@ -342,7 +342,6 @@ async def thread_content_partial(
         )
         return empty
 
-    sb_token = request.cookies.get("sb-access-token")
     if not sb_token:
         return empty
 

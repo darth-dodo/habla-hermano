@@ -2,12 +2,10 @@
 Review Question - Current question display
 Shows Hermano's question with progress indicator
 Variables expected:
-  - question_text: str (Hermano's question to the user)
-  - question_type: str ('translate', 'fill_blank', 'recognize')
-  - word_id: int (ID of the vocabulary item being reviewed)
-  - current_index: int (1-based current question number)
-  - session_size: int (total questions in session)
-  - hint: str (optional hint for the word)
+  - question: dict (with keys: prompt, type, word_id, correct_answer, word, translation)
+  - current: int (1-based current question number)
+  - total: int (total questions in session)
+  - progress_percent: int (0-100)
 #}
 
 <!-- Review Mode Banner -->
@@ -16,7 +14,7 @@ Variables expected:
         <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        <span class="text-sm font-medium text-accent">Review: {{ current_index }} of {{ session_size }}</span>
+        <span class="text-sm font-medium text-accent">Review: {{ current }} of {{ total }}</span>
     </div>
     <button
         hx-post="/review/end"
@@ -33,23 +31,14 @@ Variables expected:
 <div class="mb-6 h-1 bg-surface-overlay rounded-full overflow-hidden">
     <div
         class="h-full bg-accent rounded-full transition-all duration-300"
-        style="width: {{ ((current_index - 1) / session_size) * 100 }}%"
+        style="width: {{ progress_percent }}%"
     ></div>
 </div>
 
 <!-- Hermano's Question -->
 <div class="message-enter flex justify-start mb-6">
     <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
-        <p class="text-ai-text leading-relaxed">{{ question_text }}</p>
-
-        {% if hint %}
-        <div class="mt-3 pt-3 border-t border-border/40">
-            <div class="flex items-center gap-2 text-sm text-text-subtle">
-                <span>💡</span>
-                <span>{{ hint }}</span>
-            </div>
-        </div>
-        {% endif %}
+        <p class="text-ai-text leading-relaxed">{{ question.prompt }}</p>
     </div>
 </div>
 
@@ -62,12 +51,12 @@ Variables expected:
         hx-indicator="#review-loading"
         class="flex gap-3"
     >
-        <input type="hidden" name="word_id" value="{{ word_id }}" />
+        <input type="hidden" name="word_id" value="{{ question.word_id }}" />
 
         <div class="flex-1 relative">
             <input
                 type="text"
-                name="answer"
+                name="user_answer"
                 id="review-answer-input"
                 placeholder="Type your answer..."
                 autocomplete="off"
@@ -92,7 +81,7 @@ Variables expected:
     <div class="mt-3 text-center">
         <button
             hx-post="/review/answer"
-            hx-vals='{"word_id": {{ word_id }}, "answer": "", "skip": "true"}'
+            hx-vals='{"word_id": {{ question.word_id }}, "user_answer": "", "skip": "true"}'
             hx-target="#chat-messages"
             hx-swap="innerHTML"
             class="text-xs text-text-subtle hover:text-text-muted transition-colors"

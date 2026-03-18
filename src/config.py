@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-to-a-random-string"
 
     # Salt for deriving the encryption key from SECRET_KEY (PBKDF2)
-    ENCRYPTION_SALT: str = "habla-hermano-encryption-v1"
+    ENCRYPTION_SALT: str = ""
 
     # Voice features (Phase 17) - Deepgram STT/TTS
     DEEPGRAM_API_KEY: str = ""

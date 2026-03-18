@@ -11,11 +11,11 @@ Variables expected:
         <!-- Hermano Greeting -->
         <p class="text-ai-text leading-relaxed mb-4">
             <span class="font-semibold text-accent">
-                {% if language == 'es' %}
+                {% if current_language == 'es' %}
                     ¡Oye!
-                {% elif language == 'de' %}
+                {% elif current_language == 'de' %}
                     Hey!
-                {% elif language == 'fr' %}
+                {% elif current_language == 'fr' %}
                     Salut!
                 {% else %}
                     Hey!
@@ -61,13 +61,13 @@ Variables expected:
             </button>
             {% endif %}
 
-            <!-- Hidden input for selected count -->
-            <input type="hidden" name="review_count" x-model="selected" />
+            <!-- Hidden input for selected count (Alpine keeps value in sync) -->
+            <input type="hidden" name="count" x-model="selected" />
 
             <!-- Start Button -->
             <button
                 hx-post="/review/start"
-                hx-vals="js:{count: selected}"
+                hx-include="[name='count']"
                 hx-target="#chat-messages"
                 hx-swap="innerHTML"
                 class="w-full sm:w-auto sm:ml-auto px-5 py-2.5 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-all duration-150 flex items-center justify-center gap-2 btn-press"

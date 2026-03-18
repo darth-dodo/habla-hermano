@@ -1,0 +1,104 @@
+{#
+  review_feedback_question.html
+
+  Combined feedback + next question template for spaced repetition review.
+  Shows Hermano's feedback on the user's answer, then immediately displays
+  the next question and answer form (avoiding an extra HTTP request).
+
+  Context variables:
+    - feedback: str — Hermano's feedback message
+    - is_correct: bool — whether the answer was correct
+    - question: dict — next question with keys: type, prompt, word_id, correct_answer, word, translation
+    - current: int — 1-based current question number
+    - total: int — total questions in session
+    - progress_percent: int — percentage of progress (0-100)
+#}
+
+<!-- Hermano's Feedback -->
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
+        <div class="flex items-start gap-3 mb-3">
+            {% if is_correct %}
+            <div class="flex-shrink-0 w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-success check-draw" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            {% else %}
+            <div class="flex-shrink-0 w-8 h-8 bg-error/20 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            {% endif %}
+            <div class="flex-1">
+                <p class="text-ai-text leading-relaxed">{{ feedback }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Mode Banner -->
+<div id="review-banner" class="mb-4 px-4 py-2.5 bg-accent-muted rounded-xl border border-accent/20 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span class="text-sm font-medium text-accent">Review: {{ current }} of {{ total }}</span>
+    </div>
+    <button hx-post="/review/end" hx-target="#chat-messages" hx-swap="innerHTML" hx-confirm="End review session early?" class="text-xs text-text-muted hover:text-error transition-colors">
+        End Early
+    </button>
+</div>
+
+<!-- Progress Bar -->
+<div class="mb-6 h-1 bg-surface-overlay rounded-full overflow-hidden">
+    <div class="h-full bg-accent rounded-full transition-all duration-300" style="width: {{ progress_percent }}%"></div>
+</div>
+
+<!-- Hermano's Question -->
+<div class="message-enter flex justify-start mb-6">
+    <div class="bg-ai rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-border">
+        <p class="text-ai-text leading-relaxed">{{ question.prompt }}</p>
+    </div>
+</div>
+
+<!-- Answer Form -->
+<div class="mt-4">
+    <form hx-post="/review/answer" hx-target="#chat-messages" hx-swap="innerHTML" hx-indicator="#review-loading" class="flex gap-3">
+        <input type="hidden" name="word_id" value="{{ question.word_id }}" />
+        <div class="flex-1 relative">
+            <input type="text" name="user_answer" id="review-answer-input" placeholder="Type your answer..." autocomplete="off" required autofocus
+                class="w-full px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder-text-subtle transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent-muted focus:outline-none" />
+        </div>
+        <button type="submit" class="flex-shrink-0 p-3 bg-accent hover:bg-accent-hover text-accent-text rounded-xl transition-all duration-150 btn-press" aria-label="Submit answer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+        </button>
+    </form>
+    <div class="mt-3 text-center">
+        <button hx-post="/review/answer" hx-vals='{"word_id": {{ question.word_id }}, "user_answer": "", "skip": "true"}' hx-target="#chat-messages" hx-swap="innerHTML"
+            class="text-xs text-text-subtle hover:text-text-muted transition-colors">
+            Skip this word
+        </button>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="review-loading" class="hidden mt-4">
+    <div class="flex justify-center">
+        <div class="loading-dots flex gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ request.state.csp_nonce }}">
+document.addEventListener('htmx:afterSwap', function(evt) {
+    const input = document.getElementById('review-answer-input');
+    if (input) { input.focus(); }
+});
+</script>

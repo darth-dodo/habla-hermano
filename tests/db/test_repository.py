@@ -27,7 +27,7 @@ def _bypass_encryption():
     """Bypass field encryption so existing tests work with plaintext mock data."""
     with (
         patch("src.db.repository.encrypt_field", side_effect=lambda x: x),
-        patch("src.db.repository.decrypt_field", side_effect=lambda x: x),
+        patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x),
     ):
         yield
 
