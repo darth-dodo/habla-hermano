@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full" x-data="{ language: localStorage.getItem('hermano-language') || 'es', open: false }">
-    <!-- Header with back to chat link -->
-    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
+<div class="flex flex-col h-full" x-data="{ language: localStorage.getItem('hermano-language') || 'es', open: false, chartDays: 30 }">
+    <!-- Header -->
+    <header class="flex-shrink-0 border-b border-border px-4 py-3 shadow-sm" style="background: linear-gradient(135deg, var(--surface-elevated), var(--surface-elevated) 60%, color-mix(in srgb, var(--accent) 6%, var(--surface-elevated)));">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 text-text-muted hover:text-text transition-colors" aria-label="Back to Chat">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -70,7 +70,7 @@
 
     <!-- Scrollable Content -->
     <main class="flex-1 overflow-y-auto bg-surface">
-        <div class="max-w-4xl mx-auto px-4 py-6 space-y-4 sm:space-y-6">
+        <div class="max-w-4xl mx-auto px-4 py-6 space-y-6 sm:space-y-8">
 
             <!-- Stats Cards Row (loaded via HTMX) -->
             <div id="stats-container"
@@ -80,14 +80,25 @@
                  hx-on::response-error="this.innerHTML = '<div class=\'p-4 bg-error-muted rounded-2xl border border-error/30 text-center\'><p class=\'text-sm text-error\'>Failed to load statistics. Please refresh the page.</p></div>'"
                  role="region"
                  aria-label="Learning statistics">
-                <!-- Loading skeleton -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {% for i in range(4) %}
-                    <div class="bg-surface-elevated rounded-2xl p-4 border border-border animate-pulse">
-                        <div class="h-4 bg-surface-overlay rounded w-20 mb-2"></div>
-                        <div class="h-8 bg-surface-overlay rounded w-12"></div>
+                <!-- Loading skeleton: hero cards + secondary grid -->
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for i in range(2) %}
+                        <div class="bg-surface-elevated rounded-2xl p-5 border border-border animate-pulse">
+                            <div class="h-3 bg-surface-overlay rounded w-24 mb-3"></div>
+                            <div class="h-10 bg-surface-overlay rounded w-16 mb-2"></div>
+                            <div class="h-3 bg-surface-overlay rounded w-32"></div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    <div class="grid grid-cols-2 gap-4">
+                        {% for i in range(2) %}
+                        <div class="bg-surface-elevated rounded-2xl p-4 border border-border animate-pulse">
+                            <div class="h-3 bg-surface-overlay rounded w-16 mb-2"></div>
+                            <div class="h-7 bg-surface-overlay rounded w-10"></div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
 
@@ -100,22 +111,67 @@
             </div>
             {% endif %}
 
+            <!-- Analytics Section Divider -->
+            <div class="flex items-center gap-3" role="separator">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h2 class="text-sm font-semibold text-text tracking-wide uppercase">Analytics</h2>
+                </div>
+                <div class="flex-1 h-px bg-border"></div>
+                <!-- Time Range Selector -->
+                <div class="flex items-center gap-1 bg-surface-overlay rounded-xl p-1" role="radiogroup" aria-label="Chart time range">
+                    <template x-for="range in [{days: 7, label: '7d'}, {days: 30, label: '30d'}, {days: 90, label: '90d'}]">
+                        <button
+                            @click="chartDays = range.days; currentChartDays = range.days; initCharts(language, range.days)"
+                            :aria-checked="chartDays === range.days"
+                            role="radio"
+                            class="px-3 py-1 text-xs font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                            :class="chartDays === range.days ? 'bg-accent text-white shadow-sm' : 'text-text-muted hover:text-text hover:bg-surface-elevated'"
+                            x-text="range.label"
+                        ></button>
+                    </template>
+                </div>
+            </div>
+
             <!-- Charts Row -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Vocabulary Growth Chart -->
-                <div class="bg-surface-elevated rounded-2xl p-4 sm:p-5 border border-border">
-                    <h3 class="text-sm font-medium text-text-muted mb-4">Vocabulary Growth</h3>
-                    <div class="h-40 sm:h-48">
-                        <canvas id="vocab-growth-chart" aria-label="Line chart showing vocabulary growth over time" role="img"></canvas>
+                <div class="bg-surface-elevated rounded-2xl border border-border overflow-hidden">
+                    <div class="px-5 pt-5 pb-2">
+                        <h3 class="text-sm font-semibold text-text">Vocabulary Growth</h3>
+                        <p class="text-xs text-text-subtle mt-0.5">Cumulative words learned over time</p>
+                    </div>
+                    <div class="px-4 pb-4">
+                        <div class="h-52 sm:h-60">
+                            <canvas id="vocab-growth-chart" aria-label="Line chart showing vocabulary growth over time" role="img"></canvas>
+                        </div>
                     </div>
                 </div>
                 <!-- Accuracy Trend Chart -->
-                <div class="bg-surface-elevated rounded-2xl p-4 sm:p-5 border border-border">
-                    <h3 class="text-sm font-medium text-text-muted mb-4">Accuracy Trend</h3>
-                    <div class="h-40 sm:h-48">
-                        <canvas id="accuracy-trend-chart" aria-label="Bar chart showing accuracy trend over time" role="img"></canvas>
+                <div class="bg-surface-elevated rounded-2xl border border-border overflow-hidden">
+                    <div class="px-5 pt-5 pb-2">
+                        <h3 class="text-sm font-semibold text-text">Accuracy Trend</h3>
+                        <p class="text-xs text-text-subtle mt-0.5">Review accuracy per session (target: 80%)</p>
+                    </div>
+                    <div class="px-4 pb-4">
+                        <div class="h-52 sm:h-60">
+                            <canvas id="accuracy-trend-chart" aria-label="Bar chart showing accuracy trend over time" role="img"></canvas>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Vocabulary Section Divider -->
+            <div class="flex items-center gap-3" role="separator">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <h2 class="text-sm font-semibold text-text tracking-wide uppercase">Your Words</h2>
+                </div>
+                <div class="flex-1 h-px bg-border"></div>
             </div>
 
             <!-- Vocabulary List (loaded via HTMX) -->
@@ -146,28 +202,106 @@
 var vocabChart = null;
 var accuracyChart = null;
 
-// Fetch chart data and render charts for the given language
-async function initCharts(lang) {
+// Parse a CSS color string and return {r, g, b} or null
+function parseColor(str) {
+    str = str.trim();
+    // Hex
+    if (str.startsWith('#')) {
+        var hex = str.slice(1);
+        if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+        var val = parseInt(hex, 16);
+        return { r: (val >> 16) & 255, g: (val >> 8) & 255, b: val & 255 };
+    }
+    // rgb() or rgba()
+    var m = str.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return { r: parseInt(m[1]), g: parseInt(m[2]), b: parseInt(m[3]) };
+    return null;
+}
+
+// Build a custom tooltip configuration using theme colors
+function buildTooltipConfig(textColor, surfaceColor, borderColor) {
+    return {
+        enabled: false,
+        external: function(context) {
+            var tooltipEl = document.getElementById('chartjs-tooltip');
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'chartjs-tooltip';
+                tooltipEl.style.cssText = 'position:absolute;pointer-events:none;transition:opacity 0.15s ease;opacity:0;padding:8px 12px;border-radius:12px;font-size:13px;font-family:inherit;z-index:100;';
+                document.body.appendChild(tooltipEl);
+            }
+            var tooltip = context.tooltip;
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = '0';
+                return;
+            }
+            tooltipEl.style.background = surfaceColor;
+            tooltipEl.style.border = '1px solid ' + borderColor;
+            tooltipEl.style.color = textColor;
+            tooltipEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            var html = '';
+            if (tooltip.title && tooltip.title.length) {
+                html += '<div style="font-weight:600;margin-bottom:4px;">' + tooltip.title[0] + '</div>';
+            }
+            if (tooltip.body) {
+                tooltip.body.forEach(function(bodyItem) {
+                    bodyItem.lines.forEach(function(line) {
+                        html += '<div>' + line + '</div>';
+                    });
+                });
+            }
+            tooltipEl.innerHTML = html;
+            var rect = context.chart.canvas.getBoundingClientRect();
+            tooltipEl.style.left = rect.left + window.scrollX + tooltip.caretX + 'px';
+            tooltipEl.style.top = rect.top + window.scrollY + tooltip.caretY - 40 + 'px';
+            tooltipEl.style.opacity = '1';
+        }
+    };
+}
+
+// Fetch chart data and render charts for the given language and time range
+async function initCharts(lang, days) {
     try {
-        var response = await fetch('/progress/chart-data?language=' + (lang || 'es'));
+        if (!days) days = 30;
+        var url = '/progress/chart-data?language=' + (lang || 'es') + '&days=' + days;
+        var response = await fetch(url);
         var data = await response.json();
 
         // Get theme colors from CSS variables
         var style = getComputedStyle(document.documentElement);
         var accentColor = style.getPropertyValue('--accent').trim();
+        var successColor = style.getPropertyValue('--success').trim();
         var borderColor = style.getPropertyValue('--border').trim();
+        var textColor = style.getPropertyValue('--text').trim();
         var textMuted = style.getPropertyValue('--text-muted').trim();
+        var textSubtle = style.getPropertyValue('--text-subtle').trim();
+        var surfaceEl = style.getPropertyValue('--surface-elevated').trim();
 
-        // Common chart options
+        // Parse accent to rgb for gradient
+        var accentRgb = parseColor(accentColor) || { r: 99, g: 102, b: 241 };
+        var successRgb = parseColor(successColor) || { r: 34, g: 197, b: 94 };
+
+        // Tooltip config shared by both charts
+        var tooltipConfig = buildTooltipConfig(textColor, surfaceEl, borderColor);
+
+        // Common animation config
+        var animationConfig = {
+            duration: 800,
+            easing: 'easeInOutQuart'
+        };
+
+        // Common chart scale options
         var commonScaleOptions = {
             x: {
-                ticks: { color: textMuted, maxTicksLimit: 5 },
-                grid: { color: borderColor + '30' }
+                ticks: { color: textSubtle, maxTicksLimit: 6, font: { size: 11 } },
+                grid: { color: borderColor + '20', drawBorder: false, borderDash: [4, 4] },
+                border: { display: false }
             },
             y: {
                 beginAtZero: true,
-                ticks: { color: textMuted },
-                grid: { color: borderColor + '30' }
+                ticks: { color: textSubtle, font: { size: 11 }, padding: 8 },
+                grid: { color: borderColor + '20', drawBorder: false, borderDash: [4, 4] },
+                border: { display: false }
             }
         };
 
@@ -175,9 +309,15 @@ async function initCharts(lang) {
         if (vocabChart) { vocabChart.destroy(); vocabChart = null; }
         if (accuracyChart) { accuracyChart.destroy(); accuracyChart = null; }
 
-        // Vocabulary Growth - Line Chart
+        // Vocabulary Growth - Line Chart with gradient fill
         var vocabCtx = document.getElementById('vocab-growth-chart');
         if (vocabCtx && data.vocab_growth) {
+            var vCtx2d = vocabCtx.getContext('2d');
+            var vocabGradient = vCtx2d.createLinearGradient(0, 0, 0, vocabCtx.parentElement.clientHeight || 200);
+            vocabGradient.addColorStop(0, 'rgba(' + accentRgb.r + ',' + accentRgb.g + ',' + accentRgb.b + ',0.25)');
+            vocabGradient.addColorStop(0.7, 'rgba(' + accentRgb.r + ',' + accentRgb.g + ',' + accentRgb.b + ',0.05)');
+            vocabGradient.addColorStop(1, 'rgba(' + accentRgb.r + ',' + accentRgb.g + ',' + accentRgb.b + ',0)');
+
             vocabChart = new Chart(vocabCtx, {
                 type: 'line',
                 data: {
@@ -186,25 +326,63 @@ async function initCharts(lang) {
                         label: 'Words Learned',
                         data: data.vocab_growth.map(function(p) { return p.cumulative_words; }),
                         borderColor: accentColor,
-                        backgroundColor: accentColor + '20',
+                        backgroundColor: vocabGradient,
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 2,
-                        pointHoverRadius: 5
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: accentColor,
+                        pointHoverBorderColor: surfaceEl,
+                        pointHoverBorderWidth: 2,
+                        borderWidth: 2.5
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    animation: animationConfig,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tooltipConfig
+                    },
                     scales: commonScaleOptions
                 }
             });
         }
 
-        // Accuracy Trend - Bar Chart
+        // Accuracy Trend - Bar Chart with gradient bars and 80% target line
         var accCtx = document.getElementById('accuracy-trend-chart');
         if (accCtx && data.accuracy_trend) {
+            var aCtx2d = accCtx.getContext('2d');
+            var barGradient = aCtx2d.createLinearGradient(0, 0, 0, accCtx.parentElement.clientHeight || 200);
+            barGradient.addColorStop(0, 'rgba(' + successRgb.r + ',' + successRgb.g + ',' + successRgb.b + ',0.7)');
+            barGradient.addColorStop(1, 'rgba(' + accentRgb.r + ',' + accentRgb.g + ',' + accentRgb.b + ',0.4)');
+
+            // Plugin: draw 80% target line
+            var targetLinePlugin = {
+                id: 'targetLine',
+                afterDraw: function(chart) {
+                    var yScale = chart.scales.y;
+                    var ctx = chart.ctx;
+                    var yPos = yScale.getPixelForValue(80);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeStyle = textSubtle;
+                    ctx.lineWidth = 1.5;
+                    ctx.moveTo(chart.chartArea.left, yPos);
+                    ctx.lineTo(chart.chartArea.right, yPos);
+                    ctx.stroke();
+                    // Label
+                    ctx.fillStyle = textSubtle;
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('80% target', chart.chartArea.right, yPos - 5);
+                    ctx.restore();
+                }
+            };
+
             accuracyChart = new Chart(accCtx, {
                 type: 'bar',
                 data: {
@@ -212,18 +390,32 @@ async function initCharts(lang) {
                     datasets: [{
                         label: 'Accuracy %',
                         data: data.accuracy_trend.map(function(p) { return p.accuracy; }),
-                        backgroundColor: accentColor + '60',
-                        borderColor: accentColor,
-                        borderWidth: 1,
-                        borderRadius: 4
+                        backgroundColor: barGradient,
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
                     }]
                 },
+                plugins: [targetLinePlugin],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    animation: animationConfig,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tooltipConfig
+                    },
                     scales: Object.assign({}, commonScaleOptions, {
-                        y: Object.assign({}, commonScaleOptions.y, { max: 100 })
+                        y: Object.assign({}, commonScaleOptions.y, {
+                            max: 100,
+                            ticks: Object.assign({}, commonScaleOptions.y.ticks, {
+                                callback: function(val) { return val + '%'; }
+                            })
+                        })
                     })
                 }
             });
@@ -233,18 +425,21 @@ async function initCharts(lang) {
     }
 }
 
+// Track current chart days range (updated by Alpine buttons)
+var currentChartDays = 30;
+
 // Called by Alpine dropdown when user selects a language
 function onLanguageChange(lang) {
     // Reload HTMX partials with new language
     htmx.ajax('GET', '/progress/stats?language=' + lang, {target: '#stats-container', swap: 'innerHTML'});
     htmx.ajax('GET', '/progress/vocabulary?language=' + lang, {target: '#vocab-container', swap: 'innerHTML'});
-    // Re-render charts
-    initCharts(lang);
+    // Re-render charts with current time range
+    initCharts(lang, currentChartDays);
 }
 
 // Initialize charts when page loads with stored language
 document.addEventListener('DOMContentLoaded', function() {
-    initCharts(localStorage.getItem('hermano-language') || 'es');
+    initCharts(localStorage.getItem('hermano-language') || 'es', 30);
 });
 </script>
 {% endblock %}

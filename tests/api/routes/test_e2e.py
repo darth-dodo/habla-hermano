@@ -246,7 +246,6 @@ def _create_templates(tmp_path: Path) -> Jinja2Templates:
         "<!DOCTYPE html><html><body>"
         '<div class="progress-page">'
         "Words: {{ total_words }} Sessions: {{ sessions_count }}"
-        " Streak: {{ current_streak }}"
         " {% if review_stats %}Due: {{ review_stats.due_count }}{% endif %}"
         "</div></body></html>"
     )

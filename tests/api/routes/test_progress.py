@@ -544,9 +544,9 @@ class TestGetProgressPage:
     def test_get_progress_page_shows_real_stats(self, client: TestClient) -> None:
         """GET /progress should show real stats from ProgressService."""
         response = client.get("/progress/")
-        # Mock DashboardStats has total_words=42, current_streak=3
+        # Mock DashboardStats has total_words=42, lessons_completed=5
         assert "42" in response.text
-        assert "3" in response.text
+        assert "5" in response.text
 
     def test_get_progress_page_shows_lessons_completed(self, client: TestClient) -> None:
         """GET /progress should show lessons completed count."""
