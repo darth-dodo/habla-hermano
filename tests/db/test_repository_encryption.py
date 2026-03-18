@@ -107,7 +107,7 @@ def _profile_row(display_name: str | None = "Test User") -> dict:
 class TestVocabularyUpsertEncryption:
     """Verify encrypt_field is called on translation during upsert."""
 
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     @patch("src.db.repository.encrypt_field")
     def test_upsert_encrypts_translation_on_insert(
         self,
@@ -126,7 +126,7 @@ class TestVocabularyUpsertEncryption:
 
         mock_encrypt.assert_called_with("hello")
 
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     @patch("src.db.repository.encrypt_field")
     def test_upsert_rpc_fallback_encrypts_translation(
         self,
@@ -154,7 +154,7 @@ class TestVocabularyUpsertEncryption:
 
         mock_encrypt.assert_called_with("hello")
 
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     @patch("src.db.repository.encrypt_field")
     def test_upsert_does_not_encrypt_word(
         self,
@@ -175,7 +175,7 @@ class TestVocabularyUpsertEncryption:
         for c in mock_encrypt.call_args_list:
             assert c != call("hola"), "word should NOT be encrypted"
 
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     @patch("src.db.repository.encrypt_field")
     def test_upsert_does_not_encrypt_part_of_speech(
         self,
@@ -205,7 +205,7 @@ class TestVocabularyReadDecryption:
     """Verify decrypt_field is called on translation when reading."""
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_all_decrypts_translation(
         self,
         mock_decrypt: MagicMock,
@@ -230,7 +230,7 @@ class TestVocabularyReadDecryption:
         assert results[0].translation == "hello"
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_by_id_decrypts_translation(
         self,
         mock_decrypt: MagicMock,
@@ -251,7 +251,7 @@ class TestVocabularyReadDecryption:
         assert result.translation == "hello"
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_recent_decrypts_translation(
         self,
         mock_decrypt: MagicMock,
@@ -279,7 +279,7 @@ class TestVocabularyReadDecryption:
         assert all(v.translation == "hello" for v in results)
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_all_returns_decrypted_vocabulary_objects(
         self,
         mock_decrypt: MagicMock,
@@ -314,7 +314,7 @@ class TestVocabularySearchWithEncryption:
     """Verify search methods handle encrypted translation correctly."""
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     def test_get_due_by_keywords_searches_word_column(
         self,
         mock_decrypt: MagicMock,
@@ -349,7 +349,7 @@ class TestVocabularySearchWithEncryption:
         assert "word.ilike.%food%" in or_filter
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_by_word_and_language_returns_decrypted_translation(
         self,
         mock_decrypt: MagicMock,
@@ -374,7 +374,7 @@ class TestVocabularySearchWithEncryption:
 class TestUserProfileEncryption:
     """Verify display_name is encrypted on write and decrypted on read."""
 
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     @patch("src.db.repository.encrypt_field")
     def test_update_encrypts_display_name(
         self,
@@ -398,7 +398,7 @@ class TestUserProfileEncryption:
         assert result.display_name == "Maria"
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_decrypts_display_name(
         self,
         mock_decrypt: MagicMock,
@@ -419,7 +419,7 @@ class TestUserProfileEncryption:
         mock_decrypt.assert_called_once_with("encrypted_name")
 
     @patch("src.db.repository.encrypt_field", side_effect=lambda x: x)
-    @patch("src.db.repository.decrypt_field")
+    @patch("src.db.repository.decrypt_field_safe")
     def test_get_handles_none_display_name(
         self,
         mock_decrypt: MagicMock,
@@ -439,7 +439,7 @@ class TestUserProfileEncryption:
         assert result.display_name is None
         mock_decrypt.assert_called_once_with(None)
 
-    @patch("src.db.repository.decrypt_field", side_effect=lambda x: x)
+    @patch("src.db.repository.decrypt_field_safe", side_effect=lambda x: x)
     @patch("src.db.repository.encrypt_field")
     def test_update_none_display_name_skips_encryption(
         self,

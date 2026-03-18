@@ -141,9 +141,7 @@ def get_effective_access_token(request: Request) -> str | None:
     Returns:
         Access token string, or None if the user is unauthenticated.
     """
-    return getattr(request.state, "sb_access_token", None) or request.cookies.get(
-        "sb-access-token"
-    )
+    return getattr(request.state, "sb_access_token", None) or request.cookies.get("sb-access-token")
 
 
 def get_user_supabase_client(request: Request) -> SupabaseClient | None:
