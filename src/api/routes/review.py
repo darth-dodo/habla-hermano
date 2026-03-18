@@ -18,7 +18,7 @@ import logging
 import random
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Cookie, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Cookie, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from postgrest.exceptions import APIError
 
