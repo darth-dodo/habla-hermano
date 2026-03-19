@@ -278,6 +278,24 @@ def _decode_token_unverified(token: str) -> AuthenticatedUser:
         ) from e
 
 
+def _clear_stale_auth_state(request: Request, response: Response) -> None:
+    """Clear stale auth cookies and request state after failed authentication.
+
+    Called when a token is present but invalid and cannot be refreshed.
+    Removes the zombie cookies so the browser stops sending expired tokens,
+    and clears request.state so AccessTokenDep returns None.
+
+    Args:
+        request: FastAPI request object.
+        response: FastAPI response object (for clearing cookies).
+    """
+    from src.api.routes.auth import clear_auth_cookie  # noqa: PLC0415
+
+    clear_auth_cookie(response)
+    request.state.sb_access_token = None
+    logger.debug("Cleared stale auth cookies and request state")
+
+
 async def get_current_user(request: Request, response: Response) -> AuthenticatedUser:
     """FastAPI dependency to get the current authenticated user.
 
@@ -321,13 +339,13 @@ async def get_current_user(request: Request, response: Response) -> Authenticate
                 if new_token:
                     token = new_token
 
-        # Store the (potentially refreshed) token on request.state so
-        # the EffectiveAccessTokenDep dependency returns the fresh token
-        # instead of the stale cookie value.
+        # Production path: verify token server-side via Supabase.
+        # Store the (potentially refreshed) token on request.state AFTER
+        # verification succeeds, so AccessTokenDep returns None (via the
+        # _clear_stale_auth_state path) when the token is invalid.
+        user = _verify_token_via_supabase(token)
         request.state.sb_access_token = token
-
-        # Production path: verify token server-side via Supabase
-        return _verify_token_via_supabase(token)
+        return user
 
     # Unverified JWT decode — only allowed when explicitly opted in
     if not settings.ALLOW_UNVERIFIED_JWT:
@@ -357,6 +375,10 @@ async def get_current_user_optional(
     and cannot be refreshed. This allows pages using OptionalUserDep to
     gracefully degrade to guest mode instead of returning 401.
 
+    When auth fails, clears the stale auth cookies so the browser stops
+    sending expired tokens on subsequent requests (preventing a stuck loop
+    where the user can neither authenticate nor use guest mode cleanly).
+
     Args:
         request: FastAPI request object.
         response: FastAPI response object (for setting refreshed cookies).
@@ -383,7 +405,13 @@ async def get_current_user_optional(
                     return _verify_token_via_supabase(new_token)
                 except (HTTPException, AuthApiError):
                     pass
-        # Token invalid and refresh failed — degrade to guest
+
+        # Token invalid and refresh failed — degrade to guest.
+        # Clear stale auth cookies so the browser stops sending expired
+        # tokens on every subsequent request. Without this, the user gets
+        # stuck: has a token (so not "no token") but it's invalid, and
+        # AccessTokenDep returns the stale value instead of None.
+        _clear_stale_auth_state(request, response)
         logger.debug("Optional auth: token invalid and refresh failed, treating as guest")
         return None
 
