@@ -64,9 +64,7 @@ class TestForgotPasswordEndpoint:
             assert response.status_code == 200
             assert b"reset link" in response.content
 
-    def test_shows_success_even_for_nonexistent_email(
-        self, client: TestClient
-    ) -> None:
+    def test_shows_success_even_for_nonexistent_email(self, client: TestClient) -> None:
         """Test forgot password shows success even when email doesn't exist."""
         with patch("src.api.routes.auth.get_supabase_client") as mock_get_client:
             mock_client = MagicMock()
@@ -185,9 +183,7 @@ class TestResetPasswordEndpoint:
 
     def test_successful_password_reset(self, client: TestClient) -> None:
         """Test successful password reset redirects to login."""
-        with patch(
-            "src.db.client.get_supabase_for_user"
-        ) as mock_get_user_client:
+        with patch("src.db.client.get_supabase_for_user") as mock_get_user_client:
             mock_client = MagicMock()
             mock_get_user_client.return_value = mock_client
 
@@ -203,21 +199,15 @@ class TestResetPasswordEndpoint:
             assert response.status_code == 200
             assert "HX-Redirect" in response.headers
             assert response.headers["HX-Redirect"] == "/auth/login"
-            mock_client.auth.update_user.assert_called_once_with(
-                {"password": "newpassword123"}
-            )
+            mock_client.auth.update_user.assert_called_once_with({"password": "newpassword123"})
 
     def test_auth_error_shows_message(self, client: TestClient) -> None:
         """Test reset password shows error when Supabase returns AuthApiError."""
-        with patch(
-            "src.db.client.get_supabase_for_user"
-        ) as mock_get_user_client:
+        with patch("src.db.client.get_supabase_for_user") as mock_get_user_client:
             mock_client = MagicMock()
             mock_get_user_client.return_value = mock_client
 
-            mock_client.auth.update_user.side_effect = AuthApiError(
-                "Token expired", 401, None
-            )
+            mock_client.auth.update_user.side_effect = AuthApiError("Token expired", 401, None)
 
             response = client.post(
                 "/auth/reset-password",

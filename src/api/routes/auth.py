@@ -475,9 +475,7 @@ async def forgot_password(
 
     try:
         supabase = get_supabase_client()
-        supabase.auth.reset_password_for_email(
-            email, options={"redirect_to": redirect_url}
-        )
+        supabase.auth.reset_password_for_email(email, options={"redirect_to": redirect_url})
     except AuthApiError as e:
         # Log the error but don't reveal it to the user
         logger.warning("Password reset request error: %s", e)
