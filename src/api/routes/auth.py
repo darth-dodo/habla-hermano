@@ -532,6 +532,7 @@ async def reset_password(
     password: Annotated[str, Form()],
     confirm_password: Annotated[str, Form()],
     access_token: Annotated[str, Form()] = "",
+    refresh_token: Annotated[str, Form()] = "",
 ) -> Response:
     """Handle password reset submission.
 
@@ -589,10 +590,9 @@ async def reset_password(
         return response
 
     try:
-        from src.db.client import get_supabase_for_user  # noqa: PLC0415
-
-        client = get_supabase_for_user(access_token)
-        client.auth.update_user({"password": password})
+        supabase = get_supabase_client()
+        supabase.auth.set_session(access_token, refresh_token)
+        supabase.auth.update_user({"password": password})
 
         response = Response(status_code=status.HTTP_200_OK)
         response.headers["HX-Redirect"] = "/auth/login"

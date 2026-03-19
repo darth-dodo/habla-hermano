@@ -183,9 +183,9 @@ class TestResetPasswordEndpoint:
 
     def test_successful_password_reset(self, client: TestClient) -> None:
         """Test successful password reset redirects to login."""
-        with patch("src.db.client.get_supabase_for_user") as mock_get_user_client:
+        with patch("src.api.routes.auth.get_supabase_client") as mock_get_client:
             mock_client = MagicMock()
-            mock_get_user_client.return_value = mock_client
+            mock_get_client.return_value = mock_client
 
             response = client.post(
                 "/auth/reset-password",
@@ -193,19 +193,23 @@ class TestResetPasswordEndpoint:
                     "password": "newpassword123",
                     "confirm_password": "newpassword123",
                     "access_token": "test-recovery-token",
+                    "refresh_token": "test-refresh-token",
                 },
             )
 
             assert response.status_code == 200
             assert "HX-Redirect" in response.headers
             assert response.headers["HX-Redirect"] == "/auth/login"
+            mock_client.auth.set_session.assert_called_once_with(
+                "test-recovery-token", "test-refresh-token"
+            )
             mock_client.auth.update_user.assert_called_once_with({"password": "newpassword123"})
 
     def test_auth_error_shows_message(self, client: TestClient) -> None:
         """Test reset password shows error when Supabase returns AuthApiError."""
-        with patch("src.db.client.get_supabase_for_user") as mock_get_user_client:
+        with patch("src.api.routes.auth.get_supabase_client") as mock_get_client:
             mock_client = MagicMock()
-            mock_get_user_client.return_value = mock_client
+            mock_get_client.return_value = mock_client
 
             mock_client.auth.update_user.side_effect = AuthApiError("Token expired", 401, None)
 
@@ -215,6 +219,7 @@ class TestResetPasswordEndpoint:
                     "password": "newpassword123",
                     "confirm_password": "newpassword123",
                     "access_token": "expired-token",
+                    "refresh_token": "expired-refresh-token",
                 },
             )
 
