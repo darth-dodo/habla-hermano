@@ -157,8 +157,10 @@ async def stream_message(  # noqa: PLR0911, PLR0912, PLR0915
     # Save form param before it gets shadowed by the resolved thread_id
     thread_id_param = thread_id
 
-    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes
-    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes.
+    # Guard on `user` to avoid creating a client with a stale token when auth
+    # failed gracefully (user=None but expired cookie still present).
+    user_client = get_supabase_for_user(sb_access_token) if user and sb_access_token else None
 
     # --- Resolve identity ---
     auto_created_thread_id: str | None = None

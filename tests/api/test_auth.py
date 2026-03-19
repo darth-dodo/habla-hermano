@@ -429,6 +429,106 @@ class TestGetCurrentUserOptional:
 
         assert result is None
 
+    @pytest.mark.asyncio
+    async def test_clears_stale_cookies_when_supabase_verification_fails(
+        self,
+        expired_token: str,
+        mock_settings_with_supabase: MagicMock,
+        mock_response: Response,
+    ) -> None:
+        """Test that stale auth cookies are cleared when token is invalid and refresh fails.
+
+        This prevents the 'zombie cookie' loop where an expired sb-access-token
+        cookie causes repeated auth failures on every request, blocking guest mode.
+        """
+        request = MagicMock()
+        request.cookies.get.side_effect = lambda k: (
+            expired_token if k == "sb-access-token" else None
+        )
+        request.headers.get.return_value = None
+
+        import httpx
+
+        mock_client = MagicMock()
+        mock_client.auth.get_user.side_effect = httpx.HTTPError("Token expired")
+
+        with (
+            patch("src.api.auth.get_settings", return_value=mock_settings_with_supabase),
+            patch("src.api.auth.get_supabase", return_value=mock_client),
+            patch("src.api.routes.auth.clear_auth_cookie") as mock_clear,
+        ):
+            result = await get_current_user_optional(request, mock_response)
+
+        assert result is None
+        mock_clear.assert_called_once_with(mock_response)
+        assert request.state.sb_access_token is None
+
+    @pytest.mark.asyncio
+    async def test_clears_stale_cookies_when_refresh_also_fails(
+        self,
+        expired_token: str,
+        mock_settings_with_supabase: MagicMock,
+        mock_response: Response,
+    ) -> None:
+        """Test cookies are cleared when both access token and refresh token are expired."""
+        request = MagicMock()
+        request.cookies.get.side_effect = lambda k: {
+            "sb-access-token": expired_token,
+            "sb-refresh-token": "expired-refresh-token",
+        }.get(k)
+        request.headers.get.return_value = None
+
+        import httpx
+
+        mock_client = MagicMock()
+        mock_client.auth.get_user.side_effect = httpx.HTTPError("Token expired")
+        mock_client.auth.refresh_session.side_effect = Exception("Refresh token expired")
+
+        with (
+            patch("src.api.auth.get_settings", return_value=mock_settings_with_supabase),
+            patch("src.api.auth.get_supabase", return_value=mock_client),
+            patch("src.api.routes.auth.clear_auth_cookie") as mock_clear,
+        ):
+            result = await get_current_user_optional(request, mock_response)
+
+        assert result is None
+        mock_clear.assert_called_once_with(mock_response)
+        assert request.state.sb_access_token is None
+
+    @pytest.mark.asyncio
+    async def test_does_not_clear_cookies_on_successful_auth(
+        self,
+        valid_token: str,
+        mock_settings_with_supabase: MagicMock,
+        mock_response: Response,
+    ) -> None:
+        """Test that cookies are NOT cleared when authentication succeeds."""
+        request = MagicMock()
+        request.cookies.get.side_effect = lambda k: (
+            valid_token if k == "sb-access-token" else None
+        )
+        request.headers.get.return_value = None
+
+        mock_supabase_user = MagicMock()
+        mock_supabase_user.id = "test-user-123"
+        mock_supabase_user.email = "test@example.com"
+        mock_supabase_response = MagicMock()
+        mock_supabase_response.user = mock_supabase_user
+
+        mock_client = MagicMock()
+        mock_client.auth.get_user.return_value = mock_supabase_response
+
+        with (
+            patch("src.api.auth.get_settings", return_value=mock_settings_with_supabase),
+            patch("src.api.auth.get_supabase", return_value=mock_client),
+            patch("src.api.routes.auth.clear_auth_cookie") as mock_clear,
+        ):
+            result = await get_current_user_optional(request, mock_response)
+
+        assert result is not None
+        assert result.id == "test-user-123"
+        mock_clear.assert_not_called()
+
 
 # =============================================================================
 # Type Alias Tests
