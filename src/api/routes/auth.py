@@ -419,3 +419,195 @@ async def logout_get() -> RedirectResponse:
     clear_auth_cookie(response)
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(
+    request: Request,
+    templates: TemplatesDep,
+    settings: SettingsDep,
+) -> HTMLResponse:
+    """Render the forgot password page.
+
+    Args:
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        settings: Application settings.
+
+    Returns:
+        HTMLResponse: Rendered forgot password page.
+    """
+    response = templates.TemplateResponse(
+        request=request,
+        name="auth/forgot_password.html",
+        context={
+            "app_name": settings.APP_NAME,
+        },
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@router.post("/forgot-password", response_class=HTMLResponse)
+@rate_limited(calls=AUTH_RATE_LIMIT_CALLS, period=AUTH_RATE_LIMIT_PERIOD)
+async def forgot_password(
+    request: Request,
+    templates: TemplatesDep,
+    settings: SettingsDep,
+    email: Annotated[str, Form()],
+) -> Response:
+    """Handle forgot password request.
+
+    Sends a password reset email via Supabase Auth. Always shows a
+    success message regardless of whether the email exists to prevent
+    email enumeration attacks.
+
+    Args:
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        settings: Application settings.
+        email: User's email address.
+
+    Returns:
+        Response: Rendered forgot password page with success message.
+    """
+    redirect_url = str(request.base_url).rstrip("/") + "/auth/reset-password"
+
+    try:
+        supabase = get_supabase_client()
+        supabase.auth.reset_password_for_email(email, options={"redirect_to": redirect_url})
+    except AuthApiError as e:
+        # Log the error but don't reveal it to the user
+        logger.warning("Password reset request error: %s", e)
+
+    # Always show success to prevent email enumeration
+    response: Response = templates.TemplateResponse(
+        request=request,
+        name="auth/forgot_password.html",
+        context={
+            "app_name": settings.APP_NAME,
+            "success": "If an account exists with that email, you'll receive a password reset link shortly.",
+        },
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(
+    request: Request,
+    templates: TemplatesDep,
+    settings: SettingsDep,
+) -> HTMLResponse:
+    """Render the reset password page.
+
+    This page receives the user after clicking the Supabase recovery
+    link. The token exchange happens client-side via JavaScript.
+
+    Args:
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        settings: Application settings.
+
+    Returns:
+        HTMLResponse: Rendered reset password page.
+    """
+    response = templates.TemplateResponse(
+        request=request,
+        name="auth/reset_password.html",
+        context={
+            "app_name": settings.APP_NAME,
+        },
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@router.post("/reset-password", response_class=HTMLResponse)
+@rate_limited(calls=AUTH_RATE_LIMIT_CALLS, period=AUTH_RATE_LIMIT_PERIOD)
+async def reset_password(
+    request: Request,
+    templates: TemplatesDep,
+    settings: SettingsDep,
+    password: Annotated[str, Form()],
+    confirm_password: Annotated[str, Form()],
+    access_token: Annotated[str, Form()] = "",
+) -> Response:
+    """Handle password reset submission.
+
+    Validates the new password and updates it via a user-scoped
+    Supabase client authenticated with the recovery access token.
+
+    Args:
+        request: FastAPI request object.
+        templates: Jinja2 templates instance.
+        settings: Application settings.
+        password: New password.
+        confirm_password: Password confirmation.
+        access_token: Recovery access token from Supabase.
+
+    Returns:
+        Response: Redirect to login on success, or error message on failure.
+    """
+    # Validate access token is present
+    if not access_token.strip():
+        response: Response = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={
+                "app_name": settings.APP_NAME,
+                "error": "Invalid or expired reset link. Please request a new one.",
+            },
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    # Validate passwords match
+    if password != confirm_password:
+        response = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={
+                "app_name": settings.APP_NAME,
+                "error": "Passwords do not match",
+            },
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    # Validate password length
+    if len(password) < 8:
+        response = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={
+                "app_name": settings.APP_NAME,
+                "error": "Password must be at least 8 characters",
+            },
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    try:
+        from src.db.client import get_supabase_for_user  # noqa: PLC0415
+
+        client = get_supabase_for_user(access_token)
+        client.auth.update_user({"password": password})
+
+        response = Response(status_code=status.HTTP_200_OK)
+        response.headers["HX-Redirect"] = "/auth/login"
+        return response
+
+    except AuthApiError as e:
+        logger.warning("Password reset error: %s", e)
+        response = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={
+                "app_name": settings.APP_NAME,
+                "error": "Failed to reset password. The link may have expired. "
+                "Please request a new one.",
+            },
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
