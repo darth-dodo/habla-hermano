@@ -1,6 +1,6 @@
 # Habla Hermano: Crash Course
 
-**Version**: 2.6 | **Tests**: 2,675 (2,196+ Python + 238 JS) | **Coverage**: 97% | **Date**: March 2026
+**Version**: 2.7 | **Tests**: 2,529 (2,291 Python + 238 JS) | **Coverage**: 97% | **Date**: April 2026
 
 > 📚 AI-powered conversational language tutor for Spanish, German, and French
 
@@ -43,7 +43,7 @@ block-beta
 - ✅ PostgreSQL conversation persistence via LangGraph checkpointing
 - ✅ Three languages: Spanish, German, French
 - ✅ Four proficiency levels: A0, A1, A2, B1
-- ✅ 2,675+ tests (2,196+ Python + 238 JS) with 97% coverage, strict typing
+- ✅ 2,529+ tests (2,291 Python + 238 JS) with 97% coverage, strict typing
 - ✅ 5 Spanish-inspired themes: Azulejo, Terracotta, Flamenco, Sangria, Jardin
 - ✅ Mobile-responsive: safe areas, dynamic viewport, touch optimization
 - ✅ Collapsible pronunciation tips UI with level-based auto-expand
@@ -57,7 +57,7 @@ block-beta
 - ✅ Daily adaptive recommendations based on path progress, vocab accuracy, review schedules
 - ✅ Learn routes (/learn/, /learn/recommendation) with HTMX lazy-loaded partial
 - ✅ Voice conversation: Deepgram STT/TTS via WebSocket proxy with graceful degradation
-- ✅ ES Module architecture: 10 JavaScript modules with Vitest test suite (238 tests)
+- ✅ ES Module architecture: 11 JavaScript modules with Vitest test suite (238 tests)
 - ✅ Mobile-first JS improvements: touch focus, scroll throttle, keyboard handling
 - ✅ Floating TTS stop control with mutual exclusion (one TTS at a time)
 - ✅ Conversational lesson delivery: Phase machine teaches lessons through chat UI (Phase 19)
@@ -210,12 +210,14 @@ habla-hermano/
 │   │   ├── middleware.py             # SecurityHeadersMiddleware + CSRFMiddleware
 │   │   ├── streaming.py              # SSE streaming: StreamResult, stream_chat_events()
 │   │   └── routes/
-│   │       ├── chat.py               # GET / (freeform + lesson mode via ?lesson=), POST /chat/stream (SSE, optional lesson_id)
-│   │       ├── auth.py               # Signup, login, logout
+│   │       ├── chat.py               # GET / (freeform + lesson mode via ?lesson=, review via ?mode=review)
+│   │       ├── chat_stream.py        # POST /chat/stream (SSE streaming, optional lesson_id)
+│   │       ├── auth.py               # Signup, login, logout, password reset (forgot + reset)
 │   │       ├── lessons.py            # Micro-lessons (list, catalog)
 │   │       ├── progress.py           # Dashboard, vocabulary, chart-data endpoints
 │   │       ├── review.py             # Spaced repetition review sessions (auth-only)
 │   │       ├── learn.py              # Learning paths & adaptive recommendations
+│   │       ├── privacy.py            # Privacy & security info page
 │   │       ├── voice.py              # WebSocket STT proxy + REST TTS endpoint (Deepgram)
 │   │       └── threads.py            # Thread CRUD: list, create, rename (PATCH), delete (Phase 26)
 │   │
@@ -224,21 +226,24 @@ habla-hermano/
 │   │   ├── state.py                  # ConversationState TypedDict
 │   │   ├── prompts.py                # System prompts by level
 │   │   ├── routing.py                # Conditional edge functions
-│   │   ├── checkpointer.py           # Postgres/Memory checkpointer
+│   │   ├── checkpointer.py           # Postgres/Memory checkpointer with encryption
+│   │   ├── checkpoint_purge.py       # Purge old checkpoint data
+│   │   ├── llm.py                    # LLM client factory
+│   │   ├── utils.py                  # Agent utility functions
+│   │   ├── lesson_state.py           # LessonState for lesson subgraph
+│   │   ├── lesson_graph.py           # Lesson and exercise subgraphs
+│   │   ├── lesson_chat_state.py      # LessonChatState for lesson chat graph (Phase 19)
+│   │   ├── lesson_chat_graph.py      # Lesson chat graph builder (Phase 19)
+│   │   ├── prompts_lesson_chat.py    # Lesson chat system prompts (Phase 19)
+│   │   ├── review_graph.py           # Review subgraph
+│   │   ├── review_state.py           # Review state TypedDict
 │   │   └── nodes/
 │   │       ├── respond.py            # Generate AI response
 │   │       ├── scaffold.py           # Word banks & hints (A0-A1)
 │   │       ├── analyze.py            # Grammar & vocab extraction
 │   │       ├── lesson.py             # AI-enhanced lesson nodes
-│   │       ├── feedback.py           # Format corrections
-│   │       └── lesson_chat.py        # Lesson chat node (Phase 19)
-│   │
-│   ├── agent/
-│   │   ├── lesson_state.py           # LessonState for lesson subgraph
-│   │   ├── lesson_graph.py           # Lesson and exercise subgraphs
-│   │   ├── lesson_chat_state.py      # LessonChatState for lesson chat graph (Phase 19)
-│   │   ├── lesson_chat_graph.py      # Lesson chat graph builder (Phase 19)
-│   │   └── prompts_lesson_chat.py    # Lesson chat system prompts (Phase 19)
+│   │       ├── lesson_chat.py        # Lesson chat node (Phase 19)
+│   │       └── review.py             # Review exercise nodes
 │   │
 │   ├── lessons/                      # Micro-lessons system
 │   │   ├── models.py                 # Pydantic lesson, step, exercise models
@@ -246,6 +251,7 @@ habla-hermano/
 │   │
 │   ├── db/                           # Database layer
 │   │   ├── client.py                 # Canonical Supabase client factory (get_supabase, get_supabase_admin)
+│   │   ├── encryption.py             # Fernet encryption: field-level + FernetCipher for checkpoints
 │   │   ├── models.py                 # Pydantic models
 │   │   ├── repository.py             # Data access layer
 │   │   └── seed.py                   # Initial data loader
@@ -257,6 +263,7 @@ habla-hermano/
 │   │   ├── review.py                 # ReviewService: spaced repetition (SM-2)
 │   │   ├── paths.py                  # PathService: structured learning paths per language
 │   │   ├── adaptive.py               # AdaptiveService: daily adaptive recommendations
+│   │   ├── data_retention.py         # Data retention and cleanup policies
 │   │   ├── lesson_completion.py      # Lesson completion logic (ExerciseFeedback, CompletionResult, check_exercise_answer, complete_lesson_and_persist)
 │   │   ├── threads.py                # ThreadService: CRUD for conversation_threads table (Phase 26)
 │   │   ├── thread_titling.py         # Auto-title generation via Claude Haiku, 30-token budget, 3–5 words (Phase 26)
@@ -264,79 +271,117 @@ habla-hermano/
 │   │
 │   ├── templates/                    # Jinja2 HTML
 │   │   ├── base.html                 # Layout with themes, safe areas, dynamic viewport
-│   │   ├── chat.html                 # Chat interface: freeform + lesson mode (hamburger menu, mobile-responsive)
+│   │   ├── chat.html                 # Chat interface: freeform + lesson + review modes
 │   │   ├── lessons.html              # Lesson catalog page
 │   │   ├── progress.html             # Progress dashboard with charts
 │   │   ├── learn.html                # Learning paths overview page
-│   │   └── partials/
+│   │   ├── privacy.html              # Privacy & security info page
+│   │   ├── auth/                     # Auth templates
+│   │   │   ├── login.html            # Login form
+│   │   │   ├── signup.html           # Signup form
+│   │   │   ├── forgot_password.html  # Forgot password form
+│   │   │   └── reset_password.html   # Password reset form
+│   │   ├── errors/                   # Error pages
+│   │   │   ├── 400.html, 404.html, 500.html
+│   │   ├── macros/
+│   │   │   └── lesson_icon.html      # SVG lesson icon macro
+│   │   └── partials/                 # 28 partial templates
+│   │       ├── app_header.html       # Shared header with hamburger, logo, selectors
 │   │       ├── message_pair.html     # User + AI message
+│   │       ├── message.html          # Single message partial
 │   │       ├── grammar_feedback.html # Collapsible grammar tips
 │   │       ├── pronunciation_tips.html # Collapsible pronunciation tips
 │   │       ├── scaffold.html         # Word bank, hints
+│   │       ├── feedback.html         # Generic feedback partial
 │   │       ├── lesson_complete.html  # Completion celebration
 │   │       ├── progress_vocab.html   # Vocabulary list partial
 │   │       ├── stats_summary.html    # Stats card partial
 │   │       ├── learn_recommendation.html # Adaptive recommendation partial (HTMX)
-│   │       ├── thread_sidebar.html   # Sidebar drawer with thread list, rename/delete controls, New Chat picker (Phase 26)
-│   │       ├── thread_content.html   # SPA partial returned by /chat/thread-content on thread switch (Phase 26)
-│   │       └── thread_history.html   # Preloaded message history rendered when switching threads (Phase 26)
+│   │       ├── learn_unit.html       # Learning unit partial
+│   │       ├── vocab_sidebar.html    # Vocabulary sidebar partial
+│   │       ├── warmup_prompt.html    # Review warmup prompt
+│   │       ├── review_*.html         # Review partials (start, question, feedback_question, summary, card, empty, complete)
+│   │       ├── thread_sidebar.html   # Sidebar drawer with thread list, close button, New Chat picker
+│   │       ├── thread_content.html   # SPA partial for thread switching
+│   │       └── thread_history.html   # Preloaded message history for threads
 │   │
 │   └── static/
 │       ├── css/output.css            # Compiled Tailwind
 │       └── js/
 │           ├── main.js               # Entry point, imports all modules
 │           ├── pcm-processor.js      # AudioWorklet for mobile STT
-│           └── modules/
+│           └── modules/              # 11 ES modules
 │               ├── dom.js            # DOM utilities, scroll, focus
+│               ├── fsm.js            # Finite state machine for voice
 │               ├── htmx-handlers.js  # HTMX event handlers
 │               ├── scaffold.js       # Click-to-insert word bank
 │               ├── shortcuts.js      # Keyboard shortcuts
 │               ├── stream.js         # SSE streaming client (fetch + ReadableStream)
-│               └── voice.js          # Deepgram STT/TTS (mic capture, playback)
+│               ├── voice.js          # Voice orchestrator (imports sub-modules)
+│               ├── voice-constants.js # Voice configuration constants
+│               ├── voice-stt.js      # Speech-to-text via Deepgram WebSocket
+│               ├── voice-tts.js      # Text-to-speech via Deepgram REST
+│               └── voice-ui.js       # Voice UI state and controls
 │
-├── tests/                            # 2,675+ tests (2,196+ Python + 238 JS), 97% coverage
-│   ├── conftest.py                   # Fixtures
+├── tests/                            # 2,529+ tests (2,291 Python + 238 JS), 97% coverage
+│   ├── conftest.py                   # Fixtures + CSRF_HEADERS constant
+│   ├── test_rate_limiting.py         # Rate limiting tests
 │   ├── agent/
 │   │   ├── test_graph.py             # LangGraph pipeline tests
 │   │   ├── test_state.py             # ConversationState tests
 │   │   ├── test_prompts.py           # System prompt tests
 │   │   ├── test_routing.py           # Conditional routing tests
 │   │   ├── test_checkpointer.py      # Checkpointer tests
+│   │   ├── test_checkpoint_purge.py  # Checkpoint purge tests
+│   │   ├── test_llm_zero_retention.py # LLM zero retention tests
 │   │   ├── test_review_graph.py      # Review subgraph tests
 │   │   ├── test_coverage.py          # Agent coverage tests
 │   │   └── nodes/
 │   │       ├── test_nodes.py         # Node integration tests
 │   │       ├── test_analyze.py       # analyze_node tests
 │   │       ├── test_scaffold.py      # scaffold_node tests
+│   │       ├── test_lesson_chat.py   # Lesson chat node tests
 │   │       └── test_review.py        # Review node tests
 │   ├── api/
 │   │   ├── test_auth.py              # JWT validation tests
 │   │   ├── test_config.py            # Settings tests
-│   │   ├── test_csrf.py              # CSRF middleware tests (15 tests)
+│   │   ├── test_csrf.py              # CSRF middleware tests
 │   │   ├── test_session.py           # Session management tests
 │   │   ├── test_supabase_client.py   # Supabase client tests
 │   │   ├── test_data_capture.py      # Data capture tests
 │   │   ├── test_persistence.py       # Persistence tests
+│   │   ├── test_chat_security.py     # Chat security tests
+│   │   ├── test_privacy.py           # Privacy route tests
+│   │   ├── test_sanitize.py          # Input sanitization tests
+│   │   ├── test_security_headers.py  # Security headers tests
+│   │   ├── test_streaming.py         # SSE streaming tests
+│   │   ├── test_threads.py           # Thread API tests
 │   │   └── routes/
-│   │       ├── test_chat.py          # POST /chat endpoint tests
+│   │       ├── test_chat.py          # Chat endpoint tests
 │   │       ├── test_auth.py          # Auth route tests
+│   │       ├── test_auth_cache.py    # Auth caching tests
+│   │       ├── test_auth_password_reset.py # Password reset tests
 │   │       ├── test_learn.py         # Learn route tests
 │   │       ├── test_lessons.py       # Lesson route tests
 │   │       ├── test_progress.py      # Progress route tests
 │   │       ├── test_review.py        # Review route tests
 │   │       ├── test_validation.py    # Validation tests
 │   │       ├── test_voice.py         # Voice STT/TTS route tests
-│   │       ├── test_threads.py       # Thread CRUD route tests (Phase 26)
+│   │       ├── test_voice_integration.py # Voice integration tests
 │   │       └── test_e2e.py           # End-to-end route tests
 │   ├── db/
 │   │   ├── test_models.py            # Database model tests
-│   │   └── test_repository.py        # Repository tests
+│   │   ├── test_repository.py        # Repository tests
+│   │   ├── test_encryption.py        # Field-level encryption tests
+│   │   ├── test_fernet_cipher.py     # FernetCipher tests
+│   │   └── test_repository_encryption.py # Repository encryption integration tests
 │   ├── lessons/
 │   │   ├── test_models.py            # Lesson data model tests
 │   │   └── test_service.py           # Lesson service tests
 │   └── services/
 │       ├── test_adaptive.py          # AdaptiveService tests
 │       ├── test_coverage.py          # Service coverage tests
+│       ├── test_data_retention.py    # Data retention tests
 │       ├── test_progress.py          # ProgressService tests
 │       ├── test_review.py            # ReviewService tests
 │       ├── test_paths.py             # PathService tests
@@ -619,13 +664,17 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
-| GET | `/` | Render chat page (accepts optional `?lesson=` query param for lesson mode) |
+| GET | `/` | Render chat page (accepts `?lesson=`, `?mode=review`) |
 | POST | `/chat` | Send message, get AI response (non-streaming fallback) |
-| POST | `/chat/stream` | Send message, get SSE streaming response (accepts optional `lesson_id` for lesson-specific streaming) |
+| POST | `/chat/stream` | Send message, get SSE streaming response (accepts optional `lesson_id`) |
 | POST | `/new` | Start new conversation |
 | POST | `/auth/signup` | Register user |
 | POST | `/auth/login` | Authenticate |
 | POST | `/auth/logout` | Sign out |
+| GET | `/auth/forgot-password` | Forgot password form |
+| POST | `/auth/forgot-password` | Send password reset email via Supabase |
+| GET | `/auth/reset-password` | Password reset form (receives token from email) |
+| POST | `/auth/reset-password` | Set new password with recovery token |
 | GET | `/lessons/` | Lesson catalog |
 | GET | `/progress/` | Progress dashboard page |
 | GET | `/progress/vocabulary` | Vocabulary list partial (HTMX) |
@@ -634,8 +683,10 @@ This replaced the earlier pattern of using `get_supabase_admin()` (service-role 
 | DELETE | `/progress/vocabulary/{id}` | Remove word from vocabulary |
 | GET | `/learn/` | Learning paths overview page |
 | GET | `/learn/recommendation` | Adaptive recommendation partial (HTMX) |
+| GET | `/privacy/` | Privacy & security info page |
 | GET | `/threads/` | List all threads for the authenticated user |
 | POST | `/threads/` | Create a new thread (language + level required) |
+| POST | `/threads/select` | Set active thread cookie |
 | PATCH | `/threads/{id}` | Rename a thread |
 | DELETE | `/threads/{id}` | Delete a thread and its checkpoints |
 | GET | `/chat/thread-content` | SPA partial for thread switching (returns thread history + new welcome) |
@@ -760,11 +811,16 @@ The frontend JavaScript is organized as ES Modules loaded via `main.js`:
 |--------|------|---------|
 | `main.js` | `src/static/js/main.js` | Entry point, imports and initializes all modules |
 | `dom.js` | `src/static/js/modules/dom.js` | DOM utilities, scroll throttle, touch focus |
+| `fsm.js` | `src/static/js/modules/fsm.js` | Finite state machine for voice state management |
 | `htmx-handlers.js` | `src/static/js/modules/htmx-handlers.js` | HTMX event handlers (afterSwap, etc.) |
 | `scaffold.js` | `src/static/js/modules/scaffold.js` | Click-to-insert word bank interactions |
 | `shortcuts.js` | `src/static/js/modules/shortcuts.js` | Keyboard shortcuts (Ctrl+Enter, etc.) |
 | `stream.js` | `src/static/js/modules/stream.js` | SSE streaming client (fetch + ReadableStream) |
-| `voice.js` | `src/static/js/modules/voice.js` | Deepgram STT/TTS (mic capture, playback, floating stop control) |
+| `voice.js` | `src/static/js/modules/voice.js` | Voice orchestrator (imports sub-modules below) |
+| `voice-constants.js` | `src/static/js/modules/voice-constants.js` | Voice configuration constants |
+| `voice-stt.js` | `src/static/js/modules/voice-stt.js` | Speech-to-text via Deepgram WebSocket |
+| `voice-tts.js` | `src/static/js/modules/voice-tts.js` | Text-to-speech via Deepgram REST |
+| `voice-ui.js` | `src/static/js/modules/voice-ui.js` | Voice UI state and controls |
 | `pcm-processor.js` | `src/static/js/pcm-processor.js` | AudioWorklet for mobile STT PCM encoding |
 
 ### Chat Form Submission
@@ -830,7 +886,7 @@ class Settings(BaseSettings):
 
 ## 12. Testing Strategy
 
-### Coverage: 97% (2,675+ tests: 2,196+ Python + 238 JS)
+### Coverage: 97% (2,529+ tests: 2,291 Python + 238 JS)
 
 ### Test Categories
 
@@ -990,4 +1046,4 @@ curl -X POST http://localhost:8000/chat \
 
 ---
 
-*Crash Course v2.6 — Habla Hermano (2,675+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience + Message Encryption + Design System + Conversation Threads)*
+*Crash Course v2.7 — Habla Hermano (2,529+ tests, 97% coverage, LangGraph Pipeline + Micro-Lessons + AI-Enhanced Lessons + Progress Tracking + Mobile Responsive + Learning Paths + Voice Conversation + FSM Voice Refactor + Conversational Lessons + Unified Lesson Experience + Message Encryption + Design System + Conversation Threads + Password Reset + Privacy Page)*

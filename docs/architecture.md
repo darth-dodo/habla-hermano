@@ -32,8 +32,9 @@
 | **Phase 24** | Message Encryption & Privacy - Fernet field encryption, checkpoint blob encryption, RLS policies | ✅ Completed |
 | **Phase 25** | Design System Revamp - 5th theme (Jardín), Plus Jakarta Sans, spacing tokens, SVG icons, WCAG AA | ✅ Completed |
 | **Phase 26** | Conversation Threads - Persistent thread sidebar, auto-titling, SPA thread switching, active_thread cookie | ✅ Completed |
+| **Phase 27** | Privacy & Security Page - Privacy info page, password reset flow (forgot + reset via Supabase Auth) | ✅ Completed |
 
-**Test Coverage**: 2,437+ tests (2,196 Python + 241 JavaScript) covering agent, API, database, auth, lessons, review, service, and encryption modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
+**Test Coverage**: 2,529+ tests (2,291 Python + 238 JavaScript) covering agent, API, database, auth, lessons, review, service, and encryption modules. E2E testing is documented in [docs/playwright-e2e.md](./playwright-e2e.md).
 
 ---
 
