@@ -209,7 +209,17 @@ export function startRecordingSession(signal, sttService, chatInput, showError, 
                 if (event.code === 1011) {
                     showError('Voice service error -- please try again');
                 } else if (event.code === 1008) {
-                    showError(event.reason || 'Invalid request');
+                    // Auth failure -- clear stale httponly cookies so next
+                    // attempt falls through to guest session instead of
+                    // failing repeatedly with the same expired token.
+                    try {
+                        var p = fetch('/auth/clear-stale', {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (p && p.catch) p.catch(function() {});
+                    } catch (_) {}
+                    showError('Session expired -- tap mic to try again');
                 } else if (event.code !== 1000 && event.code !== 1001) {
                     showError('Voice connection lost');
                 }

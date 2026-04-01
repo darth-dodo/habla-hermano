@@ -4,7 +4,7 @@ Step-by-step instructions for setting up Habla Hermano locally and deploying to 
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.12+
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - Node.js 18+ (for Tailwind CSS and Vitest)
 - A [Supabase](https://supabase.com) account (free tier works)

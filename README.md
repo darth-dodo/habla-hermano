@@ -6,12 +6,12 @@
 [![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
 [![Built with Claude](https://img.shields.io/badge/Built%20with-Claude-cc785c?logo=anthropic&logoColor=white)](https://claude.ai)
 
-An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude -featuring real-time voice, adaptive scaffolding, 60 structured lessons, encrypted conversations, and five culture-inspired themes.
+An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude -featuring real-time voice, adaptive scaffolding, 60 structured lessons, encrypted conversations, conversation threads, and five culture-inspired themes.
 
 <p align="center">
   <img src="docs/screenshots/hero-opening.png" alt="Opening screen - Spanish A1" width="270"/>
@@ -124,6 +124,8 @@ No sign-up required. Start chatting immediately as a guest -full conversation wi
 Create an account to unlock:
 - **Vocabulary tracking** -words you learn are saved and reviewed via SM-2 spaced repetition
 - **Progress dashboard** -visualize your learning journey with charts and stats
+- **Conversation threads** -maintain multiple independent conversations with per-thread language and level
+- **Password reset** -forgot your password? Reset it via email through Supabase Auth
 
 ### Privacy & Encryption
 
@@ -149,7 +151,7 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
 | **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,511 tests (2,270 Python + 241 JS), strict mypy, ruff linting |
+| **Testing** | pytest + Vitest | 2,529 tests (2,291 Python + 238 JS), strict mypy, ruff linting |
 
 ### System Overview
 
@@ -258,7 +260,7 @@ src/
 └── static/          CSS + 11 ES modules + AudioWorklet processor
 
 data/lessons/        60 YAML lesson files (es/, de/, fr/)
-tests/               2,270 pytest + 241 Vitest tests
+tests/               2,291 pytest + 238 Vitest tests
 docs/                Architecture, API reference, design docs, ADRs
 ```
 
@@ -278,8 +280,9 @@ docs/                Architecture, API reference, design docs, ADRs
 | **XSS** | `nh3` sanitization + `markupsafe.escape()` for all user content |
 | **Cookies** | Signed with `itsdangerous`, environment-aware `Secure` flag |
 | **Headers** | HSTS, X-Frame-Options, X-Content-Type-Options, `Cache-Control: no-store` on auth pages |
-| **CORS** | Explicit `allow_headers` allowlist — no wildcard |
+| **CORS** | Explicit `allow_headers` allowlist -no wildcard |
 | **Thread ownership** | `thread_id` ownership verified server-side before any chat operation |
+| **Password reset** | Supabase Auth email recovery with client-side token extraction and server-side session establishment |
 
 See [Architecture → Security](docs/architecture.md) for the full threat model.
 
@@ -288,7 +291,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 <details>
 <summary><strong>Testing</strong></summary>
 
-**2,270 Python tests** (pytest) + **241 JavaScript tests** (Vitest) with CI on every push.
+**2,291 Python tests** (pytest) + **238 JavaScript tests** (Vitest) with CI on every push.
 
 | Domain | What's Tested |
 |--------|---------------|
@@ -297,7 +300,7 @@ See [Architecture → Security](docs/architecture.md) for the full threat model.
 | Services | SM-2 algorithm, lesson completion, adaptive paths, review scheduling |
 | Database | Repository pattern, encryption boundary (encrypt-on-write, decrypt-on-read) |
 | JavaScript | All 11 ES modules: DOM, streaming, scaffolding, shortcuts, voice (FSM + sub-modules) |
-| Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip, thread ownership, auth cache headers |
+| Security | CSP nonce injection, WebSocket auth rejection, header verification, Fernet round-trip, thread ownership, auth cache headers, password reset flow |
 | Integration | Voice WebSocket transport, SSE streaming end-to-end |
 
 </details>
@@ -319,7 +322,7 @@ make dev
 
 Open [http://localhost:8000](http://localhost:8000). No account required. Guest sessions work out of the box.
 
-**Requirements**: Python 3.11+, [uv](https://docs.astral.sh/uv/)
+**Requirements**: Python 3.12+, [uv](https://docs.astral.sh/uv/)
 
 **Development commands**: `make dev` | `make test` | `make check` (lint + typecheck) | `make clean`
 
@@ -336,7 +339,7 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | [Design System](docs/design/design-system.md) | Token architecture, typography, spacing, themes, animations |
 | [Testing](docs/testing.md) | Test strategy, mock patterns, coverage targets |
 | [Codebase Summary](docs/codebase-summary.md) | Onboarding guide for the full codebase |
-| [Changelog](CHANGELOG.md) | Release history across 26 phases + security audit remediation |
+| [Changelog](CHANGELOG.md) | Release history across 27 phases |
 
 #### Design Documents
 
@@ -355,5 +358,6 @@ Open [http://localhost:8000](http://localhost:8000). No account required. Guest 
 | Message Encryption | [Phase 24](docs/design/phase24-message-encryption.md) |
 | Design System Revamp | [Phase 25](docs/design/phase25-design-system-revamp.md) |
 | Conversation Threads | [Phase 26](docs/design/phase26-conversation-threads.md) |
+| Privacy & Security Page | [Phase 27](docs/design/phase27-privacy-security-page.md) |
 
 </details>

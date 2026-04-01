@@ -76,6 +76,9 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Voice Input/Output** | ✅ Complete | Deepgram STT (Nova-3) + TTS (Aura-2) via WebSocket proxy |
 | **Conversational Lessons** | ✅ Complete | Hermano teaches lessons directly in the main chat via `/?lesson={id}`, with phase machine (intro→teaching→exercise→complete) |
 | **Encryption at Rest** | ✅ Complete | PII fields and chat history encrypted with Fernet (AES-128-CBC + HMAC), row-level security on all checkpoint tables |
+| **Conversation Threads** | ✅ Complete | Per-thread language/level, sidebar with SPA switching, auto-titling via Claude Haiku |
+| **Password Reset** | ✅ Complete | Forgot password flow via Supabase Auth email, recovery token handling |
+| **Privacy & Security Page** | ✅ Complete | Dedicated privacy info page accessible from sidebar navigation |
 
 ### Guest vs. Authenticated Experience
 
@@ -94,6 +97,8 @@ To unlock the full learning loop, guests need to sign up:
 | Spaced repetition and review | -- | Yes |
 | Lesson completion tracking | -- | Yes |
 | Conversational lessons | Yes | Yes (+ score persistence) |
+| Conversation threads | -- | Yes |
+| Password reset | -- | Yes |
 
 ---
 

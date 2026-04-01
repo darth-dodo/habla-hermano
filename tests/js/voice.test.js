@@ -577,12 +577,18 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(tooltip.textContent).toContain('Voice service error');
             });
 
-            it('shows reason on WS close with code 1008', async () => {
+            it('clears stale cookies and shows session expired on WS close with code 1008', async () => {
+                globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true }));
                 var { ws } = await startRecordingSession();
-                ws.onclose({ code: 1008, reason: 'Bad language param' });
+                ws.onclose({ code: 1008, reason: 'Authentication required' });
+
+                // Should call clear-stale endpoint to remove httponly cookies
+                expect(fetch).toHaveBeenCalledWith('/auth/clear-stale', expect.objectContaining({
+                    method: 'POST',
+                }));
 
                 var tooltip = document.querySelector('.voice-error-tooltip');
-                expect(tooltip.textContent).toBe('Bad language param');
+                expect(tooltip.textContent).toBe('Session expired -- tap mic to try again');
             });
 
             it('shows connection lost on unexpected WS close codes', async () => {

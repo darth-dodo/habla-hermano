@@ -421,6 +421,23 @@ async def logout_get() -> RedirectResponse:
     return response
 
 
+@router.post("/clear-stale")
+async def clear_stale_cookies() -> Response:
+    """Clear stale auth cookies without server-side sign-out.
+
+    Called by the client when a WebSocket auth failure (code 1008)
+    indicates the stored JWT is expired or invalid. Clears the
+    httponly auth cookies so subsequent requests fall through to
+    guest mode instead of repeatedly failing.
+
+    Returns:
+        204 No Content with cookie-clearing headers.
+    """
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
+    clear_auth_cookie(response)
+    return response
+
+
 @router.get("/forgot-password", response_class=HTMLResponse)
 async def forgot_password_page(
     request: Request,
