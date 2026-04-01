@@ -128,8 +128,8 @@
         </div>
     </main>
 
-    <!-- Input Form - Clean Nordic -->
-    <footer class="flex-shrink-0 bg-surface-elevated border-t border-border px-3 py-3 sm:px-6 sm:py-4 safe-bottom safe-x">
+    <!-- Input Form - Clean Nordic (hidden in review mode — review partials have their own input) -->
+    <footer {% if review_mode %}style="display: none"{% endif %} class="flex-shrink-0 bg-surface-elevated border-t border-border px-3 py-3 sm:px-6 sm:py-4 safe-bottom safe-x">
         <div class="max-w-3xl mx-auto">
             <form
                 id="chat-form"
@@ -150,7 +150,7 @@
                         name="message"
                         id="message-input"
                         rows="1"
-                        :placeholder="language === 'es' ? 'Type in Spanish...' : language === 'de' ? 'Type in German...' : 'Type in French...'"
+                        :placeholder="language === 'es' ? 'Type in Spanish or English...' : language === 'de' ? 'Type in German or English...' : 'Type in French or English...'"
                         autocomplete="off"
                         required
                         class="w-full h-12 px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder-text-subtle transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent-muted focus:outline-none resize-none overflow-hidden leading-normal"
