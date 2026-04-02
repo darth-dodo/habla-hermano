@@ -9,7 +9,7 @@
  */
 
 import { createMachine } from './fsm.js';
-import { chunkTextForTTS } from './voice-constants.js';
+import { chunkTextForTTS, WS_SPEAK_PATH } from './voice-constants.js';
 
 // ============================================
 // TTS State Machine Definition
@@ -108,8 +108,198 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
             });
     }
 
-    // Start fetch immediately (parallel with getUserMedia)
-    doFetch(btn, text, voice, speed, signal, ttsService, showError);
+    // Start WebSocket TTS immediately (parallel with getUserMedia),
+    // falling back to REST fetch if WebSocket fails to connect.
+    doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError);
+}
+
+/**
+ * WebSocket-based TTS: streams text chunks over a single WS connection,
+ * accumulates binary audio responses, then plays the combined blob.
+ * Falls back to REST doFetch() if the WebSocket fails to connect.
+ */
+function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) {
+    // Unlock the audio element for iOS Safari (must happen synchronously
+    // in the user-gesture call stack — same as doFetch).
+    if (ttsPlayer) {
+        ttsPlayer.play().catch(function() {});
+        ttsPlayer.pause();
+    }
+
+    var textChunks = chunkTextForTTS(text);
+    var chunkIndex = 0;
+    var allBuffers = [];
+    var wsConnected = false;
+    var ws = null;
+
+    // Build WebSocket URL
+    var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var wsUrl = wsProtocol + '//' + location.host + WS_SPEAK_PATH + '?voice=' + encodeURIComponent(voice);
+
+    // iOS Safari/Chrome (WebKit) may not send httponly cookies with WS
+    // upgrade requests. Pass the signed session token as a query param.
+    var micBtn = document.getElementById('mic-btn');
+    var wsToken = micBtn && micBtn.dataset.wsToken;
+    if (wsToken) {
+        wsUrl += '&token=' + encodeURIComponent(wsToken);
+    }
+
+    function cleanup() {
+        if (ws) {
+            ws.onopen = null;
+            ws.onmessage = null;
+            ws.onerror = null;
+            ws.onclose = null;
+            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                ws.close(1000, 'Done');
+            }
+            ws = null;
+        }
+    }
+
+    // Listen for abort signal — send close message and tear down
+    function onAbort() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            try { ws.send(JSON.stringify({ type: 'close' })); } catch (_) {}
+        }
+        cleanup();
+    }
+
+    if (signal.aborted) return;
+    signal.addEventListener('abort', onAbort);
+
+    try {
+        ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
+    } catch (_) {
+        // WebSocket constructor failed — fall back to REST
+        signal.removeEventListener('abort', onAbort);
+        doFetch(btn, text, voice, speed, signal, ttsService, showError);
+        return;
+    }
+
+    ws.onopen = function() {
+        if (signal.aborted) { cleanup(); return; }
+        wsConnected = true;
+        // Send the first chunk
+        if (textChunks.length > 0) {
+            ws.send(JSON.stringify({ text: textChunks[chunkIndex] }));
+        }
+    };
+
+    ws.onmessage = function(event) {
+        if (signal.aborted) { cleanup(); return; }
+
+        // Binary frame — accumulate audio data
+        if (event.data instanceof ArrayBuffer) {
+            allBuffers.push(event.data);
+            return;
+        }
+
+        // Text frame — parse JSON metadata
+        var msg;
+        try { msg = JSON.parse(event.data); } catch (_) { return; }
+
+        if (msg.type === 'metadata') {
+            chunkIndex++;
+            if (chunkIndex < textChunks.length) {
+                // More chunks to send
+                ws.send(JSON.stringify({ text: textChunks[chunkIndex] }));
+            } else {
+                // All chunks done — concatenate audio and play
+                signal.removeEventListener('abort', onAbort);
+                cleanup();
+
+                if (allBuffers.length > 0) {
+                    var combinedBlob = new Blob(allBuffers, { type: 'audio/mpeg' });
+                    playAudioFromBlob(combinedBlob, speed, signal, ttsService, btn, showError);
+                } else {
+                    ttsService.send('ERROR');
+                }
+            }
+        }
+    };
+
+    ws.onerror = function() {
+        // If we never connected, fall back to REST
+        if (!wsConnected) {
+            signal.removeEventListener('abort', onAbort);
+            cleanup();
+            doFetch(btn, text, voice, speed, signal, ttsService, showError);
+            return;
+        }
+        // Already connected — treat as error
+        if (!signal.aborted) {
+            signal.removeEventListener('abort', onAbort);
+            cleanup();
+            showError(btn, 'Could not play audio');
+            ttsService.send('ERROR');
+        }
+    };
+
+    ws.onclose = function(event) {
+        if (signal.aborted) return;
+        // If we never connected, fall back to REST
+        if (!wsConnected) {
+            signal.removeEventListener('abort', onAbort);
+            cleanup();
+            doFetch(btn, text, voice, speed, signal, ttsService, showError);
+            return;
+        }
+        // Unexpected close while still streaming chunks
+        if (chunkIndex < textChunks.length) {
+            signal.removeEventListener('abort', onAbort);
+            cleanup();
+            // Fall back to REST for reliability
+            doFetch(btn, text, voice, speed, signal, ttsService, showError);
+        }
+    };
+}
+
+/**
+ * Play an audio blob through the hidden TTS player element.
+ * Extracted so both WebSocket and REST paths can share it.
+ */
+function playAudioFromBlob(audioBlob, speed, signal, ttsService, btn, showError) {
+    if (signal.aborted) return;
+
+    // Revoke any previous blob URL
+    if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+    }
+
+    var blobUrl = URL.createObjectURL(audioBlob);
+    currentBlobUrl = blobUrl;
+
+    // Deepgram pattern: update source, load(), then play()
+    ttsSource.src = blobUrl;
+    ttsSource.type = audioBlob.type || 'audio/mpeg';
+    ttsPlayer.playbackRate = speed;
+
+    // .load() is critical for iOS to recognize the new source
+    ttsPlayer.load();
+
+    ttsService.send('STREAMING');
+
+    ttsPlayer.onended = function() {
+        if (signal.aborted) return;
+        revokeBlobUrl();
+        ttsService.send('ALL_ENDED');
+    };
+
+    ttsPlayer.onerror = function() {
+        if (signal.aborted) return;
+        revokeBlobUrl();
+        showError(btn, 'Audio playback failed');
+        ttsService.send('ERROR');
+    };
+
+    ttsPlayer.play().catch(function() {
+        if (signal.aborted) return;
+        revokeBlobUrl();
+        showError(btn, 'Could not play audio');
+        ttsService.send('ERROR');
+    });
 }
 
 function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
@@ -131,7 +321,7 @@ function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
         if (index >= textChunks.length) {
             // All chunks fetched — combine and play
             var combinedBlob = new Blob(allBlobs, { type: allBlobs[0].type });
-            playAudio(combinedBlob);
+            playAudioFromBlob(combinedBlob, speed, signal, ttsService, btn, showError);
             return;
         }
 
@@ -158,48 +348,6 @@ function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
                 ? 'Speech service not configured'
                 : 'Could not play audio';
             showError(btn, msg);
-            ttsService.send('ERROR');
-        });
-    }
-
-    function playAudio(audioBlob) {
-        if (signal.aborted) return;
-
-        // Revoke any previous blob URL
-        if (currentBlobUrl) {
-            URL.revokeObjectURL(currentBlobUrl);
-        }
-
-        var blobUrl = URL.createObjectURL(audioBlob);
-        currentBlobUrl = blobUrl;
-
-        // Deepgram pattern: update source, load(), then play()
-        ttsSource.src = blobUrl;
-        ttsSource.type = audioBlob.type || 'audio/mpeg';
-        ttsPlayer.playbackRate = speed;
-
-        // .load() is critical for iOS to recognize the new source
-        ttsPlayer.load();
-
-        ttsService.send('STREAMING');
-
-        ttsPlayer.onended = function() {
-            if (signal.aborted) return;
-            revokeBlobUrl();
-            ttsService.send('ALL_ENDED');
-        };
-
-        ttsPlayer.onerror = function() {
-            if (signal.aborted) return;
-            revokeBlobUrl();
-            showError(btn, 'Audio playback failed');
-            ttsService.send('ERROR');
-        };
-
-        ttsPlayer.play().catch(function() {
-            if (signal.aborted) return;
-            revokeBlobUrl();
-            showError(btn, 'Could not play audio');
             ttsService.send('ERROR');
         });
     }

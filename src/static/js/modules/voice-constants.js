@@ -14,6 +14,7 @@ export var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
 export var TTS_SAMPLE_RATE = 24000; // Deepgram TTS output sample rate
 export var DEFAULT_TTS_SPEED = 1.0; // 0.5 = half speed, 1.0 = normal, 2.0 = double
 export var MAX_TTS_CHUNK_LENGTH = 2000; // Must match server MAX_TTS_TEXT_LENGTH
+export var WS_SPEAK_PATH = '/ws/speak'; // WebSocket TTS endpoint
 
 export var MIC_ICON = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">'
     + '<path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />'

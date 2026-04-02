@@ -90,6 +90,20 @@ class MockWebSocket {
         this.onclose = null;
         MockWebSocket._lastInstance = this;
         MockWebSocket._instances.push(this);
+
+        // TTS WebSocket connections (/ws/speak): behavior is configurable.
+        // By default, they fail immediately so existing tests fall back to REST.
+        // Set MockWebSocket._allowTtsWs = true to simulate successful connections.
+        var self = this;
+        if (url && url.indexOf('/ws/speak') !== -1) {
+            MockWebSocket._lastTtsInstance = this;
+            if (!MockWebSocket._allowTtsWs) {
+                Promise.resolve().then(function() {
+                    self.readyState = MockWebSocket.CLOSED;
+                    if (self.onerror) self.onerror(new Event('error'));
+                });
+            }
+        }
     }
 
     send() {}
@@ -98,6 +112,8 @@ class MockWebSocket {
     }
 }
 MockWebSocket._instances = [];
+MockWebSocket._lastTtsInstance = null;
+MockWebSocket._allowTtsWs = false;
 
 class MockAudio {
     constructor(url) {
@@ -180,6 +196,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
         vi.restoreAllMocks();
         document.body.innerHTML = '';
         MockWebSocket._instances = [];
+        MockWebSocket._lastTtsInstance = null;
+        MockWebSocket._allowTtsWs = false;
 
         // Browser API mocks
         globalThis.WebSocket = MockWebSocket;
@@ -383,7 +401,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(chatInput.readOnly).toBe(true);
                 expect(micBtn.classList.contains('voice-recording')).toBe(true);
                 expect(micBtn.getAttribute('aria-label')).toBe('Stop recording');
-                expect(micBtn.innerHTML).toContain('voice-level-bars');
+                expect(micBtn.innerHTML).toContain('svg');
             });
 
             it('creates timer element', async () => {
@@ -957,6 +975,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
                 expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                     method: 'POST',
@@ -974,6 +993,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 var btn = createSpeakButton('Hola mundo', 'es');
 
                 mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
                 var body = JSON.parse(fetch.mock.calls[0][1].body);
                 expect(body.text).toBe('Hola mundo');
@@ -1230,6 +1250,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Guten Tag', 'de');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-julius-de');
@@ -1242,6 +1263,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Bonjour', 'fr');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-hector-fr');
@@ -1254,6 +1276,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hello', 'xx');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
             expect(body.voice).toBe('aura-2-nestor-es');
@@ -1271,6 +1294,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var btn = createSpeakButton('Hola', 'es');
 
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             // Verify fetch was called with POST /api/speak
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
@@ -1383,6 +1407,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
                 method: 'POST',
@@ -1458,6 +1483,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var mod = await importVoice();
             var btn = createSpeakButton('Hola', 'es');
             mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             // Verify fetch was called with signal
             expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
@@ -1793,6 +1819,336 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var player = document.getElementById('tts-player');
             expect(player.load).toHaveBeenCalled();
             expect(player.play).toHaveBeenCalled();
+        });
+    });
+
+    // ============================================
+    // 18. WebSocket TTS
+    // ============================================
+
+    describe('WebSocket TTS', () => {
+
+        /**
+         * Helper: enable WS TTS, set up DOM, import module, create speak button.
+         * Returns { mod, btn } — the TTS WS instance is available via MockWebSocket._lastTtsInstance
+         * after handleSpeakClick is called.
+         */
+        async function setupWsTts(text, lang) {
+            MockWebSocket._allowTtsWs = true;
+            setupVoiceDOM();
+            var mod = await importVoice();
+            var btn = createSpeakButton(text || 'Hola mundo', lang || 'es');
+            return { mod, btn };
+        }
+
+        /**
+         * Helper: trigger handleSpeakClick and simulate WS open.
+         * Returns the TTS WebSocket instance with send spy attached.
+         */
+        function triggerAndOpen(mod, btn) {
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+            ws.readyState = MockWebSocket.OPEN;
+            ws.send = vi.fn();
+            ws.onopen();
+            return ws;
+        }
+
+        /**
+         * Helper: create an ArrayBuffer of given size for simulating binary audio frames.
+         */
+        function makeAudioBuffer(size) {
+            return new ArrayBuffer(size || 1024);
+        }
+
+        /**
+         * Helper: send a metadata message on the WS (simulates server metadata response).
+         */
+        function sendMetadata(ws) {
+            ws.onmessage({ data: JSON.stringify({ type: 'metadata' }) });
+        }
+
+        it('happy path: connects, sends text, receives audio, plays via blob URL', async () => {
+            var { mod, btn } = await setupWsTts('Hola');
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // First chunk should have been sent on open
+            expect(ws.send).toHaveBeenCalledTimes(1);
+            var sentMsg = JSON.parse(ws.send.mock.calls[0][0]);
+            expect(sentMsg.text).toBe('Hola');
+
+            // Simulate binary audio response
+            ws.onmessage({ data: makeAudioBuffer(512) });
+            ws.onmessage({ data: makeAudioBuffer(256) });
+
+            // Simulate metadata (signals chunk is done)
+            sendMetadata(ws);
+
+            // Should have played via blob URL — audio element should be loaded and played
+            await vi.advanceTimersByTimeAsync(0);
+
+            var source = document.getElementById('tts-player-src');
+            expect(source.src).toBe('blob:mock-url');
+            expect(URL.createObjectURL).toHaveBeenCalled();
+
+            var player = document.getElementById('tts-player');
+            expect(player.load).toHaveBeenCalled();
+            expect(player.play).toHaveBeenCalled();
+
+            // Button should transition to playing
+            expect(btn.classList.contains('voice-playing')).toBe(true);
+            expect(btn.classList.contains('voice-loading')).toBe(false);
+        });
+
+        it('multi-chunk: sends next chunk after metadata, plays combined audio', async () => {
+            // Create text long enough to be split into multiple chunks
+            var longText = Array.from({ length: 300 }, function(_, i) { return 'word' + i; }).join(' ');
+            var { mod, btn } = await setupWsTts(longText);
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // First chunk sent on open
+            expect(ws.send).toHaveBeenCalledTimes(1);
+            var firstChunk = JSON.parse(ws.send.mock.calls[0][0]);
+            expect(firstChunk.text).toBeTruthy();
+
+            // Simulate server response for chunk 1: binary + metadata
+            ws.onmessage({ data: makeAudioBuffer(512) });
+            sendMetadata(ws);
+
+            // Should have sent chunk 2
+            expect(ws.send).toHaveBeenCalledTimes(2);
+            var secondChunk = JSON.parse(ws.send.mock.calls[1][0]);
+            expect(secondChunk.text).toBeTruthy();
+            expect(secondChunk.text).not.toBe(firstChunk.text);
+
+            // Simulate server response for remaining chunks until all done
+            // Keep sending binary + metadata until no more chunks are sent
+            var prevCallCount = ws.send.mock.calls.length;
+            var maxIterations = 20;
+            while (maxIterations-- > 0) {
+                ws.onmessage({ data: makeAudioBuffer(256) });
+                sendMetadata(ws);
+
+                if (ws.send.mock.calls.length === prevCallCount) {
+                    // No new chunk was sent — all chunks done
+                    break;
+                }
+                prevCallCount = ws.send.mock.calls.length;
+            }
+
+            // Should have played combined audio
+            await vi.advanceTimersByTimeAsync(0);
+            var player = document.getElementById('tts-player');
+            expect(player.load).toHaveBeenCalled();
+            expect(player.play).toHaveBeenCalled();
+
+            // More than one chunk was sent
+            expect(ws.send.mock.calls.length).toBeGreaterThan(1);
+        });
+
+        it('falls back to REST on WS connection error (onerror before onopen)', async () => {
+            MockWebSocket._allowTtsWs = true;
+            setupVoiceDOM();
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+
+            // Simulate connection error before open
+            ws.readyState = MockWebSocket.CLOSED;
+            ws.onerror(new Event('error'));
+
+            // Should fall back to REST fetch
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                method: 'POST',
+            }));
+        });
+
+        it('falls back to REST when WebSocket constructor throws', async () => {
+            setupVoiceDOM();
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+
+            // Replace WebSocket with a constructor that throws
+            globalThis.WebSocket = function() { throw new Error('WS not supported'); };
+            globalThis.WebSocket.CONNECTING = 0;
+            globalThis.WebSocket.OPEN = 1;
+            globalThis.WebSocket.CLOSING = 2;
+            globalThis.WebSocket.CLOSED = 3;
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+
+            // Should fall back to REST fetch
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                method: 'POST',
+            }));
+
+            // Restore MockWebSocket for other tests
+            globalThis.WebSocket = MockWebSocket;
+        });
+
+        it('sends close message and cleans up on abort signal', async () => {
+            var { mod, btn } = await setupWsTts('Hola');
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // Simulate some audio arriving
+            ws.onmessage({ data: makeAudioBuffer(512) });
+
+            // Cancel TTS via stopAllTTS (which aborts the signal)
+            ws.close = vi.fn();
+            mod.stopAllTTS();
+
+            // Should have sent {"type": "close"} before closing
+            var closeMsgCalls = ws.send.mock.calls.filter(function(call) {
+                try {
+                    var parsed = JSON.parse(call[0]);
+                    return parsed.type === 'close';
+                } catch (_) { return false; }
+            });
+            expect(closeMsgCalls.length).toBe(1);
+        });
+
+        it('falls back to REST on unexpected close during streaming', async () => {
+            MockWebSocket._allowTtsWs = true;
+            setupVoiceDOM();
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+
+            var mod = await importVoice();
+            // Use long text to ensure multiple chunks so close happens mid-stream
+            var longText = Array.from({ length: 300 }, function(_, i) { return 'word' + i; }).join(' ');
+            var btn = createSpeakButton(longText, 'es');
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // First chunk was sent, simulate partial audio response
+            ws.onmessage({ data: makeAudioBuffer(512) });
+
+            // Simulate unexpected close while still streaming (before all metadata received)
+            ws.onclose({ code: 1006, reason: '' });
+
+            // Should fall back to REST fetch
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                method: 'POST',
+            }));
+        });
+
+        it('constructs correct WebSocket URL with voice parameter', async () => {
+            var { mod, btn } = await setupWsTts('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+
+            expect(ws.url).toContain('/ws/speak');
+            expect(ws.url).toContain('voice=');
+            expect(ws.url).toContain('aura-2-nestor-es');
+        });
+
+        it('includes wsToken in URL when mic-btn has data-ws-token', async () => {
+            MockWebSocket._allowTtsWs = true;
+            setupVoiceDOM();
+            // Set the ws-token on the mic button
+            var micBtn = document.getElementById('mic-btn');
+            micBtn.dataset.wsToken = 'test-token-123';
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+
+            expect(ws.url).toContain('token=test-token-123');
+        });
+
+        it('sends ERROR when all chunks done but no binary data received', async () => {
+            var { mod, btn } = await setupWsTts('Hola');
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // Send metadata without any binary data
+            sendMetadata(ws);
+
+            // No audio data was accumulated — should send ERROR to TTS FSM
+            // Button should not be in playing state
+            await vi.advanceTimersByTimeAsync(0);
+            expect(btn.classList.contains('voice-playing')).toBe(false);
+        });
+
+        it('shows error when onerror fires after connected', async () => {
+            var { mod, btn } = await setupWsTts('Hola');
+
+            var ws = triggerAndOpen(mod, btn);
+
+            // Simulate error after already connected
+            ws.onerror(new Event('error'));
+
+            var tooltip = document.querySelector('.voice-error-tooltip');
+            expect(tooltip).not.toBeNull();
+            expect(tooltip.textContent).toBe('Could not play audio');
+        });
+
+        it('falls back to REST on onclose before onopen (never connected)', async () => {
+            MockWebSocket._allowTtsWs = true;
+            setupVoiceDOM();
+            var audioBlob = new Blob(['fake-audio'], { type: 'audio/mpeg' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(audioBlob),
+            }));
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+
+            // Simulate close without ever connecting
+            ws.readyState = MockWebSocket.CLOSED;
+            ws.onclose({ code: 1006, reason: '' });
+
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({
+                method: 'POST',
+            }));
+        });
+
+        it('sets binaryType to arraybuffer on the WebSocket', async () => {
+            var { mod, btn } = await setupWsTts('Hola');
+
+            mod.handleSpeakClick(btn);
+            var ws = MockWebSocket._lastTtsInstance;
+
+            expect(ws.binaryType).toBe('arraybuffer');
         });
     });
 
