@@ -271,13 +271,15 @@ async def signup(
 
     except AuthApiError as e:
         logger.warning("Signup error: %s", e)
-        error_message = str(e)
+        raw = str(e).lower()
 
-        # Parse common Supabase errors
-        if "already registered" in error_message.lower():
+        # Map known Supabase errors to user-friendly messages
+        if "already registered" in raw:
             error_message = "An account with this email already exists"
-        elif "invalid email" in error_message.lower():
+        elif "invalid email" in raw:
             error_message = "Please enter a valid email address"
+        else:
+            error_message = "Something went wrong. Please try again."
 
         response = templates.TemplateResponse(
             request=request,
@@ -354,13 +356,15 @@ async def login(
 
     except AuthApiError as e:
         logger.warning("Login error: %s", e)
-        error_message = str(e)
+        raw = str(e).lower()
 
-        # Parse common Supabase errors
-        if "invalid login credentials" in error_message.lower():
+        # Map known Supabase errors to user-friendly messages
+        if "invalid login credentials" in raw:
             error_message = "Invalid email or password"
-        elif "email not confirmed" in error_message.lower():
+        elif "email not confirmed" in raw:
             error_message = "Please confirm your email address before logging in"
+        else:
+            error_message = "Something went wrong. Please try again."
 
         response = templates.TemplateResponse(
             request=request,
