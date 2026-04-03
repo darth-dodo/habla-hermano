@@ -8,6 +8,7 @@ import re
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, PropertyMock
 
+from src.db.encryption import decrypt_field
 from src.db.models import ConversationThread
 from src.services.threads import ThreadService
 
@@ -195,7 +196,9 @@ class TestUpdateTitle:
         svc.update_title(tid, "Renamed thread")
 
         update_call = mock_table.update.call_args[0][0]
-        assert update_call["title"] == "Renamed thread"
+        # Title should be encrypted before storage
+        assert update_call["title"] != "Renamed thread"
+        assert decrypt_field(update_call["title"]) == "Renamed thread"
         assert "updated_at" in update_call
         mock_table.execute.assert_called_once()
 

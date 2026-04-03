@@ -13,12 +13,35 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 
+from src.db.encryption import decrypt_field, encrypt_field
 from src.db.models import ConversationThread
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
 
 logger = logging.getLogger(__name__)
+
+
+def _decrypt_title(title: str | None) -> str | None:
+    """Decrypt a thread title, falling back to the raw value for legacy rows.
+
+    Unlike ``decrypt_field_safe`` (which returns "[encrypted]" on failure),
+    this preserves the original plaintext for pre-encryption rows that were
+    never encrypted.
+    """
+    if title is None or title == "":
+        return title
+    try:
+        return decrypt_field(title)
+    except Exception:
+        # Legacy unencrypted title — return as-is
+        return title
+
+
+def _decrypt_thread_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Decrypt the title field in a thread row from the database."""
+    row["title"] = _decrypt_title(row.get("title"))
+    return row
 
 
 class ThreadService:
@@ -36,14 +59,17 @@ class ThreadService:
         Thread ID format: user:{user_id}:{uuid4}
         """
         thread_id = f"user:{self._user_id}:{uuid.uuid4()}"
+        default_title = "New conversation"
         data = {
             "user_id": self._user_id,
             "thread_id": thread_id,
+            "title": encrypt_field(default_title) or default_title,
             "language": language,
             "level": level,
         }
         result = self._client.table(self.TABLE).insert(data).execute()
-        return ConversationThread(**cast("dict[str, Any]", result.data[0]))
+        row = _decrypt_thread_row(cast("dict[str, Any]", result.data[0]))
+        return ConversationThread(**row)
 
     def list_threads(self) -> list[ConversationThread]:
         """List all threads for user, ordered by updated_at DESC."""
@@ -54,7 +80,10 @@ class ThreadService:
             .order("updated_at", desc=True)
             .execute()
         )
-        return [ConversationThread(**cast("dict[str, Any]", row)) for row in result.data]
+        return [
+            ConversationThread(**_decrypt_thread_row(cast("dict[str, Any]", row)))
+            for row in result.data
+        ]
 
     def get_thread(self, thread_id: str) -> ConversationThread | None:
         """Get a single thread by its LangGraph thread_id."""
@@ -67,13 +96,15 @@ class ThreadService:
         )
         if not result.data:
             return None
-        return ConversationThread(**cast("dict[str, Any]", result.data[0]))
+        row = _decrypt_thread_row(cast("dict[str, Any]", result.data[0]))
+        return ConversationThread(**row)
 
     def update_title(self, thread_id: str, title: str) -> None:
-        """Rename a thread."""
+        """Rename a thread. The title is encrypted before storage."""
+        encrypted_title = encrypt_field(title) or title
         (
             self._client.table(self.TABLE)
-            .update({"title": title, "updated_at": datetime.now(UTC).isoformat()})
+            .update({"title": encrypted_title, "updated_at": datetime.now(UTC).isoformat()})
             .eq("user_id", self._user_id)
             .eq("thread_id", thread_id)
             .execute()

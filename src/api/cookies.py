@@ -192,6 +192,24 @@ def unsign_session_id(
     return None
 
 
+def unsign_active_thread(raw_value: str | None) -> str | None:
+    """Extract the thread_id from a signed active_thread cookie.
+
+    Returns the thread_id string on success, or None if the cookie is
+    absent, tampered, or does not contain a valid ``tid`` key.
+
+    Args:
+        raw_value: Raw cookie string, or None if the cookie is absent.
+
+    Returns:
+        The thread_id on success, None otherwise.
+    """
+    data = unsign_json_cookie(raw_value)
+    if data and isinstance(data.get("tid"), str):
+        return str(data["tid"])
+    return None
+
+
 def unsign_json_cookie(raw_value: str | None, max_age: int | None = None) -> dict[str, Any] | None:
     """Verify and deserialize a signed JSON cookie, or return None.
 

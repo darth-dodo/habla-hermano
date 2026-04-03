@@ -10,7 +10,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Cookie, Form, HTTPException, Request, Response
 
 from src.api.auth import CurrentUserDep
-from src.api.cookies import set_secure_cookie
+from src.api.cookies import set_secure_cookie, sign_cookie_value, unsign_active_thread
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import VALID_LANGUAGES, VALID_LEVELS
 from src.services.threads import ThreadService
@@ -122,7 +122,7 @@ async def delete_thread(
     """Delete a conversation thread (idempotent). Clears active_thread cookie if it matches."""
     service = _get_thread_service(user.id, _get_access_token(request, sb_access_token))
     service.delete_thread(thread_id)
-    if active_thread == thread_id:
+    if unsign_active_thread(active_thread) == thread_id:
         response.delete_cookie("active_thread")
     return Response(status_code=204)
 
@@ -140,5 +140,6 @@ async def select_thread(
     thread = service.get_thread(thread_id)
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    set_secure_cookie(response, key="active_thread", value=thread_id, max_age=60 * 60 * 24 * 30)
+    signed = sign_cookie_value({"tid": thread_id})
+    set_secure_cookie(response, key="active_thread", value=signed, max_age=60 * 60 * 24 * 30)
     return {"status": "ok"}

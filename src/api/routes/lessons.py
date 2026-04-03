@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from starlette.requests import Request
 
 from src.api.auth import OptionalUserDep
+from src.api.cookies import unsign_active_thread
 from src.api.dependencies import AccessTokenDep, LessonServiceDep, TemplatesDep
 from src.db.client import get_supabase_for_user
 from src.lessons.models import LessonLevel
@@ -72,7 +73,7 @@ async def get_lessons_page(
         "level": level or "A1",
         "user": user,
         "threads": [],
-        "active_thread_id": active_thread,
+        "active_thread_id": unsign_active_thread(active_thread),
     }
 
     # Load thread list for sidebar (authenticated users only)
