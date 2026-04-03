@@ -40,7 +40,12 @@ from postgrest.exceptions import APIError
 from src.agent.checkpointer import get_checkpointer, get_user_thread_id
 from src.agent.graph import build_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
-from src.api.cookies import delete_secure_cookie, set_secure_cookie, sign_session_id
+from src.api.cookies import (
+    delete_secure_cookie,
+    set_secure_cookie,
+    sign_session_id,
+    unsign_active_thread,
+)
 from src.api.dependencies import AccessTokenDep, LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
 from src.api.supabase_client import get_supabase_for_user
@@ -219,27 +224,30 @@ async def chat_page(  # noqa: PLR0912, PLR0915
     if user and not lesson and sb_token:
         user_client = get_supabase_for_user(sb_token)
 
+        # Unsign the active_thread cookie (signed since PII audit fix)
+        thread_id = unsign_active_thread(active_thread)
+
         # Validate active_thread cookie format before use (Finding M1)
-        if active_thread and not _is_valid_thread_id(active_thread):
+        if thread_id and not _is_valid_thread_id(thread_id):
             logger.warning(
                 "Ignoring active_thread cookie with invalid format: %r",
-                active_thread[:64],
+                thread_id[:64],
             )
-            active_thread = None
+            thread_id = None
 
         # Load active thread from cookie
-        if active_thread:
+        if thread_id:
             try:
                 thread_service = ThreadService(user_id=user.id, client=user_client)
-                thread_data = thread_service.get_thread(active_thread)
+                thread_data = thread_service.get_thread(thread_id)
                 if thread_data:
-                    context["active_thread_id"] = active_thread
-                    messages = await get_thread_messages(active_thread)
+                    context["active_thread_id"] = thread_id
+                    messages = await get_thread_messages(thread_id)
                     context["messages"] = messages
                     context["current_language"] = thread_data.language
                     context["current_level"] = thread_data.level
             except Exception:
-                logger.exception("Failed to load thread %s for user %s", active_thread, user.id)
+                logger.exception("Failed to load thread %s for user %s", thread_id, user.id)
 
         # Load thread list for sidebar
         try:
@@ -331,14 +339,17 @@ async def thread_content_partial(
     """
     empty = HTMLResponse("", headers={"X-Thread-Language": "es", "X-Thread-Level": "A1"})
 
-    if not user or not active_thread:
+    # Unsign the active_thread cookie
+    thread_id = unsign_active_thread(active_thread)
+
+    if not user or not thread_id:
         return empty
 
     # Validate active_thread cookie format before use (Finding M1)
-    if not _is_valid_thread_id(active_thread):
+    if not _is_valid_thread_id(thread_id):
         logger.warning(
             "Ignoring active_thread cookie with invalid format in thread_content_partial: %r",
-            active_thread[:64],
+            thread_id[:64],
         )
         return empty
 
@@ -348,13 +359,13 @@ async def thread_content_partial(
     try:
         user_client = get_supabase_for_user(sb_token)
         thread_service = ThreadService(user_id=user.id, client=user_client)
-        thread_data = thread_service.get_thread(active_thread)
+        thread_data = thread_service.get_thread(thread_id)
         if not thread_data:
             return empty
 
-        messages = await get_thread_messages(active_thread)
+        messages = await get_thread_messages(thread_id)
     except Exception:
-        logger.exception("Failed to load thread content for %s", active_thread)
+        logger.exception("Failed to load thread content for %s", thread_id)
         return empty
 
     return templates.TemplateResponse(
