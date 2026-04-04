@@ -39,6 +39,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["voice"])
 
 
+def _capture_sentry_exception(exc: BaseException) -> None:
+    """Report an exception to Sentry if configured, otherwise no-op."""
+    try:
+        import sentry_sdk
+
+        if sentry_sdk.is_initialized():
+            sentry_sdk.capture_exception(exc)
+    except Exception:
+        pass
+
+
 def _verify_jwt_via_supabase(token: str) -> str | None:
     """Verify a JWT token server-side via Supabase auth.get_user().
 
@@ -313,8 +324,9 @@ async def transcribe_stream(  # noqa: PLR0915
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during setup")
-    except (ConnectionError, OSError, RuntimeError):
+    except (ConnectionError, OSError, RuntimeError) as exc:
         logger.exception("Error in transcription WebSocket")
+        _capture_sentry_exception(exc)
         with contextlib.suppress(Exception):
             await websocket.close(code=1011, reason="Internal error")
 
@@ -481,7 +493,8 @@ async def speak_stream(
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during TTS setup")
-    except (ConnectionError, OSError, RuntimeError):
+    except (ConnectionError, OSError, RuntimeError) as exc:
         logger.exception("Error in TTS WebSocket")
+        _capture_sentry_exception(exc)
         with contextlib.suppress(Exception):
             await websocket.close(code=1011, reason="Internal error")
