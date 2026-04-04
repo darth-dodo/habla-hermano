@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     # Logging format: "text" for human-readable, "json" for structured logging
     LOG_FORMAT: Literal["text", "json"] = "text"
 
+    # Sentry error monitoring (empty DSN = disabled)
+    SENTRY_DSN: str = ""
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+    SENTRY_ENVIRONMENT: str = ""
+
     # Privacy: request Anthropic to not store input/output
     ANTHROPIC_ZERO_RETENTION: bool = False
 

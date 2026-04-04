@@ -44,6 +44,8 @@ dependencies = [
     # Structured logging
     "python-json-logger>=3.0.0",
     "cryptography>=46.0.3",
+    # Error monitoring
+    "sentry-sdk[fastapi]>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -114,6 +116,7 @@ known-first-party = ["src"]
 "src/services/paths.py" = ["PLC0415"]  # Lazy import in factory to avoid circular dependency
 "src/services/adaptive.py" = ["PLC0415"]  # Lazy imports in factory to avoid circular dependency
 "src/api/routes/voice.py" = ["PLC0415"]  # Lazy imports for optional deepgram-sdk
+"src/api/main.py" = ["PLR0915"]  # create_app is inherently large (middleware + routes + error handlers)
 
 # =============================================================================
 # MyPy Configuration
@@ -152,6 +155,7 @@ module = [
     "deepgram.*",
     "websockets.*",
     "markdown.*",
+    "sentry_sdk.*",
 ]
 ignore_missing_imports = true
 

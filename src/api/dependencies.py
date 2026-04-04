@@ -57,16 +57,22 @@ def _markdown_filter(value: str) -> markupsafe.Markup:
 
 
 def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
-    """Register custom Jinja2 filters on a templates instance.
+    """Register custom Jinja2 filters and globals on a templates instance.
 
     Args:
         templates: Jinja2Templates instance to register filters on.
 
     Returns:
-        Jinja2Templates: Same instance with filters registered.
+        Jinja2Templates: Same instance with filters and globals registered.
     """
     templates.env.filters["sanitize"] = _sanitize_filter
     templates.env.filters["markdown"] = _markdown_filter
+
+    # Global template variables available on every page
+    _settings = get_settings()
+    templates.env.globals["sentry_dsn_js"] = _settings.SENTRY_DSN or ""
+    templates.env.globals["debug"] = _settings.DEBUG
+
     return templates
 
 

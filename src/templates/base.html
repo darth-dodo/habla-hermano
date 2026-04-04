@@ -19,6 +19,22 @@
     (function(){var h=window.location.hash;if(h&&h.indexOf('type=recovery')!==-1&&window.location.pathname!=='/auth/reset-password'){window.location.replace('/auth/reset-password'+h)}})();
     </script>
 
+    <!-- Sentry Browser SDK (error monitoring) -->
+    <script nonce="{{ request.state.csp_nonce }}" src="https://cdn.jsdelivr.net/npm/@sentry/browser@8/build/bundles/bundle.min.js" crossorigin="anonymous"></script>
+    <script nonce="{{ request.state.csp_nonce }}">
+    if (window.Sentry && "{{ sentry_dsn_js }}") {
+        Sentry.init({
+            dsn: "{{ sentry_dsn_js }}",
+            environment: "{{ 'development' if debug else 'production' }}",
+            tracesSampleRate: 0.1,
+            beforeSend(event) {
+                if (event.user) delete event.user.ip_address;
+                return event;
+            }
+        });
+    }
+    </script>
+
     <!-- Animate.css CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 

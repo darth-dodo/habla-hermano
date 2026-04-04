@@ -177,7 +177,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "media-src 'self' blob: data:; "
-            f"connect-src 'self' {_ws_origins}"
+            f"connect-src 'self' https://*.ingest.sentry.io {_ws_origins}"
         )
 
         # HSTS only in production (HTTPS)

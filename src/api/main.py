@@ -8,6 +8,7 @@ import logging
 import secrets
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -99,12 +100,43 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     await close_checkpointer()
 
 
+def _init_sentry() -> None:
+    """Initialize Sentry error monitoring if SENTRY_DSN is configured.
+
+    Only imports and initializes sentry_sdk when a DSN is provided,
+    keeping the dependency effectively optional at runtime.
+    """
+    if not settings.SENTRY_DSN:
+        return
+
+    import sentry_sdk  # noqa: PLC0415
+
+    environment = settings.SENTRY_ENVIRONMENT or ("development" if settings.DEBUG else "production")
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=environment,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        send_default_pii=False,
+        release="habla-hermano@0.1.0",
+    )
+
+    logger.info(
+        "Sentry initialized (environment=%s, traces_sample_rate=%.2f)",
+        environment,
+        settings.SENTRY_TRACES_SAMPLE_RATE,
+    )
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application.
 
     Returns:
         FastAPI: Configured application instance.
     """
+    # Initialize Sentry BEFORE middleware/routes so all errors are captured
+    _init_sentry()
+
     app = FastAPI(
         title=settings.APP_NAME,
         description="AI-powered language tutor for Spanish learners",
@@ -142,6 +174,47 @@ def create_app() -> FastAPI:
             "X-Requested-With",
         ],
     )
+
+    # Sentry user context middleware: attach anonymized user ID to events.
+    # Runs inside the CORS/CSRF stack so auth cookies are available.
+    if settings.SENTRY_DSN:
+
+        @app.middleware("http")
+        async def sentry_user_context_middleware(request: Request, call_next: Any) -> Any:
+            """Set Sentry user context from auth cookies (user ID only, no PII)."""
+            import sentry_sdk  # noqa: PLC0415
+
+            user_id: str | None = None
+
+            # Try JWT cookie first
+            token = request.cookies.get("sb-access-token")
+            if token:
+                try:
+                    import jwt as pyjwt  # noqa: PLC0415
+
+                    payload = pyjwt.decode(
+                        token,
+                        options={"verify_signature": False},
+                        algorithms=["HS256"],
+                    )
+                    user_id = payload.get("sub")
+                except Exception:
+                    pass
+
+            # Fall back to guest session cookie
+            if not user_id:
+                from src.api.cookies import unsign_session_id  # noqa: PLC0415
+
+                session_id = request.cookies.get("session_id")
+                if session_id:
+                    user_id = unsign_session_id(session_id)
+
+            if user_id:
+                sentry_sdk.set_user({"id": user_id})
+            else:
+                sentry_sdk.set_user(None)
+
+            return await call_next(request)
 
     # Mount static files
     if settings.static_dir.exists():
@@ -224,6 +297,15 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, _exc: Exception) -> HTMLResponse:
         logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+
+        # Explicitly report to Sentry — the FastAPI integration auto-captures
+        # most errors, but this broad Exception handler swallows them before
+        # Sentry's middleware sees them.
+        if settings.SENTRY_DSN:
+            import sentry_sdk  # noqa: PLC0415
+
+            sentry_sdk.capture_exception(_exc)
+
         _ensure_csp_nonce(request)
         templates = get_cached_templates()
         return templates.TemplateResponse(
