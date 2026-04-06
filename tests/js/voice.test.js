@@ -1862,10 +1862,10 @@ describe('voice.js -- FSM-based Voice Module', () => {
         }
 
         /**
-         * Helper: send a metadata message on the WS (simulates server metadata response).
+         * Helper: send a Flushed message on the WS (simulates Deepgram flush response).
          */
-        function sendMetadata(ws) {
-            ws.onmessage({ data: JSON.stringify({ type: 'metadata' }) });
+        function sendFlushed(ws) {
+            ws.onmessage({ data: JSON.stringify({ type: 'Flushed' }) });
         }
 
         it('happy path: connects, sends text, receives audio, plays via blob URL', async () => {
@@ -1882,8 +1882,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
             ws.onmessage({ data: makeAudioBuffer(512) });
             ws.onmessage({ data: makeAudioBuffer(256) });
 
-            // Simulate metadata (signals chunk is done)
-            sendMetadata(ws);
+            // Simulate Flushed event (signals chunk is done)
+            sendFlushed(ws);
 
             // Should have played via blob URL — audio element should be loaded and played
             await vi.advanceTimersByTimeAsync(0);
@@ -1913,9 +1913,9 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var firstChunk = JSON.parse(ws.send.mock.calls[0][0]);
             expect(firstChunk.text).toBeTruthy();
 
-            // Simulate server response for chunk 1: binary + metadata
+            // Simulate server response for chunk 1: binary + Flushed
             ws.onmessage({ data: makeAudioBuffer(512) });
-            sendMetadata(ws);
+            sendFlushed(ws);
 
             // Should have sent chunk 2
             expect(ws.send).toHaveBeenCalledTimes(2);
@@ -1924,12 +1924,12 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(secondChunk.text).not.toBe(firstChunk.text);
 
             // Simulate server response for remaining chunks until all done
-            // Keep sending binary + metadata until no more chunks are sent
+            // Keep sending binary + Flushed until no more chunks are sent
             var prevCallCount = ws.send.mock.calls.length;
             var maxIterations = 20;
             while (maxIterations-- > 0) {
                 ws.onmessage({ data: makeAudioBuffer(256) });
-                sendMetadata(ws);
+                sendFlushed(ws);
 
                 if (ws.send.mock.calls.length === prevCallCount) {
                     // No new chunk was sent — all chunks done
@@ -2049,7 +2049,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             // First chunk was sent, simulate partial audio response
             ws.onmessage({ data: makeAudioBuffer(512) });
 
-            // Simulate unexpected close while still streaming (before all metadata received)
+            // Simulate unexpected close while still streaming (before all Flushed events received)
             ws.onclose({ code: 1006, reason: '' });
 
             // Should fall back to REST fetch
@@ -2093,8 +2093,8 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             var ws = triggerAndOpen(mod, btn);
 
-            // Send metadata without any binary data
-            sendMetadata(ws);
+            // Send Flushed without any binary data
+            sendFlushed(ws);
 
             // No audio data was accumulated — should send ERROR to TTS FSM
             // Button should not be in playing state

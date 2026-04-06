@@ -12,6 +12,7 @@ export var VOICES = {
 
 export var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
 export var TTS_SAMPLE_RATE = 24000; // Deepgram TTS output sample rate
+export var TTS_WS_SAMPLE_RATE = 24000; // Deepgram WS TTS linear16 sample rate
 export var DEFAULT_TTS_SPEED = 1.0; // 0.5 = half speed, 1.0 = normal, 2.0 = double
 export var MAX_TTS_CHUNK_LENGTH = 2000; // Must match server MAX_TTS_TEXT_LENGTH
 export var WS_SPEAK_PATH = '/ws/speak'; // WebSocket TTS endpoint
@@ -146,4 +147,59 @@ export function chunkTextForTTS(text, maxLen) {
     if (current.trim()) chunks.push(current.trim());
 
     return chunks;
+}
+
+/**
+ * Wrap raw linear16 PCM data in a WAV container for browser playback.
+ * Creates a minimal 44-byte WAV header + raw PCM payload.
+ *
+ * @param {ArrayBuffer[]} pcmBuffers - Array of raw PCM ArrayBuffers (16-bit LE mono)
+ * @param {number} sampleRate - Sample rate in Hz (e.g. 24000)
+ * @returns {Blob} WAV audio blob playable by <audio> element
+ */
+export function createWavBlob(pcmBuffers, sampleRate) {
+    var dataLength = 0;
+    for (var i = 0; i < pcmBuffers.length; i++) {
+        dataLength += pcmBuffers[i].byteLength;
+    }
+
+    var numChannels = 1;
+    var bitsPerSample = 16;
+    var byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+    var blockAlign = numChannels * (bitsPerSample / 8);
+
+    // 44-byte WAV header
+    var header = new ArrayBuffer(44);
+    var view = new DataView(header);
+
+    // RIFF chunk descriptor
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataLength, true);
+    writeString(view, 8, 'WAVE');
+
+    // fmt sub-chunk
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+
+    // data sub-chunk
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataLength, true);
+
+    var parts = [header];
+    for (var j = 0; j < pcmBuffers.length; j++) {
+        parts.push(pcmBuffers[j]);
+    }
+    return new Blob(parts, { type: 'audio/wav' });
+}
+
+function writeString(view, offset, str) {
+    for (var i = 0; i < str.length; i++) {
+        view.setUint8(offset + i, str.charCodeAt(i));
+    }
 }

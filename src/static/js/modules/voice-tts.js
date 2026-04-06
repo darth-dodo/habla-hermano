@@ -9,7 +9,7 @@
  */
 
 import { createMachine } from './fsm.js';
-import { chunkTextForTTS, WS_SPEAK_PATH } from './voice-constants.js';
+import { chunkTextForTTS, WS_SPEAK_PATH, createWavBlob, TTS_WS_SAMPLE_RATE } from './voice-constants.js';
 
 // ============================================
 // TTS State Machine Definition
@@ -190,29 +190,29 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
     ws.onmessage = function(event) {
         if (signal.aborted) { cleanup(); return; }
 
-        // Binary frame — accumulate audio data
+        // Binary frame — accumulate raw PCM audio data
         if (event.data instanceof ArrayBuffer) {
             allBuffers.push(event.data);
             return;
         }
 
-        // Text frame — parse JSON metadata
+        // Text frame — parse JSON (Flushed event signals chunk complete)
         var msg;
         try { msg = JSON.parse(event.data); } catch (_) { return; }
 
-        if (msg.type === 'metadata') {
+        if (msg.type === 'Flushed') {
             chunkIndex++;
             if (chunkIndex < textChunks.length) {
                 // More chunks to send
                 ws.send(JSON.stringify({ text: textChunks[chunkIndex] }));
             } else {
-                // All chunks done — concatenate audio and play
+                // All chunks done — wrap PCM in WAV and play
                 signal.removeEventListener('abort', onAbort);
                 cleanup();
 
                 if (allBuffers.length > 0) {
-                    var combinedBlob = new Blob(allBuffers, { type: 'audio/mpeg' });
-                    playAudioFromBlob(combinedBlob, speed, signal, ttsService, btn, showError);
+                    var wavBlob = createWavBlob(allBuffers, TTS_WS_SAMPLE_RATE);
+                    playAudioFromBlob(wavBlob, speed, signal, ttsService, btn, showError);
                 } else {
                     ttsService.send('ERROR');
                 }
