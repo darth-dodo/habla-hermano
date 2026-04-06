@@ -2,14 +2,14 @@
  * Habla Hermano - TTS (Text-to-Speech) Module
  * Phase 21: Extracted from voice.js for modularity.
  *
- * Uses a hidden <audio> element (Deepgram's recommended pattern) for
- * cross-device playback including iOS Safari after getUserMedia.
- * Audio data is fetched via POST, converted to a blob URL, then played
- * through the pre-initialized <audio id="tts-player"> element.
+ * WebSocket path: streams PCM audio via Web Audio API for low-latency
+ * playback — audio plays as frames arrive, no waiting for full synthesis.
+ * REST fallback: uses hidden <audio> element with blob URL for iOS Safari
+ * compatibility when WebSocket is unavailable.
  */
 
 import { createMachine } from './fsm.js';
-import { chunkTextForTTS, WS_SPEAK_PATH, createWavBlob, TTS_WS_SAMPLE_RATE } from './voice-constants.js';
+import { chunkTextForTTS, WS_SPEAK_PATH, TTS_WS_SAMPLE_RATE } from './voice-constants.js';
 
 // ============================================
 // TTS State Machine Definition
@@ -42,6 +42,12 @@ var iosSessionStream = null;
 // Set to true after STT mic usage. Only then do we need getUserMedia
 // before TTS to counteract iOS earpiece routing.
 var micWasUsed = false;
+
+// Web Audio streaming state (for WebSocket TTS path)
+var streamAudioCtx = null;
+var streamNextStartTime = 0;
+var streamSources = [];
+var streamLastSource = null;
 
 /**
  * Initialize TTS player references. Called once from voice.js initVoice().
@@ -114,8 +120,8 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
 }
 
 /**
- * WebSocket-based TTS: streams text chunks over a single WS connection,
- * accumulates binary audio responses, then plays the combined blob.
+ * WebSocket-based TTS with streaming playback: plays PCM audio frames
+ * immediately as they arrive via Web Audio API for minimal latency.
  * Falls back to REST doFetch() if the WebSocket fails to connect.
  */
 function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) {
@@ -128,9 +134,20 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
 
     var textChunks = chunkTextForTTS(text);
     var chunkIndex = 0;
-    var allBuffers = [];
     var wsConnected = false;
     var ws = null;
+    var streamingStarted = false;
+    var allDone = false;
+
+    // Create AudioContext for streaming PCM playback
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+        cleanupStreamAudio();
+        streamAudioCtx = new Ctx({ sampleRate: TTS_WS_SAMPLE_RATE });
+        streamNextStartTime = 0;
+        streamSources = [];
+        streamLastSource = null;
+    }
 
     // Build WebSocket URL
     var wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -157,12 +174,12 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
         }
     }
 
-    // Listen for abort signal — send close message and tear down
     function onAbort() {
         if (ws && ws.readyState === WebSocket.OPEN) {
             try { ws.send(JSON.stringify({ type: 'close' })); } catch (_) {}
         }
         cleanup();
+        cleanupStreamAudio();
     }
 
     if (signal.aborted) return;
@@ -172,8 +189,8 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
         ws = new WebSocket(wsUrl);
         ws.binaryType = 'arraybuffer';
     } catch (_) {
-        // WebSocket constructor failed — fall back to REST
         signal.removeEventListener('abort', onAbort);
+        cleanupStreamAudio();
         doFetch(btn, text, voice, speed, signal, ttsService, showError);
         return;
     }
@@ -181,7 +198,10 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
     ws.onopen = function() {
         if (signal.aborted) { cleanup(); return; }
         wsConnected = true;
-        // Send the first chunk
+        // Resume AudioContext (may be suspended on iOS)
+        if (streamAudioCtx && streamAudioCtx.state === 'suspended') {
+            streamAudioCtx.resume();
+        }
         if (textChunks.length > 0) {
             ws.send(JSON.stringify({ text: textChunks[chunkIndex] }));
         }
@@ -190,9 +210,38 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
     ws.onmessage = function(event) {
         if (signal.aborted) { cleanup(); return; }
 
-        // Binary frame — accumulate raw PCM audio data
+        // Binary frame — play PCM immediately via Web Audio API
         if (event.data instanceof ArrayBuffer) {
-            allBuffers.push(event.data);
+            if (!streamAudioCtx) return;
+
+            // Convert Int16 PCM to Float32 for Web Audio
+            var int16 = new Int16Array(event.data);
+            var float32 = new Float32Array(int16.length);
+            for (var i = 0; i < int16.length; i++) {
+                float32[i] = int16[i] / 32768;
+            }
+
+            var audioBuffer = streamAudioCtx.createBuffer(1, float32.length, TTS_WS_SAMPLE_RATE);
+            audioBuffer.getChannelData(0).set(float32);
+
+            var source = streamAudioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.playbackRate.value = speed;
+            source.connect(streamAudioCtx.destination);
+
+            // Schedule for gapless playback
+            var startTime = Math.max(streamAudioCtx.currentTime, streamNextStartTime);
+            source.start(startTime);
+            streamNextStartTime = startTime + (audioBuffer.duration / speed);
+
+            streamSources.push(source);
+            streamLastSource = source;
+
+            // Transition to playing on first audio frame
+            if (!streamingStarted) {
+                streamingStarted = true;
+                ttsService.send('STREAMING');
+            }
             return;
         }
 
@@ -203,17 +252,22 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
         if (msg.type === 'Flushed') {
             chunkIndex++;
             if (chunkIndex < textChunks.length) {
-                // More chunks to send
                 ws.send(JSON.stringify({ text: textChunks[chunkIndex] }));
             } else {
-                // All chunks done — wrap PCM in WAV and play
+                // All chunks sent and flushed — close WS, wait for audio to finish
+                allDone = true;
                 signal.removeEventListener('abort', onAbort);
                 cleanup();
 
-                if (allBuffers.length > 0) {
-                    var wavBlob = createWavBlob(allBuffers, TTS_WS_SAMPLE_RATE);
-                    playAudioFromBlob(wavBlob, speed, signal, ttsService, btn, showError);
+                if (streamLastSource) {
+                    streamLastSource.onended = function() {
+                        if (signal.aborted) return;
+                        cleanupStreamAudio();
+                        ttsService.send('ALL_ENDED');
+                    };
                 } else {
+                    // No audio was received
+                    cleanupStreamAudio();
                     ttsService.send('ERROR');
                 }
             }
@@ -221,17 +275,17 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
     };
 
     ws.onerror = function() {
-        // If we never connected, fall back to REST
         if (!wsConnected) {
             signal.removeEventListener('abort', onAbort);
             cleanup();
+            cleanupStreamAudio();
             doFetch(btn, text, voice, speed, signal, ttsService, showError);
             return;
         }
-        // Already connected — treat as error
         if (!signal.aborted) {
             signal.removeEventListener('abort', onAbort);
             cleanup();
+            cleanupStreamAudio();
             showError(btn, 'Could not play audio');
             ttsService.send('ERROR');
         }
@@ -239,18 +293,18 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
 
     ws.onclose = function(event) {
         if (signal.aborted) return;
-        // If we never connected, fall back to REST
         if (!wsConnected) {
             signal.removeEventListener('abort', onAbort);
             cleanup();
+            cleanupStreamAudio();
             doFetch(btn, text, voice, speed, signal, ttsService, showError);
             return;
         }
         // Unexpected close while still streaming chunks
-        if (chunkIndex < textChunks.length) {
+        if (chunkIndex < textChunks.length && !allDone) {
             signal.removeEventListener('abort', onAbort);
             cleanup();
-            // Fall back to REST for reliability
+            cleanupStreamAudio();
             doFetch(btn, text, voice, speed, signal, ttsService, showError);
         }
     };
@@ -356,6 +410,25 @@ function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
 }
 
 /**
+ * Clean up Web Audio streaming resources.
+ * Stops all scheduled AudioBufferSourceNodes and closes the AudioContext.
+ */
+function cleanupStreamAudio() {
+    if (streamSources) {
+        for (var i = 0; i < streamSources.length; i++) {
+            try { streamSources[i].onended = null; streamSources[i].stop(); } catch (_) {}
+        }
+        streamSources = [];
+    }
+    streamLastSource = null;
+    streamNextStartTime = 0;
+    if (streamAudioCtx && streamAudioCtx.state !== 'closed') {
+        streamAudioCtx.close().catch(function() {});
+    }
+    streamAudioCtx = null;
+}
+
+/**
  * Release iOS audio session stream if active.
  * Stops all tracks to free the microphone resource.
  */
@@ -396,6 +469,9 @@ export function cleanupTtsResources(ttsAbort) {
     }
 
     revokeBlobUrl();
+
+    // Stop streaming audio (Web Audio API path)
+    cleanupStreamAudio();
 
     // Release iOS audio session stream — safe to stop tracks now that
     // TTS playback has ended (or been cancelled).

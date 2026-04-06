@@ -54,9 +54,9 @@ function createMockAudioContext() {
             connect: vi.fn(),
             disconnect: vi.fn(),
         })),
-        createBuffer: vi.fn(() => ({
-            duration: 0.1,
-            getChannelData: () => new Float32Array(100),
+        createBuffer: vi.fn((channels, length, sampleRate) => ({
+            duration: (length || 100) / (sampleRate || 24000),
+            getChannelData: () => new Float32Array(length || 100),
         })),
         createBufferSource: vi.fn(() => ({
             buffer: null,
@@ -1868,7 +1868,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             ws.onmessage({ data: JSON.stringify({ type: 'Flushed' }) });
         }
 
-        it('happy path: connects, sends text, receives audio, plays via blob URL', async () => {
+        it('happy path: connects, sends text, streams audio via Web Audio API', async () => {
             var { mod, btn } = await setupWsTts('Hola');
 
             var ws = triggerAndOpen(mod, btn);
@@ -1878,30 +1878,21 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var sentMsg = JSON.parse(ws.send.mock.calls[0][0]);
             expect(sentMsg.text).toBe('Hola');
 
-            // Simulate binary audio response
+            // Simulate binary audio response — plays immediately via Web Audio API
             ws.onmessage({ data: makeAudioBuffer(512) });
             ws.onmessage({ data: makeAudioBuffer(256) });
 
             // Simulate Flushed event (signals chunk is done)
             sendFlushed(ws);
 
-            // Should have played via blob URL — audio element should be loaded and played
             await vi.advanceTimersByTimeAsync(0);
 
-            var source = document.getElementById('tts-player-src');
-            expect(source.src).toBe('blob:mock-url');
-            expect(URL.createObjectURL).toHaveBeenCalled();
-
-            var player = document.getElementById('tts-player');
-            expect(player.load).toHaveBeenCalled();
-            expect(player.play).toHaveBeenCalled();
-
-            // Button should transition to playing
+            // Button should transition to playing (STREAMING sent on first binary frame)
             expect(btn.classList.contains('voice-playing')).toBe(true);
             expect(btn.classList.contains('voice-loading')).toBe(false);
         });
 
-        it('multi-chunk: sends next chunk after metadata, plays combined audio', async () => {
+        it('multi-chunk: sends next chunk after Flushed, streams audio progressively', async () => {
             // Create text long enough to be split into multiple chunks
             var longText = Array.from({ length: 300 }, function(_, i) { return 'word' + i; }).join(' ');
             var { mod, btn } = await setupWsTts(longText);
@@ -1938,11 +1929,10 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 prevCallCount = ws.send.mock.calls.length;
             }
 
-            // Should have played combined audio
             await vi.advanceTimersByTimeAsync(0);
-            var player = document.getElementById('tts-player');
-            expect(player.load).toHaveBeenCalled();
-            expect(player.play).toHaveBeenCalled();
+
+            // Audio should be playing via Web Audio API (STREAMING on first frame)
+            expect(btn.classList.contains('voice-playing')).toBe(true);
 
             // More than one chunk was sent
             expect(ws.send.mock.calls.length).toBeGreaterThan(1);
