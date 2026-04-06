@@ -388,7 +388,11 @@ async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResp
 
 
 async def _forward_deepgram_to_browser(dg_ws: Any, websocket: WebSocket) -> None:
-    """Forward audio chunks and metadata from Deepgram WS to browser WS."""
+    """Forward audio chunks and metadata from Deepgram WS to browser WS.
+
+    Binary frames contain raw linear16 PCM audio (24kHz, mono, 16-bit LE).
+    Text frames contain JSON events (Flushed, Cleared, Warning, etc.).
+    """
     import websockets as ws_lib
 
     try:
@@ -450,8 +454,8 @@ async def speak_stream(
 
     Protocol:
         Client -> {"text": "Hola amigo"} (JSON text message)
-        Server -> binary audio chunks (MP3)
-        Server -> {"type": "metadata", ...} (JSON when audio is complete)
+        Server -> binary audio chunks (raw linear16 PCM, 24kHz mono)
+        Server -> {"type": "Flushed", ...} (JSON when audio is complete)
         Client -> {"type": "close"} or disconnect to end
     """
     # B1: Authenticate before accepting the connection
@@ -477,7 +481,7 @@ async def speak_stream(
     try:
         import websockets
 
-        dg_url = f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=mp3&mip_opt_out=true"
+        dg_url = f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&container=none&sample_rate=24000&mip_opt_out=true"
         dg_headers = {"Authorization": f"Token {api_key}"}
 
         async with websockets.connect(dg_url, additional_headers=dg_headers) as dg_ws:
@@ -493,7 +497,10 @@ async def speak_stream(
 
     except WebSocketDisconnect:
         logger.debug("WebSocket disconnected during TTS setup")
-    except (ConnectionError, OSError, RuntimeError) as exc:
+    except Exception as exc:
+        # Catch websockets.InvalidStatus, ConnectionError, OSError, RuntimeError
+        # and any other transport errors. websockets is lazily imported so we
+        # can't reference its exceptions in the except clause.
         logger.exception("Error in TTS WebSocket")
         _capture_sentry_exception(exc)
         with contextlib.suppress(Exception):
