@@ -29,7 +29,7 @@ from src.api.cookies import (
     sign_cookie_value,
     unsign_json_cookie,
 )
-from src.api.dependencies import TemplatesDep
+from src.api.dependencies import AccessTokenDep, TemplatesDep
 from src.api.supabase_client import get_supabase_for_user
 from src.db.models import Vocabulary
 from src.db.repository import VocabularyRepository
@@ -193,8 +193,8 @@ def _get_hermano_feedback(quality: int, vocab: Vocabulary) -> str:
 @router.get("/stats")
 async def get_review_stats(
     user: CurrentUserDep,
+    access_token: AccessTokenDep,
     language: str = "es",
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> dict[str, int | str | None]:
     """Get review statistics for progress page and review prompts.
 
@@ -203,8 +203,8 @@ async def get_review_stats(
 
     Args:
         user: Authenticated user (required).
+        access_token: Effective access token (refreshed if needed).
         language: Target language to filter by. Defaults to "es".
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         Dictionary with:
@@ -213,7 +213,7 @@ async def get_review_stats(
         - total_in_rotation: Total words scheduled for review
     """
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    user_client = get_supabase_for_user(access_token) if access_token else None
     service = ReviewService(user.id, client=user_client)
     stats = service.get_stats(language=language)
 
@@ -229,9 +229,9 @@ async def start_review_session(
     request: Request,
     templates: TemplatesDep,
     user: CurrentUserDep,
+    access_token: AccessTokenDep,
     count: int | Literal["all"] = Form(10),
     language: str = Form("es"),
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Initialize a review session and return the first question.
 
@@ -243,15 +243,15 @@ async def start_review_session(
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user (required).
+        access_token: Effective access token (refreshed if needed).
         count: Number of words to review (5, 10, or "all").
         language: Target language. Defaults to "es".
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: First review question as partial HTML.
     """
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    user_client = get_supabase_for_user(access_token) if access_token else None
     service = ReviewService(user.id, client=user_client)
 
     # Get due words
@@ -306,10 +306,10 @@ async def submit_review_answer(
     request: Request,
     templates: TemplatesDep,
     user: CurrentUserDep,
+    access_token: AccessTokenDep,
     word_id: int = Form(...),
     user_answer: str = Form(...),
     review_session: Annotated[str | None, Cookie()] = None,
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
 ) -> HTMLResponse:
     """Submit an answer for the current review question.
 
@@ -323,10 +323,10 @@ async def submit_review_answer(
         request: FastAPI request for template context.
         templates: Jinja2 template engine.
         user: Authenticated user (required).
+        access_token: Effective access token (refreshed if needed).
         word_id: The vocabulary ID being answered.
         user_answer: User's submitted answer.
         review_session: Signed review session state cookie.
-        sb_access_token: User's Supabase access token from cookie.
 
     Returns:
         HTMLResponse: Feedback partial with next question or session summary.
@@ -342,7 +342,7 @@ async def submit_review_answer(
         raise HTTPException(status_code=400, detail="Invalid review session.")
 
     # Use user-authenticated client for RLS to work with auth.uid()
-    user_client = get_supabase_for_user(sb_access_token) if sb_access_token else None
+    user_client = get_supabase_for_user(access_token) if access_token else None
     service = ReviewService(user.id, client=user_client)
 
     # Get the vocabulary item
