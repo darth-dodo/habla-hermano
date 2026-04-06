@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-06
+
+### Added
+- **Sentry error monitoring** (`main.py`, `base.html`): Backend Sentry SDK with FastAPI integration and frontend `@sentry/browser` with environment-aware DSN and sample rates (#91)
+- **WebSocket TTS** (`voice.py`, `voice-tts.js`): Real-time text-to-speech via Deepgram Aura WebSocket streaming with linear16 PCM encoding, replacing REST-only TTS path (#74, #92)
+
+### Fixed
+- **JWT expiry in review routes** (`review.py`): Review endpoints now use the refreshed access token from middleware instead of the original (possibly expired) token, preventing 401 errors mid-session (#93)
+- **Deepgram WebSocket TTS encoding** (`voice.py`): Changed encoding from `opus` to `linear16` to match client-side PCM AudioWorklet processing — was producing garbled audio (#92)
+- **Cookie signing and auth error sanitization** (`cookies.py`, `auth.py`): Fixed cookie signing consistency and sanitized auth error messages to prevent information leakage (#89)
+
+### Changed
+- **README**: Added live deployment URL and refreshed all screenshots from deployed application (#90)
+
+## [0.4.0] - 2026-04-01
+
+### Fixed
+- **Mobile sidebar close button** (`thread_sidebar.html`): Close button was not visible on mobile — fixed positioning and z-index (#88)
+- **Review mode double input** (`review_start.html`): Review mode was rendering duplicate input areas — removed redundant input partial (#88)
+- **Chat placeholder text** (`chat.html`): Updated placeholder to be contextually appropriate for the current mode (#88)
+
+## [0.3.0] - 2026-03-19 — Progress & Password Reset
+
+### Added
+- **Progress page redesign** (`progress.html`, `progress.py`): Completely redesigned analytics dashboard with vocabulary growth charts, streak tracking, session heatmaps, and per-level breakdown (#81, #82)
+- **Language filter on progress page** (`progress.py`): Filter progress data by language with dropdown selector; fixed token handling for authenticated API calls (#78)
+- **Password reset flow** (`auth.py`, `forgot_password.html`, `reset_password.html`): Full forgot-password and reset-password flow via Supabase Auth email recovery with client-side hash fragment extraction (#83)
+- **Supabase recovery redirect** (`reset_password.html`): Client-side script extracts `access_token` and `refresh_token` from Supabase email recovery URL hash fragment and redirects to the reset-password page (#85)
+
+### Fixed
+- **Spaced repetition review** (`review.py`): Fixed SM-2 review scheduling and card retrieval logic that was preventing reviews from loading correctly (#76)
+- **CSRF validation on delete account** (`privacy.html`): Delete account form was missing the CSRF header, causing 403 errors (#77)
+- **Account deletion data cleanup** (`privacy.py`): Delete-account now removes all user data including vocabulary, sessions, and checkpoints — previously orphaned some records (#79)
+- **Lesson page sidebar threads** (`lessons.html`): Thread history was not loading in the sidebar when viewing the lessons catalog page (#80)
+- **Stale auth cookie cleanup** (`auth.py`): Auth middleware now clears stale `sb-access-token` and `sb-refresh-token` cookies when token validation fails, preventing redirect loops (#84)
+- **CSP nonce in reset password template** (`reset_password.html`): Inline script was missing the CSP nonce attribute, causing Content Security Policy violations (#86)
+- **Password reset auth session** (`auth.py`): Reset-password endpoint now establishes a Supabase auth session from the recovery tokens before attempting password update — was failing with "not authenticated" errors (#87)
+- **Checkpointer connection pool** (`checkpointer.py`): Switched from creating new connections to using the connection pool for checkpoint operations, preventing "too many connections" errors under concurrent load (#75)
+
 ## [0.2.0] - 2026-03-17 — Audit
 
 Comprehensive 8-domain audit and remediation.
