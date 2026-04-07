@@ -19,7 +19,7 @@ Urgency tiers:
 {% set bar_pct = [((due_count / 50) * 100) | round | int, 100] | min %}
 
 <a
-    href="/?mode=review"
+    :href="'/?mode=review&language=' + (typeof language !== 'undefined' ? language : 'es')"
     class="group block bg-surface-elevated rounded-2xl border border-border hover-lift cursor-pointer no-underline overflow-hidden"
 >
     {# Top urgency accent strip #}
