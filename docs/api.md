@@ -4,6 +4,28 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Authentication](#authentication)
+- [Privacy Endpoints](#privacy-endpoints)
+- [Chat Endpoints](#chat-endpoints)
+- [Threads](#threads)
+- [Data Structures](#data-structures)
+- [Level-Specific Behavior](#level-specific-behavior)
+- [HTML Template Integration](#html-template-integration)
+- [Chat Form Integration](#chat-form-integration-streamjs)
+- [Error Handling](#error-handling)
+- [Example Workflow](#example-workflow)
+- [Voice Endpoints](#voice-endpoints-phase-17)
+- [Lesson Endpoints](#lesson-endpoints)
+- [Progress Tracking](#progress-tracking)
+- [Review Endpoints](#review-endpoints-spaced-repetition)
+- [Learning Path Endpoints](#learning-path-endpoints-phase-14)
+- [Related Documentation](#related-documentation)
+
+---
+
 ## Overview
 
 Habla Hermano provides an HTMX-driven API that returns HTML partials for seamless UI updates. The primary endpoint processes chat messages through a LangGraph agent and returns rendered HTML including the AI response, scaffolding assistance (for A0-A1 learners), and grammar feedback.
@@ -33,8 +55,9 @@ The API uses two cookie-based identity mechanisms:
 | Review (`/review/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Threads (`/threads/*`) | Required (`CurrentUserDep`) | Returns 401 Unauthorized |
 | Lessons (`/lessons/`) | Optional | Full access to browse lessons |
-| Voice (`/ws/transcribe`, `/ws/speak`) | Required (`sb-access-token` JWT cookie) | WebSocket rejected with close code `4001` |
+| Voice (`/ws/transcribe`, `/ws/speak`) | Required (JWT cookie or signed `session_id`) | WebSocket rejected with close code `1008` |
 | Voice (`/api/speak`) | Optional (`OptionalUserDep`) + CSRF header | Full access when voice configured |
+| Privacy (`/privacy/`) | Optional (`OptionalUserDep`) | Shows privacy info; data management options require authentication |
 | Auth (`/auth/*`) | None | Public endpoints |
 
 ### CSRF Protection
@@ -134,6 +157,146 @@ Create a new user account.
 Clear session and logout user.
 
 **Response**: Clears `sb-access-token` cookie, redirects to `/auth/login`
+
+---
+
+### GET /auth/forgot-password
+
+Render the forgot password page with an email input form.
+
+**Response**: Full HTML page with forgot password form.
+
+**Example**:
+```bash
+curl http://localhost:8000/auth/forgot-password
+```
+
+---
+
+### POST /auth/forgot-password
+
+Send a password reset email via Supabase Auth. Always returns a success message regardless of whether the email exists, to prevent email enumeration.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+**Rate Limiting**: Same rate limit as other auth endpoints.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | string | Yes | User's email address |
+
+**Response**: Rendered forgot password page with a success message confirming the reset link was sent (if the account exists).
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/auth/forgot-password \
+  -H "HX-Request: true" \
+  -d "email=user@example.com"
+```
+
+---
+
+### GET /auth/reset-password
+
+Render the reset password page. This page receives the user after they click the Supabase recovery link in their email. Token exchange happens client-side via JavaScript.
+
+**Response**: Full HTML page with new password form.
+
+**Example**:
+```bash
+curl http://localhost:8000/auth/reset-password
+```
+
+---
+
+### POST /auth/reset-password
+
+Update the user's password using the recovery access token from Supabase Auth.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+**Rate Limiting**: Same rate limit as other auth endpoints.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `password` | string | Yes | New password |
+| `confirm_password` | string | Yes | Password confirmation (must match `password`) |
+| `access_token` | string | No | Recovery access token from Supabase |
+| `refresh_token` | string | No | Recovery refresh token from Supabase |
+
+**Response**:
+- Success: Redirects to `/auth/login` with a success message
+- Error: Returns error message HTML partial (e.g., passwords don't match, token invalid)
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/auth/reset-password \
+  -H "HX-Request: true" \
+  -d "password=newpassword123" \
+  -d "confirm_password=newpassword123" \
+  -d "access_token=<recovery_token>" \
+  -d "refresh_token=<refresh_token>"
+```
+
+---
+
+## Privacy Endpoints
+
+### GET /privacy/
+
+Render the privacy and security information page. Shows privacy practices and data handling details for all users. Authenticated users also see data management options (delete history, delete account).
+
+**Authentication**: Optional (`OptionalUserDep`). Guests see privacy information without data management controls.
+
+**Response**: Full HTML page with privacy and security information.
+
+**Example**:
+```bash
+curl http://localhost:8000/privacy/
+```
+
+---
+
+### POST /privacy/delete-history
+
+Delete all conversation threads and checkpoint data for the authenticated user. Clears the `active_thread` cookie.
+
+**Authentication**: Required. Redirects to `/auth/login` if unauthenticated.
+
+**Response**: Sets `HX-Redirect: /` header to redirect the user to the home page.
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/privacy/delete-history \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true"
+```
+
+---
+
+### POST /privacy/delete-account
+
+Delete the user's account and all associated data (vocabulary, sessions, lesson progress, checkpoints, auth user). Requires typing "DELETE" as confirmation.
+
+**Authentication**: Required. Redirects to `/auth/login` if unauthenticated.
+
+**Content-Type**: `application/x-www-form-urlencoded`
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `confirm` | string | Yes | Must be exactly `DELETE` to proceed |
+
+**Response**:
+- Success: Clears auth cookie, redirects to home page
+- Error (`422`): Confirmation text did not match
+
+**Example**:
+```bash
+curl -X POST http://localhost:8000/privacy/delete-account \
+  -H "Cookie: sb-access-token=<jwt>" \
+  -H "HX-Request: true" \
+  -d "confirm=DELETE"
+```
 
 ---
 
@@ -875,7 +1038,7 @@ Phase 17 introduces voice conversation capabilities powered by Deepgram. The ser
 - **STT**: Nova-3 (real-time speech recognition with smart formatting and punctuation)
 - **TTS**: Aura-2 (low-latency text-to-speech with natural voices)
 
-**Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie or a `session_id` guest cookie. If neither is present or valid, the WebSocket connection is rejected before acceptance with close code `4001` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
+**Authentication**: WebSocket endpoints (`/ws/transcribe`, `/ws/speak`) require a valid `sb-access-token` JWT cookie or a `session_id` guest cookie. If neither is present or valid, the WebSocket connection is rejected before acceptance with close code `1008` (authentication required). The REST endpoint (`/api/speak`) uses `OptionalUserDep` and requires a CSRF header for the POST request.
 
 **Privacy**: All Deepgram API calls (STT and TTS) are sent with `mip_opt_out=true`, which prevents user audio and text data from being used in Deepgram's Model Improvement Program.
 
@@ -926,7 +1089,7 @@ Real-time speech-to-text proxy using Deepgram Nova-3. The browser captures micro
 
 **Protocol**: WebSocket
 
-**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `4001` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
+**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `1008` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
 
 | Query Parameter | Type | Default | Description |
 |----------------|------|---------|-------------|
@@ -939,7 +1102,7 @@ Browser                        Server                       Deepgram
   |                              |                              |
   |--- WebSocket upgrade ------->|                              |
   |                              |-- validate JWT/session ----  |
-  |                              |   (reject 4001 if invalid)   |
+  |                              |   (reject 1008 if invalid)   |
   |                              |                              |
   |<-- WebSocket accepted -------|                              |
   |                              |--- open STT WebSocket ------>|
@@ -1000,7 +1163,7 @@ Interim results (`is_final: false`) are sent as the user speaks, allowing the UI
 | `1000` | Normal closure | Client disconnected normally |
 | `1008` | Policy violation | Invalid `language` parameter or authentication failure |
 | `1011` | Internal error | Voice features not configured (`DEEPGRAM_API_KEY` missing) or server error |
-| `4001` | Authentication required | Missing or invalid JWT/session cookie |
+| `1008` | Authentication required | Missing or invalid JWT/session cookie |
 
 #### JavaScript Integration
 
@@ -1113,7 +1276,7 @@ Stream TTS audio via WebSocket for low-latency playback. The browser sends JSON 
 
 **Protocol**: WebSocket
 
-**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `4001` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
+**Authentication**: Required. The `sb-access-token` JWT cookie or `session_id` guest cookie must be present. Connection is rejected with close code `1008` if authentication fails. Authentication is validated **before** the WebSocket handshake is accepted.
 
 **Rate Limiting**: 30 text messages per 60 seconds per connection (sliding window). When exceeded, the server sends a JSON error frame and drops the message without forwarding it to Deepgram. The connection remains open.
 
@@ -1129,7 +1292,7 @@ Browser                        Server                       Deepgram
   |--- WebSocket upgrade ------->|                              |
   |   ?voice=aura-2-nestor-es   |                              |
   |                              |-- validate JWT/session ----  |
-  |                              |   (reject 4001 if invalid)   |
+  |                              |   (reject 1008 if invalid)   |
   |                              |-- validate voice parameter   |
   |                              |   (reject 1008 if invalid)   |
   |                              |                              |
@@ -1184,7 +1347,7 @@ The `Flushed` message indicates that all audio for the preceding text has been g
 |------|--------|-------------|
 | `1008` | Policy violation | Invalid `voice` parameter or authentication failure |
 | `1011` | Internal error | Voice features not configured (`DEEPGRAM_API_KEY` missing) or server error |
-| `4001` | Authentication required | Missing or invalid JWT/session cookie |
+| `1008` | Authentication required | Missing or invalid JWT/session cookie |
 
 #### JavaScript Integration
 

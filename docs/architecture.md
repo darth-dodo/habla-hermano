@@ -4,6 +4,31 @@
 
 ---
 
+## Table of Contents
+
+- [Current Implementation Status](#current-implementation-status)
+- [Learning Goals](#learning-goals)
+- [The Hermano Personality System](#the-hermano-personality-system)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [LangGraph Learning Progression](#langgraph-learning-progression)
+- [State Definition](#state-definition-full)
+- [Graph Visualization](#graph-visualization)
+- [Micro-Lessons Data Flow](#micro-lessons-data-flow-phase-6-revised-phase-23)
+- [Progress Data Flow](#progress-data-flow-phase-7-8)
+- [Node Implementations](#node-implementations)
+- [Prompts by Level](#prompts-by-level)
+- [API Endpoints](#api-endpoints)
+- [Database Schema](#database-schema-supabase-postgresql)
+- [Middleware Stack](#middleware-stack)
+- [Layer Architecture](#layer-architecture)
+- [Security and Privacy](#security-and-privacy)
+- [Lesson Completion Service](#lesson-completion-service)
+- [Conversation Threads](#conversation-threads-phase-26)
+- [Voice Architecture](#voice-architecture-phases-17--21)
+
+---
+
 ## Current Implementation Status
 
 | Phase | Description | Status |
@@ -23,7 +48,7 @@
 | **Phase 13** | Mobile Responsive - Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Completed |
 | **Phase 14** | Learning Paths - Structured paths, adaptive recommendations, learn page | ✅ Completed |
 | **Phase 15** | SSE Streaming - Real-time token streaming via POST /chat/stream and stream.js | ✅ Completed |
-| **Phase 16** | ES Module Migration - JavaScript restructured into 6 ES modules with Vitest testing | ✅ Completed |
+| **Phase 16** | ES Module Migration - JavaScript restructured into 11 ES modules with Vitest testing | ✅ Completed |
 | **Phase 17** | Voice Conversation - Deepgram STT/TTS via WebSocket proxy, graceful degradation | ✅ Completed |
 | **Phase 19** | Conversational Lesson Delivery - Phase machine teaches lessons through chat UI | ✅ Completed |
 | **Phase 21** | Voice FSM Refactor - FSM + AbortController, split into 5 sub-modules | ✅ Completed |
@@ -161,7 +186,8 @@ def get_prompt_for_level(language: str, level: str) -> str:
 | **Auth** | Supabase Auth | JWT-based authentication with httponly cookies |
 | **Styling** | Tailwind CSS + CSS Variables | Design system with 5 themes (Azulejo/Terracotta/Flamenco/Sangria/Jardín), mobile-responsive |
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time STT/TTS via JWT-authenticated WebSocket proxy |
-| **JS Testing** | Vitest + jsdom | 241 tests with ~90% coverage on ES modules |
+| **JS Testing** | Vitest + jsdom | 238 tests with ~90% coverage on ES modules |
+| **Observability** | Sentry | Error monitoring for backend (FastAPI) and frontend (JS) |
 
 ---
 
@@ -187,11 +213,13 @@ habla-hermano/
 │   │   └── routes/
 │   │       ├── __init__.py      # [Implemented]
 │   │       ├── chat.py          # [Implemented] GET / (chat page with optional ?lesson= param), POST /chat, POST /chat/stream (freeform + lesson modes)
-│   │       ├── auth.py          # [Implemented] Login, signup, logout
+│   │       ├── auth.py          # [Implemented] Login, signup, logout, password reset (forgot + reset)
 │   │       ├── lessons.py       # [Implemented] Micro-lesson endpoints (routing only; completion logic in services/lesson_completion.py)
 │   │       ├── progress.py      # [Implemented] Vocabulary, stats endpoints
 │   │       ├── review.py        # [Implemented] Spaced repetition review endpoints
 │   │       ├── learn.py         # [Implemented] Learning path and recommendation endpoints
+│   │       ├── privacy.py       # [Implemented] Privacy & security info page
+│   │       ├── threads.py       # [Implemented] Thread CRUD: list, create, rename, delete (Phase 26)
 │   │       └── voice.py         # [Implemented] WebSocket STT/TTS proxy (JWT-authenticated) + REST TTS endpoint
 │   │
 │   ├── config.py                  # [Implemented] Canonical Settings + get_settings (moved from api/config.py)
@@ -2257,7 +2285,7 @@ This section consolidates the full security posture of the application. Individu
 | Transport | HSTS, X-Frame-Options, X-Content-Type-Options | `src/api/middleware.py` |
 | Content Security | Nonce-based CSP (`'nonce-{nonce}'` for script-src) | `src/api/middleware.py` |
 | CSRF | Custom-header pattern (HX-Request / X-Requested-With) | `src/api/middleware.py` |
-| WebSocket Auth | JWT validated on connect, reject code 4001 | `src/api/routes/voice.py` |
+| WebSocket Auth | JWT or session cookie validated on connect, reject code 1008 | `src/api/routes/voice.py` |
 | Rate Limiting | REST decorator + WebSocket sliding window per-connection | `src/api/rate_limit.py` |
 | Row-Level Security | RLS on all app tables + all 4 checkpoint tables | Supabase PostgreSQL |
 | Encryption at Rest | Fernet field-level + checkpoint blob encryption | `src/db/encryption.py` |
@@ -2265,6 +2293,7 @@ This section consolidates the full security posture of the application. Individu
 | XSS Prevention | nh3 sanitization + markupsafe.escape() | Templates, routes |
 | Cookie Security | Signed with itsdangerous, environment-aware secure flag | `src/api/cookies.py` |
 | Auth Gating | JWT required via ALLOW_UNVERIFIED_JWT=false | `src/config.py` |
+| Error Monitoring | Sentry SDK (backend + frontend) | `src/api/main.py`, `base.html` |
 
 ### Encryption at Rest (Phase 24)
 

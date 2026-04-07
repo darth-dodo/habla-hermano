@@ -4,6 +4,28 @@
 
 ---
 
+## Table of Contents
+
+- [Test Summary](#test-summary)
+- [Running Tests](#running-tests)
+- [Phase 3 Test Coverage](#phase-3-test-coverage)
+- [Phase 6 Test Coverage](#phase-6-test-coverage)
+- [Phase 7 Test Coverage](#phase-7-test-coverage)
+- [Phase 12 Test Coverage](#phase-12-test-coverage)
+- [Phase 13 Test Coverage](#phase-13-test-coverage)
+- [Phase 14 Test Coverage](#phase-14-test-coverage)
+- [Phase 19/23 Test Coverage](#phase-1923-test-coverage)
+- [Phase 26 Test Coverage](#phase-26-test-coverage)
+- [JavaScript Test Suite](#javascript-test-suite)
+- [E2E Tests (Playwright)](#e2e-tests-playwright)
+- [Test Fixtures](#test-fixtures)
+- [Test Coverage Goals](#test-coverage-goals)
+- [Test Architecture](#test-architecture)
+- [Continuous Integration](#continuous-integration)
+- [Related Documentation](#related-documentation)
+
+---
+
 ## Test Summary
 
 | Category | Test File | Test Cases | Coverage Focus |
@@ -52,8 +74,6 @@
 | JS Scaffold | `tests/js/scaffold.test.js` | 15 | Click-to-insert word bank functionality |
 | JS Shortcuts | `tests/js/shortcuts.test.js` | 12 | Keyboard shortcuts (/, Shift+Enter, Escape, Cmd+Shift+N) |
 | JS HTMX | `tests/js/htmx-handlers.test.js` | 11 | HTMX event handlers (afterSwap, scroll, errors) |
-| JS Lesson | `tests/js/lesson.test.js` | 45 | Lesson mode detection, progress bar, completion overlay |
-| JS Theme | `tests/js/theme.test.js` | 7 | Theme picker, localStorage persistence |
 | Lesson Chat Node | `agent/nodes/test_lesson_chat.py` | 45 | Phase 19/23 lesson respond node, phase machine, exercise evaluation |
 | Chat Routes (Lesson) | `api/routes/test_chat.py` | 16 | Phase 23 unified chat routes: lesson mode, thread ID, streaming, resume |
 | Answer Normalization | `agent/nodes/test_lesson_chat.py` | 15 | Phase 23 normalize_answer, fill-blank, translate normalization |
@@ -62,8 +82,24 @@
 | Thread Service | `services/test_threads.py` | 11 | Phase 26 ThreadService CRUD, thread ID format, `touch()` timestamp |
 | Thread Titling | `services/test_thread_titling.py` | 5 | Phase 26 auto-title via Claude Haiku, fallback, truncation, quote stripping |
 | Thread Messages | `services/test_thread_messages.py` | 5 | Phase 26 LangGraph checkpoint extraction, role mapping, empty/error handling |
+| Checkpoint Purge | `agent/test_checkpoint_purge.py` | 13 | Checkpoint cleanup and purge logic |
+| LLM Zero Retention | `agent/test_llm_zero_retention.py` | 4 | Anthropic zero-retention header enforcement |
+| Auth Cache | `api/routes/test_auth_cache.py` | 7 | Auth page Cache-Control headers |
+| Password Reset | `api/routes/test_auth_password_reset.py` | 13 | Forgot password, reset password flows via Supabase Auth |
+| Voice Routes | `api/routes/test_voice.py` | 55 | STT/TTS endpoint validation, auth, rate limiting |
+| Voice Integration | `api/routes/test_voice_integration.py` | 60 | WebSocket STT/TTS proxy integration tests |
+| Chat Security | `api/test_chat_security.py` | 3 | Chat route security hardening |
+| Privacy Routes | `api/test_privacy.py` | 16 | Privacy page, delete history, delete account |
+| Sanitization | `api/test_sanitize.py` | 43 | Input sanitization with nh3 and markupsafe |
+| Security Headers | `api/test_security_headers.py` | 17 | CSP, HSTS, X-Frame-Options, Cache-Control |
+| SSE Streaming | `api/test_streaming.py` | 34 | Server-Sent Events streaming logic |
+| Fernet Cipher | `db/test_fernet_cipher.py` | 10 | FernetCipher encrypt/decrypt, key derivation |
+| Repository Encryption | `db/test_repository_encryption.py` | 19 | Encrypt-on-write, decrypt-on-read boundary |
+| Data Retention | `services/test_data_retention.py` | 6 | Data retention and cleanup policies |
+| Rate Limiting | `test_rate_limiting.py` | 13 | REST and WebSocket rate limit enforcement |
+| JS FSM | `tests/js/fsm.test.js` | 21 | Finite state machine: createMachine, interpret, transitions |
 
-**Total**: ~2,466 tests (~2,196+ Python + ~238 JavaScript) with 97% code coverage
+**Total**: ~2,529 tests (2,291 Python + 238 JavaScript) with 97% code coverage
 
 ---
 
@@ -71,7 +107,7 @@
 
 ### Parallel Execution with pytest-xdist
 
-Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,196+ Python test suite (Phase 26 added ~30 more tests across the thread service and API layers).
+Tests run in parallel using `pytest-xdist` with `-n auto`, which auto-detects the number of CPU cores and distributes tests across worker processes. This significantly reduces the total test run time for the 2,291 Python test suite.
 
 ```bash
 # Default: parallel execution (auto-detect cores)
