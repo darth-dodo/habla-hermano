@@ -66,6 +66,13 @@ block-beta
 - ✅ Message encryption & privacy: Fernet field-level encryption, checkpoint blob encryption, RLS on checkpoint tables, PBKDF2 key derivation (Phase 24)
 - ✅ Design system revamp: Jardin theme, Plus Jakarta Sans typography, spacing tokens, SVG lesson icons, WCAG AA compliance (Phase 25)
 - ✅ Conversation threads: per-thread language/level, thread sidebar with SPA switching, auto-titling via Claude Haiku, `active_thread` httponly cookie, 717 new Python tests (Phase 26)
+- ✅ Privacy & security page with password reset flow (forgot + reset via Supabase Auth) (Phase 27)
+- ✅ Sentry error monitoring for backend (FastAPI) and frontend (JS)
+- ✅ Progress page redesign with analytics dashboard and language filter
+- ✅ WebSocket TTS uses linear16 encoding for Deepgram compatibility
+- ✅ Connection pool for LangGraph checkpointer to prevent concurrent query errors
+- ✅ Cookie signing with itsdangerous and auth error sanitization
+- ✅ JWT refresh fix in review routes to prevent token expiry errors
 
 ---
 
@@ -178,6 +185,12 @@ flowchart TB
 |------------|---------|
 | Vitest | JavaScript unit test runner |
 | jsdom | Browser environment simulation |
+
+### Observability
+
+| Technology | Purpose |
+|------------|---------|
+| Sentry | Error monitoring (backend + frontend) |
 
 ### DevOps
 
@@ -819,7 +832,7 @@ The frontend JavaScript is organized as ES Modules loaded via `main.js`:
 | `voice.js` | `src/static/js/modules/voice.js` | Voice orchestrator (imports sub-modules below) |
 | `voice-constants.js` | `src/static/js/modules/voice-constants.js` | Voice configuration constants |
 | `voice-stt.js` | `src/static/js/modules/voice-stt.js` | Speech-to-text via Deepgram WebSocket |
-| `voice-tts.js` | `src/static/js/modules/voice-tts.js` | Text-to-speech via Deepgram REST |
+| `voice-tts.js` | `src/static/js/modules/voice-tts.js` | Text-to-speech via Deepgram WebSocket (linear16) with REST fallback |
 | `voice-ui.js` | `src/static/js/modules/voice-ui.js` | Voice UI state and controls |
 | `pcm-processor.js` | `src/static/js/pcm-processor.js` | AudioWorklet for mobile STT PCM encoding |
 

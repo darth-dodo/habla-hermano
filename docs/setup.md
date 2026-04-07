@@ -56,6 +56,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 | Variable | Purpose |
 |----------|---------|
 | `DEEPGRAM_API_KEY` | Enables voice input/output (STT/TTS) |
+| `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
 | `ANTHROPIC_ZERO_RETENTION` | Request Anthropic not to log API data |
 | `DEBUG` | Enable debug mode (local dev only) |
 

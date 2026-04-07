@@ -124,9 +124,10 @@ No sign-up required. Start chatting immediately as a guest -full conversation wi
 
 Create an account to unlock:
 - **Vocabulary tracking** -words you learn are saved and reviewed via SM-2 spaced repetition
-- **Progress dashboard** -visualize your learning journey with charts and stats
+- **Progress dashboard** -visualize your learning journey with analytics charts, language filters, and detailed stats
 - **Conversation threads** -maintain multiple independent conversations with per-thread language and level
 - **Password reset** -forgot your password? Reset it via email through Supabase Auth
+- **Account deletion** -delete your account and all associated data (vocabulary, sessions, checkpoints)
 
 ### Privacy & Encryption
 
@@ -151,8 +152,9 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
 | **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
+| **Monitoring** | Sentry | Error tracking and performance monitoring (backend + frontend) |
 | **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
-| **Testing** | pytest + Vitest | 2,529 tests (2,291 Python + 238 JS), strict mypy, ruff linting |
+| **Testing** | pytest + Vitest | 2,529 tests (2,291 Python + 238 JS), 97% coverage, strict mypy, ruff linting |
 
 ### System Overview
 
@@ -284,6 +286,7 @@ docs/                Architecture, API reference, design docs, ADRs
 | **CORS** | Explicit `allow_headers` allowlist -no wildcard |
 | **Thread ownership** | `thread_id` ownership verified server-side before any chat operation |
 | **Password reset** | Supabase Auth email recovery with client-side token extraction and server-side session establishment |
+| **Error monitoring** | Sentry integration (backend + frontend) for error tracking and performance monitoring |
 
 See [Architecture → Security](docs/architecture.md) for the full threat model.
 

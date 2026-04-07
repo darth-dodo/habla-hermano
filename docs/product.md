@@ -4,6 +4,28 @@
 
 ---
 
+## Table of Contents
+
+- [Vision](#vision)
+- [The Hermano Personality](#the-hermano-personality)
+- [What's Built (Current State)](#whats-built-current-state)
+- [Pedagogical Approach](#pedagogical-approach)
+- [The "Gentle Nudge" Pattern](#the-gentle-nudge-pattern)
+- [Pronunciation Tips](#pronunciation-tips)
+- [Spaced Repetition](#spaced-repetition)
+- [Learning Paths](#learning-paths)
+- [Voice Conversation](#voice-conversation)
+- [The A0 → B1 Journey](#the-a0--b1-journey)
+- [Target Users](#target-users)
+- [UX Principles](#ux-principles)
+- [Technical Architecture](#technical-architecture)
+- [Roadmap](#roadmap)
+- [Success Metrics](#success-metrics)
+- [What We're NOT Building](#what-were-not-building)
+- [Documentation](#documentation)
+
+---
+
 ## Vision
 
 Habla Hermano introduces you to **Hermano** - a friendly, laid-back language buddy who takes absolute beginners (A0) to confident intermediate speakers (B1). Unlike apps that drill vocabulary or grammar in isolation, Hermano gets you talking from day one—with intelligent scaffolding that fades as you improve.
@@ -79,6 +101,9 @@ Hermano: "Sí, tienes razón. By the way, you could also say 'complejo' for a mo
 | **Conversation Threads** | ✅ Complete | Per-thread language/level, sidebar with SPA switching, auto-titling via Claude Haiku |
 | **Password Reset** | ✅ Complete | Forgot password flow via Supabase Auth email, recovery token handling |
 | **Privacy & Security Page** | ✅ Complete | Dedicated privacy info page accessible from sidebar navigation |
+| **Progress Analytics** | ✅ Complete | Redesigned progress page with analytics dashboard, language filter, and detailed charts |
+| **Account Deletion** | ✅ Complete | Full account deletion removes all user data (vocabulary, sessions, checkpoints) |
+| **Error Monitoring** | ✅ Complete | Sentry integration for backend and frontend error tracking |
 
 ### Guest vs. Authenticated Experience
 
@@ -99,6 +124,7 @@ To unlock the full learning loop, guests need to sign up:
 | Conversational lessons | Yes | Yes (+ score persistence) |
 | Conversation threads | -- | Yes |
 | Password reset | -- | Yes |
+| Account deletion | -- | Yes |
 
 ---
 
@@ -457,7 +483,7 @@ Voice is available to guests — it's a core part of the conversation experience
 ## Technical Architecture
 
 Built with:
-- **Backend**: FastAPI + Python 3.11
+- **Backend**: FastAPI + Python 3.12+
 - **Frontend**: HTMX + Jinja2 + Tailwind CSS
 - **AI Agent**: LangGraph StateGraph with conditional routing
 - **LLM**: Claude API via langchain-anthropic
@@ -504,9 +530,9 @@ See [Architecture Documentation](architecture.md) for details.
 | **Phase 13** | Mobile Responsive | Safe areas, dynamic viewport, touch optimization, responsive layouts | ✅ Complete |
 | **Phase 14** | Learning Paths | Structured A0→B1 progression with adaptive daily recommendations | ✅ Complete |
 | **Phase 15** | SSE Streaming | Real-time token streaming via Server-Sent Events; POST /chat/stream endpoint, frontend ReadableStream with blinking cursor, feedback sections arrive as server-rendered HTML after response completes; existing POST /chat preserved as fallback | ✅ Complete |
-| **Phase 16** | ES Module Refactor | 6 ES modules, 186 Vitest tests, mobile hardening, TTS UX improvements | ✅ Complete |
+| **Phase 16** | ES Module Refactor | 11 ES modules, 238 Vitest tests, mobile hardening, TTS UX improvements | ✅ Complete |
 | **Phase 17** | Voice Conversation | Deepgram STT (Nova-3) + TTS (Aura-2), WebSocket proxy, browser microphone capture | ✅ Complete |
-| **Phase 18** | JavaScript Testing | Vitest test suite (189 tests, ~90% coverage) | ✅ Complete |
+| **Phase 18** | JavaScript Testing | Vitest test suite (238 tests, 97% coverage) | ✅ Complete |
 | **Phase 19** | Conversational Lessons | Hermano teaches lessons through chat UI with phase machine (intro→teaching→exercise→complete), CEFR teaching adjustments, progress bar, checkpoint-aware inputs | ✅ Complete |
 | **Phase 23** | Unified Lesson Experience | Lessons open in main chat via `/?lesson={id}`, old lesson player removed, LLM-based translation evaluation | ✅ Complete |
 | **Phase 24** | Message Encryption & Privacy | Fernet encryption at rest for PII fields and checkpoint blobs, row-level security on checkpoint tables | ✅ Complete |
@@ -514,6 +540,8 @@ See [Architecture Documentation](architecture.md) for details.
 | **P1 Audit** | Audit Remediation (HIGH) | 7 HIGH severity items — WebSocket auth, CSRF middleware, layer violations, SRP extraction | ✅ Complete |
 | **P2 Audit** | Audit Remediation (MEDIUM) | 10 MEDIUM severity items — CSP nonce, rate limiting, caching, JSON logging | ✅ Complete |
 | **P3 Audit** | Audit Remediation (LOW) | 7 LOW severity items — Cache-Control headers, voice docs, integration tests, cleanup | ✅ Complete |
+| **Phase 26** | Conversation Threads | Per-thread language/level, sidebar with SPA switching, auto-titling via Claude Haiku | ✅ Complete |
+| **Phase 27** | Privacy & Security | Privacy info page, password reset flow via Supabase Auth email recovery | ✅ Complete |
 
 ### Future Ideas
 
