@@ -20,7 +20,7 @@ class TestValidationConstants:
         assert {"A0", "A1", "A2", "B1"} == VALID_LEVELS
 
     def test_valid_languages(self) -> None:
-        assert {"es", "de", "fr"} == VALID_LANGUAGES
+        assert {"es", "de", "fr", "hi"} == VALID_LANGUAGES
 
 
 class TestMakeErrorHtml:

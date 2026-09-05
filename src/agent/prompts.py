@@ -60,6 +60,21 @@ LANGUAGE_ADAPTER: dict[str, dict[str, str]] = {
         "stress_rule": "always the last syllable of a word or phrase",
         "sound_tip": "most final consonants are silent, 'u' is like saying 'ee' with rounded lips, and liaison links words together",
     },
+    "hi": {
+        # Hinglish: code-mixed Hindi-English written in Roman script
+        "language_name": LANGUAGE_NAMES["hi"],
+        "hello": "Namaste",
+        "my_name_is": "Mera naam",
+        "goodbye": "Alvida",
+        "thank_you": "Shukriya",
+        "please": "Please",
+        "yes": "Haan",
+        "no": "Nahin",
+        # Pronunciation guidance
+        "tricky_sounds": "retroflex consonants (t/d with the tongue curled back), aspirated sounds (kh, gh, th, dh), and nasal vowels",
+        "stress_rule": "fairly even, with a light stress on the first or second-to-last syllable",
+        "sound_tip": "'v' and 'w' often blend, retroflex 't'/'d' curl the tongue back, and vowels stay short and pure",
+    },
 }
 
 # Base prompt template with {lang} placeholders

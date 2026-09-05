@@ -534,7 +534,7 @@ class TestScaffoldNodeEdgeCases:
         assert result["scaffolding"]["enabled"] is False
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("language", ["es", "de", "fr"])
+    @pytest.mark.parametrize("language", ["es", "de", "fr", "hi"])
     async def test_handles_all_languages(self, language: str) -> None:
         """scaffold_node should handle all languages."""
         state: ConversationState = {
