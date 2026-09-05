@@ -65,7 +65,7 @@ class TestGetCheckpointerContextManagerWithoutSupabase:
 
         # Create a mock settings with supabase_configured = False
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="",
             SUPABASE_ANON_KEY="",
             SUPABASE_DB_URL="",
@@ -159,7 +159,7 @@ class TestCheckpointerIntegrationWithoutSupabase:
         from src.api.config import Settings
 
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="",
             SUPABASE_ANON_KEY="",
             SUPABASE_DB_URL="",
@@ -212,7 +212,7 @@ class TestCheckpointerEdgeCases:
         from src.api.config import Settings
 
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="",
             SUPABASE_ANON_KEY="",
             SUPABASE_DB_URL="",
@@ -275,7 +275,7 @@ class TestGetPostgresCheckpointer:
         from src.api.config import Settings
 
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="",
             SUPABASE_ANON_KEY="",
             SUPABASE_DB_URL="",
@@ -304,7 +304,7 @@ class TestCheckpointerSupabaseSelection:
         from src.api.config import Settings
 
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="",
             SUPABASE_ANON_KEY="",
             SUPABASE_DB_URL="",
@@ -324,7 +324,7 @@ class TestCheckpointerSupabaseSelection:
 
         # Mock settings with Supabase configured (but invalid URL to test selection)
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SUPABASE_URL="https://test.supabase.co",
             SUPABASE_ANON_KEY="test-anon-key",
             SUPABASE_DB_URL="postgresql://user:pass@localhost:5432/test",

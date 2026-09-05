@@ -149,7 +149,7 @@ async def enhance_step_node(state: LessonState) -> dict[str, Any]:
     )
 
     # Call Claude for enhancement
-    # Anthropic requires at least one HumanMessage
+    # The chat completions API requires at least one HumanMessage
     response = await llm.ainvoke(
         [
             SystemMessage(content=prompt),
@@ -248,7 +248,7 @@ async def validate_exercise_node(state: LessonState) -> dict[str, Any]:
         is_correct=is_correct,
     )
 
-    # Anthropic requires at least one HumanMessage
+    # The chat completions API requires at least one HumanMessage
     response = await llm.ainvoke(
         [
             SystemMessage(content=feedback_prompt),

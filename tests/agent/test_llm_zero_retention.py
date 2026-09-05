@@ -1,7 +1,8 @@
-"""Tests for LLM zero-retention header configuration.
+"""Tests for LLM zero-retention (data-collection) configuration.
 
-Verifies that the x-no-store header is conditionally set on ChatAnthropic
-instances based on the ANTHROPIC_ZERO_RETENTION setting.
+Verifies that the OpenRouter ``provider.data_collection="deny"`` policy is
+conditionally applied to ChatOpenAI instances (via ``extra_body``) based on
+the OPENROUTER_ZERO_RETENTION setting.
 """
 
 from unittest.mock import patch
@@ -24,35 +25,39 @@ def _make_settings(*, zero_retention: bool) -> Settings:
     """Create test settings with the given zero-retention flag."""
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
-        ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+        OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
         SECRET_KEY="test-secret",  # pragma: allowlist secret
-        ANTHROPIC_ZERO_RETENTION=zero_retention,
+        OPENROUTER_ZERO_RETENTION=zero_retention,
     )
 
 
-class TestZeroRetentionHeaders:
-    """Tests for x-no-store header on ChatAnthropic instances."""
+def _data_collection(llm: object) -> str | None:
+    """Extract the OpenRouter data_collection policy from an LLM's extra_body."""
+    extra_body = getattr(llm, "extra_body", None) or {}
+    provider = extra_body.get("provider", {}) if isinstance(extra_body, dict) else {}
+    return provider.get("data_collection")
+
+
+class TestZeroRetentionDataCollection:
+    """Tests for the provider.data_collection policy on ChatOpenAI instances."""
 
     @pytest.mark.usefixtures("_clear_cache")
-    def test_no_extra_headers_when_disabled(self) -> None:
-        """When ANTHROPIC_ZERO_RETENTION=False, no default_headers are set."""
+    def test_no_data_policy_when_disabled(self) -> None:
+        """When OPENROUTER_ZERO_RETENTION=False, no data_collection policy is set."""
         settings = _make_settings(zero_retention=False)
         with patch("src.config.get_settings", return_value=settings):
             llm = get_llm("default")
 
-        # default_headers should be absent or not contain x-no-store
-        headers = getattr(llm, "default_headers", None) or {}
-        assert "x-no-store" not in headers
+        assert _data_collection(llm) is None
 
     @pytest.mark.usefixtures("_clear_cache")
-    def test_x_no_store_header_when_enabled(self) -> None:
-        """When ANTHROPIC_ZERO_RETENTION=True, x-no-store header is set."""
+    def test_data_collection_deny_when_enabled(self) -> None:
+        """When OPENROUTER_ZERO_RETENTION=True, data_collection is set to 'deny'."""
         settings = _make_settings(zero_retention=True)
         with patch("src.config.get_settings", return_value=settings):
             llm = get_llm("default")
 
-        headers = getattr(llm, "default_headers", {})
-        assert headers.get("x-no-store") == "true"
+        assert _data_collection(llm) == "deny"
 
     @pytest.mark.usefixtures("_clear_cache")
     def test_cache_returns_same_instance(self) -> None:
@@ -73,6 +78,6 @@ class TestZeroRetentionHeaders:
             llm_analysis = get_llm("analysis")
 
         assert llm_default is not llm_analysis
-        # Both should still carry the header
-        assert getattr(llm_default, "default_headers", {}).get("x-no-store") == "true"
-        assert getattr(llm_analysis, "default_headers", {}).get("x-no-store") == "true"
+        # Both should still carry the data_collection policy
+        assert _data_collection(llm_default) == "deny"
+        assert _data_collection(llm_analysis) == "deny"

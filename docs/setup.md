@@ -8,7 +8,7 @@ Step-by-step instructions for setting up Habla Hermano locally and deploying to 
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - Node.js 18+ (for Tailwind CSS and Vitest)
 - A [Supabase](https://supabase.com) account (free tier works)
-- An [Anthropic API key](https://console.anthropic.com/)
+- An [OpenRouter API key](https://openrouter.ai/keys)
 
 ## 1. Supabase Project Setup
 
@@ -45,7 +45,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 
 | Variable | Source |
 |----------|--------|
-| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
+| `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `SUPABASE_URL` | Supabase dashboard > Settings > API |
 | `SUPABASE_ANON_KEY` | Supabase dashboard > Settings > API |
 | `SUPABASE_DB_URL` | Supabase dashboard > Settings > Database > Connection string |
@@ -57,7 +57,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 |----------|---------|
 | `DEEPGRAM_API_KEY` | Enables voice input/output (STT/TTS) |
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
-| `ANTHROPIC_ZERO_RETENTION` | Request Anthropic not to log API data |
+| `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |
 | `DEBUG` | Enable debug mode (local dev only) |
 
 ## 4. Install and Run
