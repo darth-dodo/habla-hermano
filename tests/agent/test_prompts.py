@@ -7,7 +7,7 @@ that define system prompts for each CEFR level.
 
 import pytest
 
-from src.agent.prompts import LEVEL_PROMPTS, get_prompt_for_level
+from src.agent.prompts import LANGUAGE_ADAPTER, LEVEL_PROMPTS, get_prompt_for_level
 
 
 class TestLevelPromptsStructure:
@@ -217,6 +217,38 @@ class TestGetPromptForLevelGerman:
         """German B1 prompt should mention intermediate level."""
         prompt = get_prompt_for_level("de", "B1")
         assert "intermediate" in prompt.lower()
+
+
+class TestGetPromptForLevelHinglish:
+    """Tests for get_prompt_for_level with Hinglish (target taught using English)."""
+
+    @pytest.mark.parametrize("level", ["A0", "A1", "A2", "B1"])
+    def test_returns_prompt_for_all_levels(self, level: str) -> None:
+        """Should return a prompt for all valid levels in Hinglish."""
+        prompt = get_prompt_for_level("hi", level)
+        assert isinstance(prompt, str)
+        assert len(prompt) > 0
+
+    def test_hinglish_is_the_target_language(self) -> None:
+        """Hinglish prompt should name Hinglish as the language being taught."""
+        prompt = get_prompt_for_level("hi", "A1")
+        assert "Hinglish" in prompt
+        assert "Spanish" not in prompt
+
+    def test_english_remains_the_explanation_language(self) -> None:
+        """Hinglish is taught using English, so English is still referenced."""
+        prompt = get_prompt_for_level("hi", "A0")
+        assert "English" in prompt
+
+    def test_a0_uses_hinglish_greeting(self) -> None:
+        """Hinglish A0 prompt should use the Hinglish greeting, not Spanish."""
+        prompt = get_prompt_for_level("hi", "A0")
+        assert "Namaste" in prompt or "namaste" in prompt
+        assert "Hola" not in prompt
+
+    def test_adapter_key_parity_with_spanish(self) -> None:
+        """Hinglish adapter must define the same keys as Spanish (avoids KeyError)."""
+        assert set(LANGUAGE_ADAPTER["hi"].keys()) == set(LANGUAGE_ADAPTER["es"].keys())
 
 
 class TestGetPromptForLevelComparison:

@@ -7,9 +7,14 @@ This module lives at the ``src`` level so that inner layers (agent, services)
 can import it without depending on the API layer.
 """
 
-VALID_LANGUAGES: frozenset[str] = frozenset({"es", "de", "fr"})
+VALID_LANGUAGES: frozenset[str] = frozenset({"es", "de", "fr", "hi"})
 VALID_LEVELS: frozenset[str] = frozenset({"A0", "A1", "A2", "B1"})
-LANGUAGE_NAMES: dict[str, str] = {"es": "Spanish", "de": "German", "fr": "French"}
+LANGUAGE_NAMES: dict[str, str] = {
+    "es": "Spanish",
+    "de": "German",
+    "fr": "French",
+    "hi": "Hinglish",
+}
 MAX_MESSAGE_LENGTH: int = 2000
 MAX_DAYS: int = 365
 MIN_DAYS: int = 1
@@ -21,7 +26,7 @@ def get_language_name(code: str) -> str:
     """Convert a language code to its human-readable name.
 
     Args:
-        code: Language code (es, de, fr).
+        code: Language code (es, de, fr, hi).
 
     Returns:
         Human-readable language name, defaulting to "Spanish".

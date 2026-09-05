@@ -71,6 +71,7 @@ Variables expected:
                         <span x-show="language === 'es'" class="text-lg leading-none">🇪🇸</span>
                         <span x-show="language === 'de'" class="text-lg leading-none">🇩🇪</span>
                         <span x-show="language === 'fr'" class="text-lg leading-none">🇫🇷</span>
+                        <span x-show="language === 'hi'" class="text-lg leading-none">🇮🇳</span>
                         <svg class="w-3 h-3 text-text-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -91,7 +92,7 @@ Variables expected:
                         aria-label="Select language"
                     >
                         <div class="p-2">
-                            {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French')] %}
+                            {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
                             <button
                                 @click="language = '{{ lang_code }}'; open = false; if ($refs.languageInput) $refs.languageInput.value = '{{ lang_code }}'; localStorage.setItem('hermano-language', '{{ lang_code }}'); if (typeof onLanguageChange === 'function') onLanguageChange('{{ lang_code }}')"
                                 role="option"
