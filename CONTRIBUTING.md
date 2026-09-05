@@ -24,7 +24,7 @@ Thanks for your interest in contributing. This document covers the basics for ge
    ```
 
    Fill in at minimum:
-   - `ANTHROPIC_API_KEY` -- from [console.anthropic.com](https://console.anthropic.com/)
+   - `OPENROUTER_API_KEY` -- from [openrouter.ai/keys](https://openrouter.ai/keys)
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` -- from your [Supabase](https://supabase.com) project
    - `SECRET_KEY` -- generate with `python -c "import secrets; print(secrets.token_urlsafe(32))"`
 
