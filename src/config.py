@@ -17,10 +17,11 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables.
 
     Attributes:
-        ANTHROPIC_API_KEY: API key for Anthropic Claude models.
+        OPENROUTER_API_KEY: API key for OpenRouter (routes to Claude and other models).
+        OPENROUTER_BASE_URL: Base URL for the OpenRouter OpenAI-compatible API.
         DEBUG: Enable debug mode with detailed errors and auto-reload.
         APP_NAME: Display name for the application.
-        LLM_MODEL: Claude model identifier to use.
+        LLM_MODEL: OpenRouter model identifier to use (e.g. "anthropic/claude-haiku-4.5").
         LLM_TEMPERATURE: Sampling temperature for LLM responses.
         HOST: Server host address.
         PORT: Server port number.
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     )
 
     # Required settings
-    ANTHROPIC_API_KEY: str
+    OPENROUTER_API_KEY: str
 
     # Supabase settings (required for auth and persistence)
     SUPABASE_URL: str = ""
@@ -61,9 +62,15 @@ class Settings(BaseSettings):
     # Voice features (Phase 17) - Deepgram STT/TTS
     DEEPGRAM_API_KEY: str = ""
 
-    # LLM settings
-    LLM_MODEL: str = "claude-haiku-4-5-20251001"
+    # LLM settings (via OpenRouter, OpenAI-compatible API)
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    LLM_MODEL: str = "anthropic/claude-haiku-4.5"
     LLM_TEMPERATURE: float = 0.7
+
+    # Optional OpenRouter app attribution (sent as HTTP-Referer / X-Title headers).
+    # Used for OpenRouter's per-app usage rankings; safe to leave empty.
+    OPENROUTER_APP_URL: str = ""
+    OPENROUTER_APP_TITLE: str = ""
 
     # Server settings
     HOST: str = "127.0.0.1"
@@ -81,8 +88,9 @@ class Settings(BaseSettings):
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
     SENTRY_ENVIRONMENT: str = ""
 
-    # Privacy: request Anthropic to not store input/output
-    ANTHROPIC_ZERO_RETENTION: bool = False
+    # Privacy: when true, restrict OpenRouter routing to providers that do not
+    # collect/train on data (sends provider.data_collection="deny" in requests).
+    OPENROUTER_ZERO_RETENTION: bool = False
 
     # Auto-delete conversation data older than N days (0 = disabled)
     CONVERSATION_RETENTION_DAYS: int = 0

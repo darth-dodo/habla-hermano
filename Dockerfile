@@ -7,11 +7,11 @@
 # Run:     docker run -p 8000:8000 --env-file .env habla-ai
 #
 # Required environment variables:
-#   - ANTHROPIC_API_KEY: API key for Claude LLM access
+#   - OPENROUTER_API_KEY: API key for OpenRouter LLM access
 #
 # Optional environment variables (see .env.example for full list):
 #   - DEBUG: true|false (default: false)
-#   - LLM_MODEL: Model to use (default: claude-haiku-4-5-20251001)
+#   - LLM_MODEL: Model to use (default: anthropic/claude-haiku-4.5)
 #   - SUPABASE_URL: Supabase project URL
 #   - SUPABASE_ANON_KEY: Supabase anonymous/public key
 #   - SUPABASE_SERVICE_KEY: Supabase service role key

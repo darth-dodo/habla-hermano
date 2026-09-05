@@ -397,7 +397,7 @@ class TestVoiceConfig:
         """DEEPGRAM_API_KEY defaults to empty string."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
         )
         assert settings.DEEPGRAM_API_KEY == ""
@@ -406,7 +406,7 @@ class TestVoiceConfig:
         """voice_enabled returns True when DEEPGRAM_API_KEY is set."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             DEEPGRAM_API_KEY="dg-test-key-123",  # pragma: allowlist secret
         )
@@ -416,7 +416,7 @@ class TestVoiceConfig:
         """voice_enabled returns False when DEEPGRAM_API_KEY is empty."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             DEEPGRAM_API_KEY="",
         )
@@ -429,7 +429,7 @@ class TestVoiceConfig:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",  # pragma: allowlist secret
+                "OPENROUTER_API_KEY": "test-key",  # pragma: allowlist secret
                 "SECRET_KEY": "test",
                 "DEEPGRAM_API_KEY": "env-dg-key",  # pragma: allowlist secret
             },

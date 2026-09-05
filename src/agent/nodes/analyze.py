@@ -11,7 +11,7 @@ import json
 import logging
 from typing import Any, Literal, cast
 
-import anthropic
+import openai
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from postgrest.exceptions import APIError
@@ -357,7 +357,7 @@ async def analyze_node(state: ConversationState, config: RunnableConfig) -> dict
         else:
             grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except (openai.APIError, openai.APIConnectionError) as e:
         logger.error("Analysis LLM call failed: %s", e)
         grammar_feedback, new_vocabulary, pronunciation_tips = [], [], []
 

@@ -125,7 +125,7 @@ class TestCacheControlHeaders:
         """In DEBUG mode, static assets should use max-age=3600 (1 hour)."""
         debug_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             DEBUG=True,
         )
@@ -137,7 +137,7 @@ class TestCacheControlHeaders:
         """In production (DEBUG=False), static assets should use max-age=86400 (1 day)."""
         prod_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             DEBUG=False,
         )
@@ -188,7 +188,7 @@ class TestCSPWebSocket:
 
         prod_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             DEBUG=False,
         )
