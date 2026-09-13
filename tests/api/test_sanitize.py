@@ -281,7 +281,7 @@ class TestUnsignJsonCookie:
         """Create test settings for cookie signing."""
         return Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test-cookie-secret",  # pragma: allowlist secret
             DEBUG=True,
         )

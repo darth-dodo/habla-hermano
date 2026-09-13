@@ -1015,10 +1015,10 @@ class TestLessonGetLlm:
     """Tests for get_llm with enhancement profile."""
 
     def test_get_llm_creates_instance(self, mock_settings: Settings) -> None:
-        """Should create ChatAnthropic with higher temperature for creativity."""
+        """Should create ChatOpenAI with higher temperature for creativity."""
         with (
             patch("src.config.get_settings", return_value=mock_settings),
-            patch("src.agent.llm.ChatAnthropic") as mock_chat,
+            patch("src.agent.llm.ChatOpenAI") as mock_chat,
         ):
             mock_chat.return_value = MagicMock()
             from src.agent.llm import get_llm

@@ -139,7 +139,7 @@ class TestPurgeDefaultSettings:
         """Settings.CHECKPOINT_RETENTION_DAYS should default to 30."""
         from src.config import Settings
 
-        settings = Settings(ANTHROPIC_API_KEY="test-key")
+        settings = Settings(OPENROUTER_API_KEY="test-key")
         assert settings.CHECKPOINT_RETENTION_DAYS == 30
 
     @pytest.mark.asyncio
@@ -149,7 +149,7 @@ class TestPurgeDefaultSettings:
         from src.config import Settings
 
         mock_settings = Settings(
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             CHECKPOINT_RETENTION_DAYS=15,
         )
 

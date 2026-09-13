@@ -1250,20 +1250,20 @@ class TestUpdateSm2Node:
 class TestGetLlm:
     """Tests for get_llm with creative profile."""
 
-    def test_creates_chat_anthropic(self) -> None:
-        """get_llm('creative') should create a ChatAnthropic instance with correct params."""
+    def test_creates_chat_openai(self) -> None:
+        """get_llm('creative') should create a ChatOpenAI instance with correct params."""
         from src.api.config import Settings
 
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-review-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-review-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             LLM_MODEL="claude-test-model",
             LLM_TEMPERATURE=0.5,
         )
 
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 from src.agent.llm import get_llm
 

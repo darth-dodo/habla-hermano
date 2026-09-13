@@ -11,7 +11,7 @@ import json
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import anthropic
+import openai
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -769,10 +769,10 @@ class TestScaffoldNodeLLMEdgeCases:
 
     @pytest.mark.asyncio
     async def test_api_error_returns_default_config(self, base_state: ConversationState) -> None:
-        """When LLM raises anthropic.APIError, scaffold_node should return default config."""
+        """When LLM raises openai.APIError, scaffold_node should return default config."""
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
-            side_effect=anthropic.APIError(
+            side_effect=openai.APIError(
                 message="Service unavailable",
                 request=MagicMock(),
                 body=None,
@@ -792,9 +792,9 @@ class TestScaffoldNodeLLMEdgeCases:
     async def test_api_connection_error_returns_default_config(
         self, base_state: ConversationState
     ) -> None:
-        """When LLM raises anthropic.APIConnectionError, scaffold_node should return default config."""
+        """When LLM raises openai.APIConnectionError, scaffold_node should return default config."""
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(side_effect=anthropic.APIConnectionError(request=MagicMock()))
+        mock_llm.ainvoke = AsyncMock(side_effect=openai.APIConnectionError(request=MagicMock()))
 
         with patch("src.agent.nodes.scaffold.get_llm", return_value=mock_llm):
             result = await scaffold_node(base_state)
@@ -819,7 +819,7 @@ class TestScaffoldNodeLLMEdgeCases:
         }
         mock_llm = MagicMock()
         mock_llm.ainvoke = AsyncMock(
-            side_effect=anthropic.APIError(
+            side_effect=openai.APIError(
                 message="error",
                 request=MagicMock(),
                 body=None,

@@ -146,7 +146,7 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 |-------|-----------|-----|
 | **Backend** | FastAPI | Async SSE streaming, Pydantic validation, WebSocket support |
 | **Agent** | LangGraph | Stateful conversation graphs with conditional routing and checkpointing |
-| **LLM** | Claude (Haiku 4.5) | Strong multilingual understanding, structured output for exercises |
+| **LLM** | Claude Haiku 4.5 via OpenRouter | Strong multilingual understanding, structured output for exercises; OpenRouter gives provider flexibility |
 | **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 11 ES modules |
 | **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
@@ -322,7 +322,7 @@ cd habla-hermano
 make install
 
 cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
+# Add your OPENROUTER_API_KEY to .env
 # Optional: DEEPGRAM_API_KEY for voice, SUPABASE_URL + keys for auth/persistence
 
 make dev
