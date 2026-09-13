@@ -125,8 +125,8 @@ Variables expected:
             showPicker: false,
             newLang: localStorage.getItem('hermano-language') || 'es',
             newLevel: localStorage.getItem('hermano-level') || 'A1',
-            flagFor(l) { return l === 'es' ? '🇪🇸' : l === 'de' ? '🇩🇪' : '🇫🇷' },
-            langName(l) { return l === 'es' ? 'Spanish' : l === 'de' ? 'German' : 'French' },
+            flagFor(l) { return l === 'es' ? '🇪🇸' : l === 'de' ? '🇩🇪' : l === 'hi' ? '🇮🇳' : '🇫🇷' },
+            langName(l) { return l === 'es' ? 'Spanish' : l === 'de' ? 'German' : l === 'hi' ? 'Hinglish' : 'French' },
             startChat() {
                 localStorage.setItem('hermano-language', this.newLang);
                 localStorage.setItem('hermano-level', this.newLevel);
@@ -162,7 +162,7 @@ Variables expected:
                 <div>
                     <label class="text-xs font-medium text-text-muted mb-1.5 block">Language</label>
                     <div class="flex gap-1.5">
-                        {% for code, flag, name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French')] %}
+                        {% for code, flag, name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
                         <button
                             @click="newLang = '{{ code }}'"
                             class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer"
@@ -217,7 +217,7 @@ Variables expected:
                     >
                         <!-- Language flag -->
                         <span class="flex-shrink-0 text-base leading-none mt-0.5" aria-hidden="true">
-                            {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% else %}🇪🇸{% endif %}
+                            {% if thread.language == 'es' %}🇪🇸{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% elif thread.language == 'hi' %}🇮🇳{% else %}🇪🇸{% endif %}
                         </span>
 
                         <!-- Title (or rename input) -->

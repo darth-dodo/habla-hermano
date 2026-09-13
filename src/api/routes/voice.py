@@ -192,6 +192,10 @@ ALLOWED_VOICES: frozenset[str] = frozenset(
         # French voices
         "aura-2-agathe-fr",
         "aura-2-hector-fr",
+        # Hinglish: Deepgram has no Hindi voice, so we use an English voice.
+        # Hinglish content is code-mixed Hindi-English in Roman script, which an
+        # English voice reads far better than a Spanish one.
+        "aura-2-arcas-en",
     }
 )
 
@@ -200,6 +204,9 @@ DEFAULT_VOICES: dict[str, str] = {
     "es": "aura-2-nestor-es",
     "de": "aura-2-julius-de",
     "fr": "aura-2-hector-fr",
+    # Hinglish: no Hindi voice on Deepgram — English voice reads Roman-script
+    # Hindi-English code-mixing best.
+    "hi": "aura-2-arcas-en",
 }
 
 # STT language options (includes "multi" for code-switching)

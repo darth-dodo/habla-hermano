@@ -354,10 +354,20 @@ class TestVoiceConstants:
         assert len(french_voices) >= 1
 
     def test_default_voices_cover_all_languages(self) -> None:
-        """DEFAULT_VOICES should have entries for es, de, fr."""
+        """DEFAULT_VOICES should have entries for es, de, fr, hi."""
         assert "es" in DEFAULT_VOICES
         assert "de" in DEFAULT_VOICES
         assert "fr" in DEFAULT_VOICES
+        assert "hi" in DEFAULT_VOICES
+
+    def test_hinglish_uses_english_voice_not_spanish(self) -> None:
+        """Hinglish has no Deepgram Hindi voice, so it maps to an English voice.
+
+        Roman-script Hindi-English code-mixing reads far better with an English
+        voice than the Spanish default it previously fell back to.
+        """
+        assert DEFAULT_VOICES["hi"].endswith("-en")
+        assert not DEFAULT_VOICES["hi"].endswith("-es")
 
     def test_default_voices_are_in_allowed(self) -> None:
         """Every default voice must be in the ALLOWED_VOICES set."""

@@ -90,9 +90,10 @@
                                 <span x-show="language === 'es'">¡Hola!</span>
                                 <span x-show="language === 'de'">Hallo!</span>
                                 <span x-show="language === 'fr'">Bonjour!</span>
+                                <span x-show="language === 'hi'">Namaste!</span>
                             </span>
                             I'm your
-                            <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span>
+                            <span x-show="language === 'es'">Spanish</span><span x-show="language === 'de'">German</span><span x-show="language === 'fr'">French</span><span x-show="language === 'hi'">Hinglish</span>
                             conversation partner. I'll match your
                             <span class="font-medium text-accent" x-text="level"></span> level.
                         </p>
@@ -100,6 +101,7 @@
                             <span x-show="language === 'es'">Start typing in Spanish or ask me anything.</span>
                             <span x-show="language === 'de'">Start typing in German or ask me anything.</span>
                             <span x-show="language === 'fr'">Start typing in French or ask me anything.</span>
+                            <span x-show="language === 'hi'">Start typing in Hinglish or ask me anything.</span>
                         </p>
                     </div>
                 </div>
@@ -150,7 +152,7 @@
                         name="message"
                         id="message-input"
                         rows="1"
-                        :placeholder="language === 'es' ? 'Type in Spanish or English...' : language === 'de' ? 'Type in German or English...' : 'Type in French or English...'"
+                        :placeholder="language === 'es' ? 'Type in Spanish or English...' : language === 'de' ? 'Type in German or English...' : language === 'hi' ? 'Type in Hinglish or English...' : 'Type in French or English...'"
                         autocomplete="off"
                         required
                         class="w-full h-12 px-4 py-3 bg-surface border border-border rounded-xl text-text placeholder-text-subtle transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent-muted focus:outline-none resize-none overflow-hidden leading-normal"

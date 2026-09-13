@@ -8,6 +8,9 @@ export var VOICES = {
     es: 'aura-2-nestor-es',
     de: 'aura-2-julius-de',
     fr: 'aura-2-hector-fr',
+    // Hinglish: Deepgram has no Hindi voice; an English voice reads the
+    // Roman-script Hindi-English mix better than the Spanish fallback.
+    hi: 'aura-2-arcas-en',
 };
 
 export var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
