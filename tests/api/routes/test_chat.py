@@ -433,6 +433,63 @@ class TestHealthEndpoint:
         assert data["status"] in ("healthy", "degraded", "unhealthy")
 
 
+class TestVersionEndpoint:
+    """Tests for GET /version - Deployed build metadata endpoint."""
+
+    def test_version_returns_render_metadata(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GET /version should report commit, branch and service from Render env vars."""
+        monkeypatch.setenv("RENDER_GIT_COMMIT", "abc123def456")
+        monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+        monkeypatch.setenv("RENDER_SERVICE_NAME", "habla-hermano")
+
+        response = test_client.get("/version")
+
+        assert response.status_code == 200
+        assert "application/json" in response.headers["content-type"]
+        assert response.json() == {
+            "commit": "abc123def456",
+            "branch": "main",
+            "service": "habla-hermano",
+        }
+
+    def test_version_returns_nulls_when_env_missing(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GET /version should return null fields outside Render."""
+        monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+        monkeypatch.delenv("RENDER_GIT_BRANCH", raising=False)
+        monkeypatch.delenv("RENDER_SERVICE_NAME", raising=False)
+
+        response = test_client.get("/version")
+
+        assert response.status_code == 200
+        assert response.json() == {"commit": None, "branch": None, "service": None}
+
+    def test_version_treats_empty_env_as_null(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GET /version should map empty env values to null."""
+        monkeypatch.setenv("RENDER_GIT_COMMIT", "")
+        monkeypatch.delenv("RENDER_GIT_BRANCH", raising=False)
+        monkeypatch.delenv("RENDER_SERVICE_NAME", raising=False)
+
+        response = test_client.get("/version")
+
+        assert response.json()["commit"] is None
+
+    def test_version_exposes_only_build_fields(
+        self, test_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """GET /version should not leak any other environment or settings values."""
+        monkeypatch.setenv("RENDER_GIT_COMMIT", "abc123")
+
+        response = test_client.get("/version")
+
+        assert set(response.json()) == {"commit", "branch", "service"}
+
+
 class TestAgentIntegration:
     """Tests for agent integration and mock behavior."""
 

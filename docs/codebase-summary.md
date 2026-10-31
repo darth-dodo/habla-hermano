@@ -1051,6 +1051,9 @@ make format       # Auto-fix style
 # Health check
 curl http://localhost:8000/health
 
+# Deployed build info (commit, branch, service; null locally)
+curl http://localhost:8000/version
+
 # Send message
 curl -X POST http://localhost:8000/chat \
   -d "message=Hola&level=A1&language=es"
