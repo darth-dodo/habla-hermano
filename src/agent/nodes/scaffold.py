@@ -9,7 +9,7 @@ import json
 import logging
 from typing import Any
 
-import anthropic
+import openai
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.agent.llm import get_llm
@@ -173,7 +173,7 @@ async def scaffold_node(state: ConversationState) -> dict[str, Any]:
                 auto_expand=level == "A0",
             )
 
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except (openai.APIError, openai.APIConnectionError) as e:
         logger.error("Scaffold LLM call failed: %s", e)
         config = ScaffoldingConfig(
             enabled=True,

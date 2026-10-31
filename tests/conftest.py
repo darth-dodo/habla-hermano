@@ -174,12 +174,12 @@ def mock_settings() -> Settings:
     """Create mock settings with test values.
 
     Returns:
-        Settings: Test settings instance with ANTHROPIC_API_KEY set.
+        Settings: Test settings instance with OPENROUTER_API_KEY set.
     """
     # Use _env_file=None to prevent loading from .env
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
-        ANTHROPIC_API_KEY="test-api-key-12345",  # pragma: allowlist secret
+        OPENROUTER_API_KEY="test-api-key-12345",  # pragma: allowlist secret
         SECRET_KEY="test-secret-key",  # pragma: allowlist secret
         APP_NAME="Habla Hermano-Test",
         DEBUG=True,
@@ -198,7 +198,7 @@ def env_vars() -> dict[str, str]:
         dict: Environment variable key-value pairs.
     """
     return {
-        "ANTHROPIC_API_KEY": "test-anthropic-api-key",  # pragma: allowlist secret
+        "OPENROUTER_API_KEY": "test-openrouter-api-key",  # pragma: allowlist secret
         "SECRET_KEY": "test-secret-key",  # pragma: allowlist secret
         "APP_NAME": "TestApp",
         "DEBUG": "true",
@@ -219,7 +219,7 @@ def clean_env() -> Generator[None, None, None]:
     original_env = {
         key: os.environ.get(key)
         for key in [
-            "ANTHROPIC_API_KEY",
+            "OPENROUTER_API_KEY",
             "DEBUG",
             "APP_NAME",
             "LLM_MODEL",

@@ -28,10 +28,10 @@ if TYPE_CHECKING:
 class TestGetLlmFunction:
     """Tests for get_llm factory function (conversational profile)."""
 
-    def test_get_llm_returns_chat_anthropic(self, mock_settings: "Settings") -> None:
-        """get_llm should return a ChatAnthropic instance."""
+    def test_get_llm_returns_chat_openai(self, mock_settings: "Settings") -> None:
+        """get_llm should return a ChatOpenAI instance."""
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 result = get_llm("conversational")
                 assert result is not None
@@ -40,16 +40,16 @@ class TestGetLlmFunction:
     def test_get_llm_uses_settings_api_key(self, mock_settings: "Settings") -> None:
         """get_llm should use API key from settings."""
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]
-                assert call_kwargs["api_key"] == mock_settings.ANTHROPIC_API_KEY
+                assert call_kwargs["api_key"] == mock_settings.OPENROUTER_API_KEY
 
     def test_get_llm_uses_settings_model(self, mock_settings: "Settings") -> None:
         """get_llm should use model from settings."""
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]
@@ -58,7 +58,7 @@ class TestGetLlmFunction:
     def test_get_llm_uses_settings_temperature(self, mock_settings: "Settings") -> None:
         """get_llm conversational profile should use temperature from settings."""
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 get_llm("conversational")
                 call_kwargs = mock_chat.call_args[1]

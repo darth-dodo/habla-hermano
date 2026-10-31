@@ -890,10 +890,10 @@ class TestAnalyzeNodeLLMExceptions:
 
         # Create mock LLM that raises an exception
         mock_llm = MagicMock()
-        import anthropic
+        import openai
 
         mock_llm.ainvoke = AsyncMock(
-            side_effect=anthropic.APIError(
+            side_effect=openai.APIError(
                 message="API Error",
                 request=MagicMock(),
                 body=None,
@@ -919,10 +919,10 @@ class TestAnalyzeNodeLLMExceptions:
         """analyze_node should handle connection exceptions gracefully."""
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        import anthropic
+        import openai
 
         mock_llm = MagicMock()
-        mock_llm.ainvoke = AsyncMock(side_effect=anthropic.APIConnectionError(request=MagicMock()))
+        mock_llm.ainvoke = AsyncMock(side_effect=openai.APIConnectionError(request=MagicMock()))
 
         with patch("src.agent.nodes.analyze.get_llm", return_value=mock_llm):
             state: ConversationState = {
@@ -985,22 +985,22 @@ class TestAnalyzeNodeWithMockedLLMSuccess:
 class TestGetLlmAnalyze:
     """Tests for get_llm with analysis profile."""
 
-    def test_get_llm_creates_chat_anthropic(self) -> None:
-        """get_llm('analysis') should create a ChatAnthropic instance."""
+    def test_get_llm_creates_chat_openai(self) -> None:
+        """get_llm('analysis') should create a ChatOpenAI instance."""
         from unittest.mock import MagicMock, patch
 
         from src.api.config import Settings
 
         mock_settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             LLM_MODEL="claude-test",
             LLM_TEMPERATURE=0.5,
         )
 
         with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
+            with patch("src.agent.llm.ChatOpenAI") as mock_chat:
                 mock_chat.return_value = MagicMock()
                 from src.agent.llm import get_llm
 
