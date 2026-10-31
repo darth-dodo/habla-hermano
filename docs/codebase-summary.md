@@ -871,7 +871,6 @@ SUPABASE_SERVICE_KEY=eyJ...       # For admin ops
 APP_NAME="Habla Hermano"
 DEBUG=false
 LLM_MODEL=claude-haiku-4-5-20251001
-LLM_TEMPERATURE=0.7
 HOST=127.0.0.1
 PORT=8000
 ```

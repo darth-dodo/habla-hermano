@@ -55,14 +55,34 @@ class TestGetLlmFunction:
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["model"] == mock_settings.LLM_MODEL
 
-    def test_get_llm_uses_settings_temperature(self, mock_settings: "Settings") -> None:
-        """get_llm conversational profile should use temperature from settings."""
-        with patch("src.config.get_settings", return_value=mock_settings):
-            with patch("src.agent.llm.ChatAnthropic") as mock_chat:
-                mock_chat.return_value = MagicMock()
-                get_llm("conversational")
-                call_kwargs = mock_chat.call_args[1]
-                assert call_kwargs["temperature"] == mock_settings.LLM_TEMPERATURE
+    @pytest.mark.parametrize(
+        "profile",
+        [
+            "default",
+            "conversational",
+            "analysis",
+            "structured",
+            "creative",
+            "enhancement",
+            "titling",
+        ],
+    )
+    def test_get_llm_request_omits_temperature(
+        self, mock_settings: "Settings", profile: str
+    ) -> None:
+        """No profile may send temperature: Anthropic API version 2026-10-21 rejects it."""
+        from src.agent.llm import clear_llm_cache
+
+        clear_llm_cache()
+        try:
+            with patch("src.config.get_settings", return_value=mock_settings):
+                llm = get_llm(profile)
+                payload = llm._get_request_payload("hola")
+        finally:
+            clear_llm_cache()
+        assert "temperature" not in payload
+        assert "top_p" not in payload
+        assert "top_k" not in payload
 
 
 # =============================================================================

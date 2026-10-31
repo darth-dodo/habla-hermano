@@ -67,9 +67,6 @@ services:
       - key: LLM_MODEL
         value: "claude-haiku-4-5-20251001"
 
-      - key: LLM_TEMPERATURE
-        value: "0.7"
-
       # -----------------------------------------------------------------------
       # Database Configuration - Supabase PostgreSQL
       # -----------------------------------------------------------------------

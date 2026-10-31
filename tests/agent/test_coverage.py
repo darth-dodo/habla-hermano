@@ -1015,7 +1015,7 @@ class TestLessonGetLlm:
     """Tests for get_llm with enhancement profile."""
 
     def test_get_llm_creates_instance(self, mock_settings: Settings) -> None:
-        """Should create ChatAnthropic with higher temperature for creativity."""
+        """Should create ChatAnthropic with the enhancement token budget."""
         with (
             patch("src.config.get_settings", return_value=mock_settings),
             patch("src.agent.llm.ChatAnthropic") as mock_chat,
@@ -1027,7 +1027,7 @@ class TestLessonGetLlm:
             assert result is not None
             mock_chat.assert_called_once()
             call_kwargs = mock_chat.call_args[1]
-            assert call_kwargs["temperature"] == 0.7
+            assert "temperature" not in call_kwargs
             assert call_kwargs["max_tokens"] == 1024
 
 

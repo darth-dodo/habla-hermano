@@ -43,7 +43,6 @@ class TestSettingsClass:
         assert settings.APP_NAME == "Habla Hermano"
         assert settings.DEBUG is False
         assert settings.LLM_MODEL == "claude-haiku-4-5-20251001"
-        assert settings.LLM_TEMPERATURE == 0.7
         assert settings.HOST == "127.0.0.1"
         assert settings.PORT == 8000
 
@@ -53,7 +52,6 @@ class TestSettingsClass:
         assert mock_settings.APP_NAME == "Habla Hermano-Test"
         assert mock_settings.DEBUG is True
         assert mock_settings.LLM_MODEL == "claude-test-model"
-        assert mock_settings.LLM_TEMPERATURE == 0.5
         assert mock_settings.HOST == "127.0.0.1"
         assert mock_settings.PORT == 8000
 
@@ -67,7 +65,6 @@ class TestSettingsClass:
             assert settings.APP_NAME == "TestApp"
             assert settings.DEBUG is True
             assert settings.LLM_MODEL == "claude-test"
-            assert settings.LLM_TEMPERATURE == 0.5
             assert settings.HOST == "0.0.0.0"
             assert settings.PORT == 9000
 
@@ -114,8 +111,8 @@ class TestSettingsClass:
             assert settings.PORT == 3000
             assert isinstance(settings.PORT, int)
 
-    def test_settings_temperature_as_string(self) -> None:
-        """Settings should convert LLM_TEMPERATURE string to float."""
+    def test_legacy_llm_temperature_env_var_is_ignored(self) -> None:
+        """A leftover LLM_TEMPERATURE env var must not break startup or reach the LLM."""
         with patch.dict(
             os.environ,
             {
@@ -126,8 +123,7 @@ class TestSettingsClass:
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
-            assert settings.LLM_TEMPERATURE == 0.9
-            assert isinstance(settings.LLM_TEMPERATURE, float)
+            assert not hasattr(settings, "LLM_TEMPERATURE")
 
     def test_settings_extra_fields_ignored(self) -> None:
         """Settings should ignore extra/unknown environment variables."""
@@ -336,36 +332,6 @@ class TestSettingsValidation:
             PORT=-1,
         )
         assert settings.PORT == -1
-
-    def test_temperature_boundary_zero(self) -> None:
-        """LLM_TEMPERATURE of 0 should be accepted."""
-        settings = Settings(
-            _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
-            SECRET_KEY="test",
-            LLM_TEMPERATURE=0.0,
-        )
-        assert settings.LLM_TEMPERATURE == 0.0
-
-    def test_temperature_boundary_one(self) -> None:
-        """LLM_TEMPERATURE of 1 should be accepted."""
-        settings = Settings(
-            _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
-            SECRET_KEY="test",
-            LLM_TEMPERATURE=1.0,
-        )
-        assert settings.LLM_TEMPERATURE == 1.0
-
-    def test_temperature_above_one(self) -> None:
-        """LLM_TEMPERATURE above 1 should be accepted (Anthropic allows up to 2)."""
-        settings = Settings(
-            _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
-            SECRET_KEY="test",
-            LLM_TEMPERATURE=1.5,
-        )
-        assert settings.LLM_TEMPERATURE == 1.5
 
     def test_special_characters_in_app_name(self) -> None:
         """APP_NAME should accept special characters."""
