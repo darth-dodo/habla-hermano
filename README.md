@@ -1,6 +1,6 @@
 # Habla Hermano
 
-> Your AI conversation partner for Spanish, German, and French.
+> Your AI conversation partner for Spanish, German, French, and Hinglish.
 
 [![CI](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml/badge.svg)](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
@@ -10,6 +10,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
 [![Built with Claude](https://img.shields.io/badge/Built%20with-Claude-cc785c?logo=anthropic&logoColor=white)](https://claude.ai)
+
+### 🗣️ [Try it live → habla-hermano.onrender.com](https://habla-hermano.onrender.com)
 
 
 An AI language tutor that gets you talking from day one. Built with FastAPI, LangGraph, and Claude -featuring real-time voice, adaptive scaffolding, 60 structured lessons, encrypted conversations, conversation threads, and five culture-inspired themes.
