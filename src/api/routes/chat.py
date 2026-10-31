@@ -29,9 +29,11 @@ Guest users get:
 import logging
 import re
 import uuid
-from typing import Annotated, Any
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
-from fastapi import APIRouter, Cookie, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response
 from langchain_core.messages import HumanMessage
 from markupsafe import escape
@@ -55,6 +57,13 @@ from src.services.review import ReviewService
 from src.services.thread_messages import get_thread_messages
 from src.services.threads import ThreadService
 
+if TYPE_CHECKING:
+    from langchain_core.runnables import RunnableConfig
+    from supabase import Client as SupabaseClient
+
+    from src.api.config import Settings
+    from src.lessons.service import LessonService
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
@@ -62,6 +71,7 @@ router = APIRouter(tags=["chat"])
 
 # --- Cookie expiry ---
 _CONVERSATION_VERSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+_SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 
 # --- Thread ID validation (Finding M1) ---
 # Accepts: user:<uuid>:<any up to 100 chars>  or  lesson:<uuid>:<any up to 100 chars>
@@ -148,8 +158,193 @@ def _resolve_lesson_thread_id(
     return f"lesson:{new_id}:{lesson_id}:{suffix}", None, new_id
 
 
+# =============================================================================
+# Shared chat turn helpers (used by POST /chat and POST /chat/stream)
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class ChatCookies:
+    """Cookies read by the chat message endpoints."""
+
+    session_id: str | None = None
+    sb_access_token: str | None = None
+    conversation_version: str | None = None
+
+
+def get_chat_cookies(
+    session_id: Annotated[str | None, Cookie()] = None,
+    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
+    conversation_version: Annotated[str | None, Cookie()] = None,
+) -> ChatCookies:
+    """FastAPI dependency that groups the chat endpoint cookies."""
+    return ChatCookies(
+        session_id=session_id,
+        sb_access_token=sb_access_token,
+        conversation_version=conversation_version,
+    )
+
+
+ChatCookiesDep = Annotated[ChatCookies, Depends(get_chat_cookies)]
+
+
+@dataclass(frozen=True)
+class ChatIdentity:
+    """Resolved identity for a single chat turn.
+
+    Attributes:
+        thread_id: LangGraph checkpoint thread ID.
+        user_id: Effective user ID for progress tracking (None for guests).
+        new_session_id: Fresh guest session ID that must be set as a cookie.
+        touch_thread_id: Thread to touch (and title) after the turn, if any.
+        created_thread_id: Thread auto-created for this turn, if any.
+    """
+
+    thread_id: str
+    user_id: str | None
+    new_session_id: str | None = None
+    touch_thread_id: str | None = None
+    created_thread_id: str | None = None
+
+
+def _message_error(message: str, too_long_hint: str = "") -> str | None:
+    """Return a validation error for a (stripped) chat message, or None if valid."""
+    if not message:
+        return "Message cannot be empty."
+    if len(message) > MAX_MESSAGE_LENGTH:
+        return f"Message is too long (max {MAX_MESSAGE_LENGTH} characters).{too_long_hint}"
+    return None
+
+
+def _level_language_error(level: str, language: str) -> str | None:
+    """Return a validation error for the CEFR level or language, or None if valid."""
+    if level not in VALID_LEVELS:
+        return f"Invalid level '{level}'. Must be one of: {', '.join(sorted(VALID_LEVELS))}."
+    if language not in VALID_LANGUAGES:
+        return (
+            f"Invalid language '{language}'. Must be one of: {', '.join(sorted(VALID_LANGUAGES))}."
+        )
+    return None
+
+
+def _resolve_freeform_identity(
+    *,
+    user: AuthenticatedUser | None,
+    user_client: "SupabaseClient | None",
+    requested_thread_id: str | None,
+    cookies: ChatCookies,
+    language: str,
+    level: str,
+    thread_service_factory: Callable[..., ThreadService] | None = None,
+) -> ChatIdentity | None:
+    """Resolve the thread and user for a freeform chat turn.
+
+    Authenticated users (with a Supabase client) use their explicit thread,
+    which must belong to them (C1), or get a new thread auto-created. Everyone
+    else falls back to the cookie-based identity.
+
+    ``thread_service_factory`` defaults to this module's ``ThreadService``
+    (looked up at call time); other route modules pass their own reference.
+
+    Returns:
+        The resolved identity, or None when the requested thread is not owned
+        by the user.
+    """
+    if not (user and user_client):
+        thread_id, user_id, new_session_id = _resolve_chat_identity(
+            user, cookies.session_id, cookies.conversation_version
+        )
+        return ChatIdentity(thread_id, user_id, new_session_id, requested_thread_id)
+
+    thread_svc = (thread_service_factory or ThreadService)(user_id=user.id, client=user_client)
+    if requested_thread_id:
+        if not thread_svc.get_thread(requested_thread_id):
+            return None
+        return ChatIdentity(requested_thread_id, user.id, touch_thread_id=requested_thread_id)
+
+    new_thread_id = thread_svc.create_thread(language=language, level=level).thread_id
+    return ChatIdentity(
+        new_thread_id, user.id, touch_thread_id=new_thread_id, created_thread_id=new_thread_id
+    )
+
+
+def _freeform_inputs(
+    message: str, level: str, language: str, user_id: str | None
+) -> dict[str, Any]:
+    """Build the freeform graph input for one user message."""
+    return {
+        "messages": [HumanMessage(content=message)],
+        "level": level,
+        "language": language,
+        "user_id": user_id,  # Phase 12: For review word weaving
+    }
+
+
+def _graph_config(thread_id: str, user_client: "SupabaseClient | None") -> dict[str, Any]:
+    """Build the LangGraph run config for a chat turn."""
+    return {
+        "configurable": {
+            "thread_id": thread_id,
+            "supabase_client": user_client,  # Runtime dep, not serialized
+        }
+    }
+
+
+def _persist_chat_turn(
+    *,
+    identity: ChatIdentity,
+    user: AuthenticatedUser | None,
+    user_client: "SupabaseClient | None",
+    language: str,
+    level: str,
+    new_vocabulary: list[dict[str, str]],
+    progress_service_factory: Callable[..., ProgressService] | None = None,
+    thread_service_factory: Callable[..., ThreadService] | None = None,
+) -> None:
+    """Record vocabulary and touch the thread after a chat turn.
+
+    Only authenticated users with a Supabase client get progress tracking.
+    Failures are logged and never surface to the user. Service factories
+    default to this module's classes (looked up at call time).
+    """
+    user_id = identity.user_id
+    if new_vocabulary and user_id and user and user_client:
+        try:
+            progress_cls = progress_service_factory or ProgressService
+            progress_service = progress_cls(user_id, client=user_client)
+            progress_service.record_chat_activity(
+                language=language,
+                level=level,
+                new_vocab=new_vocabulary,
+            )
+        except APIError:
+            logger.exception("Failed to capture chat activity for user %s", user_id)
+
+    if identity.touch_thread_id and user_id and user_client:
+        try:
+            thread_cls = thread_service_factory or ThreadService
+            thread_service = thread_cls(user_id=user_id, client=user_client)
+            thread_service.touch(identity.touch_thread_id)
+        except Exception:
+            logger.exception("Failed to touch thread %s", identity.touch_thread_id)
+
+
+def _set_session_cookie(response: Response, new_session_id: str | None) -> None:
+    """Set the signed guest session cookie for first-time anonymous users.
+
+    The value is signed for server-side expiry enforcement (Finding H5).
+    """
+    if new_session_id:
+        set_secure_cookie(
+            response,
+            key="session_id",
+            value=sign_session_id(new_session_id),
+            max_age=_SESSION_COOKIE_MAX_AGE,
+        )
+
+
 @router.get("/", response_class=HTMLResponse, response_model=None)
-async def chat_page(  # noqa: PLR0912, PLR0915
+async def chat_page(
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -163,34 +358,12 @@ async def chat_page(  # noqa: PLR0912, PLR0915
     language: str = "es",
     lesson: Annotated[str | None, Query()] = None,
 ) -> HTMLResponse:
-    """Render the main chat interface.
+    """Render the main chat interface for authenticated and guest users.
 
-    Supports both authenticated and guest users. Authenticated users
-    get persistent conversation history and progress tracking; guests get
-    session-based conversations via cookies but no progress tracking.
-
-    Phase 12: Added review mode support. When mode=review, shows the
-    review session start UI instead of normal chat.
-
-    When the ``lesson`` query param is provided, renders the chat page in
-    lesson mode with lesson-specific context so the frontend auto-starts
-    the lesson conversation flow.
-
-    Args:
-        request: FastAPI request object.
-        templates: Jinja2 templates instance.
-        settings: Application settings.
-        user: Optional authenticated user (None if guest).
-        lesson_service: Lesson service for loading lesson data.
-        mode: Optional mode parameter ("review" for review mode).
-        warmup_dismissed: Cookie tracking if warmup was dismissed.
-        language: Target language for review stats.
-        lesson: Optional lesson ID to render in lesson mode.
-
-    Returns:
-        HTMLResponse: Rendered chat page for both authenticated and guest users.
+    Authenticated users get their active thread, thread sidebar and review
+    stats (Phase 12: ``mode=review`` shows the review start UI). The ``lesson``
+    query param renders lesson mode so the frontend auto-starts the lesson.
     """
-    # Default context
     context: dict[str, Any] = {
         "app_name": settings.APP_NAME,
         "debug": settings.DEBUG,
@@ -204,108 +377,19 @@ async def chat_page(  # noqa: PLR0912, PLR0915
         "threads": [],
         "messages": [],
     }
-
-    # Lesson mode: load lesson and add context for the template
     if lesson:
-        lesson_data = lesson_service.get_lesson(lesson)
-        if not lesson_data:
-            raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson}")
-        context["lesson_mode"] = True
-        context["lesson_id"] = lesson
-        context["lesson_title"] = lesson_data.metadata.title
-        context["lesson_description"] = lesson_data.metadata.description
-        context["lesson_level"] = str(lesson_data.metadata.level)
-        context["lesson_language"] = lesson_data.metadata.language
-        context["current_language"] = lesson_data.metadata.language
-        # Fresh session UUID so each page load starts a clean checkpoint
-        context["lesson_session"] = str(uuid.uuid4())
+        context.update(_lesson_page_context(lesson_service, lesson))
 
-    # Thread loading and sidebar for authenticated users (skip in lesson mode)
+    # Threads, sidebar and review features only for authenticated users outside lessons
     if user and not lesson and sb_token:
-        user_client = get_supabase_for_user(sb_token)
-
-        # Unsign the active_thread cookie (signed since PII audit fix)
-        thread_id = unsign_active_thread(active_thread)
-
-        # Validate active_thread cookie format before use (Finding M1)
-        if thread_id and not _is_valid_thread_id(thread_id):
-            logger.warning(
-                "Ignoring active_thread cookie with invalid format: %r",
-                thread_id[:64],
-            )
-            thread_id = None
-
-        # Load active thread from cookie
-        if thread_id:
-            try:
-                thread_service = ThreadService(user_id=user.id, client=user_client)
-                thread_data = thread_service.get_thread(thread_id)
-                if thread_data:
-                    context["active_thread_id"] = thread_id
-                    messages = await get_thread_messages(thread_id)
-                    context["messages"] = messages
-                    context["current_language"] = thread_data.language
-                    context["current_level"] = thread_data.level
-            except Exception:
-                logger.exception("Failed to load thread %s for user %s", thread_id, user.id)
-
-        # Load thread list for sidebar
-        try:
-            thread_service = ThreadService(user_id=user.id, client=user_client)
-            threads = thread_service.list_threads()
-            context["threads"] = [
-                {
-                    "id": t.id,
-                    "thread_id": t.thread_id,
-                    "title": t.title,
-                    "language": t.language,
-                    "level": t.level,
-                    "updated_at": t.updated_at.isoformat(),
-                }
-                for t in threads
-            ]
-        except Exception:
-            logger.exception("Failed to load thread list for user %s", user.id)
-
-    # Review features only for authenticated users (skip in lesson mode)
+        context.update(await _thread_page_context(user, sb_token, active_thread))
     if user and not lesson:
-        try:
-            review_service = ReviewService(user.id)
-            review_stats = review_service.get_stats(language=language)
-            context["review_stats"] = review_stats
+        context.update(_review_page_context(user, language, mode, warmup_dismissed))
 
-            if mode == "review":
-                # Review mode - show review start UI
-                context["review_mode"] = True
-            elif review_stats.due_count > 0 and not warmup_dismissed:
-                # Show warmup prompt if words are due and not dismissed
-                context["show_warmup"] = True
-        except APIError:
-            logger.exception("Failed to get review stats for user %s", user.id)
-
-    # Provide a signed WebSocket auth token for voice.
-    # iOS Safari/Chrome (WebKit) may not send httponly cookies with WS upgrade
-    # requests, so the JS passes this token as a query parameter instead.
-    ws_token: str | None = None
-    new_signed_session: str | None = None
-    if settings.voice_enabled:
-        if user:
-            # Authenticated users: sign their user ID as a WS token
-            ws_token = sign_session_id(user.id)
-        elif session_id:
-            # Returning guest: reuse the existing signed session cookie value
-            ws_token = session_id
-        else:
-            # New guest: generate signed session now so both cookie and token match
-            new_signed_session = sign_session_id(str(uuid.uuid4()))
-            ws_token = new_signed_session
+    ws_token, new_signed_session = _voice_ws_token(settings, user, session_id)
     context["ws_token"] = ws_token or ""
 
-    response = templates.TemplateResponse(
-        request=request,
-        name="chat.html",
-        context=context,
-    )
+    response = templates.TemplateResponse(request=request, name="chat.html", context=context)
 
     # Set session cookie on page load for guests so voice WebSocket auth works
     # before they send their first message. Sign the value so the server can
@@ -315,10 +399,117 @@ async def chat_page(  # noqa: PLR0912, PLR0915
             response,
             key="session_id",
             value=new_signed_session or sign_session_id(str(uuid.uuid4())),
-            max_age=60 * 60 * 24 * 7,  # 7 days
+            max_age=_SESSION_COOKIE_MAX_AGE,
         )
 
     return response
+
+
+def _lesson_page_context(lesson_service: "LessonService", lesson_id: str) -> dict[str, Any]:
+    """Build lesson mode template context, raising 404 for unknown lessons."""
+    lesson_data = lesson_service.get_lesson(lesson_id)
+    if not lesson_data:
+        raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
+    return {
+        "lesson_mode": True,
+        "lesson_id": lesson_id,
+        "lesson_title": lesson_data.metadata.title,
+        "lesson_description": lesson_data.metadata.description,
+        "lesson_level": str(lesson_data.metadata.level),
+        "lesson_language": lesson_data.metadata.language,
+        "current_language": lesson_data.metadata.language,
+        # Fresh session UUID so each page load starts a clean checkpoint
+        "lesson_session": str(uuid.uuid4()),
+    }
+
+
+async def _thread_page_context(
+    user: AuthenticatedUser, sb_token: str, active_thread: str | None
+) -> dict[str, Any]:
+    """Load the active thread (from the signed cookie) and the sidebar thread list.
+
+    Failures are logged and leave the corresponding context keys unset.
+    """
+    context: dict[str, Any] = {}
+    user_client = get_supabase_for_user(sb_token)
+
+    # Unsign the active_thread cookie (signed since PII audit fix)
+    thread_id = unsign_active_thread(active_thread)
+
+    # Validate active_thread cookie format before use (Finding M1)
+    if thread_id and not _is_valid_thread_id(thread_id):
+        logger.warning("Ignoring active_thread cookie with invalid format: %r", thread_id[:64])
+        thread_id = None
+
+    if thread_id:
+        try:
+            thread_service = ThreadService(user_id=user.id, client=user_client)
+            thread_data = thread_service.get_thread(thread_id)
+            if thread_data:
+                context["active_thread_id"] = thread_id
+                context["messages"] = await get_thread_messages(thread_id)
+                context["current_language"] = thread_data.language
+                context["current_level"] = thread_data.level
+        except Exception:
+            logger.exception("Failed to load thread %s for user %s", thread_id, user.id)
+
+    try:
+        thread_service = ThreadService(user_id=user.id, client=user_client)
+        context["threads"] = [
+            {
+                "id": t.id,
+                "thread_id": t.thread_id,
+                "title": t.title,
+                "language": t.language,
+                "level": t.level,
+                "updated_at": t.updated_at.isoformat(),
+            }
+            for t in thread_service.list_threads()
+        ]
+    except Exception:
+        logger.exception("Failed to load thread list for user %s", user.id)
+
+    return context
+
+
+def _review_page_context(
+    user: AuthenticatedUser, language: str, mode: str | None, warmup_dismissed: str | None
+) -> dict[str, Any]:
+    """Load review stats and decide between review mode and the warmup prompt."""
+    context: dict[str, Any] = {}
+    try:
+        review_stats = ReviewService(user.id).get_stats(language=language)
+        context["review_stats"] = review_stats
+        if mode == "review":
+            context["review_mode"] = True
+        elif review_stats.due_count > 0 and not warmup_dismissed:
+            # Show warmup prompt if words are due and not dismissed
+            context["show_warmup"] = True
+    except APIError:
+        logger.exception("Failed to get review stats for user %s", user.id)
+    return context
+
+
+def _voice_ws_token(
+    settings: "Settings", user: AuthenticatedUser | None, session_id: str | None
+) -> tuple[str | None, str | None]:
+    """Return (ws_token, new_signed_session) for voice WebSocket auth.
+
+    iOS Safari/Chrome (WebKit) may not send httponly cookies with WS upgrade
+    requests, so the JS passes this signed token as a query parameter instead.
+    ``new_signed_session`` is set only when a new guest session was generated.
+    """
+    if not settings.voice_enabled:
+        return None, None
+    if user:
+        # Authenticated users: sign their user ID as a WS token
+        return sign_session_id(user.id), None
+    if session_id:
+        # Returning guest: reuse the existing signed session cookie value
+        return session_id, None
+    # New guest: generate signed session now so both cookie and token match
+    new_signed_session = sign_session_id(str(uuid.uuid4()))
+    return new_signed_session, new_signed_session
 
 
 @router.get("/chat/thread-content", response_class=HTMLResponse, response_model=None)
@@ -386,184 +577,98 @@ async def thread_content_partial(
 
 @router.post("/chat", response_class=HTMLResponse)
 @rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
-async def send_message(  # noqa: PLR0911, PLR0912
+async def send_message(
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
     user: OptionalUserDep,
+    cookies: ChatCookiesDep,
     message: Annotated[str, Form()],
     level: Annotated[str, Form()] = "A1",
     language: Annotated[str, Form()] = "es",
     thread_id: Annotated[str | None, Form()] = None,
-    session_id: Annotated[str | None, Cookie()] = None,
-    sb_access_token: Annotated[str | None, Cookie(alias="sb-access-token")] = None,
-    conversation_version: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
-    """Process a chat message and return the response as partial HTML.
+    """Process a chat message and return the message pair partial HTML (HTMX).
 
-    This endpoint is designed for HTMX requests. It receives a message,
-    invokes the LangGraph agent, and returns a partial HTML fragment
-    that HTMX swaps into the chat container.
-
-    Supports both authenticated and anonymous users:
-    - Authenticated: Thread ID derived from user ID (persistent across sessions)
-    - Anonymous: Thread ID from session cookie (session-based)
-
-    Phase 4: Uses checkpointing for conversation persistence.
-
-    Args:
-        request: FastAPI request object.
-        templates: Jinja2 templates instance.
-        settings: Application settings.
-        user: Optional authenticated user (None for anonymous/guest).
-        message: User's message from form data.
-        level: CEFR level (A0, A1, A2, B1). Defaults to A1.
-        language: Target language (es, de). Defaults to es (Spanish).
-        thread_id: Optional explicit thread ID for authenticated users.
-        session_id: Session cookie for anonymous users.
-        sb_access_token: Supabase access token cookie.
-        conversation_version: Conversation version cookie.
-
-    Returns:
-        HTMLResponse: Partial HTML with user message and AI response.
+    Authenticated users get an owned thread and progress tracking; guests use a cookie thread.
     """
-    # --- Input validation ---
     message = message.strip()
+    error = _message_error(message, " Please shorten your message.")
+    error = error or _level_language_error(level, language)
+    if error:
+        return _make_error_html(error)
 
-    if not message:
-        return _make_error_html("Message cannot be empty.")
+    # RLS-safe client for agent nodes; ignore stale tokens when auth failed (user=None)
+    token = cookies.sb_access_token
+    user_client = get_supabase_for_user(token) if user and token else None
 
-    if len(message) > MAX_MESSAGE_LENGTH:
-        return _make_error_html(
-            f"Message is too long (max {MAX_MESSAGE_LENGTH} characters). "
-            "Please shorten your message."
-        )
+    identity = _resolve_freeform_identity(
+        user=user,
+        user_client=user_client,
+        requested_thread_id=thread_id,
+        cookies=cookies,
+        language=language,
+        level=level,
+    )
+    if identity is None:
+        return _make_error_html("Thread not found.")
 
-    if level not in VALID_LEVELS:
-        return _make_error_html(
-            f"Invalid level '{level}'. Must be one of: {', '.join(sorted(VALID_LEVELS))}."
-        )
-
-    if language not in VALID_LANGUAGES:
-        return _make_error_html(
-            f"Invalid language '{language}'. Must be one of: {', '.join(sorted(VALID_LANGUAGES))}."
-        )
-
-    # Save the form param before it gets shadowed by the resolved thread_id
-    thread_id_param = thread_id
-
-    # Create user-scoped Supabase client for RLS-safe DB access in agent nodes.
-    # Guard on `user` to avoid creating a client with a stale token when auth
-    # failed gracefully (user=None but expired cookie still present).
-    user_client = get_supabase_for_user(sb_access_token) if user and sb_access_token else None
-
-    # Resolve identity for thread_id and effective user_id
-    if user and user_client:
-        effective_user_id = user.id
-        new_session_id = None
-        if thread_id_param:
-            # Verify the thread belongs to this user before using it (C1)
-            thread_svc = ThreadService(user_id=user.id, client=user_client)
-            if not thread_svc.get_thread(thread_id_param):
-                return _make_error_html("Thread not found.")
-            thread_id = thread_id_param
-        else:
-            # Authenticated user without thread — auto-create one
-            thread_svc = ThreadService(user_id=user.id, client=user_client)
-            new_thread = thread_svc.create_thread(language=language, level=level)
-            thread_id = new_thread.thread_id
-            thread_id_param = thread_id  # so touch is called after stream
-    else:
-        # Guest fallback — use existing cookie-based identity
-        thread_id, effective_user_id, new_session_id = _resolve_chat_identity(  # type: ignore[assignment]
-            user, session_id, conversation_version
-        )
-
-    # Invoke LangGraph agent with checkpointing
     try:
-        async with get_checkpointer() as checkpointer:
-            graph = build_graph(checkpointer=checkpointer)
-            result = await graph.ainvoke(
-                {
-                    "messages": [HumanMessage(content=message)],
-                    "level": level,
-                    "language": language,
-                    "user_id": effective_user_id,  # Phase 12: For review word weaving
-                },
-                config={
-                    "configurable": {
-                        "thread_id": thread_id,
-                        "supabase_client": user_client,  # Runtime dep, not serialized
-                    }
-                },
-            )
+        inputs = _freeform_inputs(message, level, language, identity.user_id)
+        result = await _invoke_freeform_graph(inputs, identity.thread_id, user_client)
     except Exception:
         logger.exception("Chat invocation failed")
         return _make_error_html("Sorry, something went wrong. Please try again.")
 
-    # Extract AI response from graph result
-    ai_response = result["messages"][-1].content
+    context = _message_pair_context(result, message, level, language, settings)
+    _persist_chat_turn(
+        identity=identity,
+        user=user,
+        user_client=user_client,
+        language=language,
+        level=level,
+        new_vocabulary=result.get("new_vocabulary", []),
+    )
 
-    # Extract grammar feedback and vocabulary from analyze node (if present)
-    # These fields are populated by the analyze node in Phase 2
-    grammar_feedback = result.get("grammar_feedback", [])
-    new_vocabulary = result.get("new_vocabulary", [])
-    pronunciation_tips = result.get("pronunciation_tips", [])
-
-    # Extract scaffolding from scaffold node (Phase 3)
-    # Only populated for A0-A1 learners via conditional routing
-    scaffolding = result.get("scaffolding", {})
-
-    # Capture vocabulary and session data for authenticated users only
-    # Guests get chat but no progress tracking (simplifies architecture, no service key needed)
-    if new_vocabulary and effective_user_id and user and user_client:
-        try:
-            # Reuse the user-scoped client created above for RLS compliance
-            progress_service = ProgressService(effective_user_id, client=user_client)
-            progress_service.record_chat_activity(
-                language=language,
-                level=level,
-                new_vocab=new_vocabulary,
-            )
-        except APIError:
-            logger.exception("Failed to capture chat activity for user %s", effective_user_id)
-
-    # Update thread timestamp
-    if thread_id_param and effective_user_id and user_client:
-        try:
-            thread_service = ThreadService(user_id=effective_user_id, client=user_client)
-            thread_service.touch(thread_id_param)
-        except Exception:
-            logger.exception("Failed to touch thread %s", thread_id_param)
-
-    # Create template response
     template_response = templates.TemplateResponse(
         request=request,
         name="partials/message_pair.html",
-        context={
-            "user_message": message,
-            "ai_response": ai_response,
-            "grammar_feedback": grammar_feedback,
-            "new_vocabulary": new_vocabulary,
-            "pronunciation_tips": pronunciation_tips,
-            "scaffolding": scaffolding,
-            "level": level,
-            "language": language,
-            "voice_enabled": settings.voice_enabled,
-        },
+        context=context,
     )
-
-    # Set session cookie on the actual response being returned (not the injected one).
-    # Sign the value for server-side expiry enforcement (Finding H5).
-    if new_session_id:
-        set_secure_cookie(
-            template_response,
-            key="session_id",
-            value=sign_session_id(new_session_id),
-            max_age=60 * 60 * 24 * 7,  # 7 days
-        )
-
+    _set_session_cookie(template_response, identity.new_session_id)
     return template_response
+
+
+async def _invoke_freeform_graph(
+    inputs: dict[str, Any], thread_id: str, user_client: "SupabaseClient | None"
+) -> dict[str, Any]:
+    """Run the freeform graph once with checkpointing and return its final state."""
+    async with get_checkpointer() as checkpointer:
+        graph = build_graph(checkpointer=checkpointer)
+        config = cast("RunnableConfig", _graph_config(thread_id, user_client))
+        result: dict[str, Any] = await graph.ainvoke(inputs, config=config)
+        return result
+
+
+def _message_pair_context(
+    result: dict[str, Any], message: str, level: str, language: str, settings: "Settings"
+) -> dict[str, Any]:
+    """Build the message_pair.html context from the graph result.
+
+    Grammar feedback, vocabulary and pronunciation come from the analyze node;
+    scaffolding is only populated for A0-A1 learners.
+    """
+    return {
+        "user_message": message,
+        "ai_response": result["messages"][-1].content,
+        "grammar_feedback": result.get("grammar_feedback", []),
+        "new_vocabulary": result.get("new_vocabulary", []),
+        "pronunciation_tips": result.get("pronunciation_tips", []),
+        "scaffolding": result.get("scaffolding", {}),
+        "level": level,
+        "language": language,
+        "voice_enabled": settings.voice_enabled,
+    }
 
 
 @router.post("/new", response_class=HTMLResponse)
