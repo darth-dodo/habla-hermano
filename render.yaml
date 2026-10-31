@@ -25,7 +25,10 @@ services:
     region: oregon
     branch: main
 
-    # Auto-deploy on push to main branch
+    # Auto-deploy on push to main branch.
+    # CI also triggers deploys via a deploy hook (RENDER_DEPLOY_HOOK_URL).
+    # Once that hook is set up, turn Auto-Deploy Off in the Render dashboard
+    # and set this to false to avoid double deploys. See docs/setup.md.
     autoDeploy: true
 
     # Build Configuration
