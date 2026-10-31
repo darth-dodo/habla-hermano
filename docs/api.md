@@ -22,6 +22,7 @@
 - [Progress Tracking](#progress-tracking)
 - [Review Endpoints](#review-endpoints-spaced-repetition)
 - [Learning Path Endpoints](#learning-path-endpoints-phase-14)
+- [Operational Endpoints](#operational-endpoints)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -2125,6 +2126,50 @@ Personalized daily learning recommendation combining multiple signals.
 | `readiness_pct` | float | Completion percentage (0-100) |
 | `is_ready` | boolean | True when all lessons at the level are complete |
 | `next_level` | string or null | Next CEFR level, or null at highest |
+
+---
+
+## Operational Endpoints
+
+Unauthenticated JSON endpoints used for monitoring and deploy verification. Both are `GET` requests, so CSRF checks do not apply.
+
+### GET /health
+
+Health check used by Render (`healthCheckPath` in `render.yaml`). Reports database connectivity.
+
+**Response**: `{"status": "healthy" | "degraded" | "unhealthy", "app": "<app name>", "database": "connected" | "not configured" | "disconnected"}`
+
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
+### GET /version
+
+Reports which build is currently running, so you can confirm a deploy picked up the expected commit. Values come from environment variables that Render sets at runtime; each field is `null` when the variable is unset or empty (for example, when running locally). No other configuration or secrets are exposed.
+
+| Field | Source env var | Description |
+|-------|----------------|-------------|
+| `commit` | `RENDER_GIT_COMMIT` | Full git SHA of the deployed commit |
+| `branch` | `RENDER_GIT_BRANCH` | Git branch the service deploys from |
+| `service` | `RENDER_SERVICE_NAME` | Render service name |
+
+**Response** (on Render):
+```json
+{"commit": "7be6588...", "branch": "main", "service": "habla-hermano"}
+```
+
+**Response** (locally):
+```json
+{"commit": null, "branch": null, "service": null}
+```
+
+**Example**: compare the live commit with `main`:
+```bash
+curl -s https://habla-hermano.onrender.com/version
+git rev-parse origin/main
+```
 
 ---
 
