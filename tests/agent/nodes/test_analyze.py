@@ -996,7 +996,6 @@ class TestGetLlmAnalyze:
             ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             LLM_MODEL="claude-test",
-            LLM_TEMPERATURE=0.5,
         )
 
         with patch("src.config.get_settings", return_value=mock_settings):
@@ -1007,7 +1006,7 @@ class TestGetLlmAnalyze:
                 get_llm("analysis")
                 mock_chat.assert_called_once()
                 call_kwargs = mock_chat.call_args[1]
-                assert call_kwargs["temperature"] == 0.3  # Fixed lower temp for analysis
+                assert "temperature" not in call_kwargs
                 assert call_kwargs["max_tokens"] == 1024
 
 

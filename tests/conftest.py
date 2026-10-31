@@ -184,7 +184,6 @@ def mock_settings() -> Settings:
         APP_NAME="Habla Hermano-Test",
         DEBUG=True,
         LLM_MODEL="claude-test-model",
-        LLM_TEMPERATURE=0.5,
         HOST="127.0.0.1",
         PORT=8000,
     )
@@ -203,7 +202,6 @@ def env_vars() -> dict[str, str]:
         "APP_NAME": "TestApp",
         "DEBUG": "true",
         "LLM_MODEL": "claude-test",
-        "LLM_TEMPERATURE": "0.5",
         "HOST": "0.0.0.0",
         "PORT": "9000",
     }

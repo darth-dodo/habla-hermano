@@ -1259,7 +1259,6 @@ class TestGetLlm:
             ANTHROPIC_API_KEY="test-review-key",  # pragma: allowlist secret
             SECRET_KEY="test",
             LLM_MODEL="claude-test-model",
-            LLM_TEMPERATURE=0.5,
         )
 
         with patch("src.config.get_settings", return_value=mock_settings):
@@ -1272,7 +1271,7 @@ class TestGetLlm:
                 mock_chat.assert_called_once()
                 call_kwargs = mock_chat.call_args[1]
                 assert call_kwargs["model"] == "claude-test-model"
-                assert call_kwargs["temperature"] == 0.7
+                assert "temperature" not in call_kwargs
                 assert call_kwargs["max_tokens"] == 512
 
 

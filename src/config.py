@@ -21,7 +21,6 @@ class Settings(BaseSettings):
         DEBUG: Enable debug mode with detailed errors and auto-reload.
         APP_NAME: Display name for the application.
         LLM_MODEL: Claude model identifier to use.
-        LLM_TEMPERATURE: Sampling temperature for LLM responses.
         HOST: Server host address.
         PORT: Server port number.
         SECRET_KEY: Secret key for signing cookies and other tokens.
@@ -63,7 +62,6 @@ class Settings(BaseSettings):
 
     # LLM settings
     LLM_MODEL: str = "claude-haiku-4-5-20251001"
-    LLM_TEMPERATURE: float = 0.7
 
     # Server settings
     HOST: str = "127.0.0.1"
