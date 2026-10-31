@@ -9,7 +9,7 @@
 # =============================================================================
 
 install: ## Install dependencies with uv
-	uv sync --dev
+	uv sync --extra dev
 
 install-hooks: ## Install pre-commit hooks
 	uv run pre-commit install
