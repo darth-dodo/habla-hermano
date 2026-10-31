@@ -62,6 +62,7 @@ if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
 
     from src.api.config import Settings
+    from src.lessons.service import LessonService
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +344,7 @@ def _set_session_cookie(response: Response, new_session_id: str | None) -> None:
 
 
 @router.get("/", response_class=HTMLResponse, response_model=None)
-async def chat_page(  # noqa: PLR0912, PLR0915
+async def chat_page(
     request: Request,
     templates: TemplatesDep,
     settings: SettingsDep,
@@ -357,34 +358,12 @@ async def chat_page(  # noqa: PLR0912, PLR0915
     language: str = "es",
     lesson: Annotated[str | None, Query()] = None,
 ) -> HTMLResponse:
-    """Render the main chat interface.
+    """Render the main chat interface for authenticated and guest users.
 
-    Supports both authenticated and guest users. Authenticated users
-    get persistent conversation history and progress tracking; guests get
-    session-based conversations via cookies but no progress tracking.
-
-    Phase 12: Added review mode support. When mode=review, shows the
-    review session start UI instead of normal chat.
-
-    When the ``lesson`` query param is provided, renders the chat page in
-    lesson mode with lesson-specific context so the frontend auto-starts
-    the lesson conversation flow.
-
-    Args:
-        request: FastAPI request object.
-        templates: Jinja2 templates instance.
-        settings: Application settings.
-        user: Optional authenticated user (None if guest).
-        lesson_service: Lesson service for loading lesson data.
-        mode: Optional mode parameter ("review" for review mode).
-        warmup_dismissed: Cookie tracking if warmup was dismissed.
-        language: Target language for review stats.
-        lesson: Optional lesson ID to render in lesson mode.
-
-    Returns:
-        HTMLResponse: Rendered chat page for both authenticated and guest users.
+    Authenticated users get their active thread, thread sidebar and review
+    stats (Phase 12: ``mode=review`` shows the review start UI). The ``lesson``
+    query param renders lesson mode so the frontend auto-starts the lesson.
     """
-    # Default context
     context: dict[str, Any] = {
         "app_name": settings.APP_NAME,
         "debug": settings.DEBUG,
@@ -398,108 +377,19 @@ async def chat_page(  # noqa: PLR0912, PLR0915
         "threads": [],
         "messages": [],
     }
-
-    # Lesson mode: load lesson and add context for the template
     if lesson:
-        lesson_data = lesson_service.get_lesson(lesson)
-        if not lesson_data:
-            raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson}")
-        context["lesson_mode"] = True
-        context["lesson_id"] = lesson
-        context["lesson_title"] = lesson_data.metadata.title
-        context["lesson_description"] = lesson_data.metadata.description
-        context["lesson_level"] = str(lesson_data.metadata.level)
-        context["lesson_language"] = lesson_data.metadata.language
-        context["current_language"] = lesson_data.metadata.language
-        # Fresh session UUID so each page load starts a clean checkpoint
-        context["lesson_session"] = str(uuid.uuid4())
+        context.update(_lesson_page_context(lesson_service, lesson))
 
-    # Thread loading and sidebar for authenticated users (skip in lesson mode)
+    # Threads, sidebar and review features only for authenticated users outside lessons
     if user and not lesson and sb_token:
-        user_client = get_supabase_for_user(sb_token)
-
-        # Unsign the active_thread cookie (signed since PII audit fix)
-        thread_id = unsign_active_thread(active_thread)
-
-        # Validate active_thread cookie format before use (Finding M1)
-        if thread_id and not _is_valid_thread_id(thread_id):
-            logger.warning(
-                "Ignoring active_thread cookie with invalid format: %r",
-                thread_id[:64],
-            )
-            thread_id = None
-
-        # Load active thread from cookie
-        if thread_id:
-            try:
-                thread_service = ThreadService(user_id=user.id, client=user_client)
-                thread_data = thread_service.get_thread(thread_id)
-                if thread_data:
-                    context["active_thread_id"] = thread_id
-                    messages = await get_thread_messages(thread_id)
-                    context["messages"] = messages
-                    context["current_language"] = thread_data.language
-                    context["current_level"] = thread_data.level
-            except Exception:
-                logger.exception("Failed to load thread %s for user %s", thread_id, user.id)
-
-        # Load thread list for sidebar
-        try:
-            thread_service = ThreadService(user_id=user.id, client=user_client)
-            threads = thread_service.list_threads()
-            context["threads"] = [
-                {
-                    "id": t.id,
-                    "thread_id": t.thread_id,
-                    "title": t.title,
-                    "language": t.language,
-                    "level": t.level,
-                    "updated_at": t.updated_at.isoformat(),
-                }
-                for t in threads
-            ]
-        except Exception:
-            logger.exception("Failed to load thread list for user %s", user.id)
-
-    # Review features only for authenticated users (skip in lesson mode)
+        context.update(await _thread_page_context(user, sb_token, active_thread))
     if user and not lesson:
-        try:
-            review_service = ReviewService(user.id)
-            review_stats = review_service.get_stats(language=language)
-            context["review_stats"] = review_stats
+        context.update(_review_page_context(user, language, mode, warmup_dismissed))
 
-            if mode == "review":
-                # Review mode - show review start UI
-                context["review_mode"] = True
-            elif review_stats.due_count > 0 and not warmup_dismissed:
-                # Show warmup prompt if words are due and not dismissed
-                context["show_warmup"] = True
-        except APIError:
-            logger.exception("Failed to get review stats for user %s", user.id)
-
-    # Provide a signed WebSocket auth token for voice.
-    # iOS Safari/Chrome (WebKit) may not send httponly cookies with WS upgrade
-    # requests, so the JS passes this token as a query parameter instead.
-    ws_token: str | None = None
-    new_signed_session: str | None = None
-    if settings.voice_enabled:
-        if user:
-            # Authenticated users: sign their user ID as a WS token
-            ws_token = sign_session_id(user.id)
-        elif session_id:
-            # Returning guest: reuse the existing signed session cookie value
-            ws_token = session_id
-        else:
-            # New guest: generate signed session now so both cookie and token match
-            new_signed_session = sign_session_id(str(uuid.uuid4()))
-            ws_token = new_signed_session
+    ws_token, new_signed_session = _voice_ws_token(settings, user, session_id)
     context["ws_token"] = ws_token or ""
 
-    response = templates.TemplateResponse(
-        request=request,
-        name="chat.html",
-        context=context,
-    )
+    response = templates.TemplateResponse(request=request, name="chat.html", context=context)
 
     # Set session cookie on page load for guests so voice WebSocket auth works
     # before they send their first message. Sign the value so the server can
@@ -509,10 +399,117 @@ async def chat_page(  # noqa: PLR0912, PLR0915
             response,
             key="session_id",
             value=new_signed_session or sign_session_id(str(uuid.uuid4())),
-            max_age=60 * 60 * 24 * 7,  # 7 days
+            max_age=_SESSION_COOKIE_MAX_AGE,
         )
 
     return response
+
+
+def _lesson_page_context(lesson_service: "LessonService", lesson_id: str) -> dict[str, Any]:
+    """Build lesson mode template context, raising 404 for unknown lessons."""
+    lesson_data = lesson_service.get_lesson(lesson_id)
+    if not lesson_data:
+        raise HTTPException(status_code=404, detail=f"Lesson not found: {lesson_id}")
+    return {
+        "lesson_mode": True,
+        "lesson_id": lesson_id,
+        "lesson_title": lesson_data.metadata.title,
+        "lesson_description": lesson_data.metadata.description,
+        "lesson_level": str(lesson_data.metadata.level),
+        "lesson_language": lesson_data.metadata.language,
+        "current_language": lesson_data.metadata.language,
+        # Fresh session UUID so each page load starts a clean checkpoint
+        "lesson_session": str(uuid.uuid4()),
+    }
+
+
+async def _thread_page_context(
+    user: AuthenticatedUser, sb_token: str, active_thread: str | None
+) -> dict[str, Any]:
+    """Load the active thread (from the signed cookie) and the sidebar thread list.
+
+    Failures are logged and leave the corresponding context keys unset.
+    """
+    context: dict[str, Any] = {}
+    user_client = get_supabase_for_user(sb_token)
+
+    # Unsign the active_thread cookie (signed since PII audit fix)
+    thread_id = unsign_active_thread(active_thread)
+
+    # Validate active_thread cookie format before use (Finding M1)
+    if thread_id and not _is_valid_thread_id(thread_id):
+        logger.warning("Ignoring active_thread cookie with invalid format: %r", thread_id[:64])
+        thread_id = None
+
+    if thread_id:
+        try:
+            thread_service = ThreadService(user_id=user.id, client=user_client)
+            thread_data = thread_service.get_thread(thread_id)
+            if thread_data:
+                context["active_thread_id"] = thread_id
+                context["messages"] = await get_thread_messages(thread_id)
+                context["current_language"] = thread_data.language
+                context["current_level"] = thread_data.level
+        except Exception:
+            logger.exception("Failed to load thread %s for user %s", thread_id, user.id)
+
+    try:
+        thread_service = ThreadService(user_id=user.id, client=user_client)
+        context["threads"] = [
+            {
+                "id": t.id,
+                "thread_id": t.thread_id,
+                "title": t.title,
+                "language": t.language,
+                "level": t.level,
+                "updated_at": t.updated_at.isoformat(),
+            }
+            for t in thread_service.list_threads()
+        ]
+    except Exception:
+        logger.exception("Failed to load thread list for user %s", user.id)
+
+    return context
+
+
+def _review_page_context(
+    user: AuthenticatedUser, language: str, mode: str | None, warmup_dismissed: str | None
+) -> dict[str, Any]:
+    """Load review stats and decide between review mode and the warmup prompt."""
+    context: dict[str, Any] = {}
+    try:
+        review_stats = ReviewService(user.id).get_stats(language=language)
+        context["review_stats"] = review_stats
+        if mode == "review":
+            context["review_mode"] = True
+        elif review_stats.due_count > 0 and not warmup_dismissed:
+            # Show warmup prompt if words are due and not dismissed
+            context["show_warmup"] = True
+    except APIError:
+        logger.exception("Failed to get review stats for user %s", user.id)
+    return context
+
+
+def _voice_ws_token(
+    settings: "Settings", user: AuthenticatedUser | None, session_id: str | None
+) -> tuple[str | None, str | None]:
+    """Return (ws_token, new_signed_session) for voice WebSocket auth.
+
+    iOS Safari/Chrome (WebKit) may not send httponly cookies with WS upgrade
+    requests, so the JS passes this signed token as a query parameter instead.
+    ``new_signed_session`` is set only when a new guest session was generated.
+    """
+    if not settings.voice_enabled:
+        return None, None
+    if user:
+        # Authenticated users: sign their user ID as a WS token
+        return sign_session_id(user.id), None
+    if session_id:
+        # Returning guest: reuse the existing signed session cookie value
+        return session_id, None
+    # New guest: generate signed session now so both cookie and token match
+    new_signed_session = sign_session_id(str(uuid.uuid4()))
+    return new_signed_session, new_signed_session
 
 
 @router.get("/chat/thread-content", response_class=HTMLResponse, response_model=None)
