@@ -5,6 +5,7 @@ and lifespan management.
 """
 
 import logging
+import os
 import secrets
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -340,3 +341,19 @@ async def health_check() -> dict[str, str]:
         return {"status": "degraded", "app": settings.APP_NAME, "database": "not configured"}
 
     return {"status": "healthy", "app": settings.APP_NAME, "database": "connected"}
+
+
+@app.get("/version")
+async def version_info() -> dict[str, str | None]:
+    """Report which build is running, using metadata Render injects at runtime.
+
+    Returns the git commit, branch and service name from the
+    ``RENDER_GIT_COMMIT``, ``RENDER_GIT_BRANCH`` and ``RENDER_SERVICE_NAME``
+    environment variables. Each field is null when unset or empty (for example
+    when running locally). No other configuration is exposed.
+    """
+    return {
+        "commit": os.environ.get("RENDER_GIT_COMMIT") or None,
+        "branch": os.environ.get("RENDER_GIT_BRANCH") or None,
+        "service": os.environ.get("RENDER_SERVICE_NAME") or None,
+    }
