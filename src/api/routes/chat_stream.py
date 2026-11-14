@@ -261,7 +261,7 @@ def _stream_graph(
     return stream_chat_events(
         graph=graph,
         inputs=inputs,
-        config=_graph_config(turn.identity.thread_id, turn.user_client),
+        config=_graph_config(turn.identity.thread_id, turn.user_client, inputs),
         templates=turn.templates,
         level=turn.level,
         result=result,

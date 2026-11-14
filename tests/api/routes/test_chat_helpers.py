@@ -137,7 +137,8 @@ class TestGraphInputs:
 
     def test_graph_config(self) -> None:
         client = MagicMock()
-        config = _graph_config("t-1", client)
+        config = _graph_config("t-1", client, {"level": "A1", "language": "es"})
+        # Tracing is off without Langfuse keys, so only the configurable part is set.
         assert config == {"configurable": {"thread_id": "t-1", "supabase_client": client}}
 
 

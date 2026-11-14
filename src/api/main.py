@@ -37,6 +37,7 @@ from src.api.routes import (
     voice,
 )
 from src.lessons.service import get_lesson_service
+from src.services.tracing import shutdown_tracing
 
 # Configure logging
 settings = get_settings()
@@ -99,6 +100,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("Shutting down %s...", settings.APP_NAME)
     await close_checkpointer()
+    shutdown_tracing()
 
 
 def _init_sentry() -> None:

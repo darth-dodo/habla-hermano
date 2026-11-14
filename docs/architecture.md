@@ -233,6 +233,7 @@ request -> SecurityHeaders -> CSRF -> CORS -> route
 | Data access | RLS on every table, including the 4 checkpoint tables |
 | Encryption | `SECRET_KEY` + `ENCRYPTION_SALT` -> PBKDF2 (480k rounds) -> Fernet. Encrypted: `vocabulary.translation`, `user_profiles.display_name`, every checkpoint blob |
 | LLM privacy | `OPENROUTER_ZERO_RETENTION=true` sends `provider.data_collection = "deny"` on chat and TTS calls |
+| Tracing | Optional Langfuse (Cloud EU) when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set. Production spans keep node, model, tokens, cost, latency, level and language; message text and the thread ID are deleted before export (`src/services/tracing.py`). `DEBUG=true` keeps full content |
 | Rate limits | REST: per endpoint and per client IP (in memory, one process). `/ws/speak`: 30 messages per minute per connection |
 | Retention | Checkpoints purged after `CHECKPOINT_RETENTION_DAYS` (30). `CONVERSATION_RETENTION_DAYS` is off by default |
 | Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress, threads and checkpoints |

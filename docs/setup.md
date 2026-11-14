@@ -59,6 +59,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 | `DEEPGRAM_API_KEY` | Enables the mic (Deepgram STT). Spoken replies (Gemini TTS) only need `OPENROUTER_API_KEY` |
 | `TTS_MODEL` | Gemini TTS model on OpenRouter (default `google/gemini-3.8-flash-tts`) |
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Enables Langfuse tracing of chat turns (Langfuse Cloud EU by default, `LANGFUSE_BASE_URL` to change). Production traces are metadata only |
 | `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |
 | `DEBUG` | Enable debug mode (local dev only) |
 
