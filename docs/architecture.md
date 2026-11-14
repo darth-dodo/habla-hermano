@@ -1,6 +1,6 @@
 # Architecture
 
-How Habla Hermano works, one diagram per moving part. For endpoints see [api.md](./api.md), for setup see [setup.md](./setup.md).
+How Habla Hermano works, one diagram per moving part. New here? Start with [codebase-summary.md](./codebase-summary.md). For endpoints see [api.md](./api.md), for setup see [setup.md](./setup.md).
 
 ## At a glance
 

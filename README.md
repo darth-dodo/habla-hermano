@@ -89,6 +89,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 
 | Doc | For |
 |---|---|
+| [Codebase summary](docs/codebase-summary.md) | onboarding: read order, one request end to end, where to change things, gotchas |
 | [Architecture](docs/architecture.md) | how every part works, with diagrams |
 | [API](docs/api.md) | routes, SSE events, WebSocket protocols |
 | [Product](docs/product.md) | pedagogy, the Hermano persona, the A0 to B1 journey |
