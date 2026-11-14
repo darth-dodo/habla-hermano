@@ -55,7 +55,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 
 | Variable | Purpose |
 |----------|---------|
-| `DEEPGRAM_API_KEY` | Enables voice input/output (Deepgram STT; TTS uses Gemini via `OPENROUTER_API_KEY`) |
+| `DEEPGRAM_API_KEY` | Enables the mic (Deepgram STT). Spoken replies (Gemini TTS) only need `OPENROUTER_API_KEY` |
 | `TTS_MODEL` | Gemini TTS model on OpenRouter (default `google/gemini-3.8-flash-tts`) |
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
 | `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |
