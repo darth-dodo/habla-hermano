@@ -39,6 +39,7 @@ htmlcov/
 coverage.xml
 *.cover
 .hypothesis/
+evals/results/
 
 # =============================================================================
 # Type Checking

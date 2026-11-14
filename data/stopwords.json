@@ -1,5 +1,5 @@
 {
-  "description": "Common stopwords for keyword extraction filtering. Used by the respond node to filter out non-content words when extracting topic keywords from conversation messages.",
+  "description": "Common stopwords for keyword extraction filtering. Used by the respond node (english, spanish) to filter out non-content words when extracting topic keywords from conversation messages, and by evals/scoring.py (all lists) to estimate the language mix of tutor replies.",
   "english": [
     "the", "a", "an",
     "is", "are", "was", "were", "be", "been", "being",
@@ -42,5 +42,28 @@
     "sí", "muy", "más", "menos", "también",
     "ahora", "aquí", "allí",
     "hola", "bueno", "bien", "mal"
+  ],
+  "german": [
+    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "und",
+    "oder", "aber", "ich", "du", "er", "sie", "es", "wir", "ihr", "mich", "dich", "mir",
+    "dir", "sich", "ist", "sind", "war", "bin", "bist", "hat", "habe", "hast", "haben", "wird",
+    "werden", "kann", "nicht", "kein", "keine", "mit", "von", "zu", "auf", "für", "auch", "noch",
+    "sehr", "gut", "wie", "was", "wer", "wo", "warum", "heute", "gestern", "schon", "jetzt", "hier",
+    "dort", "ja", "nein", "danke", "bitte", "hallo", "genau", "mein", "dein", "sein", "unser", "gerne"
+  ],
+  "french": [
+    "le", "la", "les", "un", "une", "des", "du", "et", "ou", "mais", "je", "tu",
+    "il", "elle", "nous", "vous", "ils", "elles", "me", "te", "se", "mon", "ma", "mes",
+    "ton", "ta", "tes", "son", "sa", "ses", "est", "sont", "suis", "es", "était", "ai",
+    "as", "avons", "avez", "ont", "avec", "pour", "dans", "sur", "pas", "ne", "que", "qui",
+    "quoi", "où", "comment", "pourquoi", "très", "bien", "oui", "non", "merci", "bonjour", "salut", "aussi",
+    "encore", "c'est", "j'ai", "aujourd'hui", "hier", "beaucoup", "chez", "cette", "ce"
+  ],
+  "hinglish": [
+    "hai", "hain", "kya", "main", "mera", "meri", "mere", "aap", "aapka", "aapki", "tum", "tumhara",
+    "nahi", "nahin", "haan", "ka", "ki", "ke", "ko", "se", "mein", "bhi", "aur", "toh",
+    "yeh", "woh", "kaise", "kaisa", "kaisi", "accha", "achha", "theek", "bahut", "kuch", "ho", "tha",
+    "thi", "raha", "rahi", "karo", "karna", "hoon", "ji", "namaste", "shukriya", "dhanyavaad", "kahan", "kab",
+    "kyun"
   ]
 }

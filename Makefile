@@ -48,6 +48,10 @@ test-fast: ## Run tests without slow markers
 test-watch: ## Run tests in watch mode
 	uv run pytest-watch
 
+.PHONY: eval
+eval: ## Run LLM evals against the real model (needs OPENROUTER_API_KEY, costs money, not in CI)
+	uv run python -m evals.run $(ARGS)
+
 # =============================================================================
 # Code Quality
 # =============================================================================
