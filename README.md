@@ -1,9 +1,6 @@
 <p align="center">
   <a href="https://habla-hermano.onrender.com">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
-      <img src="docs/assets/hero-light.svg" alt="Habla Hermano: talk your way from A0 to B1 in Spanish, German, French and Hinglish, with an AI conversation partner" width="100%">
-    </picture>
+    <img src="docs/assets/hero.svg" alt="Habla Hermano: talk your way from A0 to B1 in Spanish, German, French and Hinglish, with an AI conversation partner" width="100%">
   </a>
 </p>
 
