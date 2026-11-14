@@ -1,28 +1,31 @@
-# Habla Hermano
+<p align="center">
+  <a href="https://habla-hermano.onrender.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
+      <img src="docs/assets/hero-light.svg" alt="Habla Hermano: talk your way from A0 to B1 in Spanish, German, French and Hinglish, with an AI conversation partner" width="100%">
+    </picture>
+  </a>
+</p>
 
-> Your AI conversation partner for Spanish, German, French and Hinglish.
+<p align="center">
+  <a href="https://habla-hermano.onrender.com"><b>Try it live</b></a>
+  &nbsp;&middot;&nbsp;
+  <a href="docs/architecture.md">Architecture</a>
+  &nbsp;&middot;&nbsp;
+  <a href="docs/codebase-summary.md">Codebase tour</a>
+  &nbsp;&middot;&nbsp;
+  <a href="docs/testing.md#llm-evals">Evals</a>
+  &nbsp;&middot;&nbsp;
+  <a href="#decisions-and-trade-offs">Decisions</a>
+</p>
 
-[![Live demo](https://img.shields.io/website?url=https%3A%2F%2Fhabla-hermano.onrender.com%2Fhealth&label=live%20demo&up_message=online&down_message=sleeping)](https://habla-hermano.onrender.com)
-[![CI](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml/badge.svg)](https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/darth-dodo/habla-hermano/graph/badge.svg)](https://codecov.io/gh/darth-dodo/habla-hermano)
-[![LLM evals](https://img.shields.io/badge/LLM%20evals-20%2F20-brightgreen)](docs/testing.md#results)
-[![Tests](https://img.shields.io/badge/tests-2.4k%20pytest%20%2B%20260%20vitest-blue)](docs/testing.md)
-[![License: MIT](https://img.shields.io/github/license/darth-dodo/habla-hermano)](LICENSE)
-[![Last commit](https://img.shields.io/github/last-commit/darth-dodo/habla-hermano)](https://github.com/darth-dodo/habla-hermano/commits/main)
-
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
-[![Claude Haiku 5.5 via OpenRouter](https://img.shields.io/badge/LLM-Claude%20Haiku%205.5%20via%20OpenRouter-6566F1)](docs/adr/ADR-011-openrouter-for-llm-and-tts.md)
-[![Langfuse](https://img.shields.io/badge/tracing-Langfuse-0A60FF)](docs/architecture.md#security)
-[![HTMX](https://img.shields.io/badge/HTMX-3366CC?logo=htmx&logoColor=white)](https://htmx.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-
-### 🗣️ [Try it live: habla-hermano.onrender.com](https://habla-hermano.onrender.com)
+<p align="center">
+  <a href="https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/darth-dodo/habla-hermano/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
+  <a href="https://codecov.io/gh/darth-dodo/habla-hermano"><img src="https://img.shields.io/codecov/c/github/darth-dodo/habla-hermano?style=flat-square&label=coverage" alt="Coverage"></a>
+  <a href="docs/testing.md#results"><img src="https://img.shields.io/badge/LLM%20evals-20%2F20-2ea44f?style=flat-square" alt="LLM evals 20 of 20"></a>
+  <a href="https://habla-hermano.onrender.com"><img src="https://img.shields.io/website?url=https%3A%2F%2Fhabla-hermano.onrender.com%2Fhealth&style=flat-square&label=demo&up_message=online&down_message=waking%20up" alt="Live demo status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/darth-dodo/habla-hermano?style=flat-square" alt="MIT license"></a>
+</p>
 
 Language apps teach flashcards; people freeze in real conversations. Hermano gets you **talking from message one**, even as a complete beginner, and shifts from mostly English (A0) to almost all target language (B1) as you improve.
 
@@ -117,6 +120,29 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | `make check` | ruff lint, format check, mypy strict |
 | `make eval` | 20 real-model scenarios, scored (needs `OPENROUTER_API_KEY`, about 1 US cent) |
 | `make dev-css` / `npm run build:css` | rebuild Tailwind after changing classes or `tailwind.config.js` |
+
+## Built with
+
+<p>
+  <img src="https://img.shields.io/badge/Python%203.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph">
+  <img src="https://img.shields.io/badge/Claude%20Haiku%205.5-via%20OpenRouter-6566F1?style=flat-square" alt="Claude Haiku 5.5 via OpenRouter">
+  <img src="https://img.shields.io/badge/Gemini%20TTS-%2B%20Deepgram%20STT-4285F4?style=flat-square" alt="Gemini TTS and Deepgram STT">
+  <img src="https://img.shields.io/badge/HTMX-3366CC?style=flat-square&logo=htmx&logoColor=white" alt="HTMX">
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
+  <img src="https://img.shields.io/badge/Langfuse-tracing-0A60FF?style=flat-square" alt="Langfuse tracing">
+  <img src="https://img.shields.io/badge/Sentry-362D59?style=flat-square&logo=sentry&logoColor=white" alt="Sentry">
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
+</p>
+<p>
+  <img src="https://img.shields.io/badge/tests-2.4k%20pytest%20%2B%20260%20vitest-555?style=flat-square" alt="Tests">
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/lint-ruff-D7FF64?style=flat-square&logo=ruff&logoColor=black" alt="Ruff"></a>
+  <a href="https://mypy-lang.org/"><img src="https://img.shields.io/badge/types-mypy%20strict-2A6DB2?style=flat-square" alt="mypy strict"></a>
+  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/badge/packaging-uv-DE5FE9?style=flat-square&logo=uv&logoColor=white" alt="uv"></a>
+  <img src="https://img.shields.io/github/last-commit/darth-dodo/habla-hermano?style=flat-square" alt="Last commit">
+</p>
 
 ## Docs
 
