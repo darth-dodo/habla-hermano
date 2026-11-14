@@ -7,6 +7,7 @@ Phase 6: Provides lesson management functionality including:
 - Vocabulary extraction
 """
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, TypedDict
@@ -27,6 +28,8 @@ from src.lessons.models import (
     TranslateExercise,
     UserLessonProgress,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LessonWithProgress(TypedDict):
@@ -204,91 +207,101 @@ class LessonService:
             if not isinstance(lang_data, dict):
                 continue
 
-            metadata = LessonMetadata(
-                id=shared_id,
-                title=lang_data.get("title", shared_title),
-                description=lang_data.get("description", shared_description),
-                language=language,
-                level=shared_level,
-                estimated_minutes=shared_est,
-                category=shared_category,
-                tags=shared_tags,
-                prerequisites=shared_prerequisites,
-                vocabulary_count=len(lang_data.get("vocabulary", [])),
-                icon=shared_icon,
-            )
-
-            # Build steps from per-language content
-            steps: list[LessonStep] = []
-            order = 1
-
-            # Instruction step
-            if "instruction" in lang_data:
-                steps.append(
-                    LessonStep(
-                        type=LessonStepType.INSTRUCTION,
-                        content=lang_data["instruction"],
-                        order=order,
-                    )
-                )
-                order += 1
-
-            # Vocabulary step
-            if lang_data.get("vocabulary"):
-                steps.append(
-                    LessonStep(
-                        type=LessonStepType.VOCABULARY,
-                        content="Key phrases for this situation:",
-                        vocabulary=lang_data["vocabulary"],
-                        order=order,
-                    )
-                )
-                order += 1
-
-            # Example steps
-            for ex in lang_data.get("examples", []):
-                steps.append(
-                    LessonStep(
-                        type=LessonStepType.EXAMPLE,
-                        content=ex["content"],
-                        translation=ex.get("translation"),
-                        order=order,
-                    )
-                )
-                order += 1
-
-            # Tip steps
-            for tip in lang_data.get("tips", []):
-                steps.append(
-                    LessonStep(
-                        type=LessonStepType.TIP,
-                        content=tip,
-                        order=order,
-                    )
-                )
-                order += 1
-
-            # Practice step (linking to first exercise)
-            exercises_data = lang_data.get("exercises", [])
-            if exercises_data:
-                steps.append(
-                    LessonStep(
-                        type=LessonStepType.PRACTICE,
-                        content="Put your skills to the test!",
-                        exercise_id=exercises_data[0].get("id", ""),
-                        order=order,
-                    )
+            # Isolate each language block: one bad block must not drop the
+            # other valid languages in the same file.
+            try:
+                metadata = LessonMetadata(
+                    id=shared_id,
+                    title=lang_data.get("title", shared_title),
+                    description=lang_data.get("description", shared_description),
+                    language=language,
+                    level=shared_level,
+                    estimated_minutes=shared_est,
+                    category=shared_category,
+                    tags=shared_tags,
+                    prerequisites=shared_prerequisites,
+                    vocabulary_count=len(lang_data.get("vocabulary", [])),
+                    icon=shared_icon,
                 )
 
-            # Parse exercises
-            exercises: list[AnyExercise] = []
-            for ex_data in exercises_data:
-                exercise = self._parse_exercise(ex_data)
-                if exercise:
-                    exercises.append(exercise)
+                # Build steps from per-language content
+                steps: list[LessonStep] = []
+                order = 1
 
-            content = LessonContent(steps=steps, exercises=exercises)
-            lessons.append(Lesson(metadata=metadata, content=content))
+                # Instruction step
+                if "instruction" in lang_data:
+                    steps.append(
+                        LessonStep(
+                            type=LessonStepType.INSTRUCTION,
+                            content=lang_data["instruction"],
+                            order=order,
+                        )
+                    )
+                    order += 1
+
+                # Vocabulary step
+                if lang_data.get("vocabulary"):
+                    steps.append(
+                        LessonStep(
+                            type=LessonStepType.VOCABULARY,
+                            content="Key phrases for this situation:",
+                            vocabulary=lang_data["vocabulary"],
+                            order=order,
+                        )
+                    )
+                    order += 1
+
+                # Example steps
+                for ex in lang_data.get("examples", []):
+                    steps.append(
+                        LessonStep(
+                            type=LessonStepType.EXAMPLE,
+                            content=ex["content"],
+                            translation=ex.get("translation"),
+                            order=order,
+                        )
+                    )
+                    order += 1
+
+                # Tip steps
+                for tip in lang_data.get("tips", []):
+                    steps.append(
+                        LessonStep(
+                            type=LessonStepType.TIP,
+                            content=tip,
+                            order=order,
+                        )
+                    )
+                    order += 1
+
+                # Practice step (linking to first exercise)
+                exercises_data = lang_data.get("exercises", [])
+                if exercises_data:
+                    steps.append(
+                        LessonStep(
+                            type=LessonStepType.PRACTICE,
+                            content="Put your skills to the test!",
+                            exercise_id=exercises_data[0].get("id", ""),
+                            order=order,
+                        )
+                    )
+
+                # Parse exercises
+                exercises: list[AnyExercise] = []
+                for ex_data in exercises_data:
+                    exercise = self._parse_exercise(ex_data)
+                    if exercise:
+                        exercises.append(exercise)
+
+                content = LessonContent(steps=steps, exercises=exercises)
+                lessons.append(Lesson(metadata=metadata, content=content))
+            except (ValidationError, KeyError, TypeError) as e:
+                logger.warning(
+                    "Skipping invalid language block %r in lesson file %s: %s",
+                    language,
+                    path,
+                    e,
+                )
 
         return lessons
 

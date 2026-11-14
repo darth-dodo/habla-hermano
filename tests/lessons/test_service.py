@@ -6,6 +6,7 @@ Implementation follows to make these tests pass.
 Phase 6: Micro-lessons feature.
 """
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -246,6 +247,94 @@ class TestVocabularyExtraction:
         words = [v["word"] for v in vocab]
         # At least some basic greetings vocabulary
         assert len(words) > 0
+
+
+# =============================================================================
+# Multi-language File Fault Isolation Tests
+# =============================================================================
+
+
+def _language_block(language: str) -> str:
+    """Return a minimal valid YAML language block for a multi-language file."""
+    return f"""  {language}:
+    title: "Greetings ({language})"
+    instruction: "Learn greetings in {language}."
+    vocabulary:
+      - word: "hello-{language}"
+        translation: "hello"
+    examples:
+      - content: "example-{language}"
+        translation: "example"
+    tips:
+      - "tip-{language}"
+"""
+
+
+def _write_multi_language_file(lessons_dir: Path, blocks: str) -> Path:
+    """Write a topic-based lesson file with the given language blocks."""
+    level_dir = lessons_dir / "A0"
+    level_dir.mkdir(parents=True, exist_ok=True)
+    path = level_dir / "greetings-001.yaml"
+    path.write_text(
+        "id: greetings-001\n"
+        "level: A0\n"
+        "category: greetings\n"
+        "title: Greetings\n"
+        "description: Say hello\n"
+        "languages:\n" + blocks,
+        encoding="utf-8",
+    )
+    return path
+
+
+class TestMultiLanguageFaultIsolation:
+    """One bad language block must not drop the other blocks in the same file."""
+
+    def test_hinglish_block_loads_alongside_other_languages(self, tmp_path: Path) -> None:
+        """A file with es/de/fr plus a valid hi block should load all four."""
+        blocks = "".join(_language_block(lang) for lang in ("es", "de", "fr", "hi"))
+        _write_multi_language_file(tmp_path, blocks)
+
+        service = LessonService(lessons_dir=tmp_path)
+
+        languages = {lesson.metadata.language for lesson in service.get_all_lessons()}
+        assert languages == {"es", "de", "fr", "hi"}
+        assert service.get_lesson("greetings-001", language="hi") is not None
+
+    def test_unknown_language_block_skipped_others_load(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """An unknown language code should skip only that block and log a warning."""
+        blocks = "".join(_language_block(lang) for lang in ("es", "xx", "fr"))
+        path = _write_multi_language_file(tmp_path, blocks)
+
+        with caplog.at_level(logging.WARNING, logger="src.lessons.service"):
+            service = LessonService(lessons_dir=tmp_path)
+
+        languages = {lesson.metadata.language for lesson in service.get_all_lessons()}
+        assert languages == {"es", "fr"}
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert any(str(path) in r.getMessage() and "'xx'" in r.getMessage() for r in warnings)
+
+    def test_malformed_block_skipped_others_load(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A malformed block (example missing content) should not drop valid blocks."""
+        malformed = """  de:
+    instruction: "Broken block."
+    examples:
+      - translation: "no content key"
+"""
+        blocks = _language_block("es") + malformed + _language_block("fr")
+        path = _write_multi_language_file(tmp_path, blocks)
+
+        with caplog.at_level(logging.WARNING, logger="src.lessons.service"):
+            service = LessonService(lessons_dir=tmp_path)
+
+        languages = {lesson.metadata.language for lesson in service.get_all_lessons()}
+        assert languages == {"es", "fr"}
+        warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+        assert any(str(path) in r.getMessage() and "'de'" in r.getMessage() for r in warnings)
 
 
 # =============================================================================

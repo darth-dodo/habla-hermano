@@ -25,6 +25,7 @@ from src.lessons.models import (
     UserLessonProgress,
     _normalize_answer,
 )
+from src.validation import VALID_LANGUAGES
 
 # =============================================================================
 # LessonMetadata Tests
@@ -101,6 +102,29 @@ class TestLessonMetadata:
                 level=LessonLevel.A0,
             )
             assert metadata.language == lang
+
+    def test_metadata_languages_match_valid_languages(self) -> None:
+        """LessonMetadata should accept exactly the canonical VALID_LANGUAGES."""
+        for lang in VALID_LANGUAGES:
+            metadata = LessonMetadata(
+                id="test",
+                title="Test",
+                description="Test",
+                language=lang,
+                level=LessonLevel.A0,
+            )
+            assert metadata.language == lang
+
+    def test_metadata_accepts_hinglish(self) -> None:
+        """LessonMetadata should accept Hinglish (hi), which is in VALID_LANGUAGES."""
+        metadata = LessonMetadata(
+            id="test",
+            title="Test",
+            description="Test",
+            language="hi",
+            level=LessonLevel.A0,
+        )
+        assert metadata.language == "hi"
 
     def test_metadata_all_levels(self) -> None:
         """LessonMetadata should accept all CEFR levels."""

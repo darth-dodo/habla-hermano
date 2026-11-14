@@ -15,6 +15,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from src.validation import VALID_LANGUAGES
+
 
 def _normalize_answer(text: str) -> str:
     """Normalize answer for comparison: lowercase, strip punctuation, collapse whitespace.
@@ -74,7 +76,7 @@ class LessonMetadata(BaseModel):
         id: Unique lesson identifier (slug format).
         title: Display title for the lesson.
         description: Brief description of what the lesson teaches.
-        language: Target language code (es, de, fr).
+        language: Target language code (one of src.validation.VALID_LANGUAGES).
         level: CEFR proficiency level.
         estimated_minutes: Expected completion time (default 2).
         category: Lesson category for grouping (greetings, food, etc.).
@@ -106,9 +108,8 @@ class LessonMetadata(BaseModel):
     @classmethod
     def validate_language(cls, v: str) -> str:
         """Validate language is supported."""
-        supported = {"es", "de", "fr"}
-        if v not in supported:
-            raise ValueError(f"Language must be one of {supported}, got {v}")
+        if v not in VALID_LANGUAGES:
+            raise ValueError(f"Language must be one of {sorted(VALID_LANGUAGES)}, got {v}")
         return v
 
 
