@@ -23,7 +23,7 @@ dev: ## Run development server
 	uv run uvicorn src.api.main:app --reload --port 8000
 
 dev-css: ## Watch and compile Tailwind CSS
-	npx tailwindcss -i ./src/static/css/input.css -o ./src/static/css/output.css --watch
+	npm run watch:css
 
 # =============================================================================
 # Testing
@@ -47,6 +47,10 @@ test-fast: ## Run tests without slow markers
 
 test-watch: ## Run tests in watch mode
 	uv run pytest-watch
+
+.PHONY: eval
+eval: ## Run LLM evals against the real model (needs OPENROUTER_API_KEY, costs money, not in CI)
+	uv run python -m evals.run $(ARGS)
 
 # =============================================================================
 # Code Quality

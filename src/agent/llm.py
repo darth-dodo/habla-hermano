@@ -88,11 +88,17 @@ def get_llm(profile: str = "default") -> ChatOpenAI:
     if default_headers:
         kwargs["default_headers"] = default_headers
 
+    # Turn off hidden reasoning. Reasoning tokens count against max_tokens, so
+    # Haiku 5.5 spent ~440 of the analysis profile's 1024 on reasoning and cut
+    # its JSON short (found by `make eval`); it also doubled latency.
+    extra_body: dict[str, Any] = {"reasoning": {"enabled": False}}
+
     # Privacy: restrict routing to providers that do not retain/train on data.
     # OpenRouter exposes this via the request body `provider.data_collection`
     # field, forwarded through the OpenAI-compatible client's `extra_body`.
     if settings.OPENROUTER_ZERO_RETENTION:
-        kwargs["extra_body"] = {"provider": {"data_collection": "deny"}}
+        extra_body["provider"] = {"data_collection": "deny"}
+    kwargs["extra_body"] = extra_body
 
     return ChatOpenAI(**kwargs)  # type: ignore[call-arg]  # langchain-openai partial stubs
 

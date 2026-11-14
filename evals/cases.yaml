@@ -1,0 +1,131 @@
+# LLM eval cases for Hermano (one learner turn each, fresh thread per case).
+#
+# Fields:
+#   id, language (es|de|fr|hi), level (A0|A1|A2|B1), message: the learner turn.
+#   expect (all optional):
+#     grammar_error: true   -> analyze must return grammar feedback and the reply must not lecture
+#     recast: [...]         -> corrected forms the reply should model (any one, case-insensitive substring)
+#     contains_any: [...]   -> the reply must mention at least one of these
+# Every case is also checked for language mix band, scaffolding by level,
+# JSON parsing of structured outputs and reply length (see evals/scoring.py).
+
+cases:
+  # Spanish
+  - id: es-a0-english-beginner
+    language: es
+    level: A0
+    message: "Hi! I know zero Spanish. How do I say hello?"
+    expect:
+      contains_any: ["hola"]
+  - id: es-a0-first-word
+    language: es
+    level: A0
+    message: "hola"
+  - id: es-a1-ser-error
+    language: es
+    level: A1
+    message: "Yo es estudiante y me gusta la música."
+    expect:
+      grammar_error: true
+      recast: ["soy", "eres"]
+  - id: es-a1-food
+    language: es
+    level: A1
+    message: "Me gusta la pizza. ¿Y a ti?"
+  - id: es-a2-past-tense-error
+    language: es
+    level: A2
+    message: "Ayer yo voy a la playa con mis amigos."
+    expect:
+      grammar_error: true
+      recast: ["fui"]
+  - id: es-a2-travel
+    language: es
+    level: A2
+    message: "El verano pasado viajé a México con mi familia."
+  - id: es-b1-idiom
+    language: es
+    level: B1
+    message: "¿Qué significa 'estar en las nubes'? Mi profesor siempre lo dice."
+    expect:
+      contains_any: ["nubes", "distraído", "distraída", "despistado"]
+  - id: es-b1-subjunctive-error
+    language: es
+    level: B1
+    message: "Espero que tú vienes a mi fiesta el sábado."
+    expect:
+      grammar_error: true
+      recast: ["vengas"]
+
+  # German
+  - id: de-a0-english-beginner
+    language: de
+    level: A0
+    message: "How do I say thank you in German?"
+    expect:
+      contains_any: ["danke"]
+  - id: de-a1-accusative-error
+    language: de
+    level: A1
+    message: "Ich habe ein Hund. Er heißt Max."
+    expect:
+      grammar_error: true
+      recast: ["einen hund"]
+  - id: de-a2-word-order-error
+    language: de
+    level: A2
+    message: "Gestern ich habe Fußball mit meinen Freunden gespielt."
+    expect:
+      grammar_error: true
+  - id: de-a2-weekend
+    language: de
+    level: A2
+    message: "Am Wochenende habe ich einen Film gesehen und Pizza gegessen."
+  - id: de-b1-idiom
+    language: de
+    level: B1
+    message: "Was bedeutet 'Tomaten auf den Augen haben'?"
+    expect:
+      contains_any: ["tomaten", "übersehen", "bemerken", "sehen"]
+
+  # French
+  - id: fr-a0-bonjour
+    language: fr
+    level: A0
+    message: "Bonjour!"
+  - id: fr-a1-age-error
+    language: fr
+    level: A1
+    message: "Je suis 25 ans et j'habite à Lyon."
+    expect:
+      grammar_error: true
+      recast: ["j'ai 25", "tu as 25", "vous avez 25"]
+  - id: fr-a2-passe-compose-error
+    language: fr
+    level: A2
+    message: "Hier, je suis allé au cinéma et je mange du popcorn."
+    expect:
+      grammar_error: true
+      recast: ["mangé"]
+  - id: fr-b1-idiom
+    language: fr
+    level: B1
+    message: "Que veut dire 'poser un lapin' ? Un ami m'a dit ça."
+    expect:
+      contains_any: ["lapin", "rendez-vous", "venir"]
+  - id: fr-b1-opinion
+    language: fr
+    level: B1
+    message: "Je pense que le télétravail est meilleur pour l'équilibre entre vie pro et vie perso."
+
+  # Hinglish (taught in English, target is Roman script Hindi)
+  - id: hi-a0-english-beginner
+    language: hi
+    level: A0
+    message: "How do I ask someone how they are in Hinglish?"
+    expect:
+      contains_any: ["kaise", "kaisa", "kaisi"]
+  - id: hi-a1-weekend
+    language: hi
+    level: A1
+    message: "Main kal market gaya tha aur bahut maza aaya."

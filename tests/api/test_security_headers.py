@@ -59,11 +59,32 @@ class TestCSPNonce:
             f"script-src should use nonce instead of 'unsafe-inline': {script_src}"
         )
 
-    def test_unsafe_eval_retained_for_tailwind(self, test_client: TestClient) -> None:
-        """script-src should still include 'unsafe-eval' for Tailwind CDN."""
+    def test_unsafe_eval_retained_for_alpine(self, test_client: TestClient) -> None:
+        """script-src keeps 'unsafe-eval' only for the standard Alpine.js build."""
         response = test_client.get("/health")
         csp = response.headers["Content-Security-Policy"]
-        assert "'unsafe-eval'" in csp, "Tailwind CDN requires 'unsafe-eval'"
+        assert "'unsafe-eval'" in csp, "Alpine.js (non-CSP build) requires 'unsafe-eval'"
+
+    def test_no_third_party_script_hosts(self, test_client: TestClient) -> None:
+        """Scripts are self-hosted, so script-src lists no CDN hosts."""
+        response = test_client.get("/health")
+        csp = response.headers["Content-Security-Policy"]
+        script_src_match = re.search(r"script-src\s+([^;]+)", csp)
+        assert script_src_match is not None
+        assert "https:" not in script_src_match.group(1), script_src_match.group(1)
+        for host in (
+            "cdn.tailwindcss.com",
+            "unpkg.com",
+            "cdn.jsdelivr.net",
+            "cdnjs.cloudflare.com",
+        ):
+            assert host not in csp, f"{host} should not be allowed: {csp}"
+
+    def test_object_src_none_and_base_uri_self(self, test_client: TestClient) -> None:
+        """Plugins are blocked and <base> cannot repoint relative URLs."""
+        csp = test_client.get("/health").headers["Content-Security-Policy"]
+        assert "object-src 'none'" in csp
+        assert "base-uri 'self'" in csp
 
     def test_nonce_in_rendered_html(self, test_client: TestClient) -> None:
         """Rendered HTML pages should include the nonce on script tags."""

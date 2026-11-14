@@ -81,3 +81,16 @@ class TestZeroRetentionDataCollection:
         # Both should still carry the data_collection policy
         assert _data_collection(llm_default) == "deny"
         assert _data_collection(llm_analysis) == "deny"
+
+
+@pytest.mark.usefixtures("_clear_cache")
+@pytest.mark.parametrize("zero_retention", [False, True])
+def test_reasoning_disabled_for_every_profile(zero_retention: bool) -> None:
+    """Reasoning tokens eat max_tokens and truncate structured JSON, so it stays off."""
+    from src.agent.llm import _PROFILES, clear_llm_cache, get_llm
+
+    settings = _make_settings(zero_retention=zero_retention)
+    with patch("src.config.get_settings", return_value=settings):
+        for profile in _PROFILES:
+            assert get_llm(profile).extra_body["reasoning"] == {"enabled": False}
+    clear_llm_cache()
