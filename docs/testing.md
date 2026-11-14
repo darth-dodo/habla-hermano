@@ -103,7 +103,16 @@ make eval ARGS="--only es-b1"                    # cases whose id contains "es-b
 
 It refuses to start (exit 2) when `OPENROUTER_API_KEY` is not exported. It prints a table with checks passed, latency and tokens per case plus the pass rate, writes a JSON report to `evals/results/` (gitignored), and exits 1 if any case failed.
 
-Cost: one run is about 50 LLM calls (respond and analyze per case, scaffold for A0/A1), roughly 50k input and 12k output tokens. At Claude Haiku 5.5 list prices ($0.10 / $0.50 per million tokens) that is around 1-2 US cents; OpenRouter pricing may differ slightly. This is an estimate, not a measured number.
+Cost: one run is about 50 LLM calls (respond and analyze per case, scaffold for A0/A1). Measured on 2026-11-14: about 32k input and 16k output tokens, roughly 1 US cent at Claude Haiku 5.5 list prices ($0.10 / $0.50 per million tokens).
+
+### Results
+
+| Date | Model | Pass rate | Time | Tokens in / out | Note |
+|---|---|---|---|---|---|
+| 2026-11-14 | `anthropic/claude-haiku-5.5` | 9/20 | 191s | 31.6k / 31.7k | Hidden reasoning used up `max_tokens` and cut the analyze JSON short, so grammar feedback was silently empty |
+| 2026-11-14 | `anthropic/claude-haiku-5.5` | 20/20 | 117s | 31.6k / 15.9k | With reasoning disabled in `get_llm()` (#122) |
+
+Add a row when the model, prompts or thresholds change.
 
 The real eval never runs in CI or `make test`. CI covers the scorer and the runner through `tests/evals/`, which drive the real graph with a fake chat model.
 
