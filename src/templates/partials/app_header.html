@@ -47,7 +47,7 @@ Variables expected:
             <!-- Authenticated chat: read-only badges (language/level set per thread via sidebar) -->
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <div class="h-10 flex items-center gap-1 px-2 bg-surface-overlay rounded-xl text-sm font-medium">
-                    <span x-show="language === 'es'" class="text-lg leading-none">🇪🇸</span>
+                    <span x-show="language === 'es'" class="text-lg leading-none">🇦🇷</span>
                     <span x-show="language === 'de'" class="text-lg leading-none">🇩🇪</span>
                     <span x-show="language === 'fr'" class="text-lg leading-none">🇫🇷</span>
                     <span x-show="language === 'hi'" class="text-lg leading-none">🇮🇳</span>
@@ -69,7 +69,7 @@ Variables expected:
                         class="h-10 flex items-center gap-1 px-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                         aria-label="Select language"
                     >
-                        <span x-show="language === 'es'" class="text-lg leading-none">🇪🇸</span>
+                        <span x-show="language === 'es'" class="text-lg leading-none">🇦🇷</span>
                         <span x-show="language === 'de'" class="text-lg leading-none">🇩🇪</span>
                         <span x-show="language === 'fr'" class="text-lg leading-none">🇫🇷</span>
                         <span x-show="language === 'hi'" class="text-lg leading-none">🇮🇳</span>
@@ -93,7 +93,7 @@ Variables expected:
                         aria-label="Select language"
                     >
                         <div class="p-2">
-                            {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
+                            {% for lang_code, lang_flag, lang_name in [('es', '🇦🇷', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
                             <button
                                 @click="language = '{{ lang_code }}'; open = false; if ($refs.languageInput) $refs.languageInput.value = '{{ lang_code }}'; localStorage.setItem('hermano-language', '{{ lang_code }}'); if (typeof onLanguageChange === 'function') onLanguageChange('{{ lang_code }}')"
                                 role="option"

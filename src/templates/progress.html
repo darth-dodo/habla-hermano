@@ -29,7 +29,7 @@
                     class="h-10 flex items-center gap-1 px-2 bg-surface-overlay hover:bg-border/50 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
                     aria-label="Select language"
                 >
-                    <span x-show="language === 'es'" class="text-lg leading-none">🇪🇸</span>
+                    <span x-show="language === 'es'" class="text-lg leading-none">🇦🇷</span>
                     <span x-show="language === 'de'" class="text-lg leading-none">🇩🇪</span>
                     <span x-show="language === 'fr'" class="text-lg leading-none">🇫🇷</span>
                     <span x-show="language === 'hi'" class="text-lg leading-none">🇮🇳</span>
@@ -51,7 +51,7 @@
                     aria-label="Select language"
                 >
                     <div class="p-2">
-                        {% for lang_code, lang_flag, lang_name in [('es', '🇪🇸', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
+                        {% for lang_code, lang_flag, lang_name in [('es', '🇦🇷', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
                         <button
                             @click="language = '{{ lang_code }}'; open = false; localStorage.setItem('hermano-language', '{{ lang_code }}'); onLanguageChange('{{ lang_code }}')"
                             role="option"
