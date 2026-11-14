@@ -1,6 +1,6 @@
 """Tests for src/api/routes/voice.py - Voice STT/TTS endpoints.
 
-Phase 17: WebSocket STT proxy via Deepgram and REST TTS proxy endpoint.
+Phase 17: WebSocket STT proxy via Deepgram and REST TTS endpoint (Gemini TTS via OpenRouter).
 B1: WebSocket endpoints require authentication via cookies.
 """
 
@@ -20,10 +20,13 @@ from src.api.config import Settings, get_settings
 from src.api.routes.voice import (
     ALLOWED_VOICES,
     DEFAULT_VOICES,
+    HERMANO_VOICE,
     MAX_TTS_TEXT_LENGTH,
     VALID_STT_LANGUAGES,
     SpeakRequest,
 )
+from src.services.tts import TTS_SAMPLE_RATE, TTSError
+from tests.api.routes.tts_fakes import FAKE_PCM_CHUNKS, FakeSynthesizer
 from tests.conftest import CSRF_HEADERS
 
 # Guest session UUID used for WebSocket authentication in tests
@@ -152,40 +155,19 @@ def mock_settings_no_deepgram() -> Generator[MagicMock, None, None]:
 
 
 @pytest.fixture
-def mock_httpx_stream() -> Generator[MagicMock, None, None]:
-    """Mock httpx.AsyncClient for TTS streaming response.
+def mock_tts() -> Generator[FakeSynthesizer, None, None]:
+    """Replace Gemini TTS synthesis with a fake that yields fixed PCM chunks."""
+    fake = FakeSynthesizer()
+    with patch("src.api.routes.voice.synthesize_pcm", fake):
+        yield fake
 
-    Creates a mock chain: AsyncClient() context -> client.stream() context -> response.
-    The response yields fake audio bytes to simulate Deepgram TTS output.
-    """
-    with patch("src.api.routes.voice.httpx.AsyncClient") as mock_client_cls:
-        # Build the response mock with async byte iteration
-        mock_response = MagicMock()
-        mock_response.status_code = 200
 
-        async def fake_aiter_bytes(chunk_size: int = 1024) -> AsyncIterator[bytes]:
-            yield b"fake-audio-chunk-1"
-            yield b"fake-audio-chunk-2"
-
-        mock_response.aiter_bytes = fake_aiter_bytes
-        mock_response.raise_for_status = MagicMock()
-
-        # stream() returns an async context manager yielding the response
-        mock_stream_ctx = AsyncMock()
-        mock_stream_ctx.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_stream_ctx.__aexit__ = AsyncMock(return_value=False)
-
-        # The client instance has a .stream() method
-        mock_client_instance = MagicMock()
-        mock_client_instance.stream = MagicMock(return_value=mock_stream_ctx)
-
-        # AsyncClient() returns an async context manager yielding the client instance
-        mock_client_ctx = AsyncMock()
-        mock_client_ctx.__aenter__ = AsyncMock(return_value=mock_client_instance)
-        mock_client_ctx.__aexit__ = AsyncMock(return_value=False)
-
-        mock_client_cls.return_value = mock_client_ctx
-        yield mock_client_cls
+@pytest.fixture
+def mock_tts_failing() -> Generator[FakeSynthesizer, None, None]:
+    """Replace Gemini TTS synthesis with a fake that fails like an upstream error."""
+    fake = FakeSynthesizer(error=TTSError("OpenRouter TTS returned HTTP 503"))
+    with patch("src.api.routes.voice.synthesize_pcm", fake):
+        yield fake
 
 
 @pytest.fixture
@@ -294,14 +276,14 @@ class TestSpeakRequestModel:
 
     def test_valid_request(self) -> None:
         """SpeakRequest accepts valid text and voice."""
-        req = SpeakRequest(text="Hola, como estas?", voice="aura-2-celeste-es")
+        req = SpeakRequest(text="Hola, como estas?", voice="Kore")
         assert req.text == "Hola, como estas?"
-        assert req.voice == "aura-2-celeste-es"
+        assert req.voice == "Kore"
 
     def test_default_voice(self) -> None:
-        """SpeakRequest defaults to aura-2-nestor-es voice (masculine Hermano persona)."""
+        """SpeakRequest defaults to the Hermano voice (Gemini "Achird")."""
         req = SpeakRequest(text="Hola")
-        assert req.voice == "aura-2-nestor-es"
+        assert req.voice == HERMANO_VOICE == "Achird"
 
     def test_empty_text_rejected(self) -> None:
         """SpeakRequest rejects empty text via min_length=1."""
@@ -338,20 +320,11 @@ class TestVoiceConstants:
         """ALLOWED_VOICES should be an immutable frozenset."""
         assert isinstance(ALLOWED_VOICES, frozenset)
 
-    def test_allowed_voices_contains_spanish(self) -> None:
-        """ALLOWED_VOICES should contain Spanish voice options."""
-        spanish_voices = [v for v in ALLOWED_VOICES if v.endswith("-es")]
-        assert len(spanish_voices) >= 1
-
-    def test_allowed_voices_contains_german(self) -> None:
-        """ALLOWED_VOICES should contain German voice options."""
-        german_voices = [v for v in ALLOWED_VOICES if v.endswith("-de")]
-        assert len(german_voices) >= 1
-
-    def test_allowed_voices_contains_french(self) -> None:
-        """ALLOWED_VOICES should contain French voice options."""
-        french_voices = [v for v in ALLOWED_VOICES if v.endswith("-fr")]
-        assert len(french_voices) >= 1
+    def test_allowed_voices_are_gemini_voices(self) -> None:
+        """ALLOWED_VOICES holds Gemini TTS voice names, not Deepgram model IDs."""
+        assert "Achird" in ALLOWED_VOICES
+        assert "Kore" in ALLOWED_VOICES
+        assert not any(v.startswith("aura-") for v in ALLOWED_VOICES)
 
     def test_default_voices_cover_all_languages(self) -> None:
         """DEFAULT_VOICES should have entries for es, de, fr, hi."""
@@ -360,14 +333,9 @@ class TestVoiceConstants:
         assert "fr" in DEFAULT_VOICES
         assert "hi" in DEFAULT_VOICES
 
-    def test_hinglish_uses_english_voice_not_spanish(self) -> None:
-        """Hinglish has no Deepgram Hindi voice, so it maps to an English voice.
-
-        Roman-script Hindi-English code-mixing reads far better with an English
-        voice than the Spanish default it previously fell back to.
-        """
-        assert DEFAULT_VOICES["hi"].endswith("-en")
-        assert not DEFAULT_VOICES["hi"].endswith("-es")
+    def test_every_language_uses_the_hermano_voice(self) -> None:
+        """Gemini voices are language-agnostic: Hermano sounds the same everywhere."""
+        assert set(DEFAULT_VOICES.values()) == {HERMANO_VOICE}
 
     def test_default_voices_are_in_allowed(self) -> None:
         """Every default voice must be in the ALLOWED_VOICES set."""
@@ -462,27 +430,28 @@ class TestSpeakEndpoint:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Valid request returns audio/mpeg streaming response."""
+        """Valid request streams raw PCM back as audio/pcm."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola, como estas?", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola, como estas?", "voice": "Kore"},
         )
         assert response.status_code == 200
-        assert response.headers["content-type"] == "audio/mpeg"
-        assert len(response.content) > 0
+        assert response.headers["content-type"] == "audio/pcm"
+        assert response.headers["x-sample-rate"] == str(TTS_SAMPLE_RATE)
+        assert response.content == b"".join(FAKE_PCM_CHUNKS)
 
     async def test_speak_returns_cache_control_header(
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Response includes Cache-Control: no-cache header."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "Kore"},
         )
         assert response.status_code == 200
         assert response.headers.get("cache-control") == "no-cache"
@@ -491,62 +460,42 @@ class TestSpeakEndpoint:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Default voice is aura-2-nestor-es when not specified in request."""
+        """Default voice is the Hermano voice when not specified in request."""
         response = await async_client.post(
             "/api/speak",
             json={"text": "Buenos dias"},
         )
         assert response.status_code == 200
+        assert mock_tts.calls == [("Buenos dias", HERMANO_VOICE)]
 
-        # Verify the mock was called with the default voice in the URL
-        mock_client_ctx = mock_httpx_stream.return_value
-        mock_client_instance = mock_client_ctx.__aenter__.return_value
-        mock_client_instance.stream.assert_called_once()
-        call_args = mock_client_instance.stream.call_args
-        url = call_args[0][1] if len(call_args[0]) > 1 else call_args[1].get("url", "")
-        assert "aura-2-nestor-es" in url
-
-    async def test_speak_sends_text_to_deepgram(
+    async def test_speak_sends_text_and_voice_to_synthesis(
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Request text is forwarded to Deepgram API in JSON body."""
-        test_text = "Me llamo Carlos"
+        """Request text and voice are passed to Gemini TTS synthesis."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": test_text, "voice": "aura-2-celeste-es"},
+            json={"text": "Me llamo Carlos", "voice": "Kore"},
         )
         assert response.status_code == 200
+        assert mock_tts.calls == [("Me llamo Carlos", "Kore")]
 
-        mock_client_ctx = mock_httpx_stream.return_value
-        mock_client_instance = mock_client_ctx.__aenter__.return_value
-        call_kwargs = mock_client_instance.stream.call_args
-        # Check the json body passed to stream()
-        json_body = call_kwargs[1].get("json", {}) if call_kwargs[1] else {}
-        assert json_body.get("text") == test_text
-
-    async def test_speak_sends_auth_header(
+    async def test_speak_upstream_failure_returns_502(
         self,
         async_client: AsyncClient,
-        mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts_failing: FakeSynthesizer,
     ) -> None:
-        """Deepgram API call includes the authorization token header."""
+        """An OpenRouter TTS failure becomes a clean 502, not a broken 200 stream."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "Kore"},
         )
-        assert response.status_code == 200
-
-        mock_client_ctx = mock_httpx_stream.return_value
-        mock_client_instance = mock_client_ctx.__aenter__.return_value
-        call_kwargs = mock_client_instance.stream.call_args
-        headers = call_kwargs[1].get("headers", {}) if call_kwargs[1] else {}
-        assert "Token test-deepgram-key-abc123" in headers.get("Authorization", "")
+        assert response.status_code == 502
+        assert "synthesis failed" in response.json()["detail"].lower()
 
     async def test_speak_empty_text_returns_422(
         self,
@@ -556,7 +505,7 @@ class TestSpeakEndpoint:
         """Empty text returns 422 validation error (Pydantic min_length=1)."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "", "voice": "aura-2-celeste-es"},
+            json={"text": "", "voice": "Kore"},
         )
         assert response.status_code == 422
 
@@ -568,7 +517,7 @@ class TestSpeakEndpoint:
         """Missing text field returns 422 validation error."""
         response = await async_client.post(
             "/api/speak",
-            json={"voice": "aura-2-celeste-es"},
+            json={"voice": "Kore"},
         )
         assert response.status_code == 422
 
@@ -581,7 +530,7 @@ class TestSpeakEndpoint:
         long_text = "a" * (MAX_TTS_TEXT_LENGTH + 1)
         response = await async_client.post(
             "/api/speak",
-            json={"text": long_text, "voice": "aura-2-celeste-es"},
+            json={"text": long_text, "voice": "Kore"},
         )
         assert response.status_code == 422
 
@@ -589,13 +538,13 @@ class TestSpeakEndpoint:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Text at exactly MAX_TTS_TEXT_LENGTH is accepted."""
         text = "a" * MAX_TTS_TEXT_LENGTH
         response = await async_client.post(
             "/api/speak",
-            json={"text": text, "voice": "aura-2-celeste-es"},
+            json={"text": text, "voice": "Kore"},
         )
         assert response.status_code == 200
 
@@ -614,27 +563,25 @@ class TestSpeakEndpoint:
         assert "detail" in body
         assert "nonexistent-voice-id" in body["detail"]
 
-    async def test_speak_no_api_key_returns_503(
+    async def test_speak_works_without_deepgram_key(
         self,
         async_client: AsyncClient,
         mock_settings_no_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Returns 503 when DEEPGRAM_API_KEY is not configured."""
+        """TTS no longer depends on Deepgram: it uses the OpenRouter key."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "Kore"},
         )
-        assert response.status_code == 503
-        body = response.json()
-        assert "detail" in body
-        assert "not configured" in body["detail"].lower()
+        assert response.status_code == 200
 
     @pytest.mark.parametrize("voice", sorted(ALLOWED_VOICES))
     async def test_speak_all_allowed_voices_accepted(
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
         voice: str,
     ) -> None:
         """Every voice in ALLOWED_VOICES should be accepted."""
@@ -644,29 +591,29 @@ class TestSpeakEndpoint:
         )
         assert response.status_code == 200, f"Voice {voice} was rejected"
 
-    async def test_speak_validation_order_voice_before_key(
+    async def test_speak_invalid_voice_never_calls_synthesis(
         self,
         async_client: AsyncClient,
-        mock_settings_no_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Invalid voice check happens before API key check (returns 400, not 503)."""
+        """An invalid voice is rejected before any OpenRouter request is made."""
         response = await async_client.post(
             "/api/speak",
             json={"text": "Hola", "voice": "invalid-voice"},
         )
-        # Voice validation runs first in the endpoint code
         assert response.status_code == 400
+        assert mock_tts.calls == []
 
     async def test_speak_content_disposition_header(
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Response includes Content-Disposition: inline header."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "aura-2-celeste-es"},
+            json={"text": "Hola", "voice": "Kore"},
         )
         assert response.status_code == 200
         assert response.headers.get("content-disposition") == "inline"
@@ -917,7 +864,7 @@ class TestVoiceEdgeCases:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Whitespace-only text is accepted (min_length counts whitespace).
 
@@ -926,7 +873,7 @@ class TestVoiceEdgeCases:
         """
         response = await async_client.post(
             "/api/speak",
-            json={"text": " ", "voice": "aura-2-celeste-es"},
+            json={"text": " ", "voice": "Kore"},
         )
         # Single space passes min_length=1
         assert response.status_code == 200
@@ -935,12 +882,12 @@ class TestVoiceEdgeCases:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Unicode text (accented characters) is accepted for TTS."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Buenos dias! Como estas tu?", "voice": "aura-2-celeste-es"},
+            json={"text": "Buenos dias! Como estas tu?", "voice": "Kore"},
         )
         assert response.status_code == 200
 
@@ -948,12 +895,12 @@ class TestVoiceEdgeCases:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """German text with German voice is accepted."""
+        """German text is accepted with a Gemini voice."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Guten Tag, wie geht es Ihnen?", "voice": "aura-2-elara-de"},
+            json={"text": "Guten Tag, wie geht es Ihnen?", "voice": "Kore"},
         )
         assert response.status_code == 200
 
@@ -961,12 +908,12 @@ class TestVoiceEdgeCases:
         self,
         async_client: AsyncClient,
         mock_settings_with_deepgram: MagicMock,
-        mock_httpx_stream: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """French text with French voice is accepted."""
+        """French text is accepted with a Gemini voice."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Bonjour, comment allez-vous?", "voice": "aura-2-agathe-fr"},
+            json={"text": "Bonjour, comment allez-vous?", "voice": "Kore"},
         )
         assert response.status_code == 200
 
@@ -991,6 +938,6 @@ class TestVoiceEdgeCases:
         """Voice ID matching is case-sensitive (uppercase variant rejected)."""
         response = await async_client.post(
             "/api/speak",
-            json={"text": "Hola", "voice": "AURA-2-CELESTE-ES"},
+            json={"text": "Hola", "voice": "achird"},
         )
         assert response.status_code == 400

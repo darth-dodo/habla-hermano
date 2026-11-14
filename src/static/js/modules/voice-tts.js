@@ -9,7 +9,13 @@
  */
 
 import { createMachine } from './fsm.js';
-import { chunkTextForTTS, WS_SPEAK_PATH, TTS_WS_SAMPLE_RATE } from './voice-constants.js';
+import {
+    chunkTextForTTS,
+    createWavBlob,
+    WS_SPEAK_PATH,
+    TTS_SAMPLE_RATE,
+    TTS_WS_SAMPLE_RATE,
+} from './voice-constants.js';
 
 // ============================================
 // TTS State Machine Definition
@@ -72,14 +78,15 @@ export function notifyMicUsed() {
  * Audio-element TTS — POST fetch to /api/speak, receive audio blob,
  * play through hidden <audio> element for reliable iOS Safari playback.
  *
- * Uses Deepgram's recommended pattern:
- *   1. POST text → receive audio/mpeg blob
- *   2. Create blob URL → set source.src → player.load() → player.play()
- *   3. player.load() is critical for iOS to recognize the new source
+ * Pattern:
+ *   1. POST text → receive raw PCM (audio/pcm, 24kHz mono 16-bit) per chunk
+ *   2. Wrap all chunks in one WAV blob → blob URL → source.src
+ *   3. player.load() → player.play(); load() is critical for iOS to
+ *      recognize the new source
  *
  * @param {HTMLElement} btn - speaker button for error tooltips
  * @param {string} text - text to synthesize
- * @param {string} voice - Deepgram voice ID
+ * @param {string} voice - Gemini TTS voice name (e.g. "Achird")
  * @param {number} speed - playback rate (0.25–2.0)
  * @param {AbortSignal} signal - cancellation signal
  * @param {object} ttsService - FSM service to send events
@@ -325,9 +332,9 @@ function playAudioFromBlob(audioBlob, speed, signal, ttsService, btn, showError)
     var blobUrl = URL.createObjectURL(audioBlob);
     currentBlobUrl = blobUrl;
 
-    // Deepgram pattern: update source, load(), then play()
+    // Update source, load(), then play()
     ttsSource.src = blobUrl;
-    ttsSource.type = audioBlob.type || 'audio/mpeg';
+    ttsSource.type = audioBlob.type || 'audio/wav';
     ttsPlayer.playbackRate = speed;
 
     // .load() is critical for iOS to recognize the new source
@@ -373,8 +380,8 @@ function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
     function fetchChunk(index) {
         if (signal.aborted) return;
         if (index >= textChunks.length) {
-            // All chunks fetched — combine and play
-            var combinedBlob = new Blob(allBlobs, { type: allBlobs[0].type });
+            // All chunks fetched: raw PCM needs a WAV header for <audio>
+            var combinedBlob = createWavBlob(allBlobs, TTS_SAMPLE_RATE);
             playAudioFromBlob(combinedBlob, speed, signal, ttsService, btn, showError);
             return;
         }

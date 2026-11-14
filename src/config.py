@@ -58,12 +58,17 @@ class Settings(BaseSettings):
     # Salt for deriving the encryption key from SECRET_KEY (PBKDF2)
     ENCRYPTION_SALT: str = ""
 
-    # Voice features (Phase 17) - Deepgram STT/TTS
+    # Voice features (Phase 17) - Deepgram STT (speech-to-text)
     DEEPGRAM_API_KEY: str = ""
 
     # LLM settings (via OpenRouter, OpenAI-compatible API)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     LLM_MODEL: str = "anthropic/claude-haiku-5.5"
+
+    # Text-to-speech model, served through OpenRouter's /audio/speech API.
+    # Gemini TTS returns 24kHz 16-bit mono PCM. Swap to
+    # "google/gemini-3.8-flash-lite-tts" for lower latency and cost.
+    TTS_MODEL: str = "google/gemini-3.8-flash-tts"
 
     # Optional OpenRouter app attribution (sent as HTTP-Referer / X-Title headers).
     # Used for OpenRouter's per-app usage rankings; safe to leave empty.

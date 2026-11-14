@@ -3,19 +3,19 @@
  * Phase 21: Extracted from voice.js for modularity.
  */
 
-// Masculine voices -- matches Hermano "big brother" persona
+// Gemini TTS voices are language-agnostic, so Hermano uses one friendly
+// masculine voice ("Achird") for every language. Must match the server's
+// DEFAULT_VOICES in src/api/routes/voice.py.
 export var VOICES = {
-    es: 'aura-2-nestor-es',
-    de: 'aura-2-julius-de',
-    fr: 'aura-2-hector-fr',
-    // Hinglish: Deepgram has no Hindi voice; an English voice reads the
-    // Roman-script Hindi-English mix better than the Spanish fallback.
-    hi: 'aura-2-arcas-en',
+    es: 'Achird',
+    de: 'Achird',
+    fr: 'Achird',
+    hi: 'Achird',
 };
 
 export var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
-export var TTS_SAMPLE_RATE = 24000; // Deepgram TTS output sample rate
-export var TTS_WS_SAMPLE_RATE = 24000; // Deepgram WS TTS linear16 sample rate
+export var TTS_SAMPLE_RATE = 24000; // Gemini TTS PCM output sample rate (REST path)
+export var TTS_WS_SAMPLE_RATE = 24000; // Gemini TTS PCM output sample rate (WS path)
 export var DEFAULT_TTS_SPEED = 1.0; // 0.5 = half speed, 1.0 = normal, 2.0 = double
 export var MAX_TTS_CHUNK_LENGTH = 2000; // Must match server MAX_TTS_TEXT_LENGTH
 export var WS_SPEAK_PATH = '/ws/speak'; // WebSocket TTS endpoint
@@ -156,14 +156,16 @@ export function chunkTextForTTS(text, maxLen) {
  * Wrap raw linear16 PCM data in a WAV container for browser playback.
  * Creates a minimal 44-byte WAV header + raw PCM payload.
  *
- * @param {ArrayBuffer[]} pcmBuffers - Array of raw PCM ArrayBuffers (16-bit LE mono)
+ * @param {Array<ArrayBuffer|Blob>} pcmBuffers - Raw PCM parts (16-bit LE mono),
+ *     as ArrayBuffers or Blobs (e.g. fetch() response blobs)
  * @param {number} sampleRate - Sample rate in Hz (e.g. 24000)
  * @returns {Blob} WAV audio blob playable by <audio> element
  */
 export function createWavBlob(pcmBuffers, sampleRate) {
     var dataLength = 0;
     for (var i = 0; i < pcmBuffers.length; i++) {
-        dataLength += pcmBuffers[i].byteLength;
+        var part = pcmBuffers[i];
+        dataLength += part.byteLength !== undefined ? part.byteLength : part.size;
     }
 
     var numChannels = 1;

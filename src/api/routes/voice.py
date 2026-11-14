@@ -1,7 +1,9 @@
-"""Voice endpoints for Deepgram STT/TTS integration.
+"""Voice endpoints: Deepgram STT and Gemini TTS (via OpenRouter).
 
-Phase 17: Speech-to-Text via WebSocket proxy and Text-to-Speech via WebSocket streaming proxy.
-Voice features are optional -- endpoints return errors when DEEPGRAM_API_KEY is not configured.
+Phase 17: Speech-to-Text via a WebSocket proxy to Deepgram, and Text-to-Speech
+via REST and WebSocket endpoints backed by OpenRouter's speech API (Gemini TTS,
+see src/services/tts.py). STT is optional and returns an error when
+DEEPGRAM_API_KEY is not configured; TTS uses the required OPENROUTER_API_KEY.
 
 Security (B1): All endpoints require authentication via JWT token or guest session cookie.
 WebSocket endpoints validate identity from cookies before accepting the connection.
@@ -19,7 +21,6 @@ import httpx
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from starlette.websockets import WebSocketState
 
 from src.api.auth import EffectiveUserDep
 from src.api.config import get_settings
@@ -33,6 +34,7 @@ from src.api.rate_limit import (
 )
 from src.api.validation import VALID_LANGUAGES
 from src.db.client import get_supabase
+from src.services.tts import TTS_SAMPLE_RATE, TTSError, synthesize_pcm
 
 logger = logging.getLogger(__name__)
 
@@ -179,34 +181,54 @@ async def _authenticate_websocket(websocket: WebSocket) -> str | None:
     return None
 
 
-# Allowed Deepgram TTS voice IDs
+# Gemini TTS voices (as listed by OpenRouter for google/gemini-3.8-flash-tts).
+# Gemini voices are not tied to a language: the model detects the language of
+# the text, so one voice speaks Spanish, German, French and Hinglish.
 ALLOWED_VOICES: frozenset[str] = frozenset(
     {
-        # Spanish voices
-        "aura-2-celeste-es",
-        "aura-2-estrella-es",
-        "aura-2-nestor-es",
-        # German voices
-        "aura-2-elara-de",
-        "aura-2-julius-de",
-        # French voices
-        "aura-2-agathe-fr",
-        "aura-2-hector-fr",
-        # Hinglish: Deepgram has no Hindi voice, so we use an English voice.
-        # Hinglish content is code-mixed Hindi-English in Roman script, which an
-        # English voice reads far better than a Spanish one.
-        "aura-2-arcas-en",
+        "Zephyr",
+        "Puck",
+        "Charon",
+        "Kore",
+        "Fenrir",
+        "Leda",
+        "Orus",
+        "Aoede",
+        "Callirrhoe",
+        "Autonoe",
+        "Enceladus",
+        "Iapetus",
+        "Umbriel",
+        "Algieba",
+        "Despina",
+        "Erinome",
+        "Algenib",
+        "Rasalgethi",
+        "Laomedeia",
+        "Achernar",
+        "Alnilam",
+        "Schedar",
+        "Gacrux",
+        "Pulcherrima",
+        "Achird",
+        "Zubenelgenubi",
+        "Vindemiatrix",
+        "Sadachbia",
+        "Sadaltager",
+        "Sulafat",
     }
 )
 
-# Default voice per language (masculine — matches Hermano "big brother" persona)
+# The voice the app uses for each language. Achird is Gemini's "friendly"
+# male voice, matching the Hermano "big brother" persona. Using one voice
+# everywhere keeps Hermano sounding like the same person in every language,
+# including Hinglish (Roman-script Hindi-English, which Gemini reads natively).
+HERMANO_VOICE = "Achird"
 DEFAULT_VOICES: dict[str, str] = {
-    "es": "aura-2-nestor-es",
-    "de": "aura-2-julius-de",
-    "fr": "aura-2-hector-fr",
-    # Hinglish: no Hindi voice on Deepgram — English voice reads Roman-script
-    # Hindi-English code-mixing best.
-    "hi": "aura-2-arcas-en",
+    "es": HERMANO_VOICE,
+    "de": HERMANO_VOICE,
+    "fr": HERMANO_VOICE,
+    "hi": HERMANO_VOICE,
 }
 
 # STT language options (includes "multi" for code-switching)
@@ -219,7 +241,7 @@ class SpeakRequest(BaseModel):
     """Request body for TTS endpoint."""
 
     text: str = Field(..., min_length=1, max_length=MAX_TTS_TEXT_LENGTH)
-    voice: str = "aura-2-nestor-es"
+    voice: str = HERMANO_VOICE
 
 
 @router.websocket("/ws/transcribe")
@@ -341,129 +363,87 @@ async def transcribe_stream(  # noqa: PLR0915
 @router.post("/api/speak", response_model=None)
 @rate_limited(VOICE_RATE_LIMIT_CALLS, VOICE_RATE_LIMIT_PERIOD)
 async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResponse | JSONResponse:
-    """Synthesize speech from text using Deepgram TTS.
+    """Synthesize speech from text with Gemini TTS (via OpenRouter).
 
-    Proxies the request to Deepgram's REST TTS API and streams back
-    the audio response as audio/mpeg.
+    REST fallback for browsers where the WebSocket path is unavailable.
+    Streams back raw PCM (24kHz, mono, 16-bit LE) as ``audio/pcm``; the
+    browser joins the chunks and wraps them in a WAV header for playback.
 
     Args:
         request: TTS request with text and optional voice selection.
 
     Returns:
-        StreamingResponse with audio/mpeg content, or JSONResponse on error.
+        StreamingResponse with audio/pcm content, or JSONResponse on error.
     """
-    # Validate voice
     if request.voice not in ALLOWED_VOICES:
         return JSONResponse(
             status_code=400,
             content={"detail": f"Invalid voice: {request.voice}"},
         )
 
-    api_key = get_settings().DEEPGRAM_API_KEY
-    if not api_key:
-        return JSONResponse(
-            status_code=503,
-            content={"detail": "Voice features not configured"},
-        )
+    # Pull the first chunk before answering, so an upstream failure becomes a
+    # clean 502 instead of a 200 response that breaks halfway through.
+    pcm = synthesize_pcm(request.text, request.voice)
+    try:
+        first_chunk = await anext(pcm)
+    except StopAsyncIteration:
+        first_chunk = b""
+    except TTSError:
+        logger.exception("TTS synthesis failed")
+        return JSONResponse(status_code=502, content={"detail": "Speech synthesis failed"})
 
     async def audio_stream() -> AsyncGenerator[bytes, None]:
-        async with (
-            httpx.AsyncClient() as client,
-            client.stream(
-                "POST",
-                f"https://api.deepgram.com/v1/speak?model={request.voice}&encoding=mp3&mip_opt_out=true",
-                headers={
-                    "Authorization": f"Token {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={"text": request.text},
-                timeout=30.0,
-            ) as response,
-        ):
-            response.raise_for_status()
-            async for chunk in response.aiter_bytes(1024):
+        try:
+            if first_chunk:
+                yield first_chunk
+            async for chunk in pcm:
                 yield chunk
+        finally:
+            # Close the upstream request even if the browser disconnects early.
+            await pcm.aclose()
 
     return StreamingResponse(
         audio_stream(),
-        media_type="audio/mpeg",
+        media_type="audio/pcm",
         headers={
             "Cache-Control": "no-cache",
             "Content-Disposition": "inline",
+            "X-Sample-Rate": str(TTS_SAMPLE_RATE),
         },
     )
 
 
-async def _forward_deepgram_to_browser(dg_ws: Any, websocket: WebSocket) -> None:
-    """Forward audio chunks and metadata from Deepgram WS to browser WS.
-
-    Binary frames contain raw linear16 PCM audio (24kHz, mono, 16-bit LE).
-    Text frames contain JSON events (Flushed, Cleared, Warning, etc.).
-    """
-    import websockets as ws_lib
-
-    try:
-        async for message in dg_ws:
-            if websocket.client_state != WebSocketState.CONNECTED:
-                break
-            if isinstance(message, bytes):
-                await websocket.send_bytes(message)
-            else:
-                await websocket.send_text(message)
-    except ws_lib.ConnectionClosed:
-        pass
-    except (ConnectionError, OSError, RuntimeError):
-        logger.exception("Error forwarding Deepgram TTS audio")
-
-
-async def _handle_browser_tts_messages(
-    websocket: WebSocket,
-    dg_ws: Any,
-    msg_limiter: WebSocketMessageRateLimiter,
+async def _speak_text(
+    websocket: WebSocket, client: httpx.AsyncClient, text: str, voice: str
 ) -> None:
-    """Receive text from browser and forward Speak+Flush commands to Deepgram."""
-    try:
-        while True:
-            data = await websocket.receive_text()
-            msg = json.loads(data)
+    """Synthesize one text chunk and stream its PCM frames to the browser.
 
-            if msg.get("type") == "close":
-                await dg_ws.send(json.dumps({"type": "Close"}))
-                break
-
-            text = msg.get("text", "").strip()
-            if not text or len(text) > MAX_TTS_TEXT_LENGTH:
-                continue
-
-            # B9: Per-connection message rate limiting
-            if not msg_limiter.check():
-                logger.warning("TTS WebSocket message rate limit exceeded")
-                await websocket.send_text(
-                    json.dumps({"error": "Rate limit exceeded", "code": "RATE_LIMITED"})
-                )
-                continue
-
-            await dg_ws.send(json.dumps({"type": "Speak", "text": text}))
-            await dg_ws.send(json.dumps({"type": "Flush"}))
-    except WebSocketDisconnect:
-        logger.debug("Browser WebSocket disconnected from TTS")
+    Sends a ``{"type": "Flushed"}`` message when the chunk is complete, which
+    tells the browser to send the next chunk.
+    """
+    async for pcm_chunk in synthesize_pcm(text, voice, client=client):
+        await websocket.send_bytes(pcm_chunk)
+    await websocket.send_text(json.dumps({"type": "Flushed"}))
 
 
 @router.websocket("/ws/speak")
 async def speak_stream(
     websocket: WebSocket,
-    voice: str = Query(default="aura-2-nestor-es"),
+    voice: str = Query(default=HERMANO_VOICE),
 ) -> None:
     """Stream TTS audio via WebSocket for low-latency playback.
 
-    Browser sends JSON with text, server proxies to Deepgram's WebSocket TTS
-    and forwards binary audio chunks back as they're generated.
+    Browser sends JSON with text; the server synthesizes it with Gemini TTS
+    (via OpenRouter) and forwards PCM audio frames as they arrive.
 
     Protocol:
         Client -> {"text": "Hola amigo"} (JSON text message)
         Server -> binary audio chunks (raw linear16 PCM, 24kHz mono)
-        Server -> {"type": "Flushed", ...} (JSON when audio is complete)
+        Server -> {"type": "Flushed"} (JSON when the chunk's audio is complete)
         Client -> {"type": "close"} or disconnect to end
+
+    If synthesis fails the socket closes with code 1011; the browser then
+    falls back to the REST endpoint.
     """
     # B1: Authenticate before accepting the connection
     user_id = await _authenticate_websocket(websocket)
@@ -475,40 +455,41 @@ async def speak_stream(
         await websocket.close(code=1008, reason=f"Invalid voice: {voice}")
         return
 
-    api_key = get_settings().DEEPGRAM_API_KEY
-    if not api_key:
-        await websocket.close(code=1011, reason="Voice features not configured")
-        return
-
     await websocket.accept()
 
     # B9: Per-connection message rate limiter for TTS text messages
     tts_limiter = WebSocketMessageRateLimiter(VOICE_WS_TTS_MESSAGE_RATE, 60)
 
     try:
-        import websockets
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            while True:
+                msg = json.loads(await websocket.receive_text())
 
-        dg_url = f"wss://api.deepgram.com/v1/speak?model={voice}&encoding=linear16&container=none&sample_rate=24000&mip_opt_out=true"
-        dg_headers = {"Authorization": f"Token {api_key}"}
+                if msg.get("type") == "close":
+                    break
 
-        async with websockets.connect(dg_url, additional_headers=dg_headers) as dg_ws:
-            forward_task = asyncio.create_task(_forward_deepgram_to_browser(dg_ws, websocket))
-            try:
-                await _handle_browser_tts_messages(websocket, dg_ws, tts_limiter)
-            finally:
-                forward_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await forward_task
-                with contextlib.suppress(Exception):
-                    await dg_ws.close()
+                text = msg.get("text", "").strip()
+                if not text or len(text) > MAX_TTS_TEXT_LENGTH:
+                    continue
+
+                if not tts_limiter.check():
+                    logger.warning("TTS WebSocket message rate limit exceeded")
+                    await websocket.send_text(
+                        json.dumps({"error": "Rate limit exceeded", "code": "RATE_LIMITED"})
+                    )
+                    continue
+
+                await _speak_text(websocket, client, text, voice)
 
     except WebSocketDisconnect:
-        logger.debug("WebSocket disconnected during TTS setup")
-    except Exception as exc:
-        # Catch websockets.InvalidStatus, ConnectionError, OSError, RuntimeError
-        # and any other transport errors. websockets is lazily imported so we
-        # can't reference its exceptions in the except clause.
-        logger.exception("Error in TTS WebSocket")
+        logger.debug("Browser WebSocket disconnected from TTS")
+    except TTSError as exc:
+        logger.exception("TTS synthesis failed")
         _capture_sentry_exception(exc)
+        with contextlib.suppress(Exception):
+            await websocket.close(code=1011, reason="Speech synthesis failed")
+    except (json.JSONDecodeError, RuntimeError) as exc:
+        # Malformed client message, or a send after the browser went away.
+        logger.debug("TTS WebSocket closed: %s", type(exc).__name__)
         with contextlib.suppress(Exception):
             await websocket.close(code=1011, reason="Internal error")

@@ -102,7 +102,7 @@ services:
       # Voice Features (Optional)
       # -----------------------------------------------------------------------
       - key: DEEPGRAM_API_KEY
-        sync: false  # Optional: set for voice STT/TTS features
+        sync: false  # Optional: set for voice features (Deepgram STT)
 
       # -----------------------------------------------------------------------
       # Python Runtime Configuration

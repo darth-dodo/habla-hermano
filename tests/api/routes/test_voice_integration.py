@@ -4,9 +4,9 @@ B24: Tests that exercise the WebSocket handshake, message flow lifecycle,
 error recovery, authentication rejection, rate limiting, and concurrent
 connections for both /ws/transcribe (STT) and /ws/speak (TTS).
 
-Unlike test_voice.py which mocks the Deepgram SDK classes, these tests
-mock at the HTTP/WebSocket transport level to validate the full message
-flow through the voice proxy layer.
+STT tests mock the Deepgram SDK; TTS tests replace Gemini TTS synthesis
+(src.services.tts.synthesize_pcm) with a fake, so they exercise the full
+browser-facing message flow without calling OpenRouter.
 """
 
 import asyncio
@@ -14,7 +14,7 @@ import contextlib
 import json
 import sys
 import time
-from collections.abc import AsyncIterator, Generator
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,6 +24,9 @@ from starlette.websockets import WebSocketDisconnect
 
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
+from src.api.routes.voice import HERMANO_VOICE, MAX_TTS_TEXT_LENGTH
+from src.services.tts import TTSError
+from tests.api.routes.tts_fakes import FAKE_PCM_CHUNKS, FakeSynthesizer
 from tests.conftest import CSRF_HEADERS
 
 # Valid guest session UUID for WebSocket authentication
@@ -51,7 +54,7 @@ def voice_app(mock_user: AuthenticatedUser) -> Generator[FastAPI, None, None]:
     """Create FastAPI app with mocked dependencies for voice integration testing.
 
     Patches external services (LangGraph, Supabase) to prevent real connections.
-    Voice-specific mocking (Deepgram SDK, websockets library) is done per-test.
+    Voice-specific mocking (Deepgram SDK, TTS synthesis) is done per-test.
     """
     mock_graph = MagicMock()
     mock_graph.ainvoke = AsyncMock(return_value={"messages": [], "level": "A1", "language": "es"})
@@ -243,78 +246,6 @@ def mock_deepgram_sdk_failing() -> Generator[dict[str, MagicMock], None, None]:
     mocks = _make_deepgram_sdk_mocks(connect_error=ConnectionError("Deepgram unreachable"))
     with patch.dict(sys.modules, mocks["modules"]):
         yield mocks
-
-
-def _make_websockets_connect_mock(
-    messages: list[bytes | str] | None = None,
-    connect_error: Exception | None = None,
-) -> MagicMock:
-    """Build a mock for the ``websockets.connect()`` async context manager.
-
-    Used by /ws/speak tests to mock the outbound Deepgram TTS WebSocket.
-
-    Args:
-        messages: Sequence of bytes/str messages the mock Deepgram WS will yield.
-        connect_error: If set, the context manager __aenter__ raises this.
-
-    Returns:
-        MagicMock that can replace ``websockets.connect``.
-    """
-    if messages is None:
-        messages = []
-
-    mock_dg_ws = AsyncMock()
-    mock_dg_ws.send = AsyncMock()
-    mock_dg_ws.close = AsyncMock()
-
-    async def _aiter(self: object) -> AsyncIterator[bytes | str]:
-        for msg in messages:
-            yield msg
-
-    mock_dg_ws.__aiter__ = _aiter
-
-    mock_connect_ctx = MagicMock()
-
-    if connect_error:
-
-        async def _connect_aenter(self: object) -> None:
-            raise connect_error
-
-    else:
-
-        async def _connect_aenter(self: object) -> AsyncMock:
-            return mock_dg_ws
-
-    async def _connect_aexit(
-        self: object, exc_type: object, exc_val: object, exc_tb: object
-    ) -> None:
-        return None
-
-    mock_connect_ctx.__aenter__ = _connect_aenter
-    mock_connect_ctx.__aexit__ = _connect_aexit
-
-    mock_connect_fn = MagicMock(return_value=mock_connect_ctx)
-    mock_connect_fn._mock_dg_ws = mock_dg_ws  # expose for assertion
-    return mock_connect_fn
-
-
-def _make_websockets_module(
-    mock_connect: MagicMock | None = None,
-) -> MagicMock:
-    """Build a complete mock websockets module with connect and ConnectionClosed.
-
-    Args:
-        mock_connect: Optional pre-built connect mock. If None, creates a default one.
-
-    Returns:
-        MagicMock mimicking the websockets module.
-    """
-    if mock_connect is None:
-        mock_connect = _make_websockets_connect_mock()
-    mock_ws_module = MagicMock()
-    mock_ws_module.connect = mock_connect
-    mock_ws_module.ConnectionClosed = type("ConnectionClosed", (Exception,), {})
-    return mock_ws_module
 
 
 # =============================================================================
@@ -755,142 +686,138 @@ class TestSTTMessageForwarding:
 
 
 # =============================================================================
-# TTS WebSocket Connection Lifecycle Tests
+# TTS WebSocket Tests (/ws/speak, Gemini TTS via OpenRouter)
 # =============================================================================
+
+
+@pytest.fixture
+def mock_tts() -> Generator[FakeSynthesizer, None, None]:
+    """Replace Gemini TTS synthesis with a fake that yields fixed PCM chunks."""
+    fake = FakeSynthesizer()
+    with patch("src.api.routes.voice.synthesize_pcm", fake):
+        yield fake
+
+
+@pytest.fixture
+def mock_tts_failing() -> Generator[FakeSynthesizer, None, None]:
+    """Replace Gemini TTS synthesis with a fake that fails like an upstream error."""
+    fake = FakeSynthesizer(error=TTSError("OpenRouter TTS returned HTTP 503"))
+    with patch("src.api.routes.voice.synthesize_pcm", fake):
+        yield fake
+
+
+def _receive_chunk_audio(ws: object) -> list[bytes]:
+    """Read binary frames until the Flushed message that ends one text chunk."""
+    frames: list[bytes] = []
+    while True:
+        message = ws.receive()  # type: ignore[attr-defined]
+        if message.get("bytes") is not None:
+            frames.append(message["bytes"])
+            continue
+        assert json.loads(message["text"]) == {"type": "Flushed"}
+        return frames
 
 
 class TestTTSWebSocketLifecycle:
     """Tests for /ws/speak connection lifecycle: connect, exchange, close."""
 
-    def test_connect_send_text_and_close(
+    def test_text_streams_pcm_frames_then_flushed(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Full lifecycle: connect -> send text -> send close -> disconnect."""
-        mock_connect = _make_websockets_connect_mock(
-            messages=[b"\x00\x01\x02\x03"]  # audio chunk from Deepgram
-        )
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Full lifecycle: text in, PCM frames out, Flushed, then close."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "Hola amigo"}))
+            assert _receive_chunk_audio(ws) == list(FAKE_PCM_CHUNKS)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "Hola amigo"}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        # Verify Speak+Flush commands were sent to Deepgram
-        mock_dg_ws = mock_connect._mock_dg_ws
-        send_calls = [str(c) for c in mock_dg_ws.send.call_args_list]
-        # Should have Speak, Flush, and Close commands
-        assert any("Speak" in c for c in send_calls)
-        assert any("Flush" in c for c in send_calls)
-        assert any("Close" in c for c in send_calls)
+        assert mock_tts.calls == [("Hola amigo", "Kore")]
 
     def test_connect_and_immediate_close(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Connect and immediately send close message without sending text."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Connect and close without text: nothing is synthesized."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
+        assert mock_tts.calls == []
 
     def test_default_voice_used_when_not_specified(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """When no voice query param is given, default voice is used in URL."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Without a voice query param, the Hermano voice is used."""
+        with test_client.websocket_connect("/ws/speak", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "Hola"}))
+            _receive_chunk_audio(ws)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect("/ws/speak", cookies=ws_cookies) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
+        assert mock_tts.calls == [("Hola", HERMANO_VOICE)]
 
-        # Default voice is aura-2-nestor-es
-        connect_call = mock_connect.call_args
-        url = connect_call[0][0]
-        assert "aura-2-nestor-es" in url
-
-
-# =============================================================================
-# TTS WebSocket Authentication Tests
-# =============================================================================
+    def test_works_without_deepgram_key(
+        self,
+        test_client: TestClient,
+        ws_cookies: dict[str, str],
+        mock_settings_no_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
+    ) -> None:
+        """TTS no longer depends on Deepgram: it uses the OpenRouter key."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "Hola"}))
+            assert _receive_chunk_audio(ws) == list(FAKE_PCM_CHUNKS)
+            ws.send_text(json.dumps({"type": "close"}))
 
 
 class TestTTSWebSocketAuth:
     """Tests for /ws/speak authentication enforcement."""
 
-    def test_no_cookies_rejects_with_1008(
-        self,
-        test_client: TestClient,
-    ) -> None:
+    def test_no_cookies_rejects_with_1008(self, test_client: TestClient) -> None:
         """Connection without auth cookies is rejected with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect("/ws/speak?voice=aura-2-nestor-es"):
+            with test_client.websocket_connect("/ws/speak?voice=Kore"):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
-    def test_invalid_session_id_rejects_with_1008(
-        self,
-        test_client: TestClient,
-    ) -> None:
+    def test_invalid_session_id_rejects_with_1008(self, test_client: TestClient) -> None:
         """Connection with invalid session_id is rejected with code 1008."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
             with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es",
-                cookies={"session_id": "bad-uuid"},
+                "/ws/speak?voice=Kore", cookies={"session_id": "bad-uuid"}
             ):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
 
+    @pytest.mark.parametrize("voice", ["invalid-voice-id", "aura-2-nestor-es", "achird"])
     def test_invalid_voice_rejects_with_1008(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
+        voice: str,
     ) -> None:
-        """Connection with invalid voice parameter is rejected with code 1008."""
+        """Unknown voices, old Deepgram IDs and wrong-case names are rejected."""
         with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/speak?voice=invalid-voice-id",
-                cookies=ws_cookies,
-            ):
+            with test_client.websocket_connect(f"/ws/speak?voice={voice}", cookies=ws_cookies):
                 pass  # pragma: no cover
         assert exc_info.value.code == 1008
-
-    def test_no_api_key_rejects_with_1011(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_no_deepgram: MagicMock,
-    ) -> None:
-        """Connection without API key is rejected with code 1011."""
-        with pytest.raises(WebSocketDisconnect) as exc_info:
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es",
-                cookies=ws_cookies,
-            ):
-                pass  # pragma: no cover
-        assert exc_info.value.code == 1011
 
     def test_jwt_cookie_authenticates_tts(
         self,
         test_client: TestClient,
         mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """TTS WebSocket also accepts JWT sb-access-token cookie."""
+        """TTS WebSocket also accepts JWT sb-access-token cookie.
+
+        The mocked settings report Supabase as configured, which routes the
+        JWT through _verify_jwt_via_supabase (patched below).
+        """
         import jwt as pyjwt
 
         token = pyjwt.encode(
@@ -898,271 +825,105 @@ class TestTTSWebSocketAuth:
             "test-secret",
             algorithm="HS256",
         )
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        # Mock server-side JWT verification to accept test tokens
-        with patch(
-            "src.api.routes.voice._verify_jwt_via_supabase",
-            return_value="user-tts-jwt",
-        ):
-            with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es",
-                    cookies={"sb-access-token": token},
-                ) as ws:
-                    ws.send_text(json.dumps({"type": "close"}))
-
-
-# =============================================================================
-# TTS WebSocket Message Flow Tests
-# =============================================================================
+        with patch("src.api.routes.voice._verify_jwt_via_supabase", return_value="user-tts-jwt"):
+            with test_client.websocket_connect(
+                "/ws/speak?voice=Kore", cookies={"sb-access-token": token}
+            ) as ws:
+                ws.send_text(json.dumps({"type": "close"}))
 
 
 class TestTTSMessageFlow:
     """Tests for /ws/speak text-to-audio message flow."""
 
-    def test_text_message_generates_speak_and_flush(
+    def test_multiple_chunks_each_end_with_flushed(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Sending a text message generates Speak + Flush commands to Deepgram."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Each text chunk is synthesized in order and ends with its own Flushed."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            for text in ["Primero.", "Segundo.", "Tercero."]:
+                ws.send_text(json.dumps({"text": text}))
+                assert _receive_chunk_audio(ws) == list(FAKE_PCM_CHUNKS)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "Buenos dias"}))
-                ws.send_text(json.dumps({"type": "close"}))
+        assert [text for text, _ in mock_tts.calls] == ["Primero.", "Segundo.", "Tercero."]
 
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        # First call: Speak command
-        speak_msg = json.loads(calls[0][0][0])
-        assert speak_msg["type"] == "Speak"
-        assert speak_msg["text"] == "Buenos dias"
-        # Second call: Flush command
-        flush_msg = json.loads(calls[1][0][0])
-        assert flush_msg["type"] == "Flush"
-
-    def test_empty_text_skipped(
+    @pytest.mark.parametrize("text", ["", "   ", "a" * (MAX_TTS_TEXT_LENGTH + 1)])
+    def test_empty_or_too_long_text_skipped(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
+        text: str,
     ) -> None:
-        """Empty text messages are silently skipped, no Speak command sent."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Empty, whitespace-only and over-long text never reaches synthesis."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": text}))
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": ""}))
-                ws.send_text(json.dumps({"text": "   "}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        mock_dg_ws = mock_connect._mock_dg_ws
-        # Only the Close command should have been sent, no Speak/Flush
-        calls = mock_dg_ws.send.call_args_list
-        for call in calls:
-            parsed = json.loads(call[0][0])
-            assert parsed["type"] != "Speak"
-
-    def test_text_over_max_length_skipped(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """Text exceeding MAX_TTS_TEXT_LENGTH is silently skipped."""
-        from src.api.routes.voice import MAX_TTS_TEXT_LENGTH
-
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "a" * (MAX_TTS_TEXT_LENGTH + 1)}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        for call in calls:
-            parsed = json.loads(call[0][0])
-            assert parsed["type"] != "Speak"
+        assert mock_tts.calls == []
 
     def test_text_at_max_length_accepted(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Text at exactly MAX_TTS_TEXT_LENGTH is accepted and forwarded."""
-        from src.api.routes.voice import MAX_TTS_TEXT_LENGTH
+        """Text at exactly MAX_TTS_TEXT_LENGTH is synthesized."""
+        text = "a" * MAX_TTS_TEXT_LENGTH
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": text}))
+            _receive_chunk_audio(ws)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        assert mock_tts.calls == [(text, "Kore")]
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "a" * MAX_TTS_TEXT_LENGTH}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
-        assert len(speak_calls) == 1
-        assert len(speak_calls[0]["text"]) == MAX_TTS_TEXT_LENGTH
-
-    def test_multiple_text_messages_forwarded(
+    def test_text_is_stripped_before_synthesis(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Multiple valid text messages each produce Speak + Flush pairs."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Surrounding whitespace is trimmed before the text is sent to Gemini."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "  Hola  "}))
+            _receive_chunk_audio(ws)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        texts = ["Hola", "Como estas", "Muy bien"]
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                for text in texts:
-                    ws.send_text(json.dumps({"text": text}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
-        assert len(speak_calls) == 3
-        assert [s["text"] for s in speak_calls] == texts
-
-    def test_audio_chunks_forwarded_to_browser(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """Binary audio chunks from Deepgram are forwarded to the browser."""
-        audio_chunks = [b"\x00\x01\x02\x03", b"\x04\x05\x06\x07"]
-        mock_connect = _make_websockets_connect_mock(messages=audio_chunks)
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                # Give the forward task a moment to relay chunks
-                # The mock async iterator yields chunks immediately
-                # We need to send close to end the handler loop
-                ws.send_text(json.dumps({"type": "close"}))
-
-                # Try to receive any forwarded bytes (non-blocking attempt)
-                # The forward task may or may not have completed by now
-                # depending on scheduling, so we just verify no crash
-
-    def test_metadata_string_forwarded_to_browser(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """String metadata messages from Deepgram are forwarded as text."""
-        metadata = json.dumps({"type": "metadata", "request_id": "abc123"})
-        mock_connect = _make_websockets_connect_mock(messages=[metadata])
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-                # Verify no crash from string message forwarding
-
-
-# =============================================================================
-# TTS WebSocket Error Recovery Tests
-# =============================================================================
+        assert mock_tts.calls == [("Hola", "Kore")]
 
 
 class TestTTSWebSocketErrorRecovery:
-    """Tests for /ws/speak error handling when Deepgram connection fails."""
+    """Tests for /ws/speak error handling."""
 
-    def test_deepgram_connect_failure_closes_with_1011(
+    def test_synthesis_failure_closes_with_1011(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts_failing: FakeSynthesizer,
     ) -> None:
-        """When websockets.connect raises, server closes with 1011."""
-        mock_connect = _make_websockets_connect_mock(
-            connect_error=ConnectionError("Deepgram TTS unreachable")
-        )
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
+        """An OpenRouter TTS failure closes the socket with 1011 so the browser falls back."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "Hola"}))
             with pytest.raises(WebSocketDisconnect) as exc_info:
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
-                    ws.receive_bytes()
-            assert exc_info.value.code == 1011
+                ws.receive_bytes()
+        assert exc_info.value.code == 1011
 
-    def test_runtime_error_during_tts_closes_with_1011(
+    def test_malformed_json_closes_with_1011(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """When a RuntimeError occurs during TTS, server closes with 1011."""
-        mock_connect = _make_websockets_connect_mock(
-            connect_error=RuntimeError("Unexpected runtime error")
-        )
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
+        """A non-JSON client message closes the socket with 1011."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text("not-json")
             with pytest.raises(WebSocketDisconnect) as exc_info:
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
-                    ws.receive_bytes()
-            assert exc_info.value.code == 1011
-
-    def test_os_error_during_tts_closes_with_1011(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """When an OSError occurs during TTS, server closes with 1011."""
-        mock_connect = _make_websockets_connect_mock(connect_error=OSError("TTS network error"))
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with pytest.raises(WebSocketDisconnect) as exc_info:
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
-                    ws.receive_bytes()
-            assert exc_info.value.code == 1011
-
-
-# =============================================================================
-# TTS WebSocket Rate Limiting Tests
-# =============================================================================
+                ws.receive_bytes()
+        assert exc_info.value.code == 1011
+        assert mock_tts.calls == []
 
 
 class TestTTSWebSocketRateLimiting:
@@ -1172,209 +933,59 @@ class TestTTSWebSocketRateLimiting:
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """When message rate limit is exceeded, server sends an error JSON."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """When the message rate limit is exceeded, the server sends an error JSON."""
+        with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
+            mock_limiter_cls.return_value.check = MagicMock(side_effect=[True, False])
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
-                mock_limiter = MagicMock()
-                # First call allowed, subsequent calls rejected
-                mock_limiter.check = MagicMock(side_effect=[True, False, False])
-                mock_limiter_cls.return_value = mock_limiter
-
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
-                    # First message should succeed
-                    ws.send_text(json.dumps({"text": "Hola"}))
-                    # Second message should be rate limited
-                    ws.send_text(json.dumps({"text": "Second"}))
-
-                    # Read the rate limit error response
-                    response = ws.receive_text()
-                    error = json.loads(response)
-                    assert error["code"] == "RATE_LIMITED"
-                    assert "Rate limit" in error["error"]
-
-                    ws.send_text(json.dumps({"type": "close"}))
-
-    def test_rate_limit_first_message_passes(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """First message within rate limit window is forwarded to Deepgram."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "Primer mensaje"}))
+            with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+                ws.send_text(json.dumps({"text": "Hola"}))
+                _receive_chunk_audio(ws)
+                ws.send_text(json.dumps({"text": "Second"}))
+                error = json.loads(ws.receive_text())
+                assert error["code"] == "RATE_LIMITED"
+                assert "Rate limit" in error["error"]
                 ws.send_text(json.dumps({"type": "close"}))
 
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        speak_calls = [json.loads(c[0][0]) for c in calls if json.loads(c[0][0])["type"] == "Speak"]
-        assert len(speak_calls) == 1
-        assert speak_calls[0]["text"] == "Primer mensaje"
+        assert mock_tts.calls == [("Hola", "Kore")]
 
-    def test_rate_limited_message_not_forwarded(
+    def test_rate_limited_message_not_synthesized(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
-        """Rate-limited messages are not forwarded to Deepgram, only error sent."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Rate-limited messages are never sent to OpenRouter."""
+        with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
+            mock_limiter_cls.return_value.check = MagicMock(return_value=False)
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with patch("src.api.routes.voice.WebSocketMessageRateLimiter") as mock_limiter_cls:
-                mock_limiter = MagicMock()
-                # All messages rejected
-                mock_limiter.check = MagicMock(return_value=False)
-                mock_limiter_cls.return_value = mock_limiter
+            with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+                ws.send_text(json.dumps({"text": "Should be blocked"}))
+                assert json.loads(ws.receive_text())["code"] == "RATE_LIMITED"
+                ws.send_text(json.dumps({"type": "close"}))
 
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
-                    ws.send_text(json.dumps({"text": "Should be blocked"}))
-
-                    # Read the error response
-                    response = ws.receive_text()
-                    error = json.loads(response)
-                    assert error["code"] == "RATE_LIMITED"
-
-                    ws.send_text(json.dumps({"type": "close"}))
-
-        # Verify no Speak command was sent to Deepgram
-        mock_dg_ws = mock_connect._mock_dg_ws
-        calls = mock_dg_ws.send.call_args_list
-        for call in calls:
-            parsed = json.loads(call[0][0])
-            assert parsed["type"] != "Speak"
-
-
-# =============================================================================
-# TTS WebSocket Voice Parameter Tests
-# =============================================================================
+        assert mock_tts.calls == []
 
 
 class TestTTSWebSocketVoiceParam:
     """Tests for voice parameter validation on /ws/speak."""
 
-    @pytest.mark.parametrize(
-        "voice",
-        [
-            "aura-2-nestor-es",
-            "aura-2-celeste-es",
-            "aura-2-julius-de",
-            "aura-2-elara-de",
-            "aura-2-hector-fr",
-            "aura-2-agathe-fr",
-        ],
-    )
-    def test_valid_voices_accepted(
+    @pytest.mark.parametrize("voice", ["Achird", "Kore", "Puck", "Charon", "Sulafat"])
+    def test_gemini_voice_passed_to_synthesis(
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
         voice: str,
     ) -> None:
-        """All valid voices are accepted for TTS WebSocket connections."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
+        """Valid Gemini voices are accepted and forwarded to synthesis."""
+        with test_client.websocket_connect(f"/ws/speak?voice={voice}", cookies=ws_cookies) as ws:
+            ws.send_text(json.dumps({"text": "Hola"}))
+            _receive_chunk_audio(ws)
+            ws.send_text(json.dumps({"type": "close"}))
 
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                f"/ws/speak?voice={voice}", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-
-    def test_voice_passed_to_deepgram_url(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The voice parameter is included in the Deepgram WebSocket URL."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-julius-de", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-
-        # Verify the URL passed to websockets.connect contains the voice
-        connect_call = mock_connect.call_args
-        url = connect_call[0][0]
-        assert "aura-2-julius-de" in url
-
-    def test_auth_header_passed_to_deepgram(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The API key is passed as Authorization header to Deepgram."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-
-        connect_call = mock_connect.call_args
-        headers = connect_call[1].get("additional_headers", {})
-        assert "Token test-deepgram-key-integ" in headers.get("Authorization", "")
-
-    def test_deepgram_url_contains_encoding_params(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The Deepgram TTS URL includes linear16 encoding for WebSocket."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-
-        connect_call = mock_connect.call_args
-        url = connect_call[0][0]
-        assert "encoding=linear16" in url
-        assert "container=none" in url
-        assert "sample_rate=24000" in url
-
-    def test_estrella_voice_accepted(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The estrella-es voice (not parametrized above) is also accepted."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-estrella-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
+        assert mock_tts.calls == [("Hola", voice)]
 
 
 # =============================================================================
@@ -1410,19 +1021,18 @@ class TestConcurrentConnections:
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
     ) -> None:
         """Multiple sequential TTS connections operate independently."""
-        for voice in ["aura-2-nestor-es", "aura-2-julius-de"]:
-            mock_connect = _make_websockets_connect_mock()
-            mock_ws_module = _make_websockets_module(mock_connect)
+        for voice in ["Achird", "Kore"]:
+            with test_client.websocket_connect(
+                f"/ws/speak?voice={voice}", cookies=ws_cookies
+            ) as ws:
+                ws.send_text(json.dumps({"text": "Test"}))
+                _receive_chunk_audio(ws)
+                ws.send_text(json.dumps({"type": "close"}))
 
-            with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-                with test_client.websocket_connect(
-                    f"/ws/speak?voice={voice}", cookies=ws_cookies
-                ) as ws:
-                    ws.send_text(json.dumps({"text": "Test"}))
-                    ws.send_text(json.dumps({"type": "close"}))
+        assert mock_tts.calls == [("Test", "Achird"), ("Test", "Kore")]
 
     def test_failed_connection_does_not_affect_next(
         self,
@@ -1454,30 +1064,21 @@ class TestConcurrentConnections:
         self,
         test_client: TestClient,
         ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
     ) -> None:
-        """A failed TTS connection does not prevent subsequent TTS connections."""
-        # First connection fails
-        failing_connect = _make_websockets_connect_mock(connect_error=ConnectionError("TTS down"))
-        failing_ws_module = _make_websockets_module(failing_connect)
-
-        with patch.dict(sys.modules, {"websockets": failing_ws_module}):
-            with pytest.raises(WebSocketDisconnect) as exc_info:
-                with test_client.websocket_connect(
-                    "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-                ) as ws:
+        """A failed TTS synthesis does not prevent subsequent TTS connections."""
+        failing = FakeSynthesizer(error=TTSError("OpenRouter TTS returned HTTP 503"))
+        with patch("src.api.routes.voice.synthesize_pcm", failing):
+            with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+                ws.send_text(json.dumps({"text": "Hola"}))
+                with pytest.raises(WebSocketDisconnect) as exc_info:
                     ws.receive_bytes()
             assert exc_info.value.code == 1011
 
-        # Second connection succeeds
-        working_connect = _make_websockets_connect_mock()
-        working_ws_module = _make_websockets_module(working_connect)
-
-        with patch.dict(sys.modules, {"websockets": working_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
+        working = FakeSynthesizer()
+        with patch("src.api.routes.voice.synthesize_pcm", working):
+            with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
                 ws.send_text(json.dumps({"text": "Back up"}))
+                assert _receive_chunk_audio(ws) == list(FAKE_PCM_CHUNKS)
                 ws.send_text(json.dumps({"type": "close"}))
 
     def test_mixed_stt_and_tts_sequential(
@@ -1494,14 +1095,10 @@ class TestConcurrentConnections:
             ws.close()
 
         # TTS connection
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
+        with patch("src.api.routes.voice.synthesize_pcm", FakeSynthesizer()):
+            with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
                 ws.send_text(json.dumps({"text": "Hola"}))
+                _receive_chunk_audio(ws)
                 ws.send_text(json.dumps({"type": "close"}))
 
 
@@ -1528,46 +1125,6 @@ class TestCleanupOnDisconnect:
         # send_finalize should have been called in the finally block
         mock_dg_ws = mock_deepgram_sdk["dg_ws"]
         mock_dg_ws.send_finalize.assert_awaited_once()
-
-    def test_tts_forward_task_cancelled_on_close(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The Deepgram forward task is cancelled when the TTS client disconnects."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"text": "Hola"}))
-                ws.send_text(json.dumps({"type": "close"}))
-
-        # Deepgram WS close should be called in cleanup
-        mock_dg_ws = mock_connect._mock_dg_ws
-        mock_dg_ws.close.assert_awaited()
-
-    def test_tts_deepgram_ws_closed_on_disconnect(
-        self,
-        test_client: TestClient,
-        ws_cookies: dict[str, str],
-        mock_settings_with_deepgram: MagicMock,
-    ) -> None:
-        """The Deepgram WebSocket is properly closed when browser disconnects."""
-        mock_connect = _make_websockets_connect_mock()
-        mock_ws_module = _make_websockets_module(mock_connect)
-
-        with patch.dict(sys.modules, {"websockets": mock_ws_module}):
-            with test_client.websocket_connect(
-                "/ws/speak?voice=aura-2-nestor-es", cookies=ws_cookies
-            ) as ws:
-                ws.send_text(json.dumps({"type": "close"}))
-
-        mock_dg_ws = mock_connect._mock_dg_ws
-        mock_dg_ws.close.assert_awaited_once()
 
     def test_stt_cleanup_after_many_frames(
         self,

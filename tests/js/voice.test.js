@@ -997,7 +997,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
                 var body = JSON.parse(fetch.mock.calls[0][1].body);
                 expect(body.text).toBe('Hola mundo');
-                expect(body.voice).toBe('aura-2-nestor-es');
+                expect(body.voice).toBe('Achird');
             });
         });
 
@@ -1253,7 +1253,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(body.voice).toBe('aura-2-julius-de');
+            expect(body.voice).toBe('Achird');
         });
 
         it('uses correct voice for French (fr)', async () => {
@@ -1266,7 +1266,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(body.voice).toBe('aura-2-hector-fr');
+            expect(body.voice).toBe('Achird');
         });
 
         it('defaults to Spanish voice for unknown language', async () => {
@@ -1279,7 +1279,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
             await vi.advanceTimersByTimeAsync(0); // flush WS fallback microtask
 
             var body = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(body.voice).toBe('aura-2-nestor-es');
+            expect(body.voice).toBe('Achird');
         });
 
         it('fetches audio via POST and plays through audio element', async () => {
@@ -1312,6 +1312,28 @@ describe('voice.js -- FSM-based Voice Module', () => {
             var player = document.getElementById('tts-player');
             expect(player.load).toHaveBeenCalled();
             expect(player.play).toHaveBeenCalled();
+        });
+
+        it('wraps the raw PCM response in a WAV blob for the audio element', async () => {
+            setupVoiceDOM();
+            var pcmBlob = new Blob([new Uint8Array(480)], { type: 'audio/pcm' });
+            globalThis.fetch = vi.fn(() => Promise.resolve({
+                ok: true,
+                blob: () => Promise.resolve(pcmBlob),
+            }));
+
+            var mod = await importVoice();
+            var btn = createSpeakButton('Hola', 'es');
+
+            mod.handleSpeakClick(btn);
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
+
+            var played = URL.createObjectURL.mock.calls.at(-1)[0];
+            expect(played.type).toBe('audio/wav');
+            expect(played.size).toBe(44 + 480); // WAV header + PCM payload
+            expect(document.getElementById('tts-player-src').type).toBe('audio/wav');
         });
     });
 
@@ -2059,7 +2081,7 @@ describe('voice.js -- FSM-based Voice Module', () => {
 
             expect(ws.url).toContain('/ws/speak');
             expect(ws.url).toContain('voice=');
-            expect(ws.url).toContain('aura-2-nestor-es');
+            expect(ws.url).toContain('Achird');
         });
 
         it('includes wsToken in URL when mic-btn has data-ws-token', async () => {
@@ -2223,6 +2245,43 @@ describe('voice.js -- FSM-based Voice Module', () => {
 // ============================================
 // chunkTextForTTS (pure utility — direct import)
 // ============================================
+
+describe('createWavBlob', () => {
+    let createWavBlob;
+
+    beforeEach(async () => {
+        var mod = await import('../../src/static/js/modules/voice-constants.js');
+        createWavBlob = mod.createWavBlob;
+    });
+
+    // jsdom's Blob has no arrayBuffer(), so read the header with FileReader.
+    function headerOf(blob) {
+        return new Promise((resolve, reject) => {
+            var reader = new FileReader();
+            reader.onload = () => resolve(new DataView(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(blob.slice(0, 44));
+        });
+    }
+
+    it('accepts ArrayBuffer parts and writes the data length', async () => {
+        var wav = createWavBlob([new ArrayBuffer(100), new ArrayBuffer(60)], 24000);
+        var view = await headerOf(wav);
+        expect(wav.type).toBe('audio/wav');
+        expect(wav.size).toBe(44 + 160);
+        expect(view.getUint32(40, true)).toBe(160);
+        expect(view.getUint32(24, true)).toBe(24000);
+    });
+
+    it('accepts Blob parts (fetch response blobs) and writes the data length', async () => {
+        var parts = [new Blob([new Uint8Array(200)]), new Blob([new Uint8Array(40)])];
+        var wav = createWavBlob(parts, 24000);
+        var view = await headerOf(wav);
+        expect(wav.size).toBe(44 + 240);
+        expect(view.getUint32(4, true)).toBe(36 + 240);
+        expect(view.getUint32(40, true)).toBe(240);
+    });
+});
 
 describe('chunkTextForTTS', () => {
     let chunkTextForTTS;
