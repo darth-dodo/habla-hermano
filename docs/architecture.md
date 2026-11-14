@@ -37,12 +37,12 @@ graph LR
     LG["LangGraph Pipeline"]
     C["Claude Haiku 5.5"]
     DG_STT["Deepgram Nova-3 STT"]
-    DG_TTS["Deepgram Aura-2 TTS"]
+    TTS["Gemini TTS (OpenRouter)"]
     DB["Supabase PostgreSQL"]
 
     B -- "SSE POST /chat/stream" --> F --> LG --> C
     B -- "WebSocket /ws/transcribe" --> F -- "WS Proxy" --> DG_STT
-    B -- "WebSocket /ws/speak" --> F -- "WS Proxy" --> DG_TTS
+    B -- "WebSocket /ws/speak" --> F -- "HTTP stream" --> TTS
     B -- "HTMX requests" --> F -- "Jinja2 SSR" --> DB
 ```
 
@@ -68,7 +68,7 @@ graph LR
 | LLM | Claude Haiku 5.5 | Multilingual understanding, structured output for exercises |
 | Database | PostgreSQL (Supabase) | Row-level security, auth, production persistence |
 | Auth | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
-| Voice | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time WebSocket streaming with linear16 PCM |
+| Voice | Deepgram Nova-3 STT, Gemini TTS via OpenRouter | WebSocket streaming of 24kHz linear16 PCM to the browser |
 | Encryption | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
 | Monitoring | Sentry | Error tracking for backend (FastAPI) and frontend (JS) |
 | Testing | pytest + Vitest | 2,529 tests, parallel execution via pytest-xdist |
@@ -96,7 +96,7 @@ src/
 │       ├── review.py        Spaced repetition review sessions
 │       ├── learn.py         Learning paths and adaptive recommendations
 │       ├── threads.py       Thread CRUD (create, list, rename, delete)
-│       ├── voice.py         WebSocket STT/TTS proxy + REST TTS fallback
+│       ├── voice.py         WebSocket STT proxy, WebSocket + REST TTS (Gemini)
 │       └── privacy.py       Privacy info page, delete history, delete account
 ├── agent/
 │   ├── graph.py             Freeform chat graph: respond → scaffold → analyze
@@ -357,27 +357,28 @@ sequenceDiagram
 
 ### TTS (Text-to-Speech)
 
-Two paths: WebSocket streaming (primary, ~300ms time-to-first-audio) and REST fallback.
+Two paths: WebSocket streaming (primary) and REST fallback. Both use Gemini TTS through OpenRouter's `POST /audio/speech` API (`src/services/tts.py`), which returns raw PCM (24kHz, mono, 16-bit).
 
 ```mermaid
 sequenceDiagram
     participant B as Browser
     participant F as FastAPI
-    participant D as Deepgram Aura-2
+    participant O as OpenRouter (Gemini TTS)
 
     B->>B: User taps speaker icon → AudioContext.resume()
-    B->>F: WebSocket /ws/speak?voice=aura-2-nestor-es
+    B->>F: WebSocket /ws/speak?voice=Achird
     F->>F: _authenticate_websocket()
-    F->>D: wss://api.deepgram.com/v1/speak (linear16, 24kHz)
     B->>F: {"text": "Hola amigo"}
-    D-->>F: binary audio chunks (linear16 PCM)
-    F-->>B: binary PCM chunks
+    F->>O: POST /audio/speech (response_format=pcm)
+    O-->>F: streamed PCM bytes
+    F-->>B: binary PCM frames (whole 16-bit samples)
+    F-->>B: {"type": "Flushed"} → browser sends the next chunk
     B->>B: Int16 → Float32 → AudioBufferSource.start() (gapless playback)
 ```
 
-**REST fallback:** `POST /api/speak` returns MP3 stream, played via `Audio()` element.
+**REST fallback:** `POST /api/speak` returns raw PCM (`audio/pcm`); the browser joins the chunks, adds a WAV header (`createWavBlob`) and plays it via the hidden `<audio>` element. If synthesis fails, the WebSocket closes with 1011 and the browser falls back to REST; REST answers 502.
 
-**Default voices:** Spanish (`aura-2-nestor-es`), German (`aura-2-julius-de`), French (`aura-2-hector-fr`) — masculine voices matching the Hermano persona.
+**Voice:** Gemini voices are not tied to a language, so Hermano uses one friendly masculine voice (`Achird`) for Spanish, German, French and Hinglish. Model is set by `TTS_MODEL` (default `google/gemini-3.8-flash-tts`).
 
 ### Client-Side Voice Modules
 

@@ -152,7 +152,7 @@ All conversations are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
 | **Frontend** | HTMX + Alpine.js + Tailwind | Server-rendered, no SPA complexity, 11 ES modules |
 | **Database** | PostgreSQL (Supabase) | Row-level security, auth, real-time. Local SQLite fallback |
 | **Auth** | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
-| **Voice** | Deepgram (Nova-3 STT, Aura-2 TTS) | FSM-driven WebSocket streaming with AbortController cancellation |
+| **Voice** | Deepgram Nova-3 STT, Gemini TTS via OpenRouter | FSM-driven WebSocket streaming with AbortController cancellation |
 | **Encryption** | cryptography (Fernet) | Field-level + checkpoint blob encryption, PBKDF2 key derivation |
 | **Monitoring** | Sentry | Error tracking and performance monitoring (backend + frontend) |
 | **Lessons** | 60 YAML files | 3 languages &times; 4 CEFR levels &times; 5 lessons, ~6,300 lines of content |
@@ -167,12 +167,12 @@ graph LR
     LG["LangGraph Pipeline"]
     C["Claude API"]
     DG_STT["Deepgram Nova-3 STT"]
-    DG_TTS["Deepgram Aura-2 TTS"]
+    TTS["Gemini TTS (OpenRouter)"]
     DB["Supabase (PostgreSQL)"]
 
     B -- "SSE POST /chat/stream" --> F --> LG --> C
     B -- "WebSocket /ws/transcribe" --> F -- "WS Proxy" --> DG_STT
-    B -- "WebSocket /ws/speak" --> F -- "WS Proxy" --> DG_TTS
+    B -- "WebSocket /ws/speak" --> F -- "HTTP stream" --> TTS
     B -- "HTMX requests" --> F -- "Jinja2 SSR" --> DB
 ```
 
