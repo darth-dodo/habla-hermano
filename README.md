@@ -13,7 +13,7 @@
 Language apps teach flashcards; people freeze in real conversations. Hermano gets you **talking from message one**, even as a complete beginner, and shifts from mostly English (A0) to almost all target language (B1) as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/hero-opening.png" alt="Opening screen, Spanish A1" width="250"/>
+  <img src="docs/screenshots/demo-a0.gif" alt="A0 learner asks how to say I like coffee; Hermano replies with a word bank, hint, sentence starter and pronunciation tips" width="250"/>
   &nbsp;
   <img src="docs/screenshots/mobile-scaffolding-beach.png" alt="Word bank and scaffolding" width="250"/>
   &nbsp;
