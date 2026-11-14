@@ -17,6 +17,7 @@ on:
       - 'uv.lock'
       - 'package.json'
       - 'vitest.config.js'
+      - 'tailwind.config.js'
       - 'Dockerfile'
       - 'render.yaml'
       - '.github/workflows/ci.yml'
@@ -30,6 +31,7 @@ on:
       - 'uv.lock'
       - 'package.json'
       - 'vitest.config.js'
+      - 'tailwind.config.js'
       - 'Dockerfile'
       - 'render.yaml'
       - '.github/workflows/ci.yml'
@@ -156,6 +158,14 @@ jobs:
 
       - name: Run Vitest
         run: npx vitest run
+
+      - name: Check built Tailwind CSS is up to date
+        run: |
+          npm run build:css
+          git diff --exit-code src/static/css/styles.css || {
+            echo "::error::src/static/css/styles.css is stale. Run 'npm run build:css' and commit the result."
+            exit 1
+          }
 
   # ===========================================================================
   # Security Scan
