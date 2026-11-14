@@ -35,7 +35,7 @@ graph LR
     B["Browser<br/>(HTMX + ES Modules)"]
     F["FastAPI"]
     LG["LangGraph Pipeline"]
-    C["Claude Haiku 4.5"]
+    C["Claude Haiku 5.5"]
     DG_STT["Deepgram Nova-3 STT"]
     DG_TTS["Deepgram Aura-2 TTS"]
     DB["Supabase PostgreSQL"]
@@ -65,7 +65,7 @@ graph LR
 | Backend | FastAPI | Async SSE streaming, Pydantic validation, WebSocket support |
 | Frontend | HTMX + Jinja2 + Tailwind | Server-driven UI, minimal JS, 11 ES modules |
 | Agent | LangGraph | Stateful conversation graphs with conditional routing and checkpointing |
-| LLM | Claude Haiku 4.5 | Multilingual understanding, structured output for exercises |
+| LLM | Claude Haiku 5.5 | Multilingual understanding, structured output for exercises |
 | Database | PostgreSQL (Supabase) | Row-level security, auth, production persistence |
 | Auth | Supabase Auth | JWT with httponly cookies, guest sessions via signed UUIDs |
 | Voice | Deepgram (Nova-3 STT, Aura-2 TTS) | Real-time WebSocket streaming with linear16 PCM |

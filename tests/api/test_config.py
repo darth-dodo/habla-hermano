@@ -42,7 +42,7 @@ class TestSettingsClass:
         # Check defaults
         assert settings.APP_NAME == "Habla Hermano"
         assert settings.DEBUG is False
-        assert settings.LLM_MODEL == "anthropic/claude-haiku-4.5"
+        assert settings.LLM_MODEL == "anthropic/claude-haiku-5.5"
         assert settings.HOST == "127.0.0.1"
         assert settings.PORT == 8000
 

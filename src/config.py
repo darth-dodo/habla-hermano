@@ -21,7 +21,7 @@ class Settings(BaseSettings):
         OPENROUTER_BASE_URL: Base URL for the OpenRouter OpenAI-compatible API.
         DEBUG: Enable debug mode with detailed errors and auto-reload.
         APP_NAME: Display name for the application.
-        LLM_MODEL: OpenRouter model identifier to use (e.g. "anthropic/claude-haiku-4.5").
+        LLM_MODEL: OpenRouter model identifier to use (e.g. "anthropic/claude-haiku-5.5").
         HOST: Server host address.
         PORT: Server port number.
         SECRET_KEY: Secret key for signing cookies and other tokens.
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
     # LLM settings (via OpenRouter, OpenAI-compatible API)
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    LLM_MODEL: str = "anthropic/claude-haiku-4.5"
+    LLM_MODEL: str = "anthropic/claude-haiku-5.5"
 
     # Optional OpenRouter app attribution (sent as HTTP-Referer / X-Title headers).
     # Used for OpenRouter's per-app usage rankings; safe to leave empty.
