@@ -665,8 +665,8 @@ Migrate to database-stored lessons (Option B) while preserving the Pydantic vali
 
 ### Documentation
 
-- [Phase 6 Design](../design/phase6-micro-lessons.md) - Micro-lessons implementation details (if exists)
-- [Phase 10 Design](../design/phase10-content-expansion.md) - Content expansion plan (if exists)
+- [Phase 6 Design](../history/design/phase06-micro-lessons.md) - Micro-lessons implementation details
+- [Phase 10 Design](../history/design/phase10-lesson-content-expansion.md) - Content expansion plan
 
 ### External Resources
 

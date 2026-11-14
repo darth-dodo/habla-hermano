@@ -8,7 +8,7 @@
 
 **Tech Stack:** FastAPI, Supabase (Postgres + RLS), LangGraph checkpoints, HTMX, Alpine.js, Tailwind CSS, Jinja2 templates, Vitest (JS tests), pytest (Python tests)
 
-**Design doc:** `docs/design/phase26-conversation-threads.md`
+**Design doc:** `docs/history/design/phase26-conversation-threads.md`
 
 ---
 

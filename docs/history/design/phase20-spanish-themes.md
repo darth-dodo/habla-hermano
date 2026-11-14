@@ -194,4 +194,4 @@ The Alpine.js `setTheme()` function already works with any `data-theme` value. T
 |------|--------|
 | `src/templates/base.html` | Add 4 `[data-theme]` CSS blocks |
 | `src/templates/chat.html` | Add theme buttons to menu dropdown |
-| `docs/design/phase20-spanish-themes.md` | This design document |
+| `docs/history/design/phase20-spanish-themes.md` | This design document |

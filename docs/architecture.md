@@ -248,8 +248,8 @@ request -> SecurityHeaders -> CSRF -> CORS -> route
 | `fsm.js` | Tiny `createMachine` + `interpret` |
 | `dom.js`, `scaffold.js`, `shortcuts.js`, `htmx-handlers.js` | Scrolling and rendering, word bank inserts, keyboard shortcuts, HTMX hooks |
 
-Five themes (Azulejo, Terracotta, Flamenco, Sangria, Jardín) are CSS custom-property sets, WCAG AA. Tokens and type live in [design/design-system.md](./design/design-system.md).
+Five themes (Azulejo, Terracotta, Flamenco, Sangria, Jardín) are CSS custom-property sets, WCAG AA. Tokens and type live in [design-system.md](./design-system.md).
 
 ## History
 
-Decisions are in [adr/](./adr/). Per-phase design notes are in [design/](./design/) and are kept as history, not updated. Release history: [CHANGELOG.md](../CHANGELOG.md).
+Decisions are in [adr/](./adr/). Per-phase design notes are in [history/](./history/) and are kept as history, not updated. Release history: [CHANGELOG.md](../CHANGELOG.md).

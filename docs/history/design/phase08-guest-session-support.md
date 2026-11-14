@@ -17,8 +17,8 @@ This means:
 **Why simplify?** The original design called for storing guest vocabulary, sessions, and lesson progress in Supabase using a service-role admin client to bypass RLS, followed by a merge service to transfer data on signup. This introduced significant complexity (dropped FK constraints, admin client usage, deduplication logic) for marginal benefit. Most users who engage enough to care about progress tracking are willing to create an account.
 
 **Related Phases**:
-- [Phase 5: Supabase Authentication](phase5-supabase-auth.md) -- Authentication foundation
-- [Phase 7: Progress Tracking](phase7-progress-tracking.md) -- Dashboard and data capture
+- [Phase 5: Supabase Authentication](phase05-supabase-auth.md) -- Authentication foundation
+- [Phase 7: Progress Tracking](phase07-progress-tracking.md) -- Dashboard and data capture
 
 ---
 

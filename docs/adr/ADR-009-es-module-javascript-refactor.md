@@ -228,7 +228,7 @@ ES modules solve the **actual problem** (implicit coupling via `window.*` global
 
 ## Implementation Plan
 
-See: `docs/design/phase16-es-module-refactor.md` for detailed implementation design.
+See: `docs/history/design/phase16-es-module-refactor.md` for detailed implementation design.
 
 ### Phases
 

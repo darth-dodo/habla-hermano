@@ -43,7 +43,7 @@ make test-cov   # With coverage report
 make test-js    # JavaScript tests only (Vitest)
 ```
 
-The project has 2,400+ Python tests and 241 JavaScript tests.
+The project has about 2,400 Python tests and 250+ JavaScript tests.
 
 ## Code Quality
 
@@ -86,9 +86,9 @@ src/           Core application code
   static/      CSS + JavaScript modules
 tests/         Python tests (pytest)
 tests/js/      JavaScript tests (Vitest)
-data/lessons/  60 YAML lesson files
-docs/          Architecture docs and design documents
-migrations/    SQL migration files for Supabase
+data/lessons/  20 YAML lesson files (each covers several languages)
+docs/          Living docs (architecture, setup, ADRs); docs/history/ holds old phase notes
+migrations/    Numbered SQL migrations, applied in order (see docs/setup.md)
 ```
 
 ## Code Style

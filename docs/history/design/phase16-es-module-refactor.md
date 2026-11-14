@@ -10,7 +10,7 @@ Phase 16 refactors the JavaScript architecture from two monolithic IIFE files co
 
 **Business Value**: Eliminates an entire class of integration bugs (missing exports, load-order dependencies) that are invisible to unit tests and only surface in real browser testing. Future JS development becomes safer and more maintainable.
 
-**ADR Reference**: [ADR-009: ES Module JavaScript Refactor](../adr/ADR-009-es-module-javascript-refactor.md)
+**ADR Reference**: [ADR-009: ES Module JavaScript Refactor](../../adr/ADR-009-es-module-javascript-refactor.md)
 
 ---
 

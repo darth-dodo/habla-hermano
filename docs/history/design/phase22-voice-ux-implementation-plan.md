@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JS ES modules, wavesurfer.js (npm), animate.css (CDN), FSM (fsm.js), HTMX + Jinja2 templates, Tailwind CSS, Vitest + jsdom.
 
-**Design Doc:** `docs/design/phase22-voice-ux-redesign.md`
+**Design Doc:** `docs/history/design/phase22-voice-ux-redesign.md`
 
 ---
 

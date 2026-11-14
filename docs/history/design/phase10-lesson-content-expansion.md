@@ -502,6 +502,6 @@ Output: Create all 20 files in data/lessons/fr/{level}/{category}-001.yaml
 
 ## Related Documents
 
-- [Phase 6: Micro-Lessons](phase6-micro-lessons.md) - Original lessons implementation
-- [Multi-Agent Coordination](.agentic-framework/workflows/multi-agent-coordination.md) - Parallel agent pattern
-- [Content Creation Workflow](.agentic-framework/workflows/content-creation.md) - Writer workflow
+- [Phase 6: Micro-Lessons](phase06-micro-lessons.md) - Original lessons implementation
+- [Multi-Agent Coordination](../../../.agentic-framework/workflows/multi-agent-coordination.md) - Parallel agent pattern
+- [Content Creation Workflow](../../../.agentic-framework/workflows/content-creation.md) - Writer workflow

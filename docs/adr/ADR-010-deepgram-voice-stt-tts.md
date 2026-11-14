@@ -409,8 +409,8 @@ Voice is a UI-layer feature with a server-side API proxy. It does not touch the 
 
 ### Code References
 
-- `docs/design/phase17-voice-conversation.md` — Full implementation design document
-- `docs/design/phase15-sse-streaming.md` — SSE streaming architecture (voice TTS triggers post-stream)
+- `docs/history/design/phase17-voice-conversation.md` — Full implementation design document
+- `docs/history/design/phase15-sse-streaming.md` — SSE streaming architecture (voice TTS triggers post-stream)
 - `src/api/streaming.py` — Existing SSE streaming module (unchanged by voice)
 
 ---
