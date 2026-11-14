@@ -152,7 +152,7 @@ def svg(t):
         x += w + 10
     bank, bx = [], 762
     for label in ["me llamo", "soy", "mucho gusto"]:
-        c, w = chip(bx, 228, label, t)
+        c, w = chip(bx, 264, label, t)
         bank.append(c)
         bx += w + 8
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-label="Habla Hermano: talk your way from A0 to B1 with an AI conversation partner, with Argentine motifs: Sol de Mayo, fileteado, mate and the Andes">
@@ -179,13 +179,11 @@ def svg(t):
     {"".join(chips)}
 
     <g>
-      <rect x="742" y="76" width="420" height="96" rx="20" fill="{t["ai"]}" stroke="{t["ai_border"]}"/>
-      <text x="766" y="114" font-size="19" font-weight="700" fill="{t["ai_text"]}">¡Hola! <tspan font-weight="500">I'm Hermano. How do you</tspan></text>
-      <text x="766" y="144" font-size="19" font-weight="500" fill="{t["ai_text"]}">say your name? Try <tspan font-weight="700" fill="{t["accent"]}">Me llamo...</tspan></text>
-      <text x="762" y="214" font-size="12" font-weight="700" letter-spacing="1.4" fill="{t["muted"]}">WORD BANK</text>
+      <rect x="742" y="110" width="290" height="96" rx="20" fill="{t["ai"]}" stroke="{t["ai_border"]}"/>
+      <text x="766" y="148" font-size="19" font-weight="700" fill="{t["ai_text"]}">¡Hola! <tspan fill="{t["accent"]}">Me llamo</tspan> <tspan font-weight="500">Hermano.</tspan></text>
+      <text x="766" y="178" font-size="19" font-weight="700" fill="{t["ai_text"]}">¡Mucho gusto!</text>
+      <text x="762" y="250" font-size="12" font-weight="700" letter-spacing="1.4" fill="{t["muted"]}">WORD BANK</text>
       {"".join(bank)}
-      <rect x="852" y="284" width="310" height="54" rx="20" fill="{t["user"]}"/>
-      <text x="1007" y="318" text-anchor="middle" font-size="19" font-weight="600" fill="{t["user_text"]}">Me llamo Ana. ¡Mucho gusto!</text>
     </g>
   </g>
 </svg>
