@@ -14,8 +14,7 @@ export var VOICES = {
 };
 
 export var STT_SAMPLE_RATE = 16000; // Deepgram expects 16kHz linear16
-export var TTS_SAMPLE_RATE = 24000; // Gemini TTS PCM output sample rate (REST path)
-export var TTS_WS_SAMPLE_RATE = 24000; // Gemini TTS PCM output sample rate (WS path)
+export var TTS_SAMPLE_RATE = 24000; // Gemini TTS PCM output sample rate
 export var DEFAULT_TTS_SPEED = 1.0; // 0.5 = half speed, 1.0 = normal, 2.0 = double
 export var MAX_TTS_CHUNK_LENGTH = 2000; // Must match server MAX_TTS_TEXT_LENGTH
 export var WS_SPEAK_PATH = '/ws/speak'; // WebSocket TTS endpoint

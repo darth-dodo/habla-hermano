@@ -1160,18 +1160,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
                 expect(tooltip.textContent).toBe('Could not play audio');
             });
 
-            it('shows "not configured" message on 503 error', async () => {
-                setupVoiceDOM();
-                globalThis.fetch = vi.fn(() => Promise.reject(new Error('HTTP 503')));
-                var mod = await importVoice();
-                var btn = createSpeakButton('Hola', 'es');
-
-                mod.handleSpeakClick(btn);
-                await vi.advanceTimersByTimeAsync(0);
-
-                var tooltip = document.querySelector('.voice-error-tooltip');
-                expect(tooltip.textContent).toBe('Speech service not configured');
-            });
 
             it('shows error on non-ok HTTP response', async () => {
                 setupVoiceDOM();
@@ -1463,18 +1451,6 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(tooltip.textContent).toBe('Could not play audio');
         });
 
-        it('shows "not configured" message on 503 error', async () => {
-            setupVoiceDOM();
-            globalThis.fetch = vi.fn(() => Promise.reject(new Error('HTTP 503')));
-
-            var mod = await importVoice();
-            var btn = createSpeakButton('Hola', 'es');
-            mod.handleSpeakClick(btn);
-            await vi.advanceTimersByTimeAsync(0);
-
-            var tooltip = document.querySelector('.voice-error-tooltip');
-            expect(tooltip.textContent).toBe('Speech service not configured');
-        });
 
         it('ignores AbortError from cancelled fetch', async () => {
             setupVoiceDOM();
@@ -2084,45 +2060,51 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(ws.url).toContain('Achird');
         });
 
-        describe('speed other than 1x uses the <audio> element (keeps pitch)', () => {
-            function mockPcmFetch() {
-                var pcmBlob = new Blob([new Uint8Array(480)], { type: 'audio/pcm' });
-                globalThis.fetch = vi.fn(() => Promise.resolve({
-                    ok: true,
-                    blob: () => Promise.resolve(pcmBlob),
-                }));
-            }
-
-            it.each([0.5, 0.75, 1.25, 2])('speed %s skips the WebSocket and fetches via REST', async (speed) => {
+        describe('speed other than 1x plays through the <audio> element (keeps pitch)', () => {
+            it.each([0.5, 0.75, 1.25, 2])('speed %s buffers WebSocket frames, then plays a WAV', async (speed) => {
                 MockWebSocket._allowTtsWs = true;
-                mockPcmFetch();
+                globalThis.fetch = vi.fn();
                 setupVoiceDOM();
                 var mod = await importVoice();
                 var btn = createSpeakButton('Hola', 'es', { speed: speed });
 
-                mod.handleSpeakClick(btn);
-                await vi.advanceTimersByTimeAsync(0);
-                await vi.advanceTimersByTimeAsync(0);
+                var ws = triggerAndOpen(mod, btn);
+                ws.onmessage({ data: makeAudioBuffer(480) });
+                ws.onmessage({ data: makeAudioBuffer(240) });
+                // Nothing goes to Web Audio, so the pitch is never resampled.
+                expect(btn.classList.contains('voice-playing')).toBe(false);
+                sendFlushed(ws);
                 await vi.advanceTimersByTimeAsync(0);
 
-                expect(MockWebSocket._lastTtsInstance).toBeNull();
-                expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({ method: 'POST' }));
-
+                // Same transport as 1x: no REST call, so the global /api/speak limit is untouched.
+                expect(fetch).not.toHaveBeenCalled();
                 var player = document.getElementById('tts-player');
                 expect(player.playbackRate).toBe(speed);
                 expect(player.preservesPitch).toBe(true);
                 expect(player.webkitPreservesPitch).toBe(true);
+                expect(btn.classList.contains('voice-playing')).toBe(true);
             });
 
-            it('normal speed (1x) still streams over the WebSocket', async () => {
-                mockPcmFetch();
+            it('normal speed (1x) streams frames straight to Web Audio', async () => {
                 var { mod, btn } = await setupWsTts('Hola', 'es');
 
-                mod.handleSpeakClick(btn);
+                var ws = triggerAndOpen(mod, btn);
+                ws.onmessage({ data: makeAudioBuffer(480) });
 
-                expect(MockWebSocket._lastTtsInstance).not.toBeNull();
-                expect(fetch).not.toHaveBeenCalled();
+                expect(btn.classList.contains('voice-playing')).toBe(true);
             });
+        });
+
+        it('server error reply (rate limit, invalid text) ends playback instead of hanging', async () => {
+            var { mod, btn } = await setupWsTts('Hola', 'es');
+
+            var ws = triggerAndOpen(mod, btn);
+            ws.onmessage({ data: JSON.stringify({ error: 'Rate limit exceeded', code: 'RATE_LIMITED' }) });
+            await vi.advanceTimersByTimeAsync(0);
+
+            expect(btn.classList.contains('voice-loading')).toBe(false);
+            expect(btn.classList.contains('voice-playing')).toBe(false);
+            expect(document.querySelector('.voice-error-tooltip').textContent).toBe('Could not play audio');
         });
 
         it('includes wsToken in URL when mic-btn has data-ws-token', async () => {

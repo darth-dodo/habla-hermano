@@ -464,12 +464,20 @@ async def speak_stream(
         async with httpx.AsyncClient(timeout=30.0) as client:
             while True:
                 msg = json.loads(await websocket.receive_text())
+                if not isinstance(msg, dict):
+                    msg = {}
 
                 if msg.get("type") == "close":
                     break
 
-                text = msg.get("text", "").strip()
+                text = msg.get("text")
+                text = text.strip() if isinstance(text, str) else ""
                 if not text or len(text) > MAX_TTS_TEXT_LENGTH:
+                    # Answer every message: the browser waits for a reply
+                    # before it sends the next chunk.
+                    await websocket.send_text(
+                        json.dumps({"error": "Invalid text", "code": "INVALID_TEXT"})
+                    )
                     continue
 
                 if not tts_limiter.check():

@@ -14,7 +14,6 @@ import {
     createWavBlob,
     WS_SPEAK_PATH,
     TTS_SAMPLE_RATE,
-    TTS_WS_SAMPLE_RATE,
 } from './voice-constants.js';
 
 // ============================================
@@ -121,16 +120,6 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
             });
     }
 
-    // Any speed other than 1x goes through the <audio> element. The
-    // streaming path changes speed with AudioBufferSourceNode.playbackRate,
-    // which resamples like tape: slowing down also lowers the pitch, so the
-    // voice sounds deep and dragged. <audio> keeps the pitch (preservesPitch),
-    // at the cost of waiting for the full synthesis before playback starts.
-    if (speed !== 1) {
-        doFetch(btn, text, voice, speed, signal, ttsService, showError);
-        return;
-    }
-
     // Start WebSocket TTS immediately (parallel with getUserMedia),
     // falling back to REST fetch if WebSocket fails to connect.
     doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError);
@@ -156,11 +145,17 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
     var streamingStarted = false;
     var allDone = false;
 
+    // Only 1x plays frames as they arrive. Web Audio changes speed by
+    // resampling like tape, so a slowed voice also drops in pitch. Other
+    // speeds collect the frames and play them through <audio>, which keeps
+    // the pitch (preservesPitch), once the whole reply has arrived.
+    var bufferedFrames = speed !== 1 ? [] : null;
+
     // Create AudioContext for streaming PCM playback
     var Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) {
+    if (Ctx && !bufferedFrames) {
         cleanupStreamAudio();
-        streamAudioCtx = new Ctx({ sampleRate: TTS_WS_SAMPLE_RATE });
+        streamAudioCtx = new Ctx({ sampleRate: TTS_SAMPLE_RATE });
         streamNextStartTime = 0;
         streamSources = [];
         streamLastSource = null;
@@ -229,6 +224,10 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
 
         // Binary frame — play PCM immediately via Web Audio API
         if (event.data instanceof ArrayBuffer) {
+            if (bufferedFrames) {
+                bufferedFrames.push(event.data);
+                return;
+            }
             if (!streamAudioCtx) return;
 
             // Convert Int16 PCM to Float32 for Web Audio
@@ -238,18 +237,17 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
                 float32[i] = int16[i] / 32768;
             }
 
-            var audioBuffer = streamAudioCtx.createBuffer(1, float32.length, TTS_WS_SAMPLE_RATE);
+            var audioBuffer = streamAudioCtx.createBuffer(1, float32.length, TTS_SAMPLE_RATE);
             audioBuffer.getChannelData(0).set(float32);
 
             var source = streamAudioCtx.createBufferSource();
             source.buffer = audioBuffer;
-            source.playbackRate.value = speed;
             source.connect(streamAudioCtx.destination);
 
             // Schedule for gapless playback
             var startTime = Math.max(streamAudioCtx.currentTime, streamNextStartTime);
             source.start(startTime);
-            streamNextStartTime = startTime + (audioBuffer.duration / speed);
+            streamNextStartTime = startTime + audioBuffer.duration;
 
             streamSources.push(source);
             streamLastSource = source;
@@ -266,6 +264,16 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
         var msg;
         try { msg = JSON.parse(event.data); } catch (_) { return; }
 
+        // Server refused the chunk (rate limit, invalid text): no Flushed follows.
+        if (msg.error) {
+            signal.removeEventListener('abort', onAbort);
+            cleanup();
+            cleanupStreamAudio();
+            showError(btn, 'Could not play audio');
+            ttsService.send('ERROR');
+            return;
+        }
+
         if (msg.type === 'Flushed') {
             chunkIndex++;
             if (chunkIndex < textChunks.length) {
@@ -276,7 +284,10 @@ function doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError) 
                 signal.removeEventListener('abort', onAbort);
                 cleanup();
 
-                if (streamLastSource) {
+                if (bufferedFrames && bufferedFrames.length) {
+                    var wavBlob = createWavBlob(bufferedFrames, TTS_SAMPLE_RATE);
+                    playAudioFromBlob(wavBlob, speed, signal, ttsService, btn, showError);
+                } else if (streamLastSource) {
                     streamLastSource.onended = function() {
                         if (signal.aborted) return;
                         cleanupStreamAudio();
@@ -419,10 +430,7 @@ function doFetch(btn, text, voice, speed, signal, ttsService, showError) {
         }).catch(function(err) {
             if (signal.aborted) return;
             if (err.name === 'AbortError') return;
-            var msg = (err && err.message && err.message.indexOf('503') !== -1)
-                ? 'Speech service not configured'
-                : 'Could not play audio';
-            showError(btn, msg);
+            showError(btn, 'Could not play audio');
             ttsService.send('ERROR');
         });
     }

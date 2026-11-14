@@ -858,9 +858,30 @@ class TestTTSMessageFlow:
         mock_tts: FakeSynthesizer,
         text: str,
     ) -> None:
-        """Empty, whitespace-only and over-long text never reaches synthesis."""
+        """Empty, whitespace-only and over-long text never reaches synthesis.
+
+        The server still answers with an error, so the browser does not wait
+        forever for a Flushed that never comes.
+        """
         with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
             ws.send_text(json.dumps({"text": text}))
+            assert json.loads(ws.receive_text())["code"] == "INVALID_TEXT"
+            ws.send_text(json.dumps({"type": "close"}))
+
+        assert mock_tts.calls == []
+
+    @pytest.mark.parametrize("payload", ['"just a string"', "[1, 2]", '{"text": 42}'])
+    def test_non_object_or_non_string_text_answered_with_error(
+        self,
+        test_client: TestClient,
+        ws_cookies: dict[str, str],
+        mock_tts: FakeSynthesizer,
+        payload: str,
+    ) -> None:
+        """Valid JSON of the wrong shape gets an error reply instead of crashing the handler."""
+        with test_client.websocket_connect("/ws/speak?voice=Kore", cookies=ws_cookies) as ws:
+            ws.send_text(payload)
+            assert json.loads(ws.receive_text())["code"] == "INVALID_TEXT"
             ws.send_text(json.dumps({"type": "close"}))
 
         assert mock_tts.calls == []
