@@ -229,11 +229,11 @@ request -> SecurityHeaders -> CSRF -> CORS -> route
 | CSRF | State-changing requests need `HX-Request` or `X-Requested-With` (custom-header pattern) |
 | CSP | Nonce-based `script-src`, plus HSTS, frame and content-type headers |
 | XSS | `nh3` sanitization and `markupsafe.escape()` |
-| Auth | Supabase JWT in httponly cookies; guests get a signed session UUID (`itsdangerous`) |
+| Auth | Supabase JWT in httponly cookies; guests get a signed session UUID (`itsdangerous`), and unsigned or forged values are ignored |
 | Data access | RLS on every table, including the 4 checkpoint tables |
 | Encryption | `SECRET_KEY` + `ENCRYPTION_SALT` -> PBKDF2 (480k rounds) -> Fernet. Encrypted: `vocabulary.translation`, `user_profiles.display_name`, every checkpoint blob |
 | LLM privacy | `OPENROUTER_ZERO_RETENTION=true` sends `provider.data_collection = "deny"` on chat and TTS calls |
-| Rate limits | REST: decorator per endpoint, counted for the whole app (not per user). `/ws/speak`: 30 messages per minute per connection |
+| Rate limits | REST: per endpoint and per client IP (in memory, one process). `/ws/speak`: 30 messages per minute per connection |
 | Retention | Checkpoints purged after `CHECKPOINT_RETENTION_DAYS` (30). `CONVERSATION_RETENTION_DAYS` is off by default |
 | Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress, threads and checkpoints |
 
