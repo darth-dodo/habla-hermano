@@ -50,6 +50,7 @@ There is no automated browser suite. Browser checks are the manual flows in [pla
 | `tests/lessons/` | Lesson YAML models and lesson service |
 | `tests/db/` | Fernet field encryption, `FernetCipher`, models, repositories with and without encryption |
 | `tests/test_rate_limiting.py` | REST and WebSocket rate limits |
+| `tests/evals/` | LLM eval scorer (pure functions) and the eval runner end to end with a fake chat model |
 | `tests/js/` | Vitest specs for `src/static/js/modules`: dom, fsm, htmx-handlers, scaffold, shortcuts, stream, voice |
 
 ## Mocking strategy
@@ -73,6 +74,47 @@ Patch where the name is looked up, not where it is defined. Inner layers import 
 - Vitest with the `jsdom` environment (`vitest.config.js`).
 - Specs live in `tests/js/**/*.test.js` and import the ES modules in `src/static/js/modules/` directly.
 - `make test-js` runs once. `make test-js-watch` watches.
+
+## LLM evals
+
+Unit tests mock the model. `evals/` checks that Hermano behaves as designed with the real model (whatever `LLM_MODEL` is set to, through OpenRouter).
+
+`evals/cases.yaml` holds 20 single-turn cases across es, de, fr and Hinglish and all four levels: A0 beginners writing English, learners making a known grammar error, B1 idiom questions. `evals/run.py` builds the real chat graph (respond, scaffold, analyze) with an in-memory `MemorySaver`, sends each case on a fresh thread, and scores the result with deterministic checks from `evals/scoring.py`:
+
+| Check | Passes when |
+|---|---|
+| `language_mix` | Share of target language stopwords vs English stopwords (lists in `data/stopwords.json`) is inside the level band: A0 5-50%, A1 20-80%, A2 55-100%, B1 80-100%. Skipped under 5 recognised words. |
+| `scaffolding` | A0/A1 get scaffolding with a non-empty word bank; A2/B1 get none |
+| `json_parses` | Every scaffold and analyze output parses as a JSON object |
+| `length` | Reply is 5-150 words (A0/A1) or 5-220 words (A2/B1) |
+| `grammar_feedback` | Error cases: analyze returns at least one correction |
+| `no_lecture` | Error cases: reply avoids "wrong", "incorrect", "mistake", "error", "grammar rule" |
+| `recast_in_reply` | Error cases: reply models a corrected form (for example "eres" for "Yo es") |
+| `contains_any` | Case specific words, such as "danke" for "how do I say thank you" |
+| `judge_recast` | Only with `--judge`: an LLM judge (the `analysis` profile) rates the correction a gentle recast, not a lecture |
+
+Run it:
+
+```bash
+OPENROUTER_API_KEY=sk-or-... make eval            # all cases
+make eval ARGS="--judge"                         # add the LLM judge on error cases
+make eval ARGS="--only es-b1"                    # cases whose id contains "es-b1"
+```
+
+It refuses to start (exit 2) when `OPENROUTER_API_KEY` is not exported. It prints a table with checks passed, latency and tokens per case plus the pass rate, writes a JSON report to `evals/results/` (gitignored), and exits 1 if any case failed.
+
+Cost: one run is about 50 LLM calls (respond and analyze per case, scaffold for A0/A1). Measured on 2026-11-14: about 32k input and 16k output tokens, roughly 1 US cent at Claude Haiku 5.5 list prices ($0.10 / $0.50 per million tokens).
+
+### Results
+
+| Date | Model | Pass rate | Time | Tokens in / out | Note |
+|---|---|---|---|---|---|
+| 2026-11-14 | `anthropic/claude-haiku-5.5` | 9/20 | 191s | 31.6k / 31.7k | Hidden reasoning used up `max_tokens` and cut the analyze JSON short, so grammar feedback was silently empty |
+| 2026-11-14 | `anthropic/claude-haiku-5.5` | 20/20 | 117s | 31.6k / 15.9k | With reasoning disabled in `get_llm()` (#122) |
+
+Add a row when the model, prompts or thresholds change.
+
+The real eval never runs in CI or `make test`. CI covers the scorer and the runner through `tests/evals/`, which drive the real graph with a fake chat model.
 
 ## CI
 
