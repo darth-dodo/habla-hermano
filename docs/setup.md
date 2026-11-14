@@ -95,6 +95,6 @@ One-time setup:
    gh secret set RENDER_DEPLOY_HOOK_URL -R darth-dodo/habla-hermano
    ```
 3. In Render, go to **Settings > Build & Deploy > Auto-Deploy** and set it to **Off**, so each merge deploys once (from CI) instead of twice. `render.yaml` keeps `autoDeploy: true` until the hook is confirmed working; once it is, change it to `autoDeploy: false` so a Blueprint sync does not switch Auto-Deploy back on.
-4. After the next merge to `main`, confirm the live commit with `curl -s https://habla-hermano.onrender.com/version` (once `/version` is available) and compare it to `git rev-parse origin/main`.
+4. After the next merge to `main`, confirm the live commit with `curl -s https://habla-hermano.onrender.com/version` (it returns `commit`, `branch` and `service` from Render env vars) and compare it to `git rev-parse origin/main`.
 
 Trade-off: CI is path-filtered, so a push that only touches unfiltered paths (for example `docs/`, `README.md`, `migrations/`) does not run CI and does not deploy. Those paths do not change the running app (SQL migrations are applied to Supabase separately). `data/` is read at runtime (lessons, stopwords), so it is part of the CI path filter. If a deploy is ever needed for an unfiltered change, use **Manual Deploy > Deploy latest commit** in Render.

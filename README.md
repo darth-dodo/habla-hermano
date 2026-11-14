@@ -13,7 +13,7 @@
 Language apps teach flashcards; people freeze in real conversations. Hermano gets you **talking from message one**, even as a complete beginner, and shifts from mostly English (A0) to almost all target language (B1) as you improve.
 
 <p align="center">
-  <img src="docs/screenshots/hero-opening.png" alt="Opening screen, Spanish A1" width="250"/>
+  <img src="docs/screenshots/demo-a0.gif" alt="A0 learner asks how to say I like coffee; Hermano replies with a word bank, hint, sentence starter and pronunciation tips" width="250"/>
   &nbsp;
   <img src="docs/screenshots/mobile-scaffolding-beach.png" alt="Word bank and scaffolding" width="250"/>
   &nbsp;
@@ -67,6 +67,17 @@ graph LR
 ```
 
 FastAPI renders HTML with Jinja2 and HTMX. Each chat turn runs a LangGraph graph, and the reply streams token by token over SSE. Voice is proxied through FastAPI, so API keys never reach the browser. Details: [docs/architecture.md](docs/architecture.md).
+
+## Decisions and trade-offs
+
+| Decision | Why | Cost, or when to revisit |
+|---|---|---|
+| Server-rendered HTML with HTMX, no SPA ([ADR-003](docs/adr/ADR-003-htmx-alpine-frontend.md)) | The server owns all state; one codebase, no client routing or duplicated API layer | Rich client interactivity is harder; voice and streaming still need hand-written ES modules |
+| LangGraph with Postgres checkpoints, encrypted by an `EncryptedSerializer` (Fernet) ([ADR-002](docs/adr/ADR-002-langgraph-conversation-engine.md)) | Conversation state survives restarts, and stored chats are unreadable without `SECRET_KEY` | Checkpoints cannot be queried in SQL; there is no key rotation, so changing `SECRET_KEY` makes old checkpoints unreadable |
+| OpenRouter for both chat and TTS ([ADR-011](docs/adr/ADR-011-openrouter-for-llm-and-tts.md)) | One key and one bill; models are settings, and provider routing comes for free | One more hop, and a single point of failure for chat and voice |
+| Slowed TTS buffered into `<audio>` with `preservesPitch` | Web Audio `playbackRate` drops the pitch, which misleads beginners at 0.75x and 0.85x | Speeds other than 1x wait for the whole clip before playing |
+| Per-client-IP rate limits in process memory | No Redis to run or pay for; correct with `--workers 1` on Render | Move to Redis before running a second worker or instance |
+| Guests as signed session cookies, served by the admin client scoped to that session | Guests have no Supabase JWT, so RLS cannot identify them | Guest isolation relies on app code filtering by session ID, not on the database |
 
 ## Run it locally
 
