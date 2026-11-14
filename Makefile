@@ -23,7 +23,7 @@ dev: ## Run development server
 	uv run uvicorn src.api.main:app --reload --port 8000
 
 dev-css: ## Watch and compile Tailwind CSS
-	npx tailwindcss -i ./src/static/css/input.css -o ./src/static/css/output.css --watch
+	npm run watch:css
 
 # =============================================================================
 # Testing

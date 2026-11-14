@@ -164,20 +164,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # microphone=(self) needed for voice STT feature
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
 
-        # CSP: Nonce-based script allowlisting with CDN origins.
-        # 'unsafe-eval' remains required because Tailwind CDN uses eval() internally;
-        # full removal requires a build-time CSS migration (deferred).
-        # In production, only wss: is allowed for WebSocket connections — ws: (unencrypted)
+        # CSP: nonce-based scripts, all served from 'self' (Tailwind is prebuilt,
+        # vendor JS lives in /static/vendor/).
+        # 'unsafe-eval' is still needed by the standard Alpine.js build, which compiles
+        # x-data / @click expressions with new Function(). Dropping it means moving to
+        # @alpinejs/csp and registering every component with Alpine.data().
+        # style-src keeps 'unsafe-inline' for the inline theme <style>, style="" attributes
+        # and the indicator styles htmx injects.
+        # In production, only wss: is allowed for WebSocket connections; ws: (unencrypted)
         # is only permitted in DEBUG mode to allow local development over plain HTTP.
         _ws_origins = "ws: wss:" if settings.DEBUG else "wss:"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.tailwindcss.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            f"script-src 'self' 'nonce-{nonce}' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data:; "
             "media-src 'self' blob: data:; "
-            f"connect-src 'self' https://*.ingest.sentry.io {_ws_origins}"
+            f"connect-src 'self' https://*.ingest.sentry.io {_ws_origins}; "
+            "object-src 'none'; "
+            "base-uri 'self'"
         )
 
         # HSTS only in production (HTTPS)
