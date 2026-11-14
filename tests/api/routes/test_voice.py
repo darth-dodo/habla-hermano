@@ -17,6 +17,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
+from src.api.cookies import sign_session_id
 from src.api.routes.voice import (
     ALLOWED_VOICES,
     DEFAULT_VOICES,
@@ -46,7 +47,7 @@ def mock_user() -> AuthenticatedUser:
 @pytest.fixture
 def ws_cookies() -> dict[str, str]:
     """Cookies dict with a valid guest session_id for WebSocket auth."""
-    return {"session_id": GUEST_SESSION_ID}
+    return {"session_id": sign_session_id(GUEST_SESSION_ID)}
 
 
 @pytest.fixture
@@ -425,6 +426,38 @@ class TestVoiceConfig:
 
 class TestSpeakEndpoint:
     """Tests for POST /api/speak TTS endpoint."""
+
+    async def test_speak_without_account_or_guest_session_returns_401(
+        self,
+        voice_app: FastAPI,
+        async_client: AsyncClient,
+        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
+    ) -> None:
+        """A caller with no login and no signed guest cookie cannot run paid TTS."""
+        from src.api.auth import get_current_user_optional
+
+        voice_app.dependency_overrides[get_current_user_optional] = lambda: None
+        response = await async_client.post("/api/speak", json={"text": "Hola", "voice": "Kore"})
+
+        assert response.status_code == 401
+        assert mock_tts.calls == []
+
+    async def test_speak_with_signed_guest_session_is_allowed(
+        self,
+        voice_app: FastAPI,
+        async_client: AsyncClient,
+        mock_settings_with_deepgram: MagicMock,
+        mock_tts: FakeSynthesizer,
+    ) -> None:
+        """Guests keep TTS as long as their session cookie is signed by us."""
+        from src.api.auth import get_current_user_optional
+
+        voice_app.dependency_overrides[get_current_user_optional] = lambda: None
+        async_client.cookies.set("session_id", sign_session_id(GUEST_SESSION_ID))
+        response = await async_client.post("/api/speak", json={"text": "Hola", "voice": "Kore"})
+
+        assert response.status_code == 200
 
     async def test_speak_returns_audio(
         self,

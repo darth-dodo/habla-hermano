@@ -18,7 +18,7 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -362,7 +362,11 @@ async def transcribe_stream(  # noqa: PLR0915
 
 @router.post("/api/speak", response_model=None)
 @rate_limited(VOICE_RATE_LIMIT_CALLS, VOICE_RATE_LIMIT_PERIOD)
-async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResponse | JSONResponse:
+async def speak(
+    request: Request,  # noqa: ARG001 - read by @rate_limited for the per-client key
+    body: SpeakRequest,
+    user: EffectiveUserDep,
+) -> StreamingResponse | JSONResponse:
     """Synthesize speech from text with Gemini TTS (via OpenRouter).
 
     REST fallback for browsers where the WebSocket path is unavailable.
@@ -370,20 +374,25 @@ async def speak(request: SpeakRequest, _user: EffectiveUserDep) -> StreamingResp
     browser joins the chunks and wraps them in a WAV header for playback.
 
     Args:
-        request: TTS request with text and optional voice selection.
+        request: Incoming request (used for per-client rate limiting).
+        body: TTS request with text and optional voice selection.
+        user: Account or signed guest session; anonymous callers get 401.
 
     Returns:
         StreamingResponse with audio/pcm content, or JSONResponse on error.
     """
-    if request.voice not in ALLOWED_VOICES:
+    if user is None:
+        return JSONResponse(status_code=401, content={"detail": "Authentication required"})
+
+    if body.voice not in ALLOWED_VOICES:
         return JSONResponse(
             status_code=400,
-            content={"detail": f"Invalid voice: {request.voice}"},
+            content={"detail": f"Invalid voice: {body.voice}"},
         )
 
     # Pull the first chunk before answering, so an upstream failure becomes a
     # clean 502 instead of a 200 response that breaks halfway through.
-    pcm = synthesize_pcm(request.text, request.voice)
+    pcm = synthesize_pcm(body.text, body.voice)
     try:
         first_chunk = await anext(pcm)
     except StopAsyncIteration:

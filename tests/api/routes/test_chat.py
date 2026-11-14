@@ -146,7 +146,9 @@ class TestChatPageEndpoint:
 
         app.dependency_overrides[get_current_user_optional] = mock_no_user
         try:
-            existing_session = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+            from src.api.cookies import sign_session_id
+
+            existing_session = sign_session_id("a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d")
             test_client.cookies.set("session_id", existing_session)
             response = test_client.get("/")
             assert response.status_code == 200

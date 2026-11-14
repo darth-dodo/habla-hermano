@@ -25,7 +25,7 @@ from src.api.auth import (
     get_current_user,
     get_current_user_optional,
 )
-from src.api.cookies import sign_cookie_value
+from src.api.cookies import sign_cookie_value, sign_session_id
 from src.api.dependencies import get_cached_templates
 from src.db.models import LessonProgress, Vocabulary
 from src.lessons.models import (
@@ -503,7 +503,7 @@ class TestLearnUncoveredLines:
         """Guest with session_id cookie loads data (lines 107-109)."""
         response = await guest_client.get(
             "/learn/",
-            cookies={"session_id": "guest-session-xyz"},
+            cookies={"session_id": sign_session_id("guest-session-xyz")},
         )
         assert response.status_code == 200
         assert "learn-path" in response.text
@@ -517,7 +517,7 @@ class TestLearnUncoveredLines:
         """Guest recommendation loads data with session_id (lines 183-185, 189->206)."""
         response = await guest_client.get(
             "/learn/recommendation",
-            cookies={"session_id": "guest-session-xyz"},
+            cookies={"session_id": sign_session_id("guest-session-xyz")},
         )
         assert response.status_code == 200
         assert "recommendation" in response.text

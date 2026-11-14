@@ -47,6 +47,7 @@ from src.api.cookies import (
     set_secure_cookie,
     sign_session_id,
     unsign_active_thread,
+    verified_session_cookie,
 )
 from src.api.dependencies import AccessTokenDep, LessonServiceDep, SettingsDep, TemplatesDep
 from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
@@ -179,7 +180,7 @@ def get_chat_cookies(
 ) -> ChatCookies:
     """FastAPI dependency that groups the chat endpoint cookies."""
     return ChatCookies(
-        session_id=session_id,
+        session_id=verified_session_cookie(session_id),
         sb_access_token=sb_access_token,
         conversation_version=conversation_version,
     )
@@ -386,6 +387,8 @@ async def chat_page(
     if user and not lesson:
         context.update(_review_page_context(user, language, mode, warmup_dismissed))
 
+    # A forged or expired cookie counts as no session, so a fresh one is issued.
+    session_id = verified_session_cookie(session_id)
     ws_token, new_signed_session = _voice_ws_token(settings, user, session_id)
     context["ws_token"] = ws_token or ""
 

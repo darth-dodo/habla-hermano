@@ -4,6 +4,7 @@ import asyncio
 import inspect
 
 import pytest
+from starlette.requests import Request
 
 from src.api.rate_limit import (
     AUTH_RATE_LIMIT_CALLS,
@@ -103,3 +104,41 @@ class TestRateLimitedDecorator:
             await my_endpoint()
         assert exc_info.value.status_code == 429
         assert "Rate limit exceeded" in str(exc_info.value.detail)
+
+
+class TestPerClientRateLimit:
+    """Limits are counted per client IP, not for the whole app."""
+
+    @staticmethod
+    def _request(forwarded_for: str) -> Request:
+        headers = [(b"x-forwarded-for", forwarded_for.encode())]
+        return Request({"type": "http", "headers": headers, "client": ("10.0.0.1", 1)})
+
+    @pytest.mark.asyncio
+    async def test_one_client_hitting_the_limit_does_not_block_another(self) -> None:
+        from fastapi import HTTPException
+
+        @rate_limited(calls=2, period=60)
+        async def login(request: object) -> str:
+            return "ok"
+
+        attacker = self._request("203.0.113.9")
+        await login(request=attacker)
+        await login(request=attacker)
+        with pytest.raises(HTTPException):
+            await login(request=attacker)
+
+        assert await login(request=self._request("198.51.100.7")) == "ok"
+
+    @pytest.mark.asyncio
+    async def test_forged_forwarded_for_prefix_does_not_reset_the_budget(self) -> None:
+        """Only the last X-Forwarded-For hop (added by the proxy) counts."""
+        from fastapi import HTTPException
+
+        @rate_limited(calls=1, period=60)
+        async def login(request: object) -> str:
+            return "ok"
+
+        await login(request=self._request("1.1.1.1, 203.0.113.9"))
+        with pytest.raises(HTTPException):
+            await login(request=self._request("2.2.2.2, 203.0.113.9"))

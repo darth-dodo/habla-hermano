@@ -1,11 +1,8 @@
 """Rate limiting configuration for API endpoints.
 
-Uses the ratelimit library with a custom async-compatible decorator factory.
-Protects against brute force login attempts and API budget abuse.
-
-Note: The ratelimit library provides function-level (not per-IP) rate limiting.
-For production deployments requiring per-IP limits, consider adding a reverse
-proxy (e.g., nginx) or upgrading to a Redis-backed solution.
+REST endpoints are limited per client IP with an in-process sliding window,
+so one client cannot lock everyone else out (for example of login). Protects
+against brute force login attempts and API budget abuse.
 """
 
 import functools
@@ -14,9 +11,7 @@ import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from fastapi import HTTPException
-from ratelimit import RateLimitException
-from ratelimit.decorators import RateLimitDecorator
+from fastapi import HTTPException, Request
 
 logger = logging.getLogger(__name__)
 
@@ -41,41 +36,58 @@ VOICE_WS_TTS_MESSAGE_RATE = 30  # text messages per minute (TTS)
 
 F = TypeVar("F", bound=Callable[..., Any])
 
-# Registry of active rate limit decorators for test reset support
-_active_limiters: list[RateLimitDecorator] = []
+# Registry of per-client limiters, so tests can reset them.
+_active_limiters: list[dict[str, "WebSocketMessageRateLimiter"]] = []
+
+# shortcut: limits are per process and forgotten past this many clients;
+# move to Redis if the app ever runs more than one worker or instance.
+_MAX_TRACKED_CLIENTS = 10_000
+
+
+def client_key(request: Request | None) -> str:
+    """Identify the caller for rate limiting.
+
+    Render's proxy appends the real client IP as the last X-Forwarded-For
+    entry; earlier entries come from the client and can be forged, so they
+    are ignored. Without the header (local dev) the socket peer is used.
+    """
+    if request is None:
+        return "-"
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.rsplit(",", 1)[-1].strip()
+    return request.client.host if request.client else "-"
 
 
 def rate_limited(calls: int, period: int) -> Callable[[F], F]:
-    """Create a rate limiting decorator for async FastAPI endpoints.
+    """Create a per-client rate limiting decorator for async FastAPI endpoints.
 
-    Creates a tracking function decorated with @limits that is called before
-    the wrapped endpoint executes. If the rate limit is exceeded, a 429
-    HTTPException is raised.
+    The endpoint should declare a ``request: Request`` parameter; without
+    one, every caller shares a single budget.
 
     Args:
-        calls: Maximum number of calls allowed within the period.
+        calls: Maximum number of calls allowed per client within the period.
         period: Time window in seconds.
 
     Returns:
-        A decorator that applies rate limiting to the wrapped function.
+        A decorator that raises a 429 HTTPException once a client exceeds the limit.
     """
-    limiter_instance = RateLimitDecorator(calls=calls, period=period)
-    _active_limiters.append(limiter_instance)
-
-    @limiter_instance  # type: ignore[misc,untyped-decorator]  # ratelimit library lacks type stubs
-    def _tracker() -> None:
-        """Internal tracking function for rate limit counting."""
+    clients: dict[str, WebSocketMessageRateLimiter] = {}
+    _active_limiters.append(clients)
 
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            try:
-                _tracker()
-            except RateLimitException:
+            request = kwargs.get("request")
+            key = client_key(request if isinstance(request, Request) else None)
+            if key not in clients and len(clients) >= _MAX_TRACKED_CLIENTS:
+                clients.clear()
+            limiter = clients.setdefault(key, WebSocketMessageRateLimiter(calls, period))
+            if not limiter.check():
                 raise HTTPException(
                     status_code=429,
                     detail="Rate limit exceeded. Please try again later.",
-                ) from None
+                )
             return await func(*args, **kwargs)
 
         return wrapper  # type: ignore[return-value]  # wrapper signature matches F at runtime
@@ -84,14 +96,9 @@ def rate_limited(calls: int, period: int) -> Callable[[F], F]:
 
 
 def reset_rate_limits() -> None:
-    """Reset all active rate limiters to their initial state.
-
-    Intended for use in tests to prevent rate limit state from leaking
-    between test cases.
-    """
-    for limiter_instance in _active_limiters:
-        limiter_instance.num_calls = 0
-        limiter_instance.last_reset = limiter_instance.clock()
+    """Reset all REST rate limiters (for tests, so state does not leak)."""
+    for clients in _active_limiters:
+        clients.clear()
 
 
 class WebSocketMessageRateLimiter:
