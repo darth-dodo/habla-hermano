@@ -325,7 +325,8 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-@app.get("/health")
+# HEAD too: uptime monitors and badge checkers probe with HEAD and saw 405 as "down".
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check(response: Response) -> dict[str, str]:
     """Health check endpoint with database connectivity verification.
 

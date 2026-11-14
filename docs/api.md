@@ -96,7 +96,7 @@ A thread is `{id, thread_id, title, language, level, created_at, updated_at}`. U
 | WS | `/ws/transcribe` | identity | JSON transcripts, see below |
 | WS | `/ws/speak` | identity | Binary PCM frames plus JSON control messages |
 | POST | `/api/speak` | identity (401 otherwise) | `audio/pcm` stream, header `X-Sample-Rate: 24000`. Body: `{"text", "voice"}` |
-| GET | `/health` | none | JSON `{status, app, database}`. `healthy` or `degraded` (in-memory checkpoints) answer 200, `unhealthy` (a real DB URL set but not connected) answers 503. Render's health check uses it |
+| GET, HEAD | `/health` | none | JSON `{status, app, database}`. `healthy` or `degraded` (in-memory checkpoints) answer 200, `unhealthy` (a real DB URL set but not connected) answers 503. Render's health check uses it |
 | GET | `/version` | none | JSON `{commit, branch, service}` from Render env vars (null locally) |
 
 Guest identity only comes from a `session_id` cookie the server signed. Forged or plain-UUID values are ignored and a fresh session is issued.

@@ -407,6 +407,10 @@ class TestHealthEndpoint:
         response = test_client.get("/health")
         assert response.status_code == 200
 
+    def test_health_answers_head(self, test_client: TestClient) -> None:
+        """Uptime checkers send HEAD; a 405 made them report the site as down."""
+        assert test_client.head("/health").status_code == 200
+
     def test_health_returns_json(self, test_client: TestClient) -> None:
         """GET /health should return JSON content type."""
         response = test_client.get("/health")
