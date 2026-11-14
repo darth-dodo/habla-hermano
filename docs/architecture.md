@@ -20,6 +20,7 @@ graph LR
     B -- "WS  /ws/transcribe" --> F -- "WS proxy" --> DG
     B -- "HTMX pages + partials" --> F <--> DB
     LG <-- "encrypted checkpoints" --> DB
+    LG -. "traces, metadata only (optional)" .-> LF["Langfuse Cloud EU"]
 ```
 
 | Choice | Why |
@@ -34,14 +35,14 @@ graph LR
 
 | Layer | Tech |
 |---|---|
-| Web | FastAPI, Jinja2, HTMX, Alpine.js, Tailwind |
+| Web | FastAPI, Jinja2, HTMX, Alpine.js, Tailwind (compiled to `src/static/css/styles.css`); htmx, Alpine, Chart.js and Sentry self-hosted in `src/static/vendor/` |
 | Agent | LangGraph, `langchain-openai` `ChatOpenAI` pointed at OpenRouter (`src/agent/llm.py`) |
-| LLM | `anthropic/claude-haiku-5.5` (`LLM_MODEL`), no temperature sent |
+| LLM | `anthropic/claude-haiku-5.5` (`LLM_MODEL`). No temperature sent, and hidden reasoning is off (`reasoning.enabled = false`): its tokens counted against `max_tokens` and truncated structured JSON |
 | Voice | Deepgram Nova-3 STT, Gemini TTS via OpenRouter (`TTS_MODEL`, voice `Achird`) |
 | Data | Supabase Postgres + Auth, row-level security; `MemorySaver` when Supabase is not configured |
 | Security | Fernet (`cryptography`), `nh3`, `itsdangerous`, nonce CSP |
-| Ops | Render (`render.yaml`, deploy hook from CI), Sentry |
-| Tests | pytest + xdist, Vitest + jsdom ([testing.md](./testing.md)) |
+| Ops | Render (`render.yaml`, deploy hook from CI), Sentry, optional Langfuse tracing (`src/services/tracing.py`), `GET /version` |
+| Tests | pytest + xdist, Vitest + jsdom, and `make eval` (20 real-model scenarios, [testing.md](./testing.md#llm-evals)) |
 
 ## Code map
 
@@ -227,7 +228,7 @@ request -> SecurityHeaders -> CSRF -> CORS -> route
 | Concern | How |
 |---|---|
 | CSRF | State-changing requests need `HX-Request` or `X-Requested-With` (custom-header pattern) |
-| CSP | Nonce-based `script-src`, plus HSTS, frame and content-type headers |
+| CSP | `script-src 'self' 'nonce-...' 'unsafe-eval'`: no CDN hosts, every script is self-hosted. `unsafe-eval` stays because Alpine's standard build compiles inline expressions; dropping it means moving to `@alpinejs/csp`. Plus HSTS, frame and content-type headers |
 | XSS | `nh3` sanitization and `markupsafe.escape()` |
 | Auth | Supabase JWT in httponly cookies; guests get a signed session UUID (`itsdangerous`), and unsigned or forged values are ignored |
 | Data access | RLS on every table, including the 4 checkpoint tables |
@@ -250,6 +251,8 @@ request -> SecurityHeaders -> CSRF -> CORS -> route
 | `dom.js`, `scaffold.js`, `shortcuts.js`, `htmx-handlers.js` | Scrolling and rendering, word bank inserts, keyboard shortcuts, HTMX hooks |
 
 Five themes (Azulejo, Terracotta, Flamenco, Sangria, Jardín) are CSS custom-property sets, WCAG AA. Tokens and type live in [design-system.md](./design-system.md).
+
+**CSS build:** Tailwind 3.4 compiles `src/static/css/input.css` with `tailwind.config.js` (content: templates, JS modules and `src/**/*.py`) into a minified, committed `styles.css`. Render's Python runtime has no Node, so the CSS is committed and CI rebuilds it and fails if it differs. Class names must appear as whole strings; ones assembled from pieces are not seen by Tailwind.
 
 ## History
 

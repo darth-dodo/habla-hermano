@@ -97,4 +97,6 @@ migrations/    Numbered SQL migrations, applied in order (see docs/setup.md)
 - Python: type hints on all functions, no `Any` without justification
 - JavaScript: ES modules, no global state
 - Templates: HTMX for interactivity, minimal inline JS
-- CSS: Tailwind utility classes, CSS custom properties for theming
+- CSS: Tailwind utility classes, CSS custom properties for theming. After adding classes, run `npm run build:css` and commit `src/static/css/styles.css`
+- No CDN scripts: vendor libraries live in `src/static/vendor/` at pinned versions
+- Prompt or model changes: run `make eval` and add a row to the results table in `docs/testing.md`

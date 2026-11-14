@@ -152,16 +152,18 @@ Inspiration: Living garden, learning indigo, progress green, mint cream.
 
 | Role | Font | Fallback | Weight Range |
 |------|------|----------|-------------|
-| **Display** | Fraunces | Georgia, serif | 600–700 |
-| **Body** | Inter | system-ui, -apple-system, sans-serif | 400–600 |
+| **Display** | Plus Jakarta Sans | system-ui, -apple-system, sans-serif | 600-700 |
+| **Body** | Plus Jakarta Sans | system-ui, -apple-system, sans-serif | 400-600 |
 | **Mono** | JetBrains Mono | monospace | 400 |
 
 ### 3.2 Tailwind Config
 
+The source of truth is `tailwind.config.js` at the repo root (compiled with `npm run build:css`).
+
 ```js
 fontFamily: {
-  display: ['Fraunces', 'Georgia', 'serif'],
-  sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  display: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+  sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
   mono: ['JetBrains Mono', 'monospace'],
 }
 ```
@@ -180,14 +182,14 @@ fontFamily: {
 ### 3.4 Typography Rules
 
 - Headings and `.font-display`: `letter-spacing: -0.01em`
-- Target words, `em`, `i` in AI responses: Fraunces italic, colored with `--accent`
+- Target words, `em`, `i` in AI responses: italic, colored with `--accent`
 - Body line-height: `1.5`–`1.75`
 - Max line length: 65–75 characters (`max-w-prose`)
 - Minimum mobile font size: 16px (prevents iOS auto-zoom)
 
-### 3.5 Recommended Upgrade Path
+### 3.5 Upgrade History
 
-**Candidate**: Swap Inter → **Plus Jakarta Sans** for warmer letterforms with near-identical metrics. Minimal layout disruption, friendlier personality.
+Phase 25 swapped Inter and Fraunces for **Plus Jakarta Sans** (warmer letterforms, near-identical metrics).
 
 ---
 
@@ -290,7 +292,7 @@ All buttons: `rounded-xl`, `transition-colors duration-200`, `cursor-pointer`, `
 
 ```
 ┌─────────────────────────────────┐
-│  🇪🇸  Lesson Title              │  Icon + title row
+│  🇦🇷  Lesson Title              │  Icon + title row
 │  Brief description of lesson    │  Description
 │  ┌──────┐                       │
 │  │  A1  │  Topic tag            │  Level badge + metadata
@@ -416,7 +418,7 @@ Use **Lucide** SVG icons (or Heroicons) for all semantic UI elements:
 | ❌ | X circle SVG | `x-circle` |
 | 🎯 | Target SVG | `target` |
 
-Flag emojis (🇪🇸, 🇩🇪, 🇫🇷) are acceptable — they carry cultural meaning and render well on all platforms.
+Flag emojis (🇦🇷 for Spanish, 🇩🇪, 🇫🇷, 🇮🇳 for Hinglish) are acceptable: they carry cultural meaning and render well on all platforms.
 
 ---
 
@@ -424,11 +426,11 @@ Flag emojis (🇪🇸, 🇩🇪, 🇫🇷) are acceptable — they carry cultura
 
 | Library | Version | Purpose |
 |---------|---------|---------|
-| Tailwind CSS | CDN (dev) | Utility-first CSS |
-| HTMX | 1.9.10 | Hypermedia interactions |
-| Alpine.js | 3.13.3 | Lightweight reactivity |
-| Animate.css | 4.1.1 | Utility animations |
-| Google Fonts | — | Inter, JetBrains Mono, Fraunces |
+| Tailwind CSS | 3.4.17 (compiled, `npm run build:css`) | Utility-first CSS |
+| HTMX | 1.9.10 (self-hosted, `src/static/vendor/`) | Hypermedia interactions |
+| Alpine.js | 3.13.3 (self-hosted) | Lightweight reactivity |
+| Chart.js | 4.4.1 (self-hosted) | Progress charts |
+| Google Fonts | n/a | Plus Jakarta Sans, JetBrains Mono |
 
 ### 9.1 Font Loading
 
@@ -443,22 +445,22 @@ Prioritized changes to evolve the design system.
 ### Tier 1 — Do First (Low effort, High impact)
 
 - [ ] Fix dark theme contrast issues (Terracotta, Flamenco, Sangria muted text)
-- [ ] Replace emoji semantic indicators with SVG icons (Lucide)
+- [x] Replace emoji semantic indicators with SVG icons (Lucide)
 - [ ] Add `focus-visible` ring to theme switcher and all interactive chrome
-- [ ] Add `aria-live="polite"` to voice status region
+- [x] Add `aria-live="polite"` to voice status region
 
 ### Tier 2 — Do Second (Medium effort, High impact)
 
-- [ ] Add a second light theme ("Jardín" — green/indigo learning palette)
-- [ ] Evaluate Plus Jakarta Sans as Inter replacement (A/B if possible)
-- [ ] Define and apply spacing tokens as CSS custom properties
+- [x] Add a second light theme ("Jardín", green/indigo learning palette)
+- [x] Evaluate Plus Jakarta Sans as Inter replacement (adopted in Phase 25)
+- [x] Define and apply spacing tokens as CSS custom properties
 - [ ] Add AI response feedback buttons (thumbs up/down)
 
 ### Tier 3 — Plan Next (Medium effort, Medium impact)
 
-- [ ] Implement learning celebration micro-interactions (confetti, vocab highlight)
-- [ ] Add segmented step indicator for lesson phases
-- [ ] Add `progress-shimmer` animation on lesson completion
+- [x] Implement learning celebration micro-interactions (confetti, vocab highlight)
+- [x] Add segmented step indicator for lesson phases
+- [x] Add `progress-shimmer` animation on lesson completion
 - [ ] Narrow desktop chat bubbles from 85% to 75% max-width
 
 ### Tier 4 — Nice to Have

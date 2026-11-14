@@ -74,7 +74,7 @@ sequenceDiagram
 
 | I want to... | Touch |
 |---|---|
-| Change how Hermano talks at a level | `src/agent/prompts.py` (`get_prompt_for_level`) |
+| Change how Hermano talks at a level | `src/agent/prompts.py` (`get_prompt_for_level`), then run `make eval` |
 | Change lesson teaching style | `src/agent/prompts_lesson_chat.py` (`TEACHING_ADJUSTMENTS`) |
 | Add or edit a lesson | `data/lessons/{level}/{topic}-NNN.yaml`, one `languages:` block per language |
 | Add a feedback panel to chat | node in `src/agent/nodes/`, event in `src/api/streaming.py`, partial in `templates/partials/`, handler in `stream.js` |
@@ -83,6 +83,10 @@ sequenceDiagram
 | Change the TTS voice | `HERMANO_VOICE` in `voice.py` and `VOICES` in `voice-constants.js` (must match) |
 | Tune review scheduling | `src/services/review.py` |
 | Add a theme | CSS variables under `[data-theme=...]` in `src/templates/base.html`, see [design-system.md](./design-system.md) |
+| Use new Tailwind classes or change `tailwind.config.js` | then `npm run build:css` and commit `src/static/css/styles.css` (CI fails on stale CSS) |
+| Upgrade htmx, Alpine, Chart.js or Sentry | replace the pinned file in `src/static/vendor/` and its `<script>` tag in `base.html` |
+| Add an eval scenario | a case in `evals/cases.yaml`; checks live in `evals/scoring.py` |
+| Trace another graph or LLM call | merge `tracing_config(...)` from `src/services/tracing.py` into its run config |
 | Change the database | new SQL file in `migrations/`, applied by hand in Supabase, plus `src/db/repository.py` |
 
 **Adding a language** touches more places than you would guess. Grep for an existing code such as `"fr"`:
@@ -104,7 +108,8 @@ graph LR
 |---|---|
 | Canonical modules | Import from `src.config`, `src.validation`, `src.db.client`. The `src/api/` copies are re-export shims |
 | Layers import inward | `api -> services/agent -> db -> config`. Never import `src.api` from inner layers |
-| LLM calls | Always `get_llm(profile)` from `src/agent/llm.py`. Never pass `temperature`, `top_p` or `top_k` (the API rejects them) |
+| LLM calls | Always `get_llm(profile)` from `src/agent/llm.py`. Never pass `temperature`, `top_p` or `top_k` (the API rejects them). Reasoning stays off: turning it on eats `max_tokens` and truncates JSON |
+| Frontend assets | No CDN scripts: anything new goes in `src/static/vendor/` at a pinned version, or the CSP blocks it |
 | User data access | Accounts: `get_supabase_for_user(token)` so RLS applies. Guests have no JWT, so `get_client_for_user()` hands them the admin client: scope every guest query by session ID yourself |
 | Encrypted fields | `encrypt_field` / `decrypt_field` live in `db/repository.py` and `services/threads.py`, never in routes |
 | Writing style | Docs, comments and commits use no em or en dashes. Conventional commits, feature branches only |
@@ -120,6 +125,8 @@ graph LR
 - **WebSocket tests**: use `receive_bytes()` / `receive_text()`, not raw `receive()`, which returns the close frame instead of raising.
 - **Rate limits are per client IP and kept in memory**, so tests call `reset_rate_limits()` between cases. A test with no `request` argument shares one budget.
 - **Guest cookies must be signed** in tests: use `sign_session_id(uuid)`. A plain UUID cookie is treated as no session.
+- **Silent JSON failures**: `scaffold` and `analyze` fall back to empty output when parsing fails, so unit tests stay green. Only `make eval` (`json_parses`) catches a model that stops returning valid JSON.
+- **Tracing metadata is allow-listed**: in production, `mask_content()` drops any metadata key not in `_KEEP_METADATA`. Add a key there if a new one must reach Langfuse, and never add message text or user IDs.
 - **iOS Safari audio**: call `AudioContext.resume()` on every tap, and route speeds other than 1x through `<audio>` to keep pitch.
 
 ## Glossary
