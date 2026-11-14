@@ -118,7 +118,8 @@ graph LR
 - **Supabase mocks**: chained calls (`.table().select().eq()`) must return the same mock, and `.not_` needs a `PropertyMock`.
 - **`/chat/stream` errors come over SSE** as an `error` event with HTTP 200. Only CSRF (403) and rate limits (429) fail before the stream starts.
 - **WebSocket tests**: use `receive_bytes()` / `receive_text()`, not raw `receive()`, which returns the close frame instead of raising.
-- **Rate limits are app-wide**, not per user, so tests call `reset_rate_limits()` between cases.
+- **Rate limits are per client IP and kept in memory**, so tests call `reset_rate_limits()` between cases. A test with no `request` argument shares one budget.
+- **Guest cookies must be signed** in tests: use `sign_session_id(uuid)`. A plain UUID cookie is treated as no session.
 - **iOS Safari audio**: call `AudioContext.resume()` on every tap, and route speeds other than 1x through `<audio>` to keep pitch.
 
 ## Glossary

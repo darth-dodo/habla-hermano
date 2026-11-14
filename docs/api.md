@@ -17,7 +17,7 @@ FastAPI's interactive docs are left on (no `docs_url` override in `src/api/main.
 | Levels | `A0`, `A1`, `A2`, `B1` |
 | Message length | 1 to 2000 characters after trimming (chat and TTS) |
 | Auth cookie | `sb-access-token` (Supabase JWT, httponly) |
-| Guest cookie | `session_id` (signed UUID) |
+| Guest cookie | `session_id` (signed UUID, 7 days; unsigned values are rejected) |
 | Active thread | `active_thread` (signed, set by `POST /threads/select`) |
 
 Auth column legend: **none** (public), **optional** (works for guests, more for logged-in users), **user** (JWT required, 401 otherwise), **login** (redirects to `/auth/login` when logged out), **identity** (JWT or guest session).
@@ -95,11 +95,11 @@ A thread is `{id, thread_id, title, language, level, created_at, updated_at}`. U
 |---|---|---|---|
 | WS | `/ws/transcribe` | identity | JSON transcripts, see below |
 | WS | `/ws/speak` | identity | Binary PCM frames plus JSON control messages |
-| POST | `/api/speak` | none (see note) | `audio/pcm` stream, header `X-Sample-Rate: 24000`. Body: `{"text", "voice"}` |
-| GET | `/health` | none | JSON `{status, app, database}`, status is `healthy`, `degraded` or `unhealthy` |
+| POST | `/api/speak` | identity (401 otherwise) | `audio/pcm` stream, header `X-Sample-Rate: 24000`. Body: `{"text", "voice"}` |
+| GET | `/health` | none | JSON `{status, app, database}`. `healthy` or `degraded` (in-memory checkpoints) answer 200, `unhealthy` (a real DB URL set but not connected) answers 503. Render's health check uses it |
 | GET | `/version` | none | JSON `{commit, branch, service}` from Render env vars (null locally) |
 
-Note: `POST /api/speak` takes `EffectiveUserDep` but never checks it, so callers with no JWT and no guest session are not rejected today. `/health` always answers 200, even when its status is `unhealthy`.
+Guest identity only comes from a `session_id` cookie the server signed. Forged or plain-UUID values are ignored and a fresh session is issued.
 
 ## Chat stream (`POST /chat/stream`)
 
@@ -211,13 +211,12 @@ For HTMX requests (`HX-Request` header) an `HTTPException` returns its plain `de
 
 ## Rate limits (`src/api/rate_limit.py`)
 
-The REST decorator counts calls **per endpoint for the whole app**, not per user or per IP. One busy user can exhaust the limit for everyone.
+The REST decorator counts calls **per endpoint and per client IP** (the last `X-Forwarded-For` hop, added by Render's proxy; earlier entries are ignored because clients can forge them). Counters live in memory in one process, which matches `--workers 1`.
 
-| Scope | Limit | Endpoints (each has its own counter) |
+| Scope | Limit per client | Endpoints (each has its own counter) |
 |---|---|---|
 | Auth | 5 / min | `POST /auth/login`, `/auth/signup`, `/auth/forgot-password`, `/auth/reset-password` |
 | Chat | 20 / min | `POST /chat`, `POST /chat/stream` |
 | Voice REST | 10 / min | `POST /api/speak` |
 | TTS WebSocket | 30 messages / min | Per `/ws/speak` connection (sliding window, replies `RATE_LIMITED`) |
 
-`GENERAL_RATE_LIMIT_CALLS` (60 / min) is defined but not applied to any endpoint.
