@@ -220,7 +220,7 @@ Voice is optional. The app degrades gracefully without Deepgram keys.
 
 **STT**: Browser captures audio via `AudioWorklet` (PCM16 at 16kHz), streams over WebSocket to a FastAPI proxy forwarding to Deepgram Nova-3 with interim results and endpoint detection.
 
-**TTS**: Per-message play button opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit). CEFR-aware speed defaults (A0=0.75x, A1=0.85x, A2/B1=1x). Any speed other than 1x plays through the `<audio>` element via `POST /api/speak` instead, because `AudioBufferSourceNode.playbackRate` lowers the pitch when slowing down, while `<audio>` keeps it (`preservesPitch`).
+**TTS**: Per-message play button opens a WebSocket to `/ws/speak`, sends text, receives linear16 PCM chunks, decodes to Float32, plays via `AudioBufferSourceNode` on a shared `AudioContext` (reused to avoid Safari's 4-instance limit). CEFR-aware speed defaults (A0=0.75x, A1=0.85x, A2/B1=1x). At any speed other than 1x the browser still uses the WebSocket, but collects the PCM frames and plays them as one WAV through the `<audio>` element once synthesis finishes, because `AudioBufferSourceNode.playbackRate` lowers the pitch when slowing down, while `<audio>` keeps it (`preservesPitch`).
 
 **iOS Safari**: `AudioContext.state` can report `'running'` while silently refusing output. Fix: always call `resume()` on every gesture, plus `AbortController` per session to prevent stale WebSocket handlers from corrupting active sessions.
 
