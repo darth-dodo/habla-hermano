@@ -17,38 +17,38 @@ from src.api.dependencies import get_deepgram_api_key
 class TestSettingsClass:
     """Tests for the Settings class configuration and validation."""
 
-    def test_settings_requires_anthropic_api_key(self) -> None:
-        """Settings should raise ValidationError when ANTHROPIC_API_KEY is missing."""
+    def test_settings_requires_openrouter_api_key(self) -> None:
+        """Settings should raise ValidationError when OPENROUTER_API_KEY is missing."""
         # Must use _env_file=None to prevent loading from .env file
-        # and clear the environment to ensure no ANTHROPIC_API_KEY exists
+        # and clear the environment to ensure no OPENROUTER_API_KEY exists
         with patch.dict(os.environ, {}, clear=True):
             with pytest.raises(ValidationError) as exc_info:
                 Settings(_env_file=None)  # type: ignore[call-arg]
 
             errors = exc_info.value.errors()
             assert len(errors) >= 1
-            # Check that ANTHROPIC_API_KEY is in the missing fields
+            # Check that OPENROUTER_API_KEY is in the missing fields
             field_names = [err["loc"][0] for err in errors]
-            assert "ANTHROPIC_API_KEY" in field_names
+            assert "OPENROUTER_API_KEY" in field_names
 
     def test_settings_with_required_fields_only(self) -> None:
         """Settings should work with only required fields."""
         # Use _env_file=None to prevent loading defaults from .env
         settings = Settings(
-            _env_file=None, ANTHROPIC_API_KEY="test-key-123", SECRET_KEY="test-secret"
+            _env_file=None, OPENROUTER_API_KEY="test-key-123", SECRET_KEY="test-secret"
         )  # type: ignore[call-arg]
 
-        assert settings.ANTHROPIC_API_KEY == "test-key-123"  # pragma: allowlist secret
+        assert settings.OPENROUTER_API_KEY == "test-key-123"  # pragma: allowlist secret
         # Check defaults
         assert settings.APP_NAME == "Habla Hermano"
         assert settings.DEBUG is False
-        assert settings.LLM_MODEL == "claude-haiku-4-5-20251001"
+        assert settings.LLM_MODEL == "anthropic/claude-haiku-5.5"
         assert settings.HOST == "127.0.0.1"
         assert settings.PORT == 8000
 
     def test_settings_with_all_fields(self, mock_settings: Settings) -> None:
         """Settings should accept all configurable fields."""
-        assert mock_settings.ANTHROPIC_API_KEY == "test-api-key-12345"  # pragma: allowlist secret
+        assert mock_settings.OPENROUTER_API_KEY == "test-api-key-12345"  # pragma: allowlist secret
         assert mock_settings.APP_NAME == "Habla Hermano-Test"
         assert mock_settings.DEBUG is True
         assert mock_settings.LLM_MODEL == "claude-test-model"
@@ -60,8 +60,8 @@ class TestSettingsClass:
         with patch.dict(os.environ, env_vars, clear=True):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
 
-            api_key = settings.ANTHROPIC_API_KEY  # pragma: allowlist secret
-            assert api_key == "test-anthropic-api-key"  # pragma: allowlist secret
+            api_key = settings.OPENROUTER_API_KEY  # pragma: allowlist secret
+            assert api_key == "test-openrouter-api-key"  # pragma: allowlist secret
             assert settings.APP_NAME == "TestApp"
             assert settings.DEBUG is True
             assert settings.LLM_MODEL == "claude-test"
@@ -73,7 +73,7 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",
+                "OPENROUTER_API_KEY": "test-key",
                 "SECRET_KEY": "test",
                 "DEBUG": "false",
             },  # pragma: allowlist secret
@@ -87,7 +87,7 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",
+                "OPENROUTER_API_KEY": "test-key",
                 "SECRET_KEY": "test",
                 "DEBUG": "true",
             },  # pragma: allowlist secret
@@ -101,7 +101,7 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",
+                "OPENROUTER_API_KEY": "test-key",
                 "SECRET_KEY": "test",
                 "PORT": "3000",
             },  # pragma: allowlist secret
@@ -116,7 +116,7 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",
+                "OPENROUTER_API_KEY": "test-key",
                 "SECRET_KEY": "test",
                 "LLM_TEMPERATURE": "0.9",
             },  # pragma: allowlist secret
@@ -130,7 +130,7 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "test-key",  # pragma: allowlist secret
+                "OPENROUTER_API_KEY": "test-key",  # pragma: allowlist secret
                 "SECRET_KEY": "test",
                 "UNKNOWN_SETTING": "some-value",
                 "ANOTHER_UNKNOWN": "another-value",
@@ -139,7 +139,7 @@ class TestSettingsClass:
         ):
             # Should not raise an error
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
-            assert settings.ANTHROPIC_API_KEY == "test-key"  # pragma: allowlist secret
+            assert settings.OPENROUTER_API_KEY == "test-key"  # pragma: allowlist secret
             # Extra fields should not be accessible
             assert not hasattr(settings, "UNKNOWN_SETTING")
 
@@ -148,14 +148,14 @@ class TestSettingsClass:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "correct-key",  # pragma: allowlist secret
+                "OPENROUTER_API_KEY": "correct-key",  # pragma: allowlist secret
                 "SECRET_KEY": "test",
-                "anthropic_api_key": "wrong-key",  # pragma: allowlist secret
+                "openrouter_api_key": "wrong-key",  # pragma: allowlist secret
             },
             clear=True,
         ):
             settings = Settings(_env_file=None)  # type: ignore[call-arg]
-            assert settings.ANTHROPIC_API_KEY == "correct-key"  # pragma: allowlist secret
+            assert settings.OPENROUTER_API_KEY == "correct-key"  # pragma: allowlist secret
 
 
 class TestSettingsProperties:
@@ -197,7 +197,7 @@ class TestSettingsProperties:
         """log_level should return DEBUG when DEBUG is True."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
             DEBUG=True,
         )
@@ -207,7 +207,7 @@ class TestSettingsProperties:
         """log_level should return INFO when DEBUG is False."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
             DEBUG=False,
         )
@@ -217,7 +217,7 @@ class TestSettingsProperties:
         """log_level should default to INFO."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
         )
         assert settings.log_level == "INFO"
@@ -229,7 +229,7 @@ class TestGetSettings:
     def test_get_settings_returns_settings_instance(self) -> None:
         """get_settings should return a Settings instance."""
         with patch.dict(
-            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+            os.environ, {"OPENROUTER_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
         ):
             get_settings.cache_clear()
             settings = get_settings()
@@ -238,7 +238,7 @@ class TestGetSettings:
     def test_get_settings_caches_result(self) -> None:
         """get_settings should return the same instance on subsequent calls."""
         with patch.dict(
-            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+            os.environ, {"OPENROUTER_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
         ):
             get_settings.cache_clear()
             settings1 = get_settings()
@@ -248,7 +248,7 @@ class TestGetSettings:
     def test_get_settings_cache_info(self) -> None:
         """get_settings cache should show hits after multiple calls."""
         with patch.dict(
-            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+            os.environ, {"OPENROUTER_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
         ):
             get_settings.cache_clear()
 
@@ -273,7 +273,7 @@ class TestGetSettings:
     def test_get_settings_cache_clear(self) -> None:
         """get_settings cache should be clearable."""
         with patch.dict(
-            os.environ, {"ANTHROPIC_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
+            os.environ, {"OPENROUTER_API_KEY": "test-key", "SECRET_KEY": "test"}, clear=True
         ):
             get_settings.cache_clear()
 
@@ -290,7 +290,7 @@ class TestGetSettings:
         with patch.dict(
             os.environ,
             {
-                "ANTHROPIC_API_KEY": "env-test-key",  # pragma: allowlist secret
+                "OPENROUTER_API_KEY": "env-test-key",  # pragma: allowlist secret
                 "SECRET_KEY": "test",
                 "APP_NAME": "EnvTestApp",
             },
@@ -299,7 +299,7 @@ class TestGetSettings:
             get_settings.cache_clear()
             settings = get_settings()
 
-            assert settings.ANTHROPIC_API_KEY == "env-test-key"  # pragma: allowlist secret
+            assert settings.OPENROUTER_API_KEY == "env-test-key"  # pragma: allowlist secret
             assert settings.APP_NAME == "EnvTestApp"
 
 
@@ -307,27 +307,27 @@ class TestSettingsValidation:
     """Tests for Settings field validation edge cases."""
 
     def test_empty_api_key_accepted(self) -> None:
-        """Empty string for ANTHROPIC_API_KEY should be accepted (no min length)."""
+        """Empty string for OPENROUTER_API_KEY should be accepted (no min length)."""
         # Note: pydantic-settings accepts empty strings, validation for actual
         # API key validity would happen at the Anthropic client level
-        settings = Settings(_env_file=None, ANTHROPIC_API_KEY="", SECRET_KEY="test")  # type: ignore[call-arg]
-        assert settings.ANTHROPIC_API_KEY == ""
+        settings = Settings(_env_file=None, OPENROUTER_API_KEY="", SECRET_KEY="test")  # type: ignore[call-arg]
+        assert settings.OPENROUTER_API_KEY == ""
 
     def test_whitespace_api_key_preserved(self) -> None:
-        """Whitespace in ANTHROPIC_API_KEY should be preserved."""
+        """Whitespace in OPENROUTER_API_KEY should be preserved."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="  test-key-with-spaces  ",
+            OPENROUTER_API_KEY="  test-key-with-spaces  ",
             SECRET_KEY="test",
         )
-        assert settings.ANTHROPIC_API_KEY == "  test-key-with-spaces  "
+        assert settings.OPENROUTER_API_KEY == "  test-key-with-spaces  "
 
     def test_negative_port_accepted(self) -> None:
         """Negative port values should be accepted by Settings (validation elsewhere)."""
         # Note: Port validation would typically be at the server level
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
             PORT=-1,
         )
@@ -337,7 +337,7 @@ class TestSettingsValidation:
         """APP_NAME should accept special characters."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
             APP_NAME="Habla Hermano - Test Version (v1.0)",
         )
@@ -347,7 +347,7 @@ class TestSettingsValidation:
         """APP_NAME should accept unicode characters."""
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",
+            OPENROUTER_API_KEY="test-key",
             SECRET_KEY="test",
             APP_NAME="Habla Hermano Espanol",
         )
@@ -366,7 +366,7 @@ class TestGetDeepgramApiKey:
         """Create test settings with a given DEEPGRAM_API_KEY."""
         return Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test-secret",  # pragma: allowlist secret
             DEEPGRAM_API_KEY=deepgram_key,
             DEBUG=True,

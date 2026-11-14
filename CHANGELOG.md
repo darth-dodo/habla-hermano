@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **LLM provider → OpenRouter** (`llm.py`, `config.py`, `scaffold.py`, `analyze.py`): All model calls now route through OpenRouter's OpenAI-compatible API via `ChatOpenAI` instead of the direct Anthropic API. Config renamed `ANTHROPIC_API_KEY`→`OPENROUTER_API_KEY` and `ANTHROPIC_ZERO_RETENTION`→`OPENROUTER_ZERO_RETENTION`; added `OPENROUTER_BASE_URL` and optional `OPENROUTER_APP_URL`/`OPENROUTER_APP_TITLE`. Default model is now the OpenRouter slug `anthropic/claude-haiku-4.5`. Zero-retention is enforced via OpenRouter's `provider.data_collection="deny"` policy rather than the Anthropic-only `x-no-store` header. Dependency `langchain-anthropic` replaced with `langchain-openai`.
+
 ## [0.5.0] - 2026-04-06
 
 ### Added

@@ -69,7 +69,7 @@ class TestPurgeOldConversations:
 
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
-            ANTHROPIC_API_KEY="test-key",  # pragma: allowlist secret
+            OPENROUTER_API_KEY="test-key",  # pragma: allowlist secret
             SECRET_KEY="test-secret",  # pragma: allowlist secret
             CONVERSATION_RETENTION_DAYS=0,
         )
