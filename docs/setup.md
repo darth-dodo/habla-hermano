@@ -80,3 +80,19 @@ The start command is:
 ```bash
 uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
 ```
+
+### Deploy hook from CI
+
+Render's Git auto-deploy has not always fired on merges to `main`, so CI can trigger the deploy instead. The `deploy` job in `.github/workflows/ci.yml` runs only on `push` to `main`, waits for every check (`lint`, `typecheck`, `test`, `test-js`, `security`, `build`) to pass, then POSTs to a Render deploy hook. The hook URL is read from the `RENDER_DEPLOY_HOOK_URL` repository secret and is never printed. If the secret is not set, the job skips the deploy step and stays green.
+
+One-time setup:
+
+1. In the Render dashboard, open the `habla-hermano` service, go to **Settings > Deploy Hook**, and copy the URL. Treat it as a secret: anyone holding it can trigger deploys.
+2. Store it as a repository secret (paste the URL when prompted, so it does not land in shell history):
+   ```bash
+   gh secret set RENDER_DEPLOY_HOOK_URL -R darth-dodo/habla-hermano
+   ```
+3. In Render, go to **Settings > Build & Deploy > Auto-Deploy** and set it to **Off**, so each merge deploys once (from CI) instead of twice. `render.yaml` keeps `autoDeploy: true` until the hook is confirmed working; once it is, change it to `autoDeploy: false` so a Blueprint sync does not switch Auto-Deploy back on.
+4. After the next merge to `main`, confirm the live commit with `curl -s https://habla-hermano.onrender.com/version` (once `/version` is available) and compare it to `git rev-parse origin/main`.
+
+Trade-off: CI is path-filtered, so a push that only touches unfiltered paths (for example `docs/`, `README.md`, `migrations/`) does not run CI and does not deploy. Those paths do not change the running app (SQL migrations are applied to Supabase separately). `data/` is read at runtime (lessons, stopwords), so it is part of the CI path filter. If a deploy is ever needed for an unfiltered change, use **Manual Deploy > Deploy latest commit** in Render.
