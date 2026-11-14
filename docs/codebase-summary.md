@@ -1,5 +1,7 @@
 # Codebase Summary
 
+New to FastAPI or LangGraph? Read [FastAPI and LangGraph in 5 minutes](./fastapi-langgraph-in-5-minutes.md) first.
+
 A one-sitting onboarding guide: what to read first, how one message flows through the code, where to make common changes, and the traps. How each part works inside is in [architecture.md](./architecture.md).
 
 ## In one picture
