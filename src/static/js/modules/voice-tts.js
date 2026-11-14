@@ -121,6 +121,16 @@ export function audioElementTTS(btn, text, voice, speed, signal, ttsService, sho
             });
     }
 
+    // Any speed other than 1x goes through the <audio> element. The
+    // streaming path changes speed with AudioBufferSourceNode.playbackRate,
+    // which resamples like tape: slowing down also lowers the pitch, so the
+    // voice sounds deep and dragged. <audio> keeps the pitch (preservesPitch),
+    // at the cost of waiting for the full synthesis before playback starts.
+    if (speed !== 1) {
+        doFetch(btn, text, voice, speed, signal, ttsService, showError);
+        return;
+    }
+
     // Start WebSocket TTS immediately (parallel with getUserMedia),
     // falling back to REST fetch if WebSocket fails to connect.
     doWebSocketTTS(btn, text, voice, speed, signal, ttsService, showError);
@@ -336,6 +346,10 @@ function playAudioFromBlob(audioBlob, speed, signal, ttsService, btn, showError)
     ttsSource.src = blobUrl;
     ttsSource.type = audioBlob.type || 'audio/wav';
     ttsPlayer.playbackRate = speed;
+    // Keep the voice's pitch when the speed changes. This is the browser
+    // default, but set it explicitly (older Safari only knows the prefixed name).
+    ttsPlayer.preservesPitch = true;
+    ttsPlayer.webkitPreservesPitch = true;
 
     // .load() is critical for iOS to recognize the new source
     ttsPlayer.load();

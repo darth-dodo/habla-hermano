@@ -2084,6 +2084,47 @@ describe('voice.js -- FSM-based Voice Module', () => {
             expect(ws.url).toContain('Achird');
         });
 
+        describe('speed other than 1x uses the <audio> element (keeps pitch)', () => {
+            function mockPcmFetch() {
+                var pcmBlob = new Blob([new Uint8Array(480)], { type: 'audio/pcm' });
+                globalThis.fetch = vi.fn(() => Promise.resolve({
+                    ok: true,
+                    blob: () => Promise.resolve(pcmBlob),
+                }));
+            }
+
+            it.each([0.5, 0.75, 1.25, 2])('speed %s skips the WebSocket and fetches via REST', async (speed) => {
+                MockWebSocket._allowTtsWs = true;
+                mockPcmFetch();
+                setupVoiceDOM();
+                var mod = await importVoice();
+                var btn = createSpeakButton('Hola', 'es', { speed: speed });
+
+                mod.handleSpeakClick(btn);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(0);
+
+                expect(MockWebSocket._lastTtsInstance).toBeNull();
+                expect(fetch).toHaveBeenCalledWith('/api/speak', expect.objectContaining({ method: 'POST' }));
+
+                var player = document.getElementById('tts-player');
+                expect(player.playbackRate).toBe(speed);
+                expect(player.preservesPitch).toBe(true);
+                expect(player.webkitPreservesPitch).toBe(true);
+            });
+
+            it('normal speed (1x) still streams over the WebSocket', async () => {
+                mockPcmFetch();
+                var { mod, btn } = await setupWsTts('Hola', 'es');
+
+                mod.handleSpeakClick(btn);
+
+                expect(MockWebSocket._lastTtsInstance).not.toBeNull();
+                expect(fetch).not.toHaveBeenCalled();
+            });
+        });
+
         it('includes wsToken in URL when mic-btn has data-ws-token', async () => {
             MockWebSocket._allowTtsWs = true;
             setupVoiceDOM();
