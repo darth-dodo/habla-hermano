@@ -432,6 +432,34 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] in ("healthy", "degraded", "unhealthy")
 
+    @pytest.mark.parametrize(
+        ("db_url", "saver", "status", "code"),
+        [
+            ("postgresql://u:p@host:5432/db", None, "unhealthy", 503),
+            ("postgresql://u:p@host:5432/db", object(), "healthy", 200),
+            # Placeholder URL falls back to MemorySaver, so the app still works
+            ("postgresql://postgres.[PROJECT-REF]@host/db", None, "degraded", 200),
+        ],
+    )
+    def test_health_status_code_matches_body(
+        self,
+        test_client: TestClient,
+        monkeypatch: pytest.MonkeyPatch,
+        db_url: str,
+        saver: object,
+        status: str,
+        code: int,
+    ) -> None:
+        """GET /health returns 503 only when a real DB is configured but not connected."""
+        from src.agent.checkpointer import _state
+        from src.api.main import settings
+
+        monkeypatch.setattr(settings, "SUPABASE_DB_URL", db_url)
+        monkeypatch.setitem(_state, "postgres_saver", saver)
+        response = test_client.get("/health")
+        assert response.status_code == code
+        assert response.json()["status"] == status
+
 
 class TestVersionEndpoint:
     """Tests for GET /version - Deployed build metadata endpoint."""

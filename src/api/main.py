@@ -11,7 +11,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -324,19 +324,24 @@ app = create_app()
 
 
 @app.get("/health")
-async def health_check() -> dict[str, str]:
+async def health_check(response: Response) -> dict[str, str]:
     """Health check endpoint with database connectivity verification.
 
     Returns 200 with status "healthy" when DB is connected,
     200 with "degraded" when DB is not configured,
     or 503 with "unhealthy" when DB is configured but unreachable.
+
+    "Configured" uses the same check as the checkpointer: a placeholder or
+    non-postgresql URL falls back to MemorySaver, so it is degraded, not down.
+    Render uses this path as healthCheckPath, so 503 takes the instance out.
     """
-    from src.agent.checkpointer import _state  # noqa: PLC0415
+    from src.agent.checkpointer import _is_valid_db_url, _state  # noqa: PLC0415
 
     saver = _state.get("postgres_saver")
     if saver is None:
-        if settings.SUPABASE_DB_URL:
+        if _is_valid_db_url(settings.SUPABASE_DB_URL):
             # DB configured but checkpointer not initialized
+            response.status_code = 503
             return {"status": "unhealthy", "app": settings.APP_NAME, "database": "disconnected"}
         return {"status": "degraded", "app": settings.APP_NAME, "database": "not configured"}
 
