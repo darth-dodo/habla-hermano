@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from postgrest.exceptions import APIError
 
 from src.api.auth import OptionalUserDep
+from src.api.cookies import verified_session_cookie
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import SupabaseClient, get_supabase_admin, get_supabase_for_user
 from src.api.validation import validate_language
@@ -108,7 +109,7 @@ async def get_learn_page(
 
     if user:
         effective_id = user.id
-    elif session_id:
+    elif session_id := verified_session_cookie(session_id):
         effective_id = session_id
         is_guest = True
 
@@ -185,7 +186,7 @@ async def get_recommendation(
 
     if user:
         effective_id = user.id
-    elif session_id:
+    elif session_id := verified_session_cookie(session_id):
         effective_id = session_id
         is_guest = True
 

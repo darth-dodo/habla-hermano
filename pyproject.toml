@@ -27,7 +27,6 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
     # Rate limiting
-    "ratelimit>=2.2.1",
     # SSE streaming
     "sse-starlette>=2.0.0",
     # HTML sanitization & Markdown rendering
@@ -149,7 +148,6 @@ module = [
     "psycopg_pool.*",
     "yaml.*",
     "jwt.*",
-    "ratelimit.*",
     "sse_starlette.*",
     "itsdangerous.*",
     "deepgram.*",

@@ -150,10 +150,7 @@ def unsign_session_id(
 ) -> str | None:
     """Verify a signed session_id and return the embedded UUID, or None.
 
-    Accepts both:
-    - Signed tokens produced by :func:`sign_session_id` (new format).
-    - Plain UUID v4 strings (old cookies set before signing was introduced,
-      backward-compatibility requirement).
+    Only signed tokens produced by :func:`sign_session_id` are accepted.
 
     Args:
         raw_value: Raw cookie string, or None if the cookie is absent.
@@ -174,22 +171,20 @@ def unsign_session_id(
             return str(data["id"])
         return None
     except BadSignature:
-        pass  # Fall through to backward-compat check
+        # Plain UUIDs (the pre-signing cookie format) are no longer accepted:
+        # anyone could send another user's UUID and act as them.
+        logger.warning("Rejected session_id cookie: not a valid signed token")
+        return None
 
-    # DEPRECATED: Backward compat for plain UUID v4 cookies set before signing
-    # was introduced. Remove this fallback ~14 days after public launch (exceeds
-    # the 7-day cookie max_age, so all old cookies will have expired by then).
-    import uuid as _uuid  # noqa: PLC0415
 
-    try:
-        parsed = _uuid.UUID(raw_value, version=4)
-        if str(parsed) == raw_value:
-            return raw_value
-    except (ValueError, AttributeError):
-        pass
+def verified_session_cookie(raw_value: str | None) -> str | None:
+    """Return the raw session_id cookie only if its signature is valid.
 
-    logger.warning("Rejected session_id cookie: not a valid signed token or UUID v4")
-    return None
+    Guest checkpoints and progress rows are keyed by the raw cookie value, so
+    keep using it as the ID (existing guests keep their history), but refuse
+    forged values such as ``user:<someone's uuid>``.
+    """
+    return raw_value if unsign_session_id(raw_value) else None
 
 
 def unsign_active_thread(raw_value: str | None) -> str | None:

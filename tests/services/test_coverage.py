@@ -438,10 +438,11 @@ class TestGetEffectiveUser:
     @pytest.mark.asyncio
     async def test_returns_guest_effective_user_from_session_cookie(self) -> None:
         from src.api.auth import EffectiveUser, get_effective_user
+        from src.api.cookies import sign_session_id
 
         valid_uuid = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
         request = MagicMock()
-        request.cookies.get.return_value = valid_uuid
+        request.cookies.get.return_value = sign_session_id(valid_uuid)
         result = await get_effective_user(request, user=None)
         assert isinstance(result, EffectiveUser)
         assert result.id == valid_uuid

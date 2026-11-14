@@ -24,6 +24,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from src.api.auth import AuthenticatedUser, get_current_user, get_current_user_optional
 from src.api.config import Settings, get_settings
+from src.api.cookies import sign_session_id
 from src.api.routes.voice import HERMANO_VOICE, MAX_TTS_TEXT_LENGTH
 from src.services.tts import TTSError
 from tests.api.routes.tts_fakes import FAKE_PCM_CHUNKS, FakeSynthesizer
@@ -46,7 +47,7 @@ def mock_user() -> AuthenticatedUser:
 @pytest.fixture
 def ws_cookies() -> dict[str, str]:
     """Cookies dict with a valid guest session_id for WebSocket auth."""
-    return {"session_id": GUEST_SESSION_ID}
+    return {"session_id": sign_session_id(GUEST_SESSION_ID)}
 
 
 @pytest.fixture

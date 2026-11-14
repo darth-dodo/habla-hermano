@@ -364,13 +364,12 @@ class TestGuestSessionExpiry:
         result = unsign_session_id(signed, max_age_seconds=7 * 24 * 3600)
         assert result == session_uuid, "Valid signed session_id should return the UUID"
 
-    def test_plain_uuid_still_accepted_for_backward_compat(self) -> None:
-        """A plain UUID4 (old cookie format) must still be accepted for backward compat."""
+    def test_plain_uuid_rejected(self) -> None:
+        """A plain UUID4 is rejected: it would let anyone pose as that user ID."""
         from src.api.cookies import unsign_session_id
 
         plain_uuid = str(uuid.uuid4())
-        result = unsign_session_id(plain_uuid, max_age_seconds=7 * 24 * 3600)
-        assert result == plain_uuid, "Plain UUID4 should be accepted for backward compat"
+        assert unsign_session_id(plain_uuid, max_age_seconds=7 * 24 * 3600) is None
 
     def test_invalid_value_is_rejected(self) -> None:
         """A garbage value must return None."""
@@ -488,3 +487,22 @@ class TestCookieDeletion:
         call_kwargs = mock_response.delete_cookie.call_args
         kwargs = call_kwargs.kwargs if call_kwargs.kwargs else {}
         assert kwargs.get("secure") is True
+
+
+class TestVerifiedSessionCookie:
+    """Guest identity only comes from session cookies we signed."""
+
+    def test_forged_thread_id_cookie_is_dropped(self) -> None:
+        """A cookie set to someone's thread ID must not become the guest's thread."""
+        from src.api.routes.chat import get_chat_cookies
+
+        forged = f"user:{uuid.uuid4()}"
+        assert get_chat_cookies(session_id=forged).session_id is None
+
+    def test_signed_cookie_is_kept_as_is(self) -> None:
+        """A valid signed cookie is passed through unchanged (existing guests keep history)."""
+        from src.api.cookies import sign_session_id
+        from src.api.routes.chat import get_chat_cookies
+
+        signed = sign_session_id(str(uuid.uuid4()))
+        assert get_chat_cookies(session_id=signed).session_id == signed
