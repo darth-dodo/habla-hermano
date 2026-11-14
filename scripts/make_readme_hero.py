@@ -95,6 +95,55 @@ def filete(x, y, flip=False):
     )
 
 
+def mate(x, y, scale=1.0):
+    """A mate gourd with its bombilla, in line art."""
+    return (
+        f'<g transform="translate({x} {y}) scale({scale})" opacity="0.75" stroke-linecap="round" '
+        'stroke-linejoin="round">'
+        f'<path d="M30 22 L44 -2" stroke="{SOL}" stroke-width="3" fill="none"/>'
+        f'<rect x="40" y="-6" width="9" height="5" rx="2" transform="rotate(-60 44 -3)" fill="{SOL}"/>'
+        f'<path d="M8 22 C 0 36, 6 56, 26 58 C 46 56, 52 36, 44 22 Z" fill="{CELESTE}" '
+        f'fill-opacity="0.25" stroke="{CELESTE}" stroke-width="2.5"/>'
+        f'<ellipse cx="26" cy="22" rx="18" ry="4.5" fill="#FBF8F4" stroke="{CELESTE}" stroke-width="2.5"/>'
+        f'<path d="M12 40 C 20 44, 32 44, 40 40" fill="none" stroke="{SOL}" stroke-width="2"/>'
+        f'<path d="M16 58 L14 64 L38 64 L36 58" fill="none" stroke="{CELESTE}" stroke-width="2.5"/>'
+        "</g>"
+    )
+
+
+def andes(x0, x1, base):
+    """A low silhouette of the Andes, Aconcagua the tallest peak."""
+    peaks = [
+        (0.0, 0),
+        (0.07, 18),
+        (0.13, 8),
+        (0.21, 30),
+        (0.28, 14),
+        (0.36, 42),
+        (0.42, 22),
+        (0.5, 58),
+        (0.56, 30),
+        (0.63, 40),
+        (0.7, 16),
+        (0.78, 34),
+        (0.85, 12),
+        (0.92, 22),
+        (1.0, 0),
+    ]
+    pts = " L".join(f"{x0 + (x1 - x0) * f:.0f} {base - h}" for f, h in peaks)
+    return f'<path d="M{pts} Z" fill="{CELESTE}" opacity="0.14"/>'
+
+
+def flor(cx, cy, r=7):
+    """A fileteado flower: five gold petals around a celeste centre."""
+    petals = "".join(
+        f'<ellipse cx="{cx}" cy="{cy - r}" rx="{r * 0.45:.1f}" ry="{r * 0.8:.1f}" '
+        f'transform="rotate({k * 72} {cx} {cy})"/>'
+        for k in range(5)
+    )
+    return f'<g fill="{SOL}" opacity="0.8">{petals}<circle cx="{cx}" cy="{cy}" r="{r * 0.4:.1f}" fill="{CELESTE}"/></g>'
+
+
 def svg(t):
     chips, x = [], 64
     for label in ["Español", "Deutsch", "Français", "Hinglish"]:
@@ -106,7 +155,7 @@ def svg(t):
         c, w = chip(bx, 228, label, t)
         bank.append(c)
         bx += w + 8
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-label="Habla Hermano: talk your way from A0 to B1 with an AI conversation partner, with a Sol de Mayo and fileteado ornaments">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-label="Habla Hermano: talk your way from A0 to B1 with an AI conversation partner, with Argentine motifs: Sol de Mayo, fileteado, mate and the Andes">
   <defs>
     <clipPath id="card"><rect width="1280" height="400" rx="24"/></clipPath>
   </defs>
@@ -115,8 +164,12 @@ def svg(t):
     {sol_de_mayo(1214, 44, 34, 0.22)}
     <rect y="0" width="1280" height="10" fill="{CELESTE}"/>
     <rect y="390" width="1280" height="10" fill="{CELESTE}"/>
+    {andes(250, 1030, 390)}
     {filete(34, 360)}
     {filete(1246, 370, flip=True)}
+    {flor(214, 334)}
+    {flor(1066, 344)}
+    {mate(414, 258, 0.6)}
   </g>
   <g font-family="{FONT}">
     <rect x="64" y="84" width="64" height="64" rx="16" fill="{t["accent"]}"/>
