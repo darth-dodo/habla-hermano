@@ -30,6 +30,7 @@ Run the following SQL files in order via the Supabase SQL Editor (**SQL Editor**
 | 3 | `003_atomic_counter_operations.sql` | Atomic counter operations |
 | 4 | `004_checkpoint_rls.sql` | Row-level security on checkpoint tables |
 | 5 | `005_conversation_threads.sql` | Conversation thread support |
+| 6 | `007_fix_security_definer.sql` | Vocabulary RPCs run as the caller so RLS applies |
 
 To run each migration: open the file, copy its contents, paste into the Supabase SQL Editor, and click **Run**.
 
@@ -55,7 +56,7 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 
 | Variable | Purpose |
 |----------|---------|
-| `DEEPGRAM_API_KEY` | Enables voice input/output (Deepgram STT; TTS uses Gemini via `OPENROUTER_API_KEY`) |
+| `DEEPGRAM_API_KEY` | Enables the mic (Deepgram STT). Spoken replies (Gemini TTS) only need `OPENROUTER_API_KEY` |
 | `TTS_MODEL` | Gemini TTS model on OpenRouter (default `google/gemini-3.8-flash-tts`) |
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
 | `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |

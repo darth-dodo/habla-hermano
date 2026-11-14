@@ -1,7 +1,7 @@
 # ADR-008: Switch LLM Model from Claude Sonnet 4 to Claude Haiku 4.5
 
 **Date**: 2026-02-22
-**Status**: Proposed
+**Status**: Superseded by [ADR-011](ADR-011-openrouter-for-llm-and-tts.md) (model is now Claude Haiku 5.5 via OpenRouter)
 **Context**: Cost optimization and latency improvement for production deployment
 **Decider(s)**: Project Owner
 

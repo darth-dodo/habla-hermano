@@ -1,7 +1,7 @@
 # ADR-010: Deepgram for Voice STT and TTS
 
 **Date**: 2026-02-23
-**Status**: Proposed
+**Status**: Partly superseded by [ADR-011](ADR-011-openrouter-for-llm-and-tts.md) (Deepgram still does STT; TTS moved to Gemini via OpenRouter)
 **Context**: Phase 17 (Voice Conversation)
 **Decider(s)**: Project Owner
 
