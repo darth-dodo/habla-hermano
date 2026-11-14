@@ -46,7 +46,7 @@ There is no automated browser suite. Browser checks are the manual flows in [pla
 | `tests/agent/nodes/` | Node logic: respond, scaffold, analyze, review, lesson chat phase machine |
 | `tests/api/` | App level concerns: auth, CSRF, security headers, sanitizing, session, SSE streaming, threads API, privacy, persistence, Supabase client |
 | `tests/api/routes/` | Per route modules: chat, lessons, learn, progress, review, auth (incl. password reset), validation, voice (STT WebSocket, TTS), plus `test_e2e.py` (multi route coverage tests, not browser tests) |
-| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, data retention, TTS client |
+| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, data retention, TTS client, Langfuse tracing mask |
 | `tests/lessons/` | Lesson YAML models and lesson service |
 | `tests/db/` | Fernet field encryption, `FernetCipher`, models, repositories with and without encryption |
 | `tests/test_rate_limiting.py` | REST and WebSocket rate limits |
@@ -132,7 +132,7 @@ flowchart LR
     sec -.push to main.-> deploy
 ```
 
-`ci-success` and `deploy` both wait on all six jobs (the diagram shortens this).
+`ci-success` and `deploy` both wait on all six jobs (the diagram shortens this). `test-js` also runs `npm run build:css` and fails if the committed `src/static/css/styles.css` is stale.
 
 - `test` uploads `coverage.xml` to Codecov (does not fail the build).
 - `deploy` only runs on push to `main` and skips if `RENDER_DEPLOY_HOOK_URL` is not set.

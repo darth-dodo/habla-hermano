@@ -57,6 +57,7 @@ from src.services.progress import ProgressService
 from src.services.review import ReviewService
 from src.services.thread_messages import get_thread_messages
 from src.services.threads import ThreadService
+from src.services.tracing import tracing_config
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
@@ -281,13 +282,16 @@ def _freeform_inputs(
     }
 
 
-def _graph_config(thread_id: str, user_client: "SupabaseClient | None") -> dict[str, Any]:
-    """Build the LangGraph run config for a chat turn."""
+def _graph_config(
+    thread_id: str, user_client: "SupabaseClient | None", inputs: dict[str, Any]
+) -> dict[str, Any]:
+    """Build the LangGraph run config for a chat turn (plus tracing when enabled)."""
     return {
         "configurable": {
             "thread_id": thread_id,
             "supabase_client": user_client,  # Runtime dep, not serialized
-        }
+        },
+        **tracing_config(thread_id, level=inputs.get("level"), language=inputs.get("language")),
     }
 
 
@@ -648,7 +652,7 @@ async def _invoke_freeform_graph(
     """Run the freeform graph once with checkpointing and return its final state."""
     async with get_checkpointer() as checkpointer:
         graph = build_graph(checkpointer=checkpointer)
-        config = cast("RunnableConfig", _graph_config(thread_id, user_client))
+        config = cast("RunnableConfig", _graph_config(thread_id, user_client, inputs))
         result: dict[str, Any] = await graph.ainvoke(inputs, config=config)
         return result
 

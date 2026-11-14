@@ -105,6 +105,14 @@ services:
         sync: false  # Optional: set for voice features (Deepgram STT)
 
       # -----------------------------------------------------------------------
+      # Tracing (Optional): Langfuse Cloud EU, metadata only in production
+      # -----------------------------------------------------------------------
+      - key: LANGFUSE_PUBLIC_KEY
+        sync: false
+      - key: LANGFUSE_SECRET_KEY
+        sync: false
+
+      # -----------------------------------------------------------------------
       # Python Runtime Configuration
       # -----------------------------------------------------------------------
       - key: PYTHON_VERSION

@@ -45,6 +45,7 @@ dependencies = [
     "cryptography>=46.0.3",
     # Error monitoring
     "sentry-sdk[fastapi]>=2.0.0",
+    "langfuse>=5.1.0,<5.2",
 ]
 
 [project.optional-dependencies]

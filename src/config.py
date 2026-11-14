@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     OPENROUTER_APP_URL: str = ""
     OPENROUTER_APP_TITLE: str = ""
 
+    # Optional Langfuse tracing (off unless both keys are set). Production
+    # traces are metadata only; see src/services/tracing.py.
+    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_SECRET_KEY: str = ""
+    LANGFUSE_BASE_URL: str = "https://cloud.langfuse.com"  # Langfuse Cloud EU
+
     # Server settings
     HOST: str = "127.0.0.1"
     PORT: int = 8000

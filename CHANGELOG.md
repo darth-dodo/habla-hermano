@@ -7,8 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Langfuse tracing** (`services/tracing.py`): optional, Langfuse Cloud EU. One trace per chat turn with a span per graph node and model, tokens, cost and latency per LLM call. Production traces are metadata only: message text and `thread_id` are deleted before export, and the session ID is an HMAC of the thread ID (#123)
+- **LLM eval harness** (`evals/`, `make eval`): 20 real-model cases across es, de, fr, Hinglish and A0 to B1, scored for language mix, scaffolding, JSON validity, grammar feedback and recasts. Not run in CI; the scorer and runner have offline tests (#120)
+- **Hinglish** as a fourth target language, taught in English, chat only (#97, #99)
+- **`GET /version`** reporting the deployed commit (#105) and a CI deploy hook to Render after checks pass on `main` (#106)
+- **README**: decisions and trade-offs table, demo GIF; docs rewritten as lean, diagram-first pages; RFC for runtime lesson generation (`docs/rfc/`) (#100, #112, #118)
+
 ### Changed
-- **LLM provider → OpenRouter** (`llm.py`, `config.py`, `scaffold.py`, `analyze.py`): All model calls now route through OpenRouter's OpenAI-compatible API via `ChatOpenAI` instead of the direct Anthropic API. Config renamed `ANTHROPIC_API_KEY`→`OPENROUTER_API_KEY` and `ANTHROPIC_ZERO_RETENTION`→`OPENROUTER_ZERO_RETENTION`; added `OPENROUTER_BASE_URL` and optional `OPENROUTER_APP_URL`/`OPENROUTER_APP_TITLE`. Default model is now the OpenRouter slug `anthropic/claude-haiku-4.5`. Zero-retention is enforced via OpenRouter's `provider.data_collection="deny"` policy rather than the Anthropic-only `x-no-store` header. Dependency `langchain-anthropic` replaced with `langchain-openai`.
+- **LLM via OpenRouter** (`llm.py`, `config.py`): all model calls go through OpenRouter's OpenAI-compatible API (`ChatOpenAI`). Default model `anthropic/claude-haiku-5.5`. `ANTHROPIC_*` settings renamed to `OPENROUTER_*`; zero retention uses `provider.data_collection = "deny"`. No `temperature` is sent (#103, #107)
+- **TTS: Gemini via OpenRouter** (`services/tts.py`, `voice.py`): replaces Deepgram Aura. One voice (`Achird`) for every language, raw 24kHz PCM. Deepgram stays for speech to text (#108)
+- **Frontend build** (`tailwind.config.js`, `src/static/vendor/`): Tailwind is compiled (`npm run build:css`, CI fails on stale CSS) and htmx, Alpine, Chart.js and Sentry are self-hosted at pinned versions. The CSP no longer allows any CDN script host (#121)
+- **Rate limits are per client IP** instead of one counter per endpoint for the whole app (#113)
+- **Argentina flag** for Spanish in the UI (#119)
+- **Repo layout**: migrations renumbered `001` to `006`, phase notes moved to `docs/history/`, tool state and stray screenshots untracked; coverage floor raised to 88% (measured 90.5%) (#117, #118)
+
+### Fixed
+- **Grammar feedback was mostly missing**: hidden reasoning tokens used up `max_tokens` and truncated the analyze JSON, which failed silently. Reasoning is now disabled; evals went from 9/20 to 20/20 and turns got about 39% faster (#122)
+- **Security**: forged or unsigned guest `session_id` cookies could act inside another user's conversation or records; `POST /api/speak` had no auth check; one client could exhaust the login limit for everyone (#113)
+- **Slowed TTS sounded deep and dragged**: speeds other than 1x now play through `<audio>` with `preservesPitch`, still streamed over the WebSocket; the server answers every TTS message so playback cannot hang (#110, #111)
+- **Frontend Sentry never loaded** (404 bundle URL) and a CSP-blocked, unused `animate.css` was removed (#121)
+- **A `hi:` block dropped a whole lesson file**: lesson validation uses `VALID_LANGUAGES`, and a bad language block is skipped on its own (#109)
+- **`/health` returned 200 when unhealthy**; it now returns 503 when a real database is configured but not connected (#115)
+- **`make install`** now installs the dev extras (#102)
 
 ## [0.5.0] - 2026-04-06
 

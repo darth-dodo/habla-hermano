@@ -6,7 +6,7 @@ Step-by-step instructions for setting up Habla Hermano locally and deploying to 
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Node.js 18+ (for Tailwind CSS and Vitest)
+- Node.js 18+ (for Vitest and rebuilding Tailwind CSS; not needed on Render, the built CSS is committed)
 - A [Supabase](https://supabase.com) account (free tier works)
 - An [OpenRouter API key](https://openrouter.ai/keys)
 
@@ -59,13 +59,15 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 | `DEEPGRAM_API_KEY` | Enables the mic (Deepgram STT). Spoken replies (Gemini TTS) only need `OPENROUTER_API_KEY` |
 | `TTS_MODEL` | Gemini TTS model on OpenRouter (default `google/gemini-3.8-flash-tts`) |
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Enables Langfuse tracing of chat turns (Langfuse Cloud EU by default, `LANGFUSE_BASE_URL` to change). Production traces are metadata only |
 | `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |
 | `DEBUG` | Enable debug mode (local dev only) |
 
 ## 4. Install and Run
 
 ```bash
-make install   # Install Python + JS dependencies
+make install   # Python dependencies (uv sync --extra dev)
+npm install    # Vitest and the Tailwind build
 make dev       # Start dev server at http://localhost:8000
 ```
 
