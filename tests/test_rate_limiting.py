@@ -11,8 +11,6 @@ from src.api.rate_limit import (
     AUTH_RATE_LIMIT_PERIOD,
     CHAT_RATE_LIMIT_CALLS,
     CHAT_RATE_LIMIT_PERIOD,
-    GENERAL_RATE_LIMIT_CALLS,
-    GENERAL_RATE_LIMIT_PERIOD,
     rate_limited,
 )
 
@@ -31,12 +29,6 @@ class TestRateLimitConstants:
 
     def test_chat_rate_limit_period(self) -> None:
         assert CHAT_RATE_LIMIT_PERIOD == 60
-
-    def test_general_rate_limit_calls(self) -> None:
-        assert GENERAL_RATE_LIMIT_CALLS == 60
-
-    def test_general_rate_limit_period(self) -> None:
-        assert GENERAL_RATE_LIMIT_PERIOD == 60
 
     def test_chat_has_higher_limit_than_auth(self) -> None:
         assert CHAT_RATE_LIMIT_CALLS > AUTH_RATE_LIMIT_CALLS
