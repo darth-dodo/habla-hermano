@@ -12,7 +12,7 @@ This phase introduces a **Vitest + jsdom** test suite targeting the ES module st
 1. Validate the ESM refactor didn't break behaviour
 2. Provide ongoing regression protection for the JS layer
 
-**ADR Reference**: [ADR-009: ES Module JavaScript Refactor](../adr/ADR-009-es-module-javascript-refactor.md)
+**ADR Reference**: [ADR-009: ES Module JavaScript Refactor](../../adr/ADR-009-es-module-javascript-refactor.md)
 **Prerequisite**: Phase 16 (ESM migration) should be completed first, or tests written against the planned module structure and run after migration.
 
 ---

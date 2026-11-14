@@ -25,12 +25,12 @@ Run the following SQL files in order via the Supabase SQL Editor (**SQL Editor**
 
 | Order | File | Purpose |
 |-------|------|---------|
-| 1 | `phase12_spaced_repetition.sql` | Vocabulary and review tables |
-| 2 | `fix_vocabulary_columns.sql` | Column fixes for vocabulary table |
+| 1 | `001_spaced_repetition.sql` | Vocabulary and review tables |
+| 2 | `002_fix_vocabulary_columns.sql` | Column fixes for vocabulary table |
 | 3 | `003_atomic_counter_operations.sql` | Atomic counter operations |
 | 4 | `004_checkpoint_rls.sql` | Row-level security on checkpoint tables |
 | 5 | `005_conversation_threads.sql` | Conversation thread support |
-| 6 | `007_fix_security_definer.sql` | Vocabulary RPCs run as the caller so RLS applies |
+| 6 | `006_fix_security_definer.sql` | Vocabulary RPCs run as the caller so RLS applies |
 
 To run each migration: open the file, copy its contents, paste into the Supabase SQL Editor, and click **Run**.
 

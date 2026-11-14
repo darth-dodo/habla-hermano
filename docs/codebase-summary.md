@@ -82,7 +82,7 @@ sequenceDiagram
 | Swap the chat or TTS model | `LLM_MODEL` / `TTS_MODEL` env vars (no code) |
 | Change the TTS voice | `HERMANO_VOICE` in `voice.py` and `VOICES` in `voice-constants.js` (must match) |
 | Tune review scheduling | `src/services/review.py` |
-| Add a theme | CSS variables under `[data-theme=...]` in `src/templates/base.html`, see [design-system.md](./design/design-system.md) |
+| Add a theme | CSS variables under `[data-theme=...]` in `src/templates/base.html`, see [design-system.md](./design-system.md) |
 | Change the database | new SQL file in `migrations/`, applied by hand in Supabase, plus `src/db/repository.py` |
 
 **Adding a language** touches more places than you would guess. Grep for an existing code such as `"fr"`:

@@ -15,7 +15,7 @@ Phase 5 transforms Habla Hermano from an anonymous single-user application to a 
 
 **Learning Goal**: Master Supabase Auth integration with FastAPI and LangGraph PostgresSaver for production checkpointing.
 
-**Related ADR**: [ADR-001: Supabase Integration](../adr/ADR-001-supabase-integration.md)
+**Related ADR**: [ADR-001: Supabase Integration](../../adr/ADR-001-supabase-integration.md)
 
 ---
 

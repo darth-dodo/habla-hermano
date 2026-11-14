@@ -471,8 +471,8 @@ Continue with MemorySaver and anonymous mode for MVP, revisit auth later
 
 ### Documentation
 
-- [Design Document](../design/phase5-supabase-auth.md) - Implementation details
-- [Phase 4 Design](../design/phase4-persistence.md) - Previous persistence approach
+- [Design Document](../history/design/phase05-supabase-auth.md) - Implementation details
+- [Phase 4 Design](../history/design/phase04-persistence.md) - Previous persistence approach
 
 ### External Resources
 

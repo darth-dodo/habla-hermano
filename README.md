@@ -96,5 +96,5 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | [Setup](docs/setup.md) | local setup, Supabase, Render |
 | [Testing](docs/testing.md) | running tests, layout, mocking patterns |
 | [E2E checklist](docs/playwright-e2e.md) | manual browser flows to verify |
-| [Design system](docs/design/design-system.md) | tokens, type, themes |
-| [ADRs](docs/adr/) · [phase notes](docs/design/) · [changelog](CHANGELOG.md) | history and decisions |
+| [Design system](docs/design-system.md) | tokens, type, themes |
+| [ADRs](docs/adr/) · [phase notes](docs/history/) · [changelog](CHANGELOG.md) | history and decisions |
