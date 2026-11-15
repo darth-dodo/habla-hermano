@@ -9,5 +9,6 @@ End-to-end code tours. Each one follows one user action through the real code, w
 | [Security model](security-model.md) | the layers a request passes: cookies, CSRF, CSP, rate limits, encryption |
 | [Lessons and spaced review](lessons-and-review.md) | a lesson's phases, and how due words come back with SM-2 |
 | [LLM evals](llm-evals.md) | `make eval`, from a YAML case to a score, and the bug it caught |
+| [The software factory](software-factory.md) | how a change goes from a request to an agent, through CI, to production |
 
 Code links point at `main`. Line numbers were checked when each page was written, and can drift as the code changes.
