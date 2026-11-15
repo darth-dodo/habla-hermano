@@ -1,3 +1,8 @@
+---
+name: add-node
+description: Add a LangGraph node or routing to the conversation graph (respond, scaffold, analyze) or the lesson graph. Use when adding a processing step or a conditional edge in src/agent/.
+---
+
 # Add LangGraph Node
 
 Add a new node to the Habla Hermano LangGraph conversation pipeline.
@@ -16,7 +21,7 @@ Add a new node to the Habla Hermano LangGraph conversation pipeline.
 
 2. **Create the node function** in `src/agent/nodes/{name}.py`
    - Import `ConversationState` from `src/agent/state`
-   - Use the centralized LLM factory from `src/agent/llm.py` (`get_llm()` or `get_llm_for_profile()`)
+   - Use the centralized LLM factory from `src/agent/llm.py` (`get_llm(profile)`)
    - Node signature: `async def {name}_node(state: ConversationState) -> dict[str, Any]:`
    - Return a dict with only the state keys that changed
    - Use lazy imports for `src.api.config` to avoid circular dependencies

@@ -1,3 +1,8 @@
+---
+name: run-checks
+description: Run Habla Hermano's quality checks (ruff lint and format, mypy, pytest, Vitest) locally. Use before committing or opening a PR, after a change, or to reproduce a CI failure.
+---
+
 # Run Quality Checks
 
 Run the full quality check pipeline: lint, format, typecheck, and tests.
@@ -21,14 +26,18 @@ Run the full quality check pipeline: lint, format, typecheck, and tests.
    # Type check
    uv run mypy src/
 
-   # Tests
+   # Tests (Python, then JS)
    uv run pytest -v
+   npx vitest run
+
+   # Built CSS must be current (CI fails on stale styles.css)
+   npm run build:css && git diff --exit-code src/static/css/styles.css
    ```
 
    Or use the Makefile shortcut:
    ```bash
    make check   # lint + format-check + typecheck
-   make test    # all tests
+   make test    # pytest + Vitest
    ```
 
 2. **Auto-fix lint and format issues**

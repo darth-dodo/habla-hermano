@@ -1,3 +1,8 @@
+---
+name: add-repo-method
+description: Add a Supabase repository method in src/db/repository.py: CRUD, filtered or aggregate queries, upserts, keeping encryption and RLS rules. Use when a service needs new data access.
+---
+
 # Add Repository Method
 
 Add a new database operation to the Supabase repository layer.

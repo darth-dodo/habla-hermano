@@ -1,3 +1,8 @@
+---
+name: add-prompt
+description: Add or change an LLM prompt: Hermano's personality, level or language adaptations, scaffolding or analysis prompts. Use when editing src/agent/prompts*.py or tuning model behaviour.
+---
+
 # Add or Modify LLM Prompt
 
 Create or update prompts used by the LangGraph agent nodes.

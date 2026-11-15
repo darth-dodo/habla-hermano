@@ -1,3 +1,8 @@
+---
+name: add-template
+description: Add or change a Jinja2 page or HTMX partial in src/templates/ (chat, lessons, review, progress) using the design system. Use when building or changing UI.
+---
+
 # Add HTMX Template
 
 Create or modify Jinja2 + HTMX templates for the frontend.

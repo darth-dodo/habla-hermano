@@ -1,3 +1,8 @@
+---
+name: add-service
+description: Add business logic in src/services/ between routes and repositories: workflows over several repositories, or algorithms like SM-2. Use when logic does not belong in a route or a repository.
+---
+
 # Add Service
 
 Create a new service layer component for business logic.

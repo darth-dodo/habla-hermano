@@ -1,3 +1,8 @@
+---
+name: write-test
+description: Write pytest or Vitest tests that follow this repo's patterns: fixtures in tests/conftest.py, CSRF headers, Supabase mocks, API integration tests. Use for new features, bug fixes or missing coverage.
+---
+
 # Write Tests
 
 Create pytest tests following the Habla Hermano testing patterns.
@@ -120,7 +125,7 @@ Create pytest tests following the Habla Hermano testing patterns.
 ## Testing Conventions
 - `asyncio_mode = "auto"` - no need for `@pytest.mark.asyncio`
 - Fixtures auto-reset settings cache and rate limits between tests
-- Mock external services (Supabase, Anthropic API) - never call real APIs in tests
+- Mock external services (Supabase, OpenRouter, Deepgram) - never call real APIs in tests
 - Use `MagicMock` for sync, `AsyncMock` for async operations
 - Chain Supabase fluent API mocks: `.table().select().eq().execute()`
 - Current coverage: 1810 tests, 97% coverage
