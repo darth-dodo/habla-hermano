@@ -5,6 +5,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 
 ## Unreleased
 
+**Fixed**
+- Conversations idle for 30 days are now really deleted, daily. The old purge looked for a column LangGraph does not have and silently deleted nothing; it is now tested against a real Postgres in CI. An unused setting that would have deleted progress data is gone.
+
 **New**
 - A `/demo` page creates, reseeds, re-passwords and deletes ready-made demo accounts, so a demo needs no server shell. Only emails in `DEMO_ADMIN_EMAILS` can open it (#136, `make seed-demo` still works).
 

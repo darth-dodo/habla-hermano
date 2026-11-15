@@ -80,17 +80,17 @@ Deleting data:
 | Action | What goes | Code |
 |---|---|---|
 | Delete one thread | its checkpoint rows, then its metadata row | [`delete_thread`](../../src/services/threads.py#L133-L155) |
-| Delete all conversations | every `user:{id}:%` and `lesson:{id}:%` checkpoint, all thread rows | [privacy route](../../src/api/routes/privacy.py#L72-L96) |
-| Delete account | vocabulary, sessions, lesson progress, checkpoints, then the auth user (cascades profile and threads) | [privacy route](../../src/api/routes/privacy.py#L142-L163) |
-| Startup purge | checkpoints older than `CHECKPOINT_RETENTION_DAYS` (30) | [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L22-L77), called from [lifespan](../../src/api/main.py#L92-L96) |
+| Delete all conversations | every `user:{id}:%` and `lesson:{id}:%` checkpoint, all thread rows | [privacy route](../../src/api/routes/privacy.py#L73-L97) |
+| Delete account | vocabulary, sessions, lesson progress, checkpoints (shared [`delete_user_rows`](../../src/services/user_data.py#L12-L32)), then the auth user (cascades profile and threads) | [privacy route](../../src/api/routes/privacy.py#L139-L149) |
+| Daily purge | every conversation whose last message is older than `CHECKPOINT_RETENTION_DAYS` (30): its checkpoints, blobs, writes and thread row, in one transaction | [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L30-L67), run at startup and then every 24 hours by [`_purge_daily`](../../src/api/main.py#L71-L74) |
 
 ## Gaps
 
-Found while writing this page. Not fixed here.
+Found while writing this page. Gaps 1 and 2 are fixed; their notes stay as a record.
 
-1. **The startup checkpoint purge likely deletes nothing.** [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L49-L58) filters on `thread_ts`, but the installed `langgraph-checkpoint-postgres` tables have no such column (no timestamp column at all). The error is caught and logged, so startup goes on and the 30-day retention never runs. Tests mock the connection, so they pass.
-2. **`purge_old_conversations` is never called.** [data_retention.py](../../src/services/data_retention.py#L17-L67) has no caller in `src/`, and it uses the anon client, so RLS would block its deletes anyway. `CONVERSATION_RETENTION_DAYS` does nothing today.
-3. **The `checkpoint_owner` comment says a guest ID casts to NULL.** In Postgres, `''::uuid` raises an error instead. Not tested: a filter that is not leakproof (the `LIKE` in [delete conversations](../../src/api/routes/privacy.py#L83-L90)) might reach guest rows and fail.
+1. **Fixed: the startup checkpoint purge deleted nothing.** [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L49-L58) filters on `thread_ts`, but the installed `langgraph-checkpoint-postgres` tables have no such column (no timestamp column at all). The error is caught and logged, so startup goes on and the 30-day retention never runs. Tests mock the connection, so they pass.
+2. **Fixed (removed): `purge_old_conversations` was never called.** `data_retention.py` had no caller in `src/`, and it uses the anon client, so RLS would block its deletes anyway. It also deleted learning sessions and vocabulary (progress), not chat history. The function and `CONVERSATION_RETENTION_DAYS` are gone; chat retention is the daily purge above, now tested against a real Postgres in CI.
+3. **The `checkpoint_owner` comment says a guest ID casts to NULL.** In Postgres, `''::uuid` raises an error instead. Not tested: a filter that is not leakproof (the `LIKE` in [delete conversations](../../src/api/routes/privacy.py#L84-L91)) might reach guest rows and fail.
 4. **Thread switch ignores a failed select.** The sidebar loads `/chat/thread-content` even if `/threads/select` returned 404, because `fetch` does not reject on HTTP errors ([sidebar](../../src/templates/partials/thread_sidebar.html#L39-L40)).
 
 Related: [security model](security-model.md), [one chat message](chat-message.md).

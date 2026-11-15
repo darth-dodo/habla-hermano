@@ -101,13 +101,10 @@ class Settings(BaseSettings):
     # collect/train on data (sends provider.data_collection="deny" in requests).
     OPENROUTER_ZERO_RETENTION: bool = False
 
-    # Auto-delete conversation data older than N days (0 = disabled)
-    CONVERSATION_RETENTION_DAYS: int = 0
-
     # Comma-separated emails allowed to open /demo and manage demo accounts (empty = nobody)
     DEMO_ADMIN_EMAILS: str = ""
 
-    # Checkpoint retention: auto-purge checkpoints older than this many days (0 = disabled)
+    # Delete a conversation once its last message is this many days old (0 = never)
     CHECKPOINT_RETENTION_DAYS: int = 30
 
     # Paths (computed relative to project root)

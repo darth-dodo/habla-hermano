@@ -236,7 +236,7 @@ request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route
 | LLM privacy | `OPENROUTER_ZERO_RETENTION=true` sends `provider.data_collection = "deny"` on chat and TTS calls |
 | Tracing | Optional Langfuse (Cloud EU) when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set. Production spans keep node, model, tokens, cost, latency, level and language; message text and the thread ID are deleted before export (`src/services/tracing.py`). `DEBUG=true` keeps full content |
 | Rate limits | REST: per endpoint and per client IP (in memory, one process), checked before auth on chat and speech. `/ws/speak`: 30 messages per minute per connection |
-| Retention | Checkpoints purged after `CHECKPOINT_RETENTION_DAYS` (30). `CONVERSATION_RETENTION_DAYS` is off by default |
+| Retention | Daily: a conversation is deleted whole (checkpoints and thread row) once its last message is older than `CHECKPOINT_RETENTION_DAYS` (30). Progress data (vocabulary, sessions, lessons) is kept until the user deletes it |
 | Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress, threads and checkpoints |
 
 ## Frontend modules
