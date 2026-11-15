@@ -31,6 +31,7 @@ Run the following SQL files in order via the Supabase SQL Editor (**SQL Editor**
 | 4 | `004_checkpoint_rls.sql` | Row-level security on checkpoint tables |
 | 5 | `005_conversation_threads.sql` | Conversation thread support |
 | 6 | `006_fix_security_definer.sql` | Vocabulary RPCs run as the caller so RLS applies |
+| 7 | `007_checkpoint_owner_guest_safe.sql` | `checkpoint_owner()` returns NULL for guest thread IDs instead of raising, so signed-in users can list and delete their checkpoints |
 
 To run each migration: open the file, copy its contents, paste into the Supabase SQL Editor, and click **Run**.
 
