@@ -5,28 +5,30 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 
 ## Unreleased
 
-**New**
-- Demo accounts now come with 10 ready-made conversations across Spanish, German, French and Hinglish, from A0 to B1, each with a typical mistake corrected.
+Nothing yet.
+
+## 1.1.0 (2026-11-15): data deletion that really deletes, and a ready-made demo
 
 **Fixed**
-- Seven buttons that did nothing in production now work: "Next" after an exercise, "Try again" on the error page, "Review more", the helpful/not helpful thumbs and the jump-to-exercise link. The content security policy blocked their inline handlers; they use Alpine now, and a test stops new inline handlers.
-
-**Fixed**
-- Conversations idle for 30 days are now really deleted, daily. The old purge looked for a column LangGraph does not have and silently deleted nothing; it is now tested against a real Postgres in CI. An unused setting that would have deleted progress data is gone.
-- "Delete all conversations" works again once guests have chatted. A guest row made the database ownership check error out, so nothing was deleted. Needs migration 007 applied in Supabase.
-- Sidebar fixes: new Hinglish threads show the India flag, a new thread picks up its auto title, long replies are no longer cut off at 60 seconds (the timeout now counts from the last word), and a failed thread switch reloads instead of showing the wrong thread.
+- Idle conversations are now really deleted after 30 days, checked daily. The old purge looked for a column LangGraph does not have and silently deleted nothing (#139).
+- "Delete all conversations" works once guests have chatted. A guest row made the database ownership check fail, so nothing was deleted. Needs migration 007 in Supabase (#140).
+- Seven buttons the content security policy had blocked work again: "Next" after an exercise, "Try again", "Review more", the reply thumbs and the jump-to-exercise link (#143).
+- Sidebar: Hinglish threads show the India flag, new threads pick up their auto title, long replies are no longer cut off at 60 seconds, and a failed thread switch reloads instead of showing the wrong thread (#141).
 
 **New**
-- A `/demo` page creates, reseeds, re-passwords and deletes ready-made demo accounts, so a demo needs no server shell. Only emails in `DEMO_ADMIN_EMAILS` can open it (#136, `make seed-demo` still works).
+- A `/demo` page, open only to emails in `DEMO_ADMIN_EMAILS`, creates, reseeds, re-passwords and deletes demo accounts (#136, #138).
+- Demo accounts come with four weeks of history and 10 conversations across all four languages, A0 to B1 (#142).
 
 **Safer and leaner**
 - Rate-limited requests are refused before the login check, so they no longer cost a call to Supabase (#131).
-- Deploys only happen from CI after every check passes, and `main` requires a green CI run to merge (#131).
-- About 3,000 lines of unused code removed: a review subgraph the app never called, and a guest path in lesson completion that could not run (#131).
-- The old lesson subgraph and its prompts are gone too: lessons have run through the chat phase machine since Phase 23, and nothing called it.
+- Deploys only happen from CI after every check passes, and `main` needs a green CI run to merge (#131).
+- About 4,600 lines of unused code removed: the review and lesson subgraphs, and a guest path that could not run (#131, #135).
+- An unused setting that would have deleted progress data, not chats, is gone (#139).
 
 **For maintainers**
-- Two more code walkthroughs: threads and the data lifecycle, and the frontend without React.
+- SQL is tested against a real Postgres in CI, because mocked tests had passed while the purge and the RLS policy were broken (#139, #140).
+- Two more walkthroughs: threads and the data lifecycle, and the frontend without React (#137). Every doc and the README brought up to date (#132, #144).
+- Claude Code skills: an `ask` skill for codebase questions, and the 11 repo skills now load (#133, #134).
 
 ## 1.0.0 (2026-11-15): first tagged release
 

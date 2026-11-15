@@ -151,7 +151,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         description="AI-powered language tutor for Spanish, German, French and Hinglish learners",
-        version="1.0.0",
+        version="1.1.0",
         debug=settings.DEBUG,
         lifespan=lifespan,
     )
