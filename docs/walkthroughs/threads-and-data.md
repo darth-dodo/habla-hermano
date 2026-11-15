@@ -86,7 +86,7 @@ Deleting data:
 
 ## Gaps
 
-Found while writing this page. Gaps 1 to 3 are fixed; their notes stay as a record.
+Found while writing this page. Fixed gaps are marked; their notes stay as a record.
 
 1. **Fixed: the startup checkpoint purge deleted nothing.** [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L49-L58) filters on `thread_ts`, but the installed `langgraph-checkpoint-postgres` tables have no such column (no timestamp column at all). The error is caught and logged, so startup goes on and the 30-day retention never runs. Tests mock the connection, so they pass.
 2. **Fixed (removed): `purge_old_conversations` was never called.** `data_retention.py` had no caller in `src/`, and it uses the anon client, so RLS would block its deletes anyway. It also deleted learning sessions and vocabulary (progress), not chat history. The function and `CONVERSATION_RETENTION_DAYS` are gone; chat retention is the daily purge above, now tested against a real Postgres in CI.
