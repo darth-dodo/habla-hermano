@@ -62,7 +62,7 @@ Dependencies can depend on other dependencies, run once per request, and are eas
 request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route        (src/api/main.py, src/api/middleware.py)
 ```
 
-**Middleware** wraps every request (CSP headers, CSRF check). **Lifespan** runs once at startup and shutdown: here it opens the Postgres checkpointer pool, purges old checkpoints, and on shutdown closes the pool and flushes Langfuse traces.
+**Middleware** wraps every request (CSP headers, CSRF check). **Lifespan** runs once at startup and shutdown: here it opens the Postgres checkpointer pool, starts a daily task that deletes idle conversations, and on shutdown closes the pool and flushes Langfuse traces.
 
 ## LangGraph (2.5 minutes)
 

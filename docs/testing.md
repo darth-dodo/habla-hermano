@@ -2,7 +2,7 @@
 
 How the Habla Hermano test suites are laid out, how to run them, and how they avoid real network calls.
 
-As of 2026-11-15 there are about 2,186 Python tests (pytest) and 257 JS tests (Vitest). Counts drift, so treat them as rough.
+As of 2026-11-15 there are 2,130 Python tests (pytest) and 257 JS tests (Vitest). Counts drift, so treat them as rough.
 
 ## Run the tests
 
@@ -42,13 +42,13 @@ There is no automated browser suite. Browser checks are the manual flows in [pla
 | Path | Covers |
 |---|---|
 | `tests/conftest.py` | Shared fixtures: `CSRF_HEADERS`, `mock_settings`, `mock_supabase`, mocked graph and checkpointer, an app client with the graph mocked. Autouse fixture clears settings, template, rate limit, LLM and graph caches after each test. |
-| `tests/agent/` | LangGraph build and routing, state, prompts, review graph, checkpointer and checkpoint purge (real Postgres when `TEST_DATABASE_URL` is set, as in CI), LLM zero retention settings |
-| `tests/agent/nodes/` | Node logic: respond, scaffold, analyze, review, lesson chat phase machine |
-| `tests/api/` | App level concerns: auth, CSRF, security headers, sanitizing, session, SSE streaming, threads API, privacy, persistence, Supabase client |
+| `tests/agent/` | LangGraph build and routing, state, prompts, checkpointer and checkpoint purge (real Postgres when `TEST_DATABASE_URL` is set, as in CI), LLM zero retention settings |
+| `tests/agent/nodes/` | Node logic: respond, scaffold, analyze, lesson chat phase machine |
+| `tests/api/` | App level concerns: auth, CSRF, security headers, sanitizing, session, SSE streaming, threads API, privacy, the `/demo` admin page, persistence, Supabase client |
 | `tests/api/routes/` | Per route modules: chat, lessons, learn, progress, review, auth (incl. password reset), validation, voice (STT WebSocket, TTS), plus `test_e2e.py` (multi route coverage tests, not browser tests) |
-| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, TTS client, Langfuse tracing mask |
+| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, lesson completion, TTS client, Langfuse tracing mask |
 | `tests/lessons/` | Lesson YAML models and lesson service |
-| `tests/db/` | Fernet field encryption, `FernetCipher`, models, repositories with and without encryption |
+| `tests/db/` | Fernet field encryption, `FernetCipher`, models, repositories with and without encryption, demo seed rows |
 | `tests/test_rate_limiting.py` | REST and WebSocket rate limits |
 | `tests/evals/` | LLM eval scorer (pure functions) and the eval runner end to end with a fake chat model |
 | `tests/js/` | Vitest specs for `src/static/js/modules`: dom, fsm, htmx-handlers, scaffold, shortcuts, stream, voice |
@@ -118,7 +118,7 @@ The real eval never runs in CI or `make test`. CI covers the scorer and the runn
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pushes to `main` and on PRs, only when `src/`, `tests/`, `data/`, dependency files, the Dockerfile, `render.yaml` or the workflow change.
+`.github/workflows/ci.yml` runs on every PR. On pushes to `main` it runs only when `src/`, `tests/`, `data/`, dependency files, the Dockerfile, `render.yaml` or the workflow change. `main` requires the `CI Success` check to merge.
 
 ```mermaid
 flowchart LR
@@ -134,6 +134,7 @@ flowchart LR
 
 `ci-success` and `deploy` both wait on all six jobs (the diagram shortens this). `test-js` also runs `npm run build:css` and fails if the committed `src/static/css/styles.css` is stale.
 
+- `test` starts a `postgres:16` service and sets `TEST_DATABASE_URL`, so tests that check real SQL (the checkpoint purge) run against Postgres. Locally they skip without that variable.
 - `test` uploads `coverage.xml` to Codecov (does not fail the build).
 - `deploy` only runs on push to `main` and skips if `RENDER_DEPLOY_HOOK_URL` is not set.
 

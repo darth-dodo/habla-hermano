@@ -51,7 +51,7 @@ src/
 ├── config.py, validation.py   canonical settings and validators (src/api/* copies are re-export shims)
 ├── api/        app factory, auth, middleware, SSE streaming, rate limits, routes/
 ├── agent/      graphs, nodes/, prompts, checkpointer, llm.py
-├── services/   business logic: review (SM-2), paths, adaptive, threads, tts.py, ...
+├── services/   business logic: review (SM-2), paths, adaptive, threads, tts.py, demo_seed, user_data, ...
 ├── db/         Supabase client, repositories, models, encryption
 ├── lessons/    lesson models + YAML loader
 ├── templates/  Jinja2 pages and HTMX partials
@@ -237,7 +237,8 @@ request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route
 | Tracing | Optional Langfuse (Cloud EU) when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set. Production spans keep node, model, tokens, cost, latency, level and language; message text and the thread ID are deleted before export (`src/services/tracing.py`). `DEBUG=true` keeps full content |
 | Rate limits | REST: per endpoint and per client IP (in memory, one process), checked before auth on chat and speech. `/ws/speak`: 30 messages per minute per connection |
 | Retention | Daily: a conversation is deleted whole (checkpoints and thread row) once its last message is older than `CHECKPOINT_RETENTION_DAYS` (30). Progress data (vocabulary, sessions, lessons) is kept until the user deletes it |
-| Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress, threads and checkpoints |
+| Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress and checkpoints (`delete_user_rows` in `src/services/user_data.py`), then the auth user, which cascades the profile and threads |
+| Demo accounts | `/demo` (`src/api/routes/demo.py`) answers 404 unless the signed-in email is in `DEMO_ADMIN_EMAILS`. Its actions only touch `demo-*@example.com` accounts, so real users are never reseeded or deleted |
 
 ## Frontend modules
 

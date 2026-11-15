@@ -61,6 +61,9 @@ Edit `.env` and fill in the required values. See `.env.example` for descriptions
 | `SENTRY_DSN` | Enables Sentry error monitoring (backend + frontend) |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Enables Langfuse tracing of chat turns (Langfuse Cloud EU by default, `LANGFUSE_BASE_URL` to change). Production traces are metadata only |
 | `OPENROUTER_ZERO_RETENTION` | Restrict routing to providers that don't retain/train on data |
+| `SUPABASE_SERVICE_KEY` | Admin client: account deletion, the `/demo` page and `make seed-demo` |
+| `CHECKPOINT_RETENTION_DAYS` | Delete a conversation once its last message is this many days old, checked daily (default 30, `0` = never) |
+| `DEMO_ADMIN_EMAILS` | Comma-separated emails allowed to open `/demo` and manage demo accounts (empty = nobody, everyone gets 404) |
 | `DEBUG` | Enable debug mode (local dev only) |
 
 ## 4. Install and Run
@@ -78,7 +81,7 @@ The project includes a `render.yaml` blueprint for one-click deployment to [Rend
 1. Push your repo to GitHub.
 2. In Render, click **New > Blueprint** and connect your repository.
 3. Render will detect `render.yaml` and configure the service.
-4. Set the environment variables listed above in the Render dashboard.
+4. Set the environment variables listed above in the Render dashboard. Env changes take effect after a restart, so use **Save, rebuild, and deploy** (or a manual deploy) after editing them.
 
 The start command is:
 ```bash
