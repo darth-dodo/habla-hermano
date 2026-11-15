@@ -211,7 +211,7 @@ For HTMX requests (`HX-Request` header) an `HTTPException` returns its plain `de
 
 ## Rate limits (`src/api/rate_limit.py`)
 
-The REST decorator counts calls **per endpoint and per client IP** (the last `X-Forwarded-For` hop, added by Render's proxy; earlier entries are ignored because clients can forge them). Counters live in memory in one process, which matches `--workers 1`.
+Calls are counted **per endpoint and per client IP** (the last `X-Forwarded-For` hop, added by Render's proxy; earlier entries are ignored because clients can forge them). Counters live in memory in one process, which matches `--workers 1`. Chat and speech routes check the limit as a route dependency, before the login check; auth routes use the `@rate_limited` decorator.
 
 | Scope | Limit per client | Endpoints (each has its own counter) |
 |---|---|---|

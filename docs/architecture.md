@@ -216,7 +216,7 @@ sequenceDiagram
 ```
 
 - **Threads** (accounts only): each has its own language and level. Titles come from the `titling` LLM profile (30 tokens) after the first exchange.
-- **Progress**: `ProgressService` reads vocabulary, sessions and lesson progress through `get_supabase_for_user(token)`, so RLS applies. Guests see an empty dashboard and a sign-up prompt.
+- **Progress**: `ProgressService` reads vocabulary, sessions and lesson progress through `get_supabase_for_user(token)`, so RLS applies. Guests are redirected to login, and their lesson completions are not saved.
 - **Paths**: 20 lessons per language. `AdaptiveService` suggests the next step from path progress, weak vocabulary categories (under 70%), due reviews and level readiness.
 
 ## Security
@@ -235,7 +235,7 @@ request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route
 | Encryption | `SECRET_KEY` + `ENCRYPTION_SALT` -> PBKDF2 (480k rounds) -> Fernet. Encrypted: `vocabulary.translation`, `user_profiles.display_name`, every checkpoint blob |
 | LLM privacy | `OPENROUTER_ZERO_RETENTION=true` sends `provider.data_collection = "deny"` on chat and TTS calls |
 | Tracing | Optional Langfuse (Cloud EU) when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set. Production spans keep node, model, tokens, cost, latency, level and language; message text and the thread ID are deleted before export (`src/services/tracing.py`). `DEBUG=true` keeps full content |
-| Rate limits | REST: per endpoint and per client IP (in memory, one process). `/ws/speak`: 30 messages per minute per connection |
+| Rate limits | REST: per endpoint and per client IP (in memory, one process), checked before auth on chat and speech. `/ws/speak`: 30 messages per minute per connection |
 | Retention | Checkpoints purged after `CHECKPOINT_RETENTION_DAYS` (30). `CONVERSATION_RETENTION_DAYS` is off by default |
 | Account deletion | `POST /privacy/delete-account` removes vocabulary, sessions, lesson progress, threads and checkpoints |
 

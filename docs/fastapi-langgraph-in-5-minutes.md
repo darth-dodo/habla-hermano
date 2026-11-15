@@ -23,10 +23,11 @@ The function signature *is* the API contract. FastAPI reads the type hints, pars
 
 ```python
 # src/api/routes/chat_stream.py
-@router.post("/chat/stream")
-@rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
+@router.post(
+    "/chat/stream",
+    dependencies=[Depends(rate_limit(CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD))],
+)
 async def stream_message(
-    request: Request,
     user: OptionalUserDep,                      # dependency (see 2)
     cookies: ChatCookiesDep,                    # dependency
     message: Annotated[str, Form()],            # form field, required
@@ -45,7 +46,7 @@ OptionalUserDep = Annotated[AuthenticatedUser | None, Depends(get_current_user_o
 EffectiveUserDep = Annotated[EffectiveUser | None, Depends(get_effective_user)]  # account or signed guest
 ```
 
-Dependencies can depend on other dependencies, run once per request, and are easy to swap in tests with `app.dependency_overrides[get_current_user] = fake`.
+Dependencies can depend on other dependencies, run once per request, and are easy to swap in tests with `app.dependency_overrides[get_current_user] = fake`. Route-level `dependencies=[...]` run before the parameters' own, which is why the rate limit sits there: a limited client is refused before the login check calls Supabase.
 
 ### 3. Three ways to answer
 

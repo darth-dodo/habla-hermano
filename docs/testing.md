@@ -2,7 +2,7 @@
 
 How the Habla Hermano test suites are laid out, how to run them, and how they avoid real network calls.
 
-As of 2026-11-14 there are about 2,378 Python tests (pytest) and 257 JS tests (Vitest). Counts drift, so treat them as rough.
+As of 2026-11-15 there are about 2,186 Python tests (pytest) and 257 JS tests (Vitest). Counts drift, so treat them as rough.
 
 ## Run the tests
 

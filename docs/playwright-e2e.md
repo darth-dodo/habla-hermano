@@ -38,8 +38,8 @@ After every flow, check:
 | Lessons | `/lessons`, open a lesson card | Opens in the main chat at `/?lesson=<id>`. Lesson header and progress bar show. Phases move intro, teaching, exercise, complete. Exercises accept and grade answers. Completion shows a score. |
 | Learning paths | `/learn` | Path cards render with progress. Continue goes to the next lesson. |
 | Review | `/?mode=review` with words due | Review start UI shows. Answers are graded and the next card loads. |
-| Progress | `/progress` | Stats, vocabulary list and chart render. `/progress/chart-data` returns JSON. A fresh guest sees the empty state. |
-| Guest persistence | Finish a lesson as a guest, then open `/progress` | Session cookie is set. The completed lesson shows on progress. |
+| Progress | `/progress` | Stats, vocabulary list and chart render. `/progress/chart-data` returns JSON. A guest is redirected to login. |
+| Guest lessons | Finish a lesson as a guest | Completion shows a score. Nothing is saved, and `/progress` redirects to login. |
 | Auth | `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/forgot-password` | Bad password and mismatch show errors. Valid login lands on chat with read only language/level badges. Logout returns to the login page and guest dropdowns work again. |
 | Threads (signed in) | Sidebar: New Chat, pick language and level | Thread is created and opens. Switching threads loads the right language, level and history. Rename submits on Enter, Escape cancels. Delete asks first. Deleting the active thread goes to `/`. |
 | Threads on mobile | Resize to phone width, use the hamburger | Sidebar opens and closes (button, Escape, backdrop). It closes after picking a thread. |
