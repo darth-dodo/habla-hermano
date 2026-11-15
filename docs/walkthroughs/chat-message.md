@@ -58,7 +58,7 @@ Call path for one message:
    - [`ChatCookiesDep`](../../src/api/routes/chat.py#L177-L190): the guest ID, only if [its signature is valid](../../src/api/cookies.py#L180-L187).
 2. [`_stream_graph`](../../src/api/routes/chat_stream.py#L259-L269) builds the run config with [`_graph_config`](../../src/api/routes/chat.py#L285-L296), which merges [`tracing_config`](../../src/services/tracing.py#L82).
 3. [`stream_chat_events`](../../src/api/streaming.py#L107-L135) loops over `graph.astream`: `messages` chunks from `respond` become `token` events, and `updates` become the feedback partials.
-4. The [graph topology](../../src/agent/graph.py#L40-L51) runs the nodes, and each one calls [`get_llm`](../../src/agent/llm.py#L43).
+4. The [graph topology](../../src/agent/graph.py#L40-L51) runs the nodes, and each one calls [`get_llm`](../../src/agent/llm.py#L41).
 
 **Invariant:** per-run dependencies go in the run config, so they are never saved into the checkpoint.
 
@@ -85,7 +85,7 @@ graph LR
     F --> R(["20/20 pass, about 39% faster"])
 ```
 
-Unit tests mock the LLM, so they could not see this. The fix is one setting in [`get_llm`](../../src/agent/llm.py#L91-L101), next to the zero-retention flag:
+Unit tests mock the LLM, so they could not see this. The fix is one setting in [`get_llm`](../../src/agent/llm.py#L89-L99), next to the zero-retention flag:
 
 ```python
 extra_body: dict[str, Any] = {"reasoning": {"enabled": False}}

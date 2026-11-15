@@ -63,7 +63,6 @@ class TestGetLlmFunction:
             "analysis",
             "structured",
             "creative",
-            "enhancement",
             "titling",
         ],
     )

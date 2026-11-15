@@ -65,7 +65,7 @@ LEVEL_BANDS: dict[str, tuple[float, float]] = {
 | Before #122 | 9/20 | 191s | 31.7k |
 | After #122 | 20/20 | 117s | 15.9k |
 
-Hidden reasoning used about 440 of the 1024 `max_tokens` on the analysis profile. The analyze JSON was cut off, so grammar feedback was silently empty. The fix in [`get_llm`](../../src/agent/llm.py#L91-L94) turns reasoning off for every profile:
+Hidden reasoning used about 440 of the 1024 `max_tokens` on the analysis profile. The analyze JSON was cut off, so grammar feedback was silently empty. The fix in [`get_llm`](../../src/agent/llm.py#L89-L92) turns reasoning off for every profile:
 
 ```python
 extra_body: dict[str, Any] = {"reasoning": {"enabled": False}}
