@@ -1,3 +1,8 @@
+---
+name: new-feature-phase
+description: Plan a new feature that spans several files: scope, design document, phases and tests, before writing code. Use when starting a major enhancement.
+---
+
 # Plan New Feature Phase
 
 Design and plan a new phase of development for Habla Hermano.

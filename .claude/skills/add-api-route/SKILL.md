@@ -1,3 +1,8 @@
+---
+name: add-api-route
+description: Add a FastAPI route to Habla Hermano: a REST or HTMX endpoint, or a page rendered with Jinja2, for signed-in users or guests. Use when adding or changing an endpoint in src/api/routes/.
+---
+
 # Add API Route
 
 Add a new FastAPI route to the Habla Hermano backend.

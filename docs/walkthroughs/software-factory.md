@@ -19,7 +19,7 @@ graph LR
 
 | Stage | What runs | Code |
 |---|---|---|
-| Agent recipes | 11 repo skills: add a route, node, lesson, test; run checks | [.claude/skills/](../../.claude/skills/) |
+| Agent recipes | 11 repo skills (`.claude/skills/<name>/SKILL.md`): add a route, node, lesson, test; run checks | [.claude/skills/](../../.claude/skills/) |
 | Local gates | pre-commit (ruff, mypy, secret and large-file checks), `make check` | [.pre-commit-config.yaml](../../.pre-commit-config.yaml), [Makefile](../../Makefile) |
 | CI | lint, typecheck, test with 88% coverage floor, JS tests + stale CSS check, Bandit, Docker build | [ci.yml](../../.github/workflows/ci.yml) |
 | Gate | `ci-success` fails if any job did not succeed | [ci-success](../../.github/workflows/ci.yml#L224-L242) |

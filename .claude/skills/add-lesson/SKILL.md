@@ -1,3 +1,8 @@
+---
+name: add-lesson
+description: Add YAML lessons to data/lessons/: a new category, a new language's lesson set, or lessons for a new CEFR level, with validation. Use when creating or editing lesson content.
+---
+
 # Add Lesson Content
 
 Create new YAML lesson files for the Habla Hermano lesson catalog.

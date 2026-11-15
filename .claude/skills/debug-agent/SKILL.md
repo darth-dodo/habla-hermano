@@ -1,3 +1,8 @@
+---
+name: debug-agent
+description: Debug the LangGraph agent: wrong or empty replies, missing scaffolding for A0/A1, grammar not detected, due words not woven in, or checkpoint and session state problems.
+---
+
 # Debug LangGraph Agent
 
 Investigate and fix issues in the LangGraph conversation pipeline.
@@ -53,9 +58,9 @@ Investigate and fix issues in the LangGraph conversation pipeline.
 
    **LLM returning empty or malformed output**:
    - Check `get_llm()` configuration in `src/agent/llm.py`
-   - Verify `ANTHROPIC_API_KEY` is set
+   - Verify `OPENROUTER_API_KEY` is set
    - Check prompt formatting (missing format keys cause KeyError)
-   - Temperature too high (>0.9) can cause erratic output
+   - JSON cut off mid-object: check `finish_reason`; hidden reasoning must stay off in `get_llm` (#122)
 
    **Checkpoint/state not persisting**:
    - Production: PostgresSaver (needs `SUPABASE_DB_URL`)
