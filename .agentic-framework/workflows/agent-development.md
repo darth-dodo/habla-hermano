@@ -118,9 +118,7 @@ uv run pytest tests/agent/ -v && uv run pytest
 | `respond_node` | `src/agent/nodes/respond.py` | Generate AI tutor response |
 | `analyze_node` | `src/agent/nodes/analyze.py` | Grammar/vocabulary analysis |
 | `scaffold_node` | `src/agent/nodes/scaffold.py` | Word banks/hints for A0-A1 |
-| `feedback_node` | `src/agent/nodes/feedback.py` | Structured feedback |
-| `lesson_node` | `src/agent/nodes/lesson.py` | Lesson delivery |
-| `review_node` | `src/agent/nodes/review.py` | Spaced repetition review |
+| `lesson_respond_node` | `src/agent/nodes/lesson_chat.py` | Lesson phase machine (intro, teaching, exercise, complete) |
 
 ---
 

@@ -78,10 +78,10 @@ Create or update prompts used by the LangGraph agent nodes.
 ## Prompt Categories
 | Prompt | Used By | Purpose |
 |--------|---------|---------|
-| SYSTEM_PROMPT | respond_node | Main conversation personality |
-| SCAFFOLD_PROMPT | scaffold_node | Word bank/hint generation (A0-A1) |
-| ANALYZE_PROMPT | analyze_node | Grammar/vocabulary extraction |
-| LESSON_ENHANCE_PROMPT | lesson subgraph | Enhance lesson content |
+| LEVEL_PROMPTS + `get_prompt_for_level()` (`src/agent/prompts.py`) | respond_node | Main conversation personality per level and language |
+| SCAFFOLD_PROMPT (`src/agent/nodes/scaffold.py`) | scaffold_node | Word bank/hint generation (A0-A1) |
+| ANALYSIS_PROMPT (`src/agent/nodes/analyze.py`) | analyze_node | Grammar/vocabulary extraction |
+| LESSON_*_PROMPT (`src/agent/prompts_lesson_chat.py`) | lesson_respond_node | One prompt per lesson phase |
 
 ## Tips
 - Keep prompts under 2000 tokens for efficiency

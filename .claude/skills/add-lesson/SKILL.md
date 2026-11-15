@@ -15,7 +15,7 @@ Create new YAML lesson files for the Habla Hermano lesson catalog.
 ## Steps
 
 1. **Review existing lesson structure**
-   - Read a reference lesson: `data/lessons/es/A0/greetings-001.yaml`
+   - Read a reference lesson: `data/lessons/A0/greetings-001.yaml` (one file per topic, one `languages:` block per language)
    - Check `src/lessons/models.py` for the `Lesson`, `LessonStep`, and `LessonExercise` Pydantic models
    - Read `src/lessons/service.py` for how lessons are loaded and validated
 

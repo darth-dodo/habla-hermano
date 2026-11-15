@@ -43,7 +43,7 @@ make test-cov   # With coverage report
 make test-js    # JavaScript tests only (Vitest)
 ```
 
-The project has about 2,200 Python tests and 250+ JavaScript tests.
+The project has about 2,100 Python tests and 250+ JavaScript tests.
 
 ## Code Quality
 

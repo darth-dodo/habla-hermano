@@ -90,6 +90,7 @@ sequenceDiagram
 | Add an eval scenario | a case in `evals/cases.yaml`; checks live in `evals/scoring.py` |
 | Trace another graph or LLM call | merge `tracing_config(...)` from `src/services/tracing.py` into its run config |
 | Change the database | new SQL file in `migrations/`, applied by hand in Supabase, plus `src/db/repository.py` |
+| Get a demo account | `/demo` (emails in `DEMO_ADMIN_EMAILS`) or `make seed-demo EMAIL=...`; the data is in `src/services/demo_seed.py` |
 
 **Adding a language** touches more places than you would guess. Grep for an existing code such as `"fr"`:
 
@@ -113,7 +114,7 @@ graph LR
 | LLM calls | Always `get_llm(profile)` from `src/agent/llm.py`. Never pass `temperature`, `top_p` or `top_k` (the API rejects them). Reasoning stays off: turning it on eats `max_tokens` and truncates JSON |
 | Frontend assets | No CDN scripts: anything new goes in `src/static/vendor/` at a pinned version, or the CSP blocks it |
 | User data access | Accounts: `get_supabase_for_user(token)` so RLS applies. Guests have no JWT, so `get_client_for_user()` hands them the admin client: scope every guest query by session ID yourself |
-| Encrypted fields | `encrypt_field` / `decrypt_field` live in `db/repository.py` and `services/threads.py`, never in routes |
+| Encrypted fields | `encrypt_field` / `decrypt_field` live in `db/repository.py`, `services/threads.py` and the demo seed, never in routes |
 | Writing style | Docs, comments and commits use no em or en dashes. Conventional commits, feature branches only |
 
 ## Gotchas
@@ -122,6 +123,7 @@ graph LR
 - **CSRF in tests**: every POST, PUT, PATCH and DELETE needs `CSRF_HEADERS` from `tests/conftest.py`, or you get a 403.
 - **Required env in tests**: `OPENROUTER_API_KEY` and `SECRET_KEY` must be set, even to dummy values, or import fails. Dev deps: `uv sync --extra dev`.
 - **pytest runs in parallel** (`-n auto`). Use `-n 0` to debug; do not pass `-p no:xdist`.
+- **SQL tests need Postgres**: tests that check real SQL (the checkpoint purge) skip unless `TEST_DATABASE_URL` is set. CI sets it with a Postgres service; mocks cannot catch a wrong column name.
 - **Supabase mocks**: chained calls (`.table().select().eq()`) must return the same mock, and `.not_` needs a `PropertyMock`.
 - **`/chat/stream` errors come over SSE** as an `error` event with HTTP 200. Only CSRF (403) and rate limits (429) fail before the stream starts.
 - **WebSocket tests**: use `receive_bytes()` / `receive_text()`, not raw `receive()`, which returns the close frame instead of raising.

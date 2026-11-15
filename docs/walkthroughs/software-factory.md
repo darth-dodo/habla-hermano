@@ -19,11 +19,11 @@ graph LR
 
 | Stage | What runs | Code |
 |---|---|---|
-| Agent recipes | 11 repo skills (`.claude/skills/<name>/SKILL.md`): add a route, node, lesson, test; run checks | [.claude/skills/](../../.claude/skills/) |
+| Agent recipes | 12 repo skills (`.claude/skills/<name>/SKILL.md`): add a route, node, lesson, test; run checks; `ask` answers questions about the code with file:line evidence | [.claude/skills/](../../.claude/skills/) |
 | Local gates | pre-commit (ruff, mypy, secret and large-file checks), `make check` | [.pre-commit-config.yaml](../../.pre-commit-config.yaml), [Makefile](../../Makefile) |
-| CI | lint, typecheck, test with 88% coverage floor, JS tests + stale CSS check, Bandit, Docker build | [ci.yml](../../.github/workflows/ci.yml) |
-| Gate | `ci-success` fails if any job did not succeed | [ci-success](../../.github/workflows/ci.yml#L224-L242) |
-| Deploy | Render deploy hook, push to main only, after every job | [deploy](../../.github/workflows/ci.yml#L252-L280) |
+| CI | lint, typecheck, test with 88% coverage floor and a Postgres service for SQL tests, JS tests + stale CSS check, Bandit, Docker build | [ci.yml](../../.github/workflows/ci.yml) |
+| Gate | `ci-success` fails if any job did not succeed | [ci-success](../../.github/workflows/ci.yml#L227-L245) |
+| Deploy | Render deploy hook, push to main only, after every job | [deploy](../../.github/workflows/ci.yml#L255-L283) |
 | Verify | Render polls `/health`; `/version` names the deployed commit | [main.py](../../src/api/main.py) |
 | Manual | `make eval` against the real model before prompt or model changes | [Makefile](../../Makefile) |
 

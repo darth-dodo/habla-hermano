@@ -16,7 +16,7 @@ Design and plan a new phase of development for Habla Hermano.
 
 1. **Review current architecture**
    - Read `docs/architecture.md` for the full system overview
-   - Check `docs/phases/` for existing phase design documents
+   - Check `docs/rfc/` and `docs/history/design/` for earlier design documents
    - Read the latest ADR in `docs/adr/` for recent architectural decisions
 
 2. **Assess impact across layers**
@@ -27,7 +27,7 @@ Design and plan a new phase of development for Habla Hermano.
    - **Frontend layer**: New templates, HTMX interactions, mobile support?
    - **Test layer**: New test files, fixtures, mocking patterns?
 
-3. **Create a design document** at `docs/phases/phase-{N}-{name}.md`
+3. **Create a design document** at `docs/rfc/YYYY-MM-DD-{name}.md`
    ```markdown
    # Phase {N}: {Feature Name}
 

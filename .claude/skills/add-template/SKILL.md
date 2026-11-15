@@ -78,7 +78,7 @@ Create or modify Jinja2 + HTMX templates for the frontend.
 
 7. **Compile Tailwind CSS** after adding new utility classes:
    ```bash
-   npx tailwindcss -i ./src/static/css/input.css -o ./src/static/css/output.css
+   npm run build:css   # then commit src/static/css/styles.css; CI fails if it is stale
    ```
 
 8. **Test the template**
@@ -97,9 +97,9 @@ Create or modify Jinja2 + HTMX templates for the frontend.
 |------|---------|
 | `src/templates/base.html` | Base layout with nav, footer, theme support |
 | `src/templates/chat.html` | Main chat interface |
-| `src/templates/lessons/` | Lesson catalog, player, exercises |
-| `src/templates/review.html` | Spaced repetition review interface |
+| `src/templates/lessons.html` | Lesson catalog (lessons run inside the chat) |
+| `src/templates/partials/review_*.html` | Spaced repetition review cards and summaries |
 | `src/templates/progress.html` | Learning progress dashboard |
 | `src/static/css/input.css` | Tailwind input with custom styles |
-| `src/static/css/output.css` | Compiled Tailwind output (gitignored) |
+| `src/static/css/styles.css` | Compiled Tailwind output (committed; rebuild with `npm run build:css`) |
 | `src/static/js/` | Alpine.js components, HTMX handlers |
