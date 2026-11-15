@@ -50,7 +50,7 @@ from src.api.cookies import (
     verified_session_cookie,
 )
 from src.api.dependencies import AccessTokenDep, LessonServiceDep, SettingsDep, TemplatesDep
-from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
+from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limit
 from src.api.supabase_client import get_supabase_for_user
 from src.api.validation import MAX_MESSAGE_LENGTH, VALID_LANGUAGES, VALID_LEVELS
 from src.services.progress import ProgressService
@@ -582,8 +582,11 @@ async def thread_content_partial(
     )
 
 
-@router.post("/chat", response_class=HTMLResponse)
-@rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
+@router.post(
+    "/chat",
+    response_class=HTMLResponse,
+    dependencies=[Depends(rate_limit(CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD))],
+)
 async def send_message(
     request: Request,
     templates: TemplatesDep,

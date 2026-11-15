@@ -53,10 +53,10 @@ graph LR
 
 Call path for one message:
 
-1. [`POST /chat/stream`](../../src/api/routes/chat_stream.py#L98-L112): typed form fields, plus dependencies FastAPI resolves first:
+1. [`POST /chat/stream`](../../src/api/routes/chat_stream.py#L98-L114): typed form fields, plus dependencies FastAPI resolves first:
    - [`OptionalUserDep`](../../src/api/auth.py#L421): the account from the JWT cookie, or `None`.
    - [`ChatCookiesDep`](../../src/api/routes/chat.py#L177-L190): the guest ID, only if [its signature is valid](../../src/api/cookies.py#L180-L187).
-2. [`_stream_graph`](../../src/api/routes/chat_stream.py#L257-L267) builds the run config with [`_graph_config`](../../src/api/routes/chat.py#L285-L296), which merges [`tracing_config`](../../src/services/tracing.py#L82).
+2. [`_stream_graph`](../../src/api/routes/chat_stream.py#L259-L269) builds the run config with [`_graph_config`](../../src/api/routes/chat.py#L285-L296), which merges [`tracing_config`](../../src/services/tracing.py#L82).
 3. [`stream_chat_events`](../../src/api/streaming.py#L107-L135) loops over `graph.astream`: `messages` chunks from `respond` become `token` events, and `updates` become the feedback partials.
 4. The [graph topology](../../src/agent/graph.py#L40-L51) runs the nodes, and each one calls [`get_llm`](../../src/agent/llm.py#L43).
 

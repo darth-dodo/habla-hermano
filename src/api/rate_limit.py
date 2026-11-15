@@ -8,7 +8,7 @@ against brute force login attempts and API budget abuse.
 import functools
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
 from fastapi import HTTPException, Request
@@ -56,11 +56,47 @@ def client_key(request: Request | None) -> str:
     return request.client.host if request.client else "-"
 
 
+def _limiter_for(calls: int, period: int) -> Callable[[Request | None], None]:
+    """Return a check that raises 429 once one client exceeds calls per period."""
+    clients: dict[str, WebSocketMessageRateLimiter] = {}
+    _active_limiters.append(clients)
+
+    def check(request: Request | None) -> None:
+        key = client_key(request)
+        if key not in clients and len(clients) >= _MAX_TRACKED_CLIENTS:
+            clients.clear()
+        limiter = clients.setdefault(key, WebSocketMessageRateLimiter(calls, period))
+        if not limiter.check():
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded. Please try again later.",
+            )
+
+    return check
+
+
+def rate_limit(calls: int, period: int) -> Callable[[Request], Awaitable[None]]:
+    """Per-client rate limit as a route dependency.
+
+    Use it as ``@router.post(..., dependencies=[Depends(rate_limit(...))])``.
+    Route-level dependencies run before the endpoint's own parameters, so a
+    limited client is refused before auth dependencies call Supabase.
+    """
+    check = _limiter_for(calls, period)
+
+    async def dependency(request: Request) -> None:
+        check(request)
+
+    return dependency
+
+
 def rate_limited(calls: int, period: int) -> Callable[[F], F]:
-    """Create a per-client rate limiting decorator for async FastAPI endpoints.
+    """Per-client rate limit as a decorator, for endpoints without costly dependencies.
 
     The endpoint should declare a ``request: Request`` parameter; without
-    one, every caller shares a single budget.
+    one, every caller shares a single budget. The check runs after FastAPI
+    has resolved the endpoint's dependencies; use ``rate_limit`` when those
+    are expensive.
 
     Args:
         calls: Maximum number of calls allowed per client within the period.
@@ -69,22 +105,13 @@ def rate_limited(calls: int, period: int) -> Callable[[F], F]:
     Returns:
         A decorator that raises a 429 HTTPException once a client exceeds the limit.
     """
-    clients: dict[str, WebSocketMessageRateLimiter] = {}
-    _active_limiters.append(clients)
+    check = _limiter_for(calls, period)
 
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             request = kwargs.get("request")
-            key = client_key(request if isinstance(request, Request) else None)
-            if key not in clients and len(clients) >= _MAX_TRACKED_CLIENTS:
-                clients.clear()
-            limiter = clients.setdefault(key, WebSocketMessageRateLimiter(calls, period))
-            if not limiter.check():
-                raise HTTPException(
-                    status_code=429,
-                    detail="Rate limit exceeded. Please try again later.",
-                )
+            check(request if isinstance(request, Request) else None)
             return await func(*args, **kwargs)
 
         return wrapper  # type: ignore[return-value]  # wrapper signature matches F at runtime

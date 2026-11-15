@@ -33,7 +33,7 @@ Code for each step:
 - The [Deepgram connect](../../src/api/routes/voice.py#L291-L303) uses linear16 at 16kHz.
 - The [audio forwarding loop](../../src/api/routes/voice.py#L342-L344) passes frames to Deepgram, and the [transcript relay](../../src/api/routes/voice.py#L318-L327) sends text back.
 - The [first TTS chunk](../../src/static/js/modules/voice-tts.js#L210-L220) is sent when the socket opens.
-- [_speak_text](../../src/api/routes/voice.py#L425-L435) forwards the frames, then sends `Flushed`.
+- [_speak_text](../../src/api/routes/voice.py#L426-L436) forwards the frames, then sends `Flushed`.
 
 ## How the browser plays a reply
 
@@ -69,9 +69,9 @@ graph LR
 1. [handleSpeakClick](../../src/static/js/modules/voice.js#L357-L394) clamps the speed to 0.25x to 2x and moves the TTS machine to `loading`.
 2. [audioElementTTS](../../src/static/js/modules/voice-tts.js#L94) handles the iOS audio session, then starts the WebSocket path.
 3. [doWebSocketTTS](../../src/static/js/modules/voice-tts.js#L133-L152) splits the text into chunks and opens `/ws/speak`.
-4. [speak_stream](../../src/api/routes/voice.py#L457-L470) checks identity and voice before `accept()`, then creates the per-connection limiter.
-5. The [message loop](../../src/api/routes/voice.py#L482-L499) validates the text and checks the limiter. It answers every message, because the browser waits for a reply before it sends the next chunk.
-6. [_speak_text](../../src/api/routes/voice.py#L425-L435) forwards PCM frames, then sends `Flushed`.
+4. [speak_stream](../../src/api/routes/voice.py#L458-L471) checks identity and voice before `accept()`, then creates the per-connection limiter.
+5. The [message loop](../../src/api/routes/voice.py#L483-L500) validates the text and checks the limiter. It answers every message, because the browser waits for a reply before it sends the next chunk.
+6. [_speak_text](../../src/api/routes/voice.py#L426-L436) forwards PCM frames, then sends `Flushed`.
 7. [synthesize_pcm](../../src/services/tts.py#L47-L94) streams the audio from OpenRouter, with zero data retention when it is enabled.
 8. The browser's [onmessage](../../src/static/js/modules/voice-tts.js#L240-L256) schedules each frame, or buffers it when the speed is not 1x.
 
@@ -89,7 +89,7 @@ async for chunk in response.aiter_bytes():
         yield data[:usable]
 ```
 
-**Clean REST errors** ([voice.py](../../src/api/routes/voice.py#L393-L402)). The route pulls the first chunk before it answers, so an upstream failure becomes a 502. Without this, the client would get a 200 that breaks halfway.
+**Clean REST errors** ([voice.py](../../src/api/routes/voice.py#L394-L403)). The route pulls the first chunk before it answers, so an upstream failure becomes a 502. Without this, the client would get a 200 that breaks halfway.
 
 **State machines** ([STT](../../src/static/js/modules/voice-stt.js#L16-L24), [TTS](../../src/static/js/modules/voice-tts.js#L23-L30)). Both are small state machines built on `fsm.js`.
 

@@ -25,11 +25,10 @@ services:
     region: oregon
     branch: main
 
-    # Auto-deploy on push to main branch.
-    # CI also triggers deploys via a deploy hook (RENDER_DEPLOY_HOOK_URL).
-    # Once that hook is set up, turn Auto-Deploy Off in the Render dashboard
-    # and set this to false to avoid double deploys. See docs/setup.md.
-    autoDeploy: true
+    # Deploys come only from CI, through the deploy hook (RENDER_DEPLOY_HOOK_URL),
+    # after every check passes. Auto-deploy would ship a push before CI finished.
+    # Also keep Auto-Deploy Off in the Render dashboard. See docs/setup.md.
+    autoDeploy: false
 
     # Build Configuration
     # Install uv package manager, then sync dependencies (production only)

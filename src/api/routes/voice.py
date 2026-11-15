@@ -18,7 +18,7 @@ from collections.abc import AsyncGenerator
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ from src.api.rate_limit import (
     VOICE_RATE_LIMIT_PERIOD,
     VOICE_WS_TTS_MESSAGE_RATE,
     WebSocketMessageRateLimiter,
-    rate_limited,
+    rate_limit,
 )
 from src.api.validation import VALID_LANGUAGES
 from src.db.client import get_supabase
@@ -360,10 +360,12 @@ async def transcribe_stream(  # noqa: PLR0915
             await websocket.close(code=1011, reason="Internal error")
 
 
-@router.post("/api/speak", response_model=None)
-@rate_limited(VOICE_RATE_LIMIT_CALLS, VOICE_RATE_LIMIT_PERIOD)
+@router.post(
+    "/api/speak",
+    response_model=None,
+    dependencies=[Depends(rate_limit(VOICE_RATE_LIMIT_CALLS, VOICE_RATE_LIMIT_PERIOD))],
+)
 async def speak(
-    request: Request,  # noqa: ARG001 - read by @rate_limited for the per-client key
     body: SpeakRequest,
     user: EffectiveUserDep,
 ) -> StreamingResponse | JSONResponse:
@@ -374,7 +376,6 @@ async def speak(
     browser joins the chunks and wraps them in a WAV header for playback.
 
     Args:
-        request: Incoming request (used for per-client rate limiting).
         body: TTS request with text and optional voice selection.
         user: Account or signed guest session; anonymous callers get 401.
 

@@ -443,7 +443,6 @@ def app_with_mocked_graph(
         patch("src.api.routes.chat.get_checkpointer", mock_get_checkpointer),
         patch("src.api.routes.chat_stream.get_checkpointer", mock_get_checkpointer),
         patch("src.db.repository.get_supabase", return_value=mock_supabase),
-        patch("src.services.lesson_completion.get_supabase_admin", return_value=mock_supabase),
         patch("src.api.routes.learn.get_supabase_admin", return_value=mock_supabase),
     ):
         # Clear caches to ensure fresh app creation

@@ -59,9 +59,9 @@ deploy:
   concurrency: { group: render-deploy, cancel-in-progress: false }
 ```
 
-## Gaps (checked 2026-11-15)
+## Gates and gaps (checked 2026-11-15)
 
-- **main is not protected.** The GitHub API reports "Branch not protected" and no rulesets, so a red CI run does not block a merge. Making `CI Success` a required check closes this.
-- **Render autoDeploy is still on** in [render.yaml](../../render.yaml#L28-L32), so Render can deploy every push to main without waiting for CI, and the hook adds a second deploy. The dashboard setting was not checked.
-- **Docs-only pushes skip CI** because of path filters, so they also skip the hook deploy.
+- **main requires `CI Success`** (branch protection, set 2026-11-15). Admins can still bypass it in an emergency, and force pushes and deletion are blocked.
+- **Render deploys only from CI** ([render.yaml](../../render.yaml#L28-L31) sets `autoDeploy: false`). The Render dashboard's Auto-Deploy toggle must also be Off.
+- **Every PR runs CI**, so the required check always reports. Pushes to main keep the path filter, so docs-only merges do not redeploy.
 - **Evals are manual.** No CI job runs `make eval`.

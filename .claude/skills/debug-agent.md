@@ -29,10 +29,6 @@ Investigate and fix issues in the LangGraph conversation pipeline.
    Main pipeline:
    START -> respond_node -> [needs_scaffolding?] -> scaffold_node? -> analyze_node -> END
 
-   Review subgraph:
-   generate_question -> END
-   evaluate_answer -> update_sm2 -> END
-
    Lesson subgraph:
    load_step -> enhance_step -> END
    ```

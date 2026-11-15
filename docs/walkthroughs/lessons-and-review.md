@@ -45,7 +45,7 @@ graph LR
     S -- "update_sm2(word, quality 0-5)" --> V
 ```
 
-- Lesson ends: [initialize_lesson_vocabulary_for_review](../../src/services/lesson_completion.py#L158-L170)
+- Lesson ends: [initialize_lesson_vocabulary_for_review](../../src/services/lesson_completion.py#L160-L176)
 - Chat weaving, read: [respond_node](../../src/agent/nodes/respond.py#L210-L225) adds due words to the prompt
 - Chat weaving, write: [analyze](../../src/agent/nodes/analyze.py#L249-L256) grades the words the learner used
 - Review session: [get_due_words](../../src/api/routes/review.py#L349), then [_evaluate_answer and update_sm2](../../src/api/routes/review.py#L363-L369)
@@ -55,13 +55,13 @@ graph LR
 1. [GET /](../../src/api/routes/chat.py#L351-L365) with `?lesson=<id>`
    - [_lesson_page_context](../../src/api/routes/chat.py#L415-L429): 404 for an unknown lesson, a new `lesson_session` UUID per page load
    - [LessonService.get_lesson](../../src/lessons/service.py#L353-L356): YAML is loaded once with [rglob](../../src/lessons/service.py#L75-L82)
-2. [POST /chat/stream](../../src/api/routes/chat_stream.py#L124-L126) with `lesson_id`
-   - [thread_id](../../src/api/routes/chat_stream.py#L200-L204) is `lesson:<who>:<lesson>:<attempt>` ([format](../../src/api/routes/chat.py#L144-L149)), so each attempt gets a clean checkpoint
-   - [_stream_lesson_turn](../../src/api/routes/chat_stream.py#L276-L296): the lesson state is sent only on the first turn; later turns resume from the checkpoint
+2. [POST /chat/stream](../../src/api/routes/chat_stream.py#L126-L128) with `lesson_id`
+   - [thread_id](../../src/api/routes/chat_stream.py#L202-L206) is `lesson:<who>:<lesson>:<attempt>` ([format](../../src/api/routes/chat.py#L144-L149)), so each attempt gets a clean checkpoint
+   - [_stream_lesson_turn](../../src/api/routes/chat_stream.py#L278-L298): the lesson state is sent only on the first turn; later turns resume from the checkpoint
    - [lesson_respond_node](../../src/agent/nodes/lesson_chat.py#L528-L543): dispatch on `lesson_phase`
-   - [_lesson_state_events](../../src/api/routes/chat_stream.py#L316-L338): `lesson_progress`, `exercise_result`, `lesson_complete`
-   - [_persist_lesson_completion](../../src/api/routes/chat_stream.py#L341-L355), signed-in users only
-   - [complete_lesson_and_persist](../../src/services/lesson_completion.py#L208-L260): progress row, then words into review
+   - [_lesson_state_events](../../src/api/routes/chat_stream.py#L318-L340): `lesson_progress`, `exercise_result`, `lesson_complete`
+   - [_persist_lesson_completion](../../src/api/routes/chat_stream.py#L343-L357), signed-in users only
+   - [complete_lesson_and_persist](../../src/services/lesson_completion.py#L189-L214): progress row, then words into review
 
 ## Key snippets
 
@@ -90,6 +90,6 @@ Translate exercises ([lesson_chat.py](../../src/agent/nodes/lesson_chat.py#L143-
 
 ## Worth knowing
 
-- [review_graph.py](../../src/agent/review_graph.py) builds two LangGraph subgraphs (question, then evaluate and SM-2). Only tests import them. The `/review` routes call `ReviewService` directly.
-- Lesson completion is saved only for signed-in users. Guests can finish a lesson, but no progress row or review words are written.
+- The `/review` routes call `ReviewService` directly. An unused LangGraph review subgraph was removed.
+- Lesson completion is saved only for signed-in users, by design: guests have no progress page. Guests can finish a lesson, but no progress row or review words are written.
 - Words are woven into chat only in free chat: the lesson graph uses its own respond node.

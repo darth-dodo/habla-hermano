@@ -1,5 +1,5 @@
 # CI Pipeline for HablaAI
-# Runs on push to main and all PRs
+# Runs on every PR, and on pushes to main that touch code or config
 # Includes Docker build validation for Render deployment
 # On push to main, triggers a Render deploy via deploy hook once all checks pass
 # (see docs/setup.md, "Deploy hook from CI")
@@ -21,20 +21,10 @@ on:
       - 'Dockerfile'
       - 'render.yaml'
       - '.github/workflows/ci.yml'
+  # Every PR runs CI (no path filter), so "CI Success" can be a required
+  # check: a filtered-out docs PR would never report it and could not merge.
   pull_request:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'data/**'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - 'package.json'
-      - 'vitest.config.js'
-      - 'tailwind.config.js'
-      - 'Dockerfile'
-      - 'render.yaml'
-      - '.github/workflows/ci.yml'
 
 env:
   PYTHON_VERSION: "3.12"
