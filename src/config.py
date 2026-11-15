@@ -104,6 +104,9 @@ class Settings(BaseSettings):
     # Auto-delete conversation data older than N days (0 = disabled)
     CONVERSATION_RETENTION_DAYS: int = 0
 
+    # Comma-separated emails allowed to open /demo and manage demo accounts (empty = nobody)
+    DEMO_ADMIN_EMAILS: str = ""
+
     # Checkpoint retention: auto-purge checkpoints older than this many days (0 = disabled)
     CHECKPOINT_RETENTION_DAYS: int = 30
 

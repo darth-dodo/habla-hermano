@@ -9,7 +9,7 @@ Usage (on the Render shell the env is already set):
     make seed-demo EMAIL=demo@example.com          # dry run
     make seed-demo EMAIL=demo@example.com YES=1    # write
 
-Over HTTP instead: sign in on the site and POST /demo/seed (see docs/api.md).
+In the browser instead: sign in with an email listed in DEMO_ADMIN_EMAILS and open /demo.
 Each write first deletes the demo user's rows in the seeded tables, so runs
 never duplicate. The streak counts days ending today: re-run on demo day.
 """

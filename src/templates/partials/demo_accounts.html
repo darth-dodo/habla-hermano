@@ -1,0 +1,35 @@
+{% if creds %}
+<div class="bg-surface-elevated rounded-2xl p-5 border border-accent mb-4" role="status">
+    <p class="font-semibold text-text">Login for {{ creds.email }}</p>
+    <p class="text-sm text-text-muted mt-1">Copy it now: the password is not shown again.</p>
+    <p class="mt-2 text-sm text-text">Email: <code>{{ creds.email }}</code></p>
+    <p class="text-sm text-text">Password: <code>{{ creds.password }}</code></p>
+</div>
+{% elif notice %}
+<div class="bg-surface-elevated rounded-2xl p-4 border border-border mb-4 text-sm text-text" role="status">{{ notice }}</div>
+{% endif %}
+
+{% if accounts %}
+<ul class="space-y-3" aria-label="Demo accounts">
+    {% for account in accounts %}
+    <li class="bg-surface-elevated rounded-2xl p-4 border border-border">
+        <p class="font-semibold text-text">{{ account.email }}</p>
+        <p class="text-sm text-text-muted">
+            Created {{ account.created_at | string | truncate(16, True, "") }}
+            {% if account.last_sign_in_at %}, last sign-in {{ account.last_sign_in_at | string | truncate(16, True, "") }}{% endif %}
+        </p>
+        <div class="flex flex-wrap gap-2 mt-3">
+            <button type="button" class="px-3 py-1 rounded-xl border border-border text-sm text-text"
+                    hx-post="/demo/accounts/{{ account.id }}/reseed" hx-target="#demo-panel" hx-disabled-elt="this">Reseed</button>
+            <button type="button" class="px-3 py-1 rounded-xl border border-border text-sm text-text"
+                    hx-post="/demo/accounts/{{ account.id }}/password" hx-target="#demo-panel" hx-disabled-elt="this">New password</button>
+            <button type="button" class="px-3 py-1 rounded-xl border border-border text-sm text-red-500"
+                    hx-delete="/demo/accounts/{{ account.id }}" hx-target="#demo-panel"
+                    hx-confirm="Delete {{ account.email }} and all its data?" hx-disabled-elt="this">Delete</button>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-text-muted">No demo accounts yet.</p>
+{% endif %}
