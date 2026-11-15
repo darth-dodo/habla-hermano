@@ -8,6 +8,10 @@ import { initStreamingForm } from './modules/stream.js';
 import { initKeyboardShortcuts } from './modules/shortcuts.js';
 import { initScaffoldDelegation } from './modules/scaffold.js';
 import { initHTMXHandlers } from './modules/htmx-handlers.js';
+import { fetchThreadContent } from './modules/threads.js';
+
+// The sidebar's inline Alpine code reaches the module through this global.
+window.hablaThreads = { fetchThreadContent };
 
 // ============================================
 // Initialization

@@ -15,6 +15,8 @@ LANGUAGE_NAMES: dict[str, str] = {
     "fr": "French",
     "hi": "Hinglish",
 }
+# Shown next to threads; Spanish is taught as rioplatense, so Argentina.
+LANGUAGE_FLAGS: dict[str, str] = {"es": "🇦🇷", "de": "🇩🇪", "fr": "🇫🇷", "hi": "🇮🇳"}
 MAX_MESSAGE_LENGTH: int = 2000
 MAX_DAYS: int = 365
 MIN_DAYS: int = 1

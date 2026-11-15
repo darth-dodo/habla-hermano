@@ -14,6 +14,7 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 **Fixed**
 - Conversations idle for 30 days are now really deleted, daily. The old purge looked for a column LangGraph does not have and silently deleted nothing; it is now tested against a real Postgres in CI. An unused setting that would have deleted progress data is gone.
 - "Delete all conversations" works again once guests have chatted. A guest row made the database ownership check error out, so nothing was deleted. Needs migration 007 applied in Supabase.
+- Sidebar fixes: new Hinglish threads show the India flag, a new thread picks up its auto title, long replies are no longer cut off at 60 seconds (the timeout now counts from the last word), and a failed thread switch reloads instead of showing the wrong thread.
 
 **New**
 - A `/demo` page creates, reseeds, re-passwords and deletes ready-made demo accounts, so a demo needs no server shell. Only emails in `DEMO_ADMIN_EMAILS` can open it (#136, `make seed-demo` still works).
