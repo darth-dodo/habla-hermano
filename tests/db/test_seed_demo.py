@@ -1,13 +1,12 @@
-"""Checks for the demo seed rows (scripts/seed_demo.py); no database needed."""
+"""Checks for the demo seed rows (src/services/demo_seed.py); no database needed."""
 
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
-from scripts.seed_demo import LESSONS, build_rows
-
 from src.db.encryption import decrypt_field
 from src.db.models import LearningSession
 from src.lessons.service import get_lesson_service
+from src.services.demo_seed import LESSONS, build_rows
 from src.services.progress import ProgressService
 
 NOW = datetime.now(UTC)

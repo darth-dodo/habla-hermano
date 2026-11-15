@@ -98,6 +98,7 @@ A thread is `{id, thread_id, title, language, level, created_at, updated_at}`. U
 | POST | `/api/speak` | identity (401 otherwise) | `audio/pcm` stream, header `X-Sample-Rate: 24000`. Body: `{"text", "voice"}` |
 | GET, HEAD | `/health` | none | JSON `{status, app, database}`. `healthy` or `degraded` (in-memory checkpoints) answer 200, `unhealthy` (a real DB URL set but not connected) answers 503. Render's health check uses it |
 | GET | `/version` | none | JSON `{commit, branch, service}` from Render env vars (null locally) |
+| POST | `/demo/seed` (`src/api/routes/demo.py`) | user (401 otherwise) | JSON `{email, password, next}` for a NEW confirmed demo user with four weeks of seeded history (`src/services/demo_seed.py`). Never touches the caller's own data |
 
 Guest identity only comes from a `session_id` cookie the server signed. Forged or plain-UUID values are ignored and a fresh session is issued.
 
@@ -218,5 +219,6 @@ Calls are counted **per endpoint and per client IP** (the last `X-Forwarded-For`
 | Auth | 5 / min | `POST /auth/login`, `/auth/signup`, `/auth/forgot-password`, `/auth/reset-password` |
 | Chat | 20 / min | `POST /chat`, `POST /chat/stream` |
 | Voice REST | 10 / min | `POST /api/speak` |
+| Demo seed | 3 / hour | `POST /demo/seed` |
 | TTS WebSocket | 30 messages / min | Per `/ws/speak` connection (sliding window, replies `RATE_LIMITED`) |
 
