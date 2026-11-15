@@ -1,250 +1,93 @@
-"""Tests for src/agent/checkpoint_purge.py - Checkpoint TTL purging.
+"""purge_old_checkpoints: no-op cases, plus the real SQL against Postgres.
 
-Verifies that stale LangGraph checkpoints are purged correctly when a
-Postgres saver is active, and that the function is a safe no-op when
-running with MemorySaver or when purging is disabled.
+The Postgres test runs when TEST_DATABASE_URL is set (CI starts a Postgres
+service). It uses LangGraph's own saver to write rows, so a schema change in
+langgraph-checkpoint-postgres fails here instead of silently in production.
 """
 
-import logging
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
-class TestPurgeMemorySaverMode:
-    """Purge should be a no-op when no Postgres saver is active."""
-
-    @pytest.mark.asyncio
-    async def test_returns_zero_when_memory_saver_active(self) -> None:
-        """purge_old_checkpoints returns 0 when postgres_saver is None."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": None}):
-            result = await purge_old_checkpoints(retention_days=30)
-
-        assert result == 0
-
-    @pytest.mark.asyncio
-    async def test_logs_info_when_memory_saver_active(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Should log an informational message when skipping purge."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": None}):
-            with caplog.at_level(logging.INFO):
-                await purge_old_checkpoints(retention_days=30)
-
-        assert "MemorySaver mode" in caplog.text
-
-
-class TestPurgeDisabled:
-    """Purge should be a no-op when retention_days is 0."""
-
-    @pytest.mark.asyncio
-    async def test_returns_zero_when_disabled(self) -> None:
-        """purge_old_checkpoints returns 0 when retention_days=0."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        result = await purge_old_checkpoints(retention_days=0)
-
-        assert result == 0
-
-    @pytest.mark.asyncio
-    async def test_logs_info_when_disabled(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Should log that purging is disabled."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        with caplog.at_level(logging.INFO):
-            await purge_old_checkpoints(retention_days=0)
-
-        assert "disabled" in caplog.text
-
-
-class TestPurgeWithPostgresSaver:
-    """Purge should execute SQL when a Postgres saver is active."""
-
-    @pytest.mark.asyncio
-    async def test_executes_delete_on_all_tables(self) -> None:
-        """Should execute DELETE queries on all three checkpoint tables."""
-        from src.agent.checkpoint_purge import _CHECKPOINT_TABLES, purge_old_checkpoints
-
-        mock_result = MagicMock()
-        mock_result.rowcount = 5
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(return_value=mock_result)
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            result = await purge_old_checkpoints(retention_days=30)
-
-        assert result == 5 * len(_CHECKPOINT_TABLES)
-        assert mock_conn.execute.call_count == len(_CHECKPOINT_TABLES)
-
-    @pytest.mark.asyncio
-    async def test_returns_total_deleted_rows(self) -> None:
-        """Should return the sum of deleted rows across all tables."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        # Simulate different row counts per table
-        row_counts = iter([10, 3, 7])
-
-        def make_result() -> MagicMock:
-            result = MagicMock()
-            result.rowcount = next(row_counts)
-            return result
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(side_effect=lambda *_args, **_kwargs: make_result())
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            result = await purge_old_checkpoints(retention_days=7)
-
-        assert result == 20
-
-    @pytest.mark.asyncio
-    async def test_uses_correct_retention_interval(self) -> None:
-        """Should use the specified retention_days in the SQL interval."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        mock_result = MagicMock()
-        mock_result.rowcount = 0
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(return_value=mock_result)
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            await purge_old_checkpoints(retention_days=14)
-
-        # retention_days is now a parameterised value, not in the SQL string
-        first_call = mock_conn.execute.call_args_list[0]
-        params = first_call.args[1]
-        assert params == ("14 days",)
-
-
-class TestPurgeDefaultSettings:
-    """Purge should use Settings.CHECKPOINT_RETENTION_DAYS as default."""
-
-    @pytest.mark.asyncio
-    async def test_default_retention_is_30_days(self) -> None:
-        """Settings.CHECKPOINT_RETENTION_DAYS should default to 30."""
-        from src.config import Settings
-
-        settings = Settings(OPENROUTER_API_KEY="test-key")
-        assert settings.CHECKPOINT_RETENTION_DAYS == 30
-
-    @pytest.mark.asyncio
-    async def test_uses_settings_default_when_no_arg(self) -> None:
-        """Should read retention_days from settings when not passed."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-        from src.config import Settings
-
-        mock_settings = Settings(
-            OPENROUTER_API_KEY="test-key",
-            CHECKPOINT_RETENTION_DAYS=15,
-        )
-
-        mock_result = MagicMock()
-        mock_result.rowcount = 0
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(return_value=mock_result)
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with (
-            patch(
-                "src.agent.checkpoint_purge._state",
-                {"postgres_saver": mock_saver},
-            ),
-            patch(
-                "src.agent.checkpoint_purge.get_settings",
-                return_value=mock_settings,
-            ),
-        ):
-            await purge_old_checkpoints()
-
-        first_call = mock_conn.execute.call_args_list[0]
-        params = first_call.args[1]
-        assert params == ("15 days",)
-
-
-class TestPurgeErrorHandling:
-    """Purge errors should be caught and logged, not raised."""
-
-    @pytest.mark.asyncio
-    async def test_catches_database_errors(self) -> None:
-        """Should catch exceptions and return 0 without raising."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(side_effect=RuntimeError("connection failed"))
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            result = await purge_old_checkpoints(retention_days=30)
-
-        assert result == 0
-
-    @pytest.mark.asyncio
-    async def test_logs_error_on_failure(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Should log the exception details when purge fails."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(side_effect=RuntimeError("connection failed"))
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            with caplog.at_level(logging.ERROR):
-                await purge_old_checkpoints(retention_days=30)
-
-        assert "Checkpoint purge failed" in caplog.text
-
-    @pytest.mark.asyncio
-    async def test_handles_none_rowcount(self) -> None:
-        """Should handle result.rowcount being None gracefully."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        mock_result = MagicMock()
-        mock_result.rowcount = None
-
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock(return_value=mock_result)
-
-        mock_saver = MagicMock()
-        mock_saver.conn = mock_conn
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": mock_saver}):
-            result = await purge_old_checkpoints(retention_days=30)
-
-        assert result == 0
-
-
-class TestCustomRetentionOverride:
-    """Custom retention_days parameter should override settings default."""
-
-    @pytest.mark.asyncio
-    async def test_explicit_retention_overrides_settings(self) -> None:
-        """Passing retention_days explicitly should bypass settings lookup."""
-        from src.agent.checkpoint_purge import purge_old_checkpoints
-
-        with patch("src.agent.checkpoint_purge._state", {"postgres_saver": None}):
-            # Should not call get_settings() since we pass the arg
-            with patch("src.agent.checkpoint_purge.get_settings") as mock_get_settings:
-                await purge_old_checkpoints(retention_days=7)
-                mock_get_settings.assert_not_called()
+from src.agent.checkpoint_purge import purge_old_checkpoints
+
+
+async def test_noop_without_postgres() -> None:
+    with patch("src.agent.checkpoint_purge._state", {"postgres_pool": None}):
+        assert await purge_old_checkpoints(retention_days=30) == 0
+
+
+async def test_noop_when_disabled() -> None:
+    pool = MagicMock()
+    with patch("src.agent.checkpoint_purge._state", {"postgres_pool": pool}):
+        assert await purge_old_checkpoints(retention_days=0) == 0
+    pool.connection.assert_not_called()
+
+
+async def test_database_errors_are_logged_not_raised(caplog: pytest.LogCaptureFixture) -> None:
+    pool = MagicMock()
+    pool.connection.return_value.__aenter__ = AsyncMock(side_effect=RuntimeError("down"))
+    with patch("src.agent.checkpoint_purge._state", {"postgres_pool": pool}):
+        assert await purge_old_checkpoints(retention_days=30) == 0
+    assert "Checkpoint purge failed" in caplog.text
+
+
+def test_default_retention_is_30_days() -> None:
+    from src.config import Settings
+
+    assert Settings(OPENROUTER_API_KEY="x", SECRET_KEY="x").CHECKPOINT_RETENTION_DAYS == 30
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_DATABASE_URL"), reason="needs TEST_DATABASE_URL")
+async def test_deletes_only_idle_threads_whole() -> None:
+    from langgraph.checkpoint.base import empty_checkpoint
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+    from psycopg.rows import dict_row
+    from psycopg_pool import AsyncConnectionPool
+
+    tables = ("checkpoint_writes", "checkpoint_blobs", "checkpoints", "conversation_threads")
+    async with AsyncConnectionPool(
+        os.environ["TEST_DATABASE_URL"],
+        kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row},
+    ) as pool:
+        saver = AsyncPostgresSaver(conn=pool)  # type: ignore[arg-type]
+        await saver.setup()
+        async with pool.connection() as conn:
+            await conn.execute("CREATE TABLE IF NOT EXISTS conversation_threads (thread_id TEXT)")
+            for table in tables:
+                await conn.execute(f"DELETE FROM {table}")
+
+        async def write(thread_id: str) -> None:
+            config = {"configurable": {"thread_id": thread_id, "checkpoint_ns": ""}}
+            checkpoint = empty_checkpoint()
+            checkpoint["channel_values"] = {"messages": ["hola"]}  # stored as a blob
+            checkpoint["channel_versions"] = {"messages": "1"}
+            saved = await saver.aput(config, checkpoint, {}, {"messages": "1"})
+            await saver.aput_writes(saved, [("messages", "bien")], task_id="t1")
+            async with pool.connection() as conn:
+                await conn.execute(
+                    "INSERT INTO conversation_threads (thread_id) VALUES (%s)", (thread_id,)
+                )
+
+        for thread_id in ("user:a:old", "user:a:active", "user:a:active"):
+            await write(thread_id)
+        async with pool.connection() as conn:
+            # The old thread's last message was 40 days ago. The active thread
+            # has one 40-day-old checkpoint too, but its newest is fresh.
+            await conn.execute(
+                "UPDATE checkpoints SET checkpoint = jsonb_set(checkpoint, '{ts}',"
+                " to_jsonb((NOW() - INTERVAL '40 days')::text)) WHERE thread_id = 'user:a:old'"
+                " OR checkpoint_id = (SELECT MIN(checkpoint_id) FROM checkpoints"
+                " WHERE thread_id = 'user:a:active')"
+            )
+
+        with patch("src.agent.checkpoint_purge._state", {"postgres_pool": pool}):
+            assert await purge_old_checkpoints(retention_days=30) == 1
+
+        async with pool.connection() as conn:
+            for table in tables:
+                cur = await conn.execute(f"SELECT DISTINCT thread_id FROM {table}")
+                assert [r["thread_id"] for r in await cur.fetchall()] == ["user:a:active"], table
+            cur = await conn.execute("SELECT COUNT(*) AS n FROM checkpoints")
+            assert (await cur.fetchone())["n"] == 2  # the active thread keeps its old checkpoint

@@ -4,6 +4,7 @@ Creates and configures the FastAPI application with routes, static files,
 and lifespan management.
 """
 
+import asyncio
 import logging
 import os
 import secrets
@@ -67,6 +68,12 @@ logging.getLogger("MARKDOWN").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+async def _purge_daily() -> None:
+    while True:
+        await purge_old_checkpoints()
+        await asyncio.sleep(24 * 60 * 60)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown events.
@@ -90,13 +97,13 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialise persistent Postgres checkpointer (connection pool + DDL once)
     await init_checkpointer()
 
-    # Purge stale checkpoints (best-effort; failures do not block startup)
-    try:
-        await purge_old_checkpoints()
-    except Exception:
-        logger.exception("Checkpoint purge failed during startup — continuing")
+    # Purge idle conversations now and then daily: the server can run for weeks
+    # between deploys. purge_old_checkpoints logs and swallows its own errors.
+    purge_task = asyncio.create_task(_purge_daily())
 
     yield
+
+    purge_task.cancel()
 
     # Shutdown
     logger.info("Shutting down %s...", settings.APP_NAME)

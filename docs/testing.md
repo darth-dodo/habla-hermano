@@ -42,11 +42,11 @@ There is no automated browser suite. Browser checks are the manual flows in [pla
 | Path | Covers |
 |---|---|
 | `tests/conftest.py` | Shared fixtures: `CSRF_HEADERS`, `mock_settings`, `mock_supabase`, mocked graph and checkpointer, an app client with the graph mocked. Autouse fixture clears settings, template, rate limit, LLM and graph caches after each test. |
-| `tests/agent/` | LangGraph build and routing, state, prompts, review graph, checkpointer and checkpoint purge, LLM zero retention settings |
+| `tests/agent/` | LangGraph build and routing, state, prompts, review graph, checkpointer and checkpoint purge (real Postgres when `TEST_DATABASE_URL` is set, as in CI), LLM zero retention settings |
 | `tests/agent/nodes/` | Node logic: respond, scaffold, analyze, review, lesson chat phase machine |
 | `tests/api/` | App level concerns: auth, CSRF, security headers, sanitizing, session, SSE streaming, threads API, privacy, persistence, Supabase client |
 | `tests/api/routes/` | Per route modules: chat, lessons, learn, progress, review, auth (incl. password reset), validation, voice (STT WebSocket, TTS), plus `test_e2e.py` (multi route coverage tests, not browser tests) |
-| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, data retention, TTS client, Langfuse tracing mask |
+| `tests/services/` | Business logic: SM-2 review, learning paths, adaptive, levels, progress, vocabulary, threads, thread messages, thread titling, TTS client, Langfuse tracing mask |
 | `tests/lessons/` | Lesson YAML models and lesson service |
 | `tests/db/` | Fernet field encryption, `FernetCipher`, models, repositories with and without encryption |
 | `tests/test_rate_limiting.py` | REST and WebSocket rate limits |
