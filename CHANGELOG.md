@@ -10,6 +10,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 - Deploys only happen from CI after every check passes, and `main` requires a green CI run to merge (#131).
 - About 3,000 lines of unused code removed: a review subgraph the app never called, and a guest path in lesson completion that could not run (#131).
 
+**For maintainers**
+- Two more code walkthroughs: threads and the data lifecycle, and the frontend without React.
+
 ## 1.0.0 (2026-11-15): first tagged release
 
 **Hermano got more reliable**
