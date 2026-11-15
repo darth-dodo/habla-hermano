@@ -228,7 +228,7 @@ request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route
 | Concern | How |
 |---|---|
 | CSRF | State-changing requests need `HX-Request` or `X-Requested-With` (custom-header pattern) |
-| CSP | `script-src 'self' 'nonce-...' 'unsafe-eval'`: no CDN hosts, every script is self-hosted. `unsafe-eval` stays because Alpine's standard build compiles inline expressions; dropping it means moving to `@alpinejs/csp`. Plus HSTS, frame and content-type headers |
+| CSP | `script-src 'self' 'nonce-...' 'unsafe-eval'`: no CDN hosts, every script is self-hosted. `unsafe-eval` stays because Alpine's standard build compiles inline expressions; dropping it means moving to `@alpinejs/csp`. Plus HSTS, frame and content-type headers No `unsafe-inline`, so `on*=` attributes are blocked: use Alpine `@click` or Tailwind `hover:` (enforced by `tests/test_no_inline_handlers.py`) |
 | XSS | `nh3` sanitization and `markupsafe.escape()` |
 | Auth | Supabase JWT in httponly cookies; guests get a signed session UUID (`itsdangerous`), and unsigned or forged values are ignored |
 | Data access | RLS on every table, including the 4 checkpoint tables |

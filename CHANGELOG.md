@@ -9,6 +9,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 - Demo accounts now come with 10 ready-made conversations across Spanish, German, French and Hinglish, from A0 to B1, each with a typical mistake corrected.
 
 **Fixed**
+- Seven buttons that did nothing in production now work: "Next" after an exercise, "Try again" on the error page, "Review more", the helpful/not helpful thumbs and the jump-to-exercise link. The content security policy blocked their inline handlers; they use Alpine now, and a test stops new inline handlers.
+
+**Fixed**
 - Conversations idle for 30 days are now really deleted, daily. The old purge looked for a column LangGraph does not have and silently deleted nothing; it is now tested against a real Postgres in CI. An unused setting that would have deleted progress data is gone.
 - "Delete all conversations" works again once guests have chatted. A guest row made the database ownership check error out, so nothing was deleted. Needs migration 007 applied in Supabase.
 
