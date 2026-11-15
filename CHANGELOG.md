@@ -14,6 +14,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 - About 3,000 lines of unused code removed: a review subgraph the app never called, and a guest path in lesson completion that could not run (#131).
 - The old lesson subgraph and its prompts are gone too: lessons have run through the chat phase machine since Phase 23, and nothing called it.
 
+**For maintainers**
+- Two more code walkthroughs: threads and the data lifecycle, and the frontend without React.
+
 ## 1.0.0 (2026-11-15): first tagged release
 
 **Hermano got more reliable**
