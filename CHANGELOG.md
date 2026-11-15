@@ -5,6 +5,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 
 ## Unreleased
 
+**New**
+- `POST /demo/seed` creates a ready-made demo account over HTTP and returns its login, so a demo needs no server shell (`make seed-demo` still works).
+
 **Safer and leaner**
 - Rate-limited requests are refused before the login check, so they no longer cost a call to Supabase (#131).
 - Deploys only happen from CI after every check passes, and `main` requires a green CI run to merge (#131).

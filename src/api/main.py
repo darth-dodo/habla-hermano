@@ -28,6 +28,7 @@ from src.api.routes import (
     auth,
     chat,
     chat_stream,
+    demo,
     learn,
     lessons,
     privacy,
@@ -242,6 +243,7 @@ def create_app() -> FastAPI:
     app.include_router(privacy.router, prefix="/privacy", tags=["privacy"])
     app.include_router(threads.router)
     app.include_router(voice.router)
+    app.include_router(demo.router)
 
     # --- Custom error pages ---
 
