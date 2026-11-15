@@ -148,11 +148,12 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Security middleware (applied in reverse order — last added runs first)
-    # 1. ProxyHeaders runs first (outermost): trusts X-Forwarded-Proto/For from reverse proxy
-    # 2. SecurityHeaders: adds security headers to responses
-    # 3. CSRF runs before route handlers: rejects forged state-changing requests
-    # 4. CORS runs innermost: handles preflight OPTIONS and origin checks
+    # Security middleware. Starlette runs the LAST added first (outermost), so a
+    # request passes: CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route.
+    # - CORS: handles preflight OPTIONS and origin checks
+    # - CSRF: rejects forged state-changing requests
+    # - SecurityHeaders: adds CSP and other security headers to responses
+    # - ProxyHeaders: trusts X-Forwarded-Proto/For from the reverse proxy
     app.add_middleware(
         ProxyHeadersMiddleware,
         trusted_hosts=["*"],  # Render/Cloudflare always proxy; trust X-Forwarded-Proto

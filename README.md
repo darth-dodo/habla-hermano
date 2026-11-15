@@ -146,6 +146,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | Doc | For |
 |---|---|
 | [FastAPI and LangGraph in 5 minutes](docs/fastapi-langgraph-in-5-minutes.md) | the two core frameworks, taught through this codebase |
+| [Walkthroughs](docs/walkthroughs/README.md) | six end-to-end tours: chat message, voice, security, lessons and review, evals, and the software factory |
 | [Codebase summary](docs/codebase-summary.md) | onboarding: read order, one request end to end, where to change things, gotchas |
 | [Architecture](docs/architecture.md) | how every part works, with diagrams |
 | [API](docs/api.md) | routes, SSE events, WebSocket protocols |
