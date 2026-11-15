@@ -3,6 +3,7 @@
 Needs the TARGET environment's settings in the shell, because encrypted
 fields (translations, display name) must use that environment's key:
     SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SECRET_KEY, ENCRYPTION_SALT
+    SUPABASE_DB_URL (for the ten conversations; skipped without it)
     DEMO_PASSWORD   (only needed when the user does not exist yet)
 
 Usage (on the Render shell the env is already set):
@@ -15,14 +16,17 @@ never duplicate. The streak counts days ending today: re-run on demo day.
 """
 
 import argparse
+import asyncio
 import os
 import sys
 from datetime import UTC, datetime
 from typing import Any
 
+from src.agent.checkpointer import _is_valid_db_url
 from src.config import get_settings
 from src.db.client import get_supabase_admin
-from src.services.demo_seed import build_rows, seed_user
+from src.services.demo_conversations import CONVERSATIONS
+from src.services.demo_seed import build_rows, reseed_demo_account, seed_user
 
 
 def find_or_create_user(admin: Any, email: str) -> str:
@@ -65,13 +69,20 @@ def main() -> None:
         print(f"  {table}: {len(items)} rows")
     due = sum(1 for v in rows["vocabulary"] if v["next_review_at"] <= now.isoformat())
     print(f"  words due for review now: {due}; streak: 9 days")
+    print(f"  conversations: {len(CONVERSATIONS)} (needs SUPABASE_DB_URL)")
     if not args.yes:
         print("Dry run. Re-run with --yes to write.")
         return
 
     admin = get_supabase_admin()
-    for table, count in seed_user(admin, find_or_create_user(admin, args.email)).items():
-        print(f"Wrote {count} rows to {table}")
+    user_id = find_or_create_user(admin, args.email)
+    if _is_valid_db_url(settings.SUPABASE_DB_URL):
+        asyncio.run(reseed_demo_account(admin, user_id))
+        print(f"Wrote history and {len(CONVERSATIONS)} conversations")
+    else:  # without Postgres, LangGraph would keep the conversations in memory only
+        for table, count in seed_user(admin, user_id).items():
+            print(f"Wrote {count} rows to {table}")
+        print("SUPABASE_DB_URL not set: skipped conversations")
     print("Done. Sign in as the demo user and open /progress to check.")
 
 

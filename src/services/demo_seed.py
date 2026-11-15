@@ -3,15 +3,17 @@
 Used by ``make seed-demo`` (scripts/seed_demo.py) and the /demo admin page.
 Writes, for ONE user only: profile, learning sessions (a 9-day streak ending
 today), vocabulary with SM-2 review state (some due today), and completed
-lessons. Chat threads are not written; create them on the live site so
-checkpoints are real. Encrypted fields use the running environment's key.
+lessons, plus ten scripted conversations (demo_conversations.py). Encrypted
+fields use the running environment's key.
 """
 
+import asyncio
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.db.encryption import encrypt_field
+from src.services.demo_conversations import seed_conversations
 from src.services.user_data import delete_user_rows
 
 LANGUAGE, LEVEL, DISPLAY_NAME = "es", "A1", "Demo"
@@ -101,7 +103,7 @@ def build_rows(user_id: str, now: datetime) -> dict[str, list[dict[str, Any]]]:
 
     vocabulary = []
     for i, (word, translation, pos) in enumerate(WORDS):
-        first_seen = now - timedelta(days=27 - (i * 27) // len(WORDS))
+        first_seen = now - timedelta(days=27 - (i * 28) // len(WORDS), hours=1)
         if i < 12:  # well known: long intervals, not due
             ef, interval, reps, due_in = 2.6, 16 + i, 4, 3 + i % 6
         elif i < 30:  # learning: short intervals, a few due today
@@ -210,12 +212,20 @@ def delete_demo_account(admin: Any, user_id: str) -> None:
     admin.auth.admin.delete_user(user_id)
 
 
-def create_demo_account(admin: Any) -> tuple[str, str]:
+async def reseed_demo_account(admin: Any, user_id: str) -> None:
+    """Wipe the account's data, then write the history and the ten conversations."""
+    await asyncio.to_thread(delete_user_rows, admin, user_id)
+    await asyncio.to_thread(seed_user, admin, user_id)
+    await seed_conversations(admin, user_id, datetime.now(UTC))
+
+
+async def create_demo_account(admin: Any) -> tuple[str, str]:
     """Create a new confirmed demo user, seed it, and return (email, password)."""
     email = f"{DEMO_EMAIL_PREFIX}{secrets.token_hex(4)}{DEMO_EMAIL_DOMAIN}"
     password = secrets.token_urlsafe(12)
-    created = admin.auth.admin.create_user(
-        {"email": email, "password": password, "email_confirm": True}
+    created = await asyncio.to_thread(
+        admin.auth.admin.create_user,
+        {"email": email, "password": password, "email_confirm": True},
     )
-    seed_user(admin, str(created.user.id))
+    await reseed_demo_account(admin, str(created.user.id))
     return email, password

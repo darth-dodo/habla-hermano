@@ -99,8 +99,8 @@ A thread is `{id, thread_id, title, language, level, created_at, updated_at}`. U
 | GET, HEAD | `/health` | none | JSON `{status, app, database}`. `healthy` or `degraded` (in-memory checkpoints) answer 200, `unhealthy` (a real DB URL set but not connected) answers 503. Render's health check uses it |
 | GET | `/version` | none | JSON `{commit, branch, service}` from Render env vars (null locally) |
 | GET | `/demo` (`src/api/routes/demo.py`) | email in `DEMO_ADMIN_EMAILS` (404 otherwise) | Admin page listing demo accounts |
-| POST | `/demo/accounts` | same | Creates a confirmed demo user with four weeks of history (`src/services/demo_seed.py`); the partial shows its login once |
-| POST | `/demo/accounts/{id}/reseed`, `/demo/accounts/{id}/password` | same | Fresh history (streak ends today) or a new password, shown once |
+| POST | `/demo/accounts` | same | Creates a confirmed demo user with four weeks of history (`src/services/demo_seed.py`) and 10 scripted conversations in all four languages (`src/services/demo_conversations.py`, written as real checkpoints, no LLM calls); the partial shows its login once |
+| POST | `/demo/accounts/{id}/reseed`, `/demo/accounts/{id}/password` | same | Wipes and rewrites history and conversations, dated to end today, or sets a new password, shown once |
 | DELETE | `/demo/accounts/{id}` | same | Deletes the account and all its rows. Every `{id}` action answers 404 unless the email matches `demo-*@example.com`, so real users are never touched |
 
 Guest identity only comes from a `session_id` cookie the server signed. Forged or plain-UUID values are ignored and a fresh session is issued.
