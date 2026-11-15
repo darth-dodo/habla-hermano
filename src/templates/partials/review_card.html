@@ -125,10 +125,8 @@ Urgency tiers:
 
         {# Review button #}
         <div
-            class="mt-4 w-full px-4 py-3 font-medium rounded-xl flex items-center justify-center gap-2 btn-press transition-all duration-200"
+            class="mt-4 w-full px-4 py-3 font-medium rounded-xl flex items-center justify-center gap-2 btn-press transition-all duration-200 hover:opacity-90 hover:scale-[1.01]"
             style="background: {% if is_high %}var(--error){% else %}var(--accent){% endif %}; color: {% if is_high %}#fff{% else %}var(--accent-text){% endif %};"
-            onmouseover="this.style.opacity='0.9'; this.style.transform='scale(1.01)';"
-            onmouseout="this.style.opacity='1'; this.style.transform='scale(1)';"
         >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />

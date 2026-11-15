@@ -45,7 +45,7 @@
 
             <!-- Try Again Button -->
             <button
-                onclick="this.closest('.exercise, [role=alert]').scrollIntoView({behavior: 'smooth'})"
+                x-data @click="$el.closest('.exercise, [role=alert]').scrollIntoView({behavior: 'smooth'})"
                 class="mt-3 px-4 py-2 bg-surface-overlay hover:bg-border text-text text-sm font-medium rounded-lg border border-border transition-all duration-150"
             >
                 Try Again
