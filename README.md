@@ -55,11 +55,11 @@ graph LR
 | **A2** elementary | 80% target language | grammar tips on demand |
 | **B1** intermediate | 95%+ target language | peer-level corrections |
 
-- **Lessons**: 20 topics x Spanish, German, French, 4 CEFR levels. They run as a guided chat, with multiple choice, fill-in and translation exercises.
+- **Lessons**: 20 topics x Spanish, German, French (60 in all), 4 CEFR levels; Hinglish is conversation only for now. They run as a guided chat, with multiple choice, fill-in and translation exercises.
 - **Voice**: tap the mic to talk (code-switching between English and the target language is fine). Tap play to hear any reply, from 0.75x to 1.5x speed with the pitch kept natural.
 - **Review**: SM-2 tracks every word you learn and brings due words back into conversation. No flashcard decks.
 - **Guest or account**: chat, feedback and voice work without signing up. An account adds vocabulary tracking, progress charts, multiple threads, password reset and account deletion.
-- **Privacy**: conversations and personal fields are encrypted at rest, and row-level security keeps each user's data separate.
+- **Privacy**: conversations and personal fields are encrypted at rest, row-level security keeps each user's data separate, and a conversation is deleted once it has been idle for 30 days.
 - **Five themes**: Azulejo, Terracotta, Flamenco, Sangria, Jardín (all WCAG AA).
 
 <p align="center">
@@ -84,7 +84,7 @@ graph LR
 
 FastAPI renders HTML with Jinja2 and HTMX. Each chat turn runs a LangGraph graph, and the reply streams token by token over SSE. Voice is proxied through FastAPI, so API keys never reach the browser.
 
-**How we know it works:** about 2,100 pytest and 260 Vitest tests in CI (90% coverage), plus `make eval`, which runs 20 learner scenarios against the real model and scores the replies ([results](docs/testing.md#results)). The first eval run found that grammar feedback was silently missing in production (#122). Optional Langfuse traces show each graph node's model, tokens, cost and latency, without any message text. Details: [docs/architecture.md](docs/architecture.md).
+**How we know it works:** about 2,100 pytest and 265 Vitest tests in CI (91% coverage), plus `make eval`, which runs 20 learner scenarios against the real model and scores the replies ([results](docs/testing.md#results)). The first eval run found that grammar feedback was silently missing in production (#122). SQL that mocks cannot check (the 30-day purge, the row-level security policies) runs against a real Postgres in CI, after mocked tests had passed while both were broken (#139, #140). Optional Langfuse traces show each graph node's model, tokens, cost and latency, without any message text. Details: [docs/architecture.md](docs/architecture.md).
 
 ## Decisions and trade-offs
 
@@ -98,6 +98,7 @@ FastAPI renders HTML with Jinja2 and HTMX. Each chat turn runs a LangGraph graph
 | Guests as signed session cookies, served by the admin client scoped to that session | Guests have no Supabase JWT, so RLS cannot identify them | Guest isolation relies on app code filtering by session ID, not on the database |
 | Hidden model reasoning turned off (`get_llm()`) | Reasoning tokens counted against `max_tokens` and truncated the structured JSON; off, evals pass 20/20 and turns are about 39% faster | Revisit if a task needs multi-step reasoning: raise `max_tokens` for that profile instead of turning it back on everywhere |
 | Langfuse traces are metadata only in production | The privacy page promises learning data is never shared | Debugging a bad reply needs a local `DEBUG=true` run or an eval case, not a production trace |
+| Real Postgres in CI for SQL tests (`TEST_DATABASE_URL`) | Mocked tests passed while the 30-day purge deleted nothing and a guest row broke signed-in deletes under RLS (#139, #140) | Those tests skip locally unless `TEST_DATABASE_URL` points at a Postgres |
 | Tailwind compiled and vendor JS self-hosted, CSS committed | No CDN script hosts in the CSP; Render's Python runtime has no Node | Rebuild with `npm run build:css` (CI fails on stale CSS); vendor upgrades are manual |
 
 ## Run it locally
@@ -114,7 +115,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | Command | Does |
 |---|---|
 | `make dev` | dev server with reload |
-| `make test` | pytest (about 2,100 tests, parallel) + Vitest (about 260) |
+| `make test` | pytest (about 2,100 tests, parallel) + Vitest (about 265) |
 | `make check` | ruff lint, format check, mypy strict |
 | `make eval` | 20 real-model scenarios, scored (needs `OPENROUTER_API_KEY`, about 1 US cent) |
 | `make dev-css` / `npm run build:css` | rebuild Tailwind after changing classes or `tailwind.config.js` |
@@ -136,7 +137,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
   <img src="https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render&logoColor=black" alt="Render">
 </p>
 <p>
-  <img src="https://img.shields.io/badge/tests-2.4k%20pytest%20%2B%20260%20vitest-555?style=flat-square" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-2.1k%20pytest%20%2B%20265%20vitest-555?style=flat-square" alt="Tests">
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/lint-ruff-D7FF64?style=flat-square&logo=ruff&logoColor=black" alt="Ruff"></a>
   <a href="https://mypy-lang.org/"><img src="https://img.shields.io/badge/types-mypy%20strict-2A6DB2?style=flat-square" alt="mypy strict"></a>
   <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/badge/packaging-uv-DE5FE9?style=flat-square&logo=uv&logoColor=white" alt="uv"></a>
@@ -148,7 +149,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | Doc | For |
 |---|---|
 | [FastAPI and LangGraph in 5 minutes](docs/fastapi-langgraph-in-5-minutes.md) | the two core frameworks, taught through this codebase |
-| [Walkthroughs](docs/walkthroughs/README.md) | six end-to-end tours: chat message, voice, security, lessons and review, evals, and the software factory |
+| [Walkthroughs](docs/walkthroughs/README.md) | eight end-to-end tours: chat message, voice, security, lessons and review, evals, the software factory, threads and data, and the frontend without React |
 | [Codebase summary](docs/codebase-summary.md) | onboarding: read order, one request end to end, where to change things, gotchas |
 | [Architecture](docs/architecture.md) | how every part works, with diagrams |
 | [API](docs/api.md) | routes, SSE events, WebSocket protocols |
