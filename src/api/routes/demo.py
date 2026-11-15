@@ -5,6 +5,7 @@ so the page does not reveal it exists. Actions only ever touch accounts whose
 email matches the demo pattern (see is_demo_email), never real users.
 """
 
+import asyncio
 import logging
 from typing import Annotated, Any
 
@@ -22,7 +23,7 @@ from src.services.demo_seed import (
     get_demo_email,
     list_demo_accounts,
     new_demo_password,
-    seed_user,
+    reseed_demo_account,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +58,8 @@ def _demo_email_or_404(admin: Any, user_id: str) -> str:
         raise HTTPException(status_code=404) from None
 
 
-# Plain ``def`` routes: FastAPI runs the blocking Supabase calls in a thread.
+# Plain ``def`` routes: FastAPI runs the blocking Supabase calls in a thread. The
+# seeding routes are async because conversations are written through LangGraph.
 @router.get("", response_class=HTMLResponse)
 def demo_page(request: Request, templates: TemplatesDep, user: DemoAdminDep) -> HTMLResponse:
     """The admin page with the list of demo accounts."""
@@ -68,23 +70,27 @@ def demo_page(request: Request, templates: TemplatesDep, user: DemoAdminDep) -> 
 
 
 @router.post("/accounts", response_class=HTMLResponse)
-def create_account(request: Request, templates: TemplatesDep, user: DemoAdminDep) -> HTMLResponse:
+async def create_account(
+    request: Request, templates: TemplatesDep, user: DemoAdminDep
+) -> HTMLResponse:
     """Create a seeded demo account and show its login once."""
-    email, password = create_demo_account(get_supabase_admin())
+    email, password = await create_demo_account(get_supabase_admin())
     logger.info("Demo account %s created by %s", email, user.id)
-    return _panel(request, templates, creds={"email": email, "password": password})
+    return await asyncio.to_thread(
+        _panel, request, templates, creds={"email": email, "password": password}
+    )
 
 
 @router.post("/accounts/{user_id}/reseed", response_class=HTMLResponse)
-def reseed_account(
+async def reseed_account(
     user_id: str, request: Request, templates: TemplatesDep, user: DemoAdminDep
 ) -> HTMLResponse:
-    """Replace the account's history with fresh data, so the streak ends today."""
+    """Replace the account's history and conversations with fresh ones dated to today."""
     admin = get_supabase_admin()
-    email = _demo_email_or_404(admin, user_id)
-    seed_user(admin, user_id)
+    email = await asyncio.to_thread(_demo_email_or_404, admin, user_id)
+    await reseed_demo_account(admin, user_id)
     logger.info("Demo account %s reseeded by %s", email, user.id)
-    return _panel(request, templates, notice=f"Reseeded {email}.")
+    return await asyncio.to_thread(_panel, request, templates, notice=f"Reseeded {email}.")
 
 
 @router.post("/accounts/{user_id}/password", response_class=HTMLResponse)

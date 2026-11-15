@@ -90,7 +90,7 @@ def test_reseed_password_and_delete_work_on_demo_accounts(
     boss: TestClient, admin: MagicMock
 ) -> None:
     assert boss.post(f"/demo/accounts/{DEMO_ID}/reseed").status_code == 200
-    assert admin.table.return_value.insert.call_count == 3
+    assert admin.table.return_value.insert.call_count == 4  # 3 history tables + thread rows
     response = boss.post(f"/demo/accounts/{DEMO_ID}/password")
     new_password = admin.auth.admin.update_user_by_id.call_args.args[1]["password"]
     assert new_password in response.text

@@ -5,6 +5,9 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 
 ## Unreleased
 
+**New**
+- Demo accounts now come with 10 ready-made conversations across Spanish, German, French and Hinglish, from A0 to B1, each with a typical mistake corrected.
+
 **Fixed**
 - Conversations idle for 30 days are now really deleted, daily. The old purge looked for a column LangGraph does not have and silently deleted nothing; it is now tested against a real Postgres in CI. An unused setting that would have deleted progress data is gone.
 - "Delete all conversations" works again once guests have chatted. A guest row made the database ownership check error out, so nothing was deleted. Needs migration 007 applied in Supabase.
