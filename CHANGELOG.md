@@ -9,6 +9,7 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 - Rate-limited requests are refused before the login check, so they no longer cost a call to Supabase (#131).
 - Deploys only happen from CI after every check passes, and `main` requires a green CI run to merge (#131).
 - About 3,000 lines of unused code removed: a review subgraph the app never called, and a guest path in lesson completion that could not run (#131).
+- The old lesson subgraph and its prompts are gone too: lessons have run through the chat phase machine since Phase 23, and nothing called it.
 
 ## 1.0.0 (2026-11-15): first tagged release
 

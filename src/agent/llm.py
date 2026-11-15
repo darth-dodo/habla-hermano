@@ -18,7 +18,6 @@ Profiles:
     - "analysis": max_tokens=1024
     - "structured": max_tokens=512
     - "creative": max_tokens=512
-    - "enhancement": max_tokens=1024
     - "titling": max_tokens=30, timeout=15s
 """
 
@@ -34,7 +33,6 @@ _PROFILES: dict[str, tuple[int, int]] = {
     "analysis": (1024, 60),
     "structured": (512, 60),
     "creative": (512, 60),
-    "enhancement": (1024, 60),
     "titling": (30, 15),
 }
 
@@ -51,7 +49,7 @@ def get_llm(profile: str = "default") -> ChatOpenAI:
     Args:
         profile: Configuration profile name. One of "default",
             "conversational", "analysis", "structured", "creative",
-            "enhancement", or "titling".
+            or "titling".
 
     Returns:
         A configured ChatOpenAI instance pointed at OpenRouter.
