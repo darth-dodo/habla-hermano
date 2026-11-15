@@ -125,7 +125,7 @@ graph LR
 - **Supabase mocks**: chained calls (`.table().select().eq()`) must return the same mock, and `.not_` needs a `PropertyMock`.
 - **`/chat/stream` errors come over SSE** as an `error` event with HTTP 200. Only CSRF (403) and rate limits (429) fail before the stream starts.
 - **WebSocket tests**: use `receive_bytes()` / `receive_text()`, not raw `receive()`, which returns the close frame instead of raising.
-- **Rate limits are per client IP and kept in memory**, so tests call `reset_rate_limits()` between cases. A test with no `request` argument shares one budget.
+- **Rate limits are per client IP and kept in memory**, so tests call `reset_rate_limits()` between cases. With the `@rate_limited` decorator, an endpoint with no `request` argument shares one budget; the `rate_limit()` route dependency always gets the request.
 - **Guest cookies must be signed** in tests: use `sign_session_id(uuid)`. A plain UUID cookie is treated as no session.
 - **Silent JSON failures**: `scaffold` and `analyze` fall back to empty output when parsing fails, so unit tests stay green. Only `make eval` (`json_parses`) catches a model that stops returning valid JSON.
 - **Tracing metadata is allow-listed**: in production, `mask_content()` drops any metadata key not in `_KEEP_METADATA`. Add a key there if a new one must reach Langfuse, and never add message text or user IDs.

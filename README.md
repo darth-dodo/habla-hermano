@@ -18,6 +18,7 @@
 
 <p align="center">
   <a href="https://github.com/darth-dodo/habla-hermano/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/darth-dodo/habla-hermano/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
+  <a href="https://github.com/darth-dodo/habla-hermano/releases/latest"><img src="https://img.shields.io/github/v/release/darth-dodo/habla-hermano?style=flat-square&label=release" alt="Latest release"></a>
   <a href="https://codecov.io/gh/darth-dodo/habla-hermano"><img src="https://img.shields.io/codecov/c/github/darth-dodo/habla-hermano?style=flat-square&label=coverage" alt="Coverage"></a>
   <a href="docs/testing.md#results"><img src="https://img.shields.io/badge/LLM%20evals-20%2F20-2ea44f?style=flat-square" alt="LLM evals 20 of 20"></a>
   <a href="https://habla-hermano.onrender.com"><img src="https://img.shields.io/website?url=https%3A%2F%2Fhabla-hermano.onrender.com%2Fhealth&style=flat-square&label=demo&up_message=online&down_message=waking%20up" alt="Live demo status"></a>
@@ -83,7 +84,7 @@ graph LR
 
 FastAPI renders HTML with Jinja2 and HTMX. Each chat turn runs a LangGraph graph, and the reply streams token by token over SSE. Voice is proxied through FastAPI, so API keys never reach the browser.
 
-**How we know it works:** about 2,400 pytest and 260 Vitest tests in CI (90% coverage), plus `make eval`, which runs 20 learner scenarios against the real model and scores the replies ([results](docs/testing.md#results)). The first eval run found that grammar feedback was silently missing in production (#122). Optional Langfuse traces show each graph node's model, tokens, cost and latency, without any message text. Details: [docs/architecture.md](docs/architecture.md).
+**How we know it works:** about 2,200 pytest and 260 Vitest tests in CI (90% coverage), plus `make eval`, which runs 20 learner scenarios against the real model and scores the replies ([results](docs/testing.md#results)). The first eval run found that grammar feedback was silently missing in production (#122). Optional Langfuse traces show each graph node's model, tokens, cost and latency, without any message text. Details: [docs/architecture.md](docs/architecture.md).
 
 ## Decisions and trade-offs
 
@@ -113,7 +114,7 @@ Needs Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node 18+. Without Supab
 | Command | Does |
 |---|---|
 | `make dev` | dev server with reload |
-| `make test` | pytest (about 2,400 tests, parallel) + Vitest (about 260) |
+| `make test` | pytest (about 2,200 tests, parallel) + Vitest (about 260) |
 | `make check` | ruff lint, format check, mypy strict |
 | `make eval` | 20 real-model scenarios, scored (needs `OPENROUTER_API_KEY`, about 1 US cent) |
 | `make dev-css` / `npm run build:css` | rebuild Tailwind after changing classes or `tailwind.config.js` |

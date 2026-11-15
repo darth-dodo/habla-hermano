@@ -43,7 +43,7 @@ make test-cov   # With coverage report
 make test-js    # JavaScript tests only (Vitest)
 ```
 
-The project has about 2,400 Python tests and 250+ JavaScript tests.
+The project has about 2,200 Python tests and 250+ JavaScript tests.
 
 ## Code Quality
 
@@ -71,7 +71,7 @@ The project uses:
 
 4. **Keep commits focused**. One logical change per commit with a descriptive message.
 
-5. **Open a PR** with a clear description of what changed and why.
+5. **Open a PR** with a clear description of what changed and why. CI runs on every PR, and `main` requires the `CI Success` check before a merge.
 
 ## Project Structure
 
