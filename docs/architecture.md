@@ -222,7 +222,7 @@ sequenceDiagram
 ## Security
 
 ```
-request -> SecurityHeaders -> CSRF -> CORS -> route
+request -> CORS -> CSRF -> SecurityHeaders -> ProxyHeaders -> route
 ```
 
 | Concern | How |
