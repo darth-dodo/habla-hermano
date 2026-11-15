@@ -3,7 +3,11 @@
 What changed, in plain words, newest first. Each line says what a learner (or a maintainer) notices, with the PR number.
 The full technical log, with every file and fix, is in [docs/history/changelog-detailed.md](docs/history/changelog-detailed.md).
 
-## Unreleased (since April 2026)
+## Unreleased
+
+Nothing yet.
+
+## 1.0.0 (2026-11-15): first tagged release
 
 **Hermano got more reliable**
 - Grammar tips now appear on every turn. They were often missing because the model ran out of room mid-answer; replies are also about 39% faster (#122).
@@ -25,6 +29,7 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 - Deploys run from CI after every check passes; `/version` shows the live commit, and `/health` reports real failures (#105, #106, #115, #124).
 - New docs: a 5-minute FastAPI and LangGraph intro, six code walkthroughs, a decisions table, and a README banner (#112, #118, #124 to #127).
 - Repo cleanup, and an 88% test coverage floor (#117, #118).
+- `make seed-demo` fills a demo account with four weeks of history, and the changelog is now plain words (#128, #129).
 
 ## April 2026: monitoring and live voice
 
