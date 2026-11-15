@@ -76,8 +76,6 @@ Create or update prompts used by the LangGraph agent nodes.
 | SYSTEM_PROMPT | respond_node | Main conversation personality |
 | SCAFFOLD_PROMPT | scaffold_node | Word bank/hint generation (A0-A1) |
 | ANALYZE_PROMPT | analyze_node | Grammar/vocabulary extraction |
-| REVIEW_QUESTION_PROMPT | review subgraph | Generate review questions |
-| REVIEW_EVALUATE_PROMPT | review subgraph | Evaluate user answers |
 | LESSON_ENHANCE_PROMPT | lesson subgraph | Enhance lesson content |
 
 ## Tips

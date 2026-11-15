@@ -17,7 +17,7 @@ graph TD
     ROUTE --> STORE(["Postgres<br/>Fernet-encrypted blobs, RLS by owner"])
 ```
 
-Starlette makes the last added middleware the outermost one, so the request order is CORS, CSRF, SecurityHeaders, ProxyHeaders ([main.py](../../src/api/main.py#L157-L180)). FastAPI resolves dependencies before the endpoint runs, and the rate limiter wraps the endpoint, so identity is resolved before the rate check.
+Starlette makes the last added middleware the outermost one, so the request order is CORS, CSRF, SecurityHeaders, ProxyHeaders ([main.py](../../src/api/main.py#L157-L180)). On chat and speech routes the rate limit is a route-level dependency, which FastAPI runs before the endpoint's own dependencies, so a limited client is refused before the Supabase token check.
 
 ## The layers
 
@@ -28,7 +28,7 @@ Starlette makes the last added middleware the outermost one, so the request orde
 | CSP with nonce | Injected `<script>` tags without the per-request nonce | [SecurityHeadersMiddleware](../../src/api/middleware.py#L153-L185) |
 | JWT auth | Forged account tokens: Supabase verifies them server-side | [OptionalUserDep](../../src/api/auth.py#L421), [_verify_token_via_supabase](../../src/api/auth.py#L185) |
 | Signed guest cookie | Forged guest IDs such as `user:<someone's uuid>` | [verified_session_cookie](../../src/api/cookies.py#L180-L187) |
-| Per-client rate limit | One caller using up everyone's budget | [client_key](../../src/api/rate_limit.py#L44-L56), [rate_limited](../../src/api/rate_limit.py#L59-L92) |
+| Per-client rate limit | One caller using up everyone's budget | [client_key](../../src/api/rate_limit.py#L44-L56), [rate_limit](../../src/api/rate_limit.py#L78-L90), [rate_limited](../../src/api/rate_limit.py#L93-L120) |
 | nh3 sanitization | Script or event handlers in LLM-generated HTML | [sanitize_html](../../src/api/sanitize.py#L56-L72) |
 | Fernet encryption | Readable data in a leaked database dump | [encryption.py](../../src/db/encryption.py#L24-L57), [EncryptedSerializer](../../src/agent/checkpointer.py#L53-L61) |
 | Row-level security | One user reading another user's checkpoints | [004_checkpoint_rls.sql](../../migrations/004_checkpoint_rls.sql#L29-L55) |
@@ -63,9 +63,9 @@ CREATE POLICY checkpoints_user_policy ON checkpoints
 
 ## WebSockets
 
-WebSockets do not pass the CSRF check. The [voice handshake](../../src/api/routes/voice.py#L113-L180) accepts a Supabase-verified JWT, a signed guest cookie, or a signed `token` query value (WebKit may drop cookies on the upgrade). Otherwise it closes with code 1008. Each TTS socket gets its own [message limiter](../../src/api/routes/voice.py#L470).
+WebSockets do not pass the CSRF check. The [voice handshake](../../src/api/routes/voice.py#L113-L180) accepts a Supabase-verified JWT, a signed guest cookie, or a signed `token` query value (WebKit may drop cookies on the upgrade). Otherwise it closes with code 1008. Each TTS socket gets its own [message limiter](../../src/api/routes/voice.py#L471).
 
 ## Known gaps
 
 - CSP keeps [`'unsafe-eval'`](../../src/api/middleware.py#L169-L171) for the standard Alpine.js build. Removing it means `@alpinejs/csp` and registering each component with `Alpine.data()`.
-- Rate-limit state is a [dict per process](../../src/api/rate_limit.py#L72-L81). With several workers, each worker has its own budget, and the dict clears at 10,000 clients.
+- Rate-limit state is a [dict per process](../../src/api/rate_limit.py#L59-L75). Fine for the single worker Render runs; with several workers each would have its own budget, and the dict clears at 10,000 clients.

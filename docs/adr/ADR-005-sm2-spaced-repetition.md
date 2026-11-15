@@ -43,7 +43,7 @@ Research shows spaced repetition is the most effective technique for long-term v
 
 ### Option A: SM-2 with Dual Channels (Selected)
 
-**Description**: Standard SM-2 algorithm tracking easiness factor, interval, and repetition count per word. Two delivery channels: dedicated `/review` mode with LangGraph subgraphs, and silent chat weaving through respond/analyze nodes.
+**Description**: Standard SM-2 algorithm tracking easiness factor, interval, and repetition count per word. Two delivery channels: dedicated `/review` mode, and silent chat weaving through respond/analyze nodes.
 
 **Implementation**:
 - **SM-2 formula**: EF = max(1.3, EF + 0.1 - (5 - q) x (0.08 + (5 - q) x 0.02))
@@ -161,8 +161,7 @@ Research shows spaced repetition is the most effective technique for long-term v
   - **Translate**: "How do you say 'thank you'?" — user responds in target language
   - **Fill blank**: "At a restaurant, you'd say '_____ la cuenta'" — fill in blank
   - **Recognize**: "What does 'cansado' mean?" — translate from target language
-- LangGraph review subgraphs: `generate_question_subgraph`, `evaluate_answer_subgraph`
-- AI evaluates answer, infers quality score, updates SM-2 state
+- `/review` routes call `ReviewService` directly; the answer check infers a quality score and updates SM-2 state (the original LangGraph review subgraphs were never wired to the routes and were removed in 2026-11)
 
 **Channel 2: Silent Chat Weaving**
 1. `respond_node`: `_get_topical_review_words()` queries due words matching topic
@@ -177,9 +176,7 @@ Research shows spaced repetition is the most effective technique for long-term v
 ## Key Files
 
 - `src/services/review.py` — ReviewService with SM-2 scheduling, due word queries
-- `src/agent/review_graph.py` — LangGraph subgraphs (generate question, evaluate answer)
-- `src/agent/review_state.py` — ReviewState TypedDict
-- `src/agent/nodes/review.py` — Review nodes (question generation, answer evaluation)
+- `src/api/routes/review.py`: review mode routes and answer checking
 - `src/agent/nodes/respond.py` — `_get_topical_review_words()` for chat weaving
 - `src/agent/nodes/analyze.py` — `_check_review_word_usage()` for silent tracking
 - `src/api/routes/review.py` — Review API endpoints

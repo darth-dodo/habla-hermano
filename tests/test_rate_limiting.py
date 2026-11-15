@@ -134,3 +134,30 @@ class TestPerClientRateLimit:
         await login(request=self._request("1.1.1.1, 203.0.113.9"))
         with pytest.raises(HTTPException):
             await login(request=self._request("2.2.2.2, 203.0.113.9"))
+
+
+class TestRateLimitDependency:
+    """The route-level dependency refuses a limited client before auth runs."""
+
+    def test_limited_client_is_refused_before_auth_dependency(self) -> None:
+        from fastapi import Depends, FastAPI
+        from fastapi.testclient import TestClient
+
+        from src.api.rate_limit import rate_limit
+
+        auth_calls = 0
+
+        async def costly_auth() -> str:
+            nonlocal auth_calls
+            auth_calls += 1
+            return "user"
+
+        app = FastAPI()
+
+        @app.post("/limited", dependencies=[Depends(rate_limit(2, 60))])
+        async def limited(user: str = Depends(costly_auth)) -> dict[str, str]:
+            return {"user": user}
+
+        client = TestClient(app)
+        assert [client.post("/limited").status_code for _ in range(3)] == [200, 200, 429]
+        assert auth_calls == 2  # the refused request never reached costly_auth

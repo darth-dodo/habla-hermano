@@ -14,7 +14,7 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from langchain_core.runnables import RunnableConfig
 from postgrest.exceptions import APIError
 from sse_starlette.sse import EventSourceResponse
@@ -24,7 +24,7 @@ from src.agent.graph import build_graph
 from src.agent.lesson_chat_graph import build_lesson_chat_graph
 from src.api.auth import AuthenticatedUser, OptionalUserDep
 from src.api.dependencies import LessonServiceDep, TemplatesDep
-from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limited
+from src.api.rate_limit import CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD, rate_limit
 from src.api.routes.chat import (
     ChatCookies,
     ChatCookiesDep,
@@ -95,8 +95,10 @@ class _StreamTurn:
     lesson_service: "LessonService"
 
 
-@router.post("/chat/stream")
-@rate_limited(calls=CHAT_RATE_LIMIT_CALLS, period=CHAT_RATE_LIMIT_PERIOD)
+@router.post(
+    "/chat/stream",
+    dependencies=[Depends(rate_limit(CHAT_RATE_LIMIT_CALLS, CHAT_RATE_LIMIT_PERIOD))],
+)
 async def stream_message(
     request: Request,  # noqa: ARG001 — kept for FastAPI DI consistency with other endpoints
     templates: TemplatesDep,
@@ -346,7 +348,6 @@ def _persist_lesson_completion(turn: _StreamTurn, score: Any) -> None:
         vocabulary = turn.lesson_service.get_lesson_vocabulary(turn.lesson_id)
         complete_lesson_and_persist(
             user=turn.user,
-            session_id=turn.session_id,
             lesson_id=turn.lesson_id,
             score=score,
             vocabulary=vocabulary,

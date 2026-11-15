@@ -95,7 +95,7 @@ Graph-based state machine using LangGraph's StateGraph with typed state, conditi
 - Nodes: `respond` (generate tutor response), `scaffold` (add beginner hints), `analyze` (grammar feedback)
 - Conditional edge after `respond`: route to `scaffold` if level is A0/A1, else route to `analyze`
 - PostgresSaver checkpointer for persistence
-- Subgraphs: `lesson_graph` and `review_graph` as separate StateGraphs
+- Subgraphs: `lesson_graph` as a separate StateGraph (a `review_graph` was removed in 2026-11: `/review` calls `ReviewService` directly)
 
 **Pros**:
 
@@ -366,7 +366,6 @@ def needs_scaffold(state: ConversationState) -> str:
 | `src/agent/nodes/analyze.py` | Grammar analysis node |
 | `src/agent/prompts.py` | LEVEL_PROMPTS dict and LANGUAGE_ADAPTER |
 | `src/agent/lesson_graph.py` | Lesson subgraph (load -> enhance -> END) |
-| `src/agent/review_graph.py` | Review subgraph (generate_question -> evaluate_answer) |
 
 ---
 

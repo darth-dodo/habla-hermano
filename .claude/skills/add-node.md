@@ -11,11 +11,11 @@ Add a new node to the Habla Hermano LangGraph conversation pipeline.
 
 1. **Understand the current graph structure**
    - Read `src/agent/graph.py` for the main conversation pipeline
-   - Read `src/agent/state.py` for `ConversationState` and `ReviewState` definitions
+   - Read `src/agent/state.py` for the `ConversationState` definition
    - Read existing nodes in `src/agent/nodes/` to understand the pattern
 
 2. **Create the node function** in `src/agent/nodes/{name}.py`
-   - Import `ConversationState` (or `ReviewState` for review subgraph nodes) from `src/agent/state`
+   - Import `ConversationState` from `src/agent/state`
    - Use the centralized LLM factory from `src/agent/llm.py` (`get_llm()` or `get_llm_for_profile()`)
    - Node signature: `async def {name}_node(state: ConversationState) -> dict[str, Any]:`
    - Return a dict with only the state keys that changed
@@ -81,6 +81,5 @@ def should_route(state: ConversationState) -> str:
 ## Architecture Notes
 - The main pipeline is: `respond_node` -> (conditional) -> `scaffold_node` -> `analyze_node` -> END
 - A0/A1 levels get scaffolding (word banks, hints), A2/B1 skip to analyze
-- Review subgraph is separate: `generate_question` -> END; `evaluate_answer` -> `update_sm2` -> END
 - Lesson subgraph: `load_step` -> `enhance_step` -> END
 - All nodes use `src/agent/prompts.py` LANGUAGE_ADAPTER for multi-language support
