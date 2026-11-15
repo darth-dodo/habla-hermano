@@ -60,7 +60,7 @@ Page load, when the learner comes back:
 First message in a new thread:
 
 1. [`_resolve_freeform_identity`](../../src/api/routes/chat.py#L262-L270) creates the thread when the form has no `thread_id`.
-2. The stream sends [`thread_created`](../../src/api/routes/chat_stream.py#L225-L231); the browser stores the ID in the form and [calls `/threads/select`](../../src/static/js/modules/stream.js#L286-L290).
+2. The stream sends [`thread_created`](../../src/api/routes/chat_stream.py#L225-L231); the browser stores the ID in the form and [calls `/threads/select`](../../src/static/js/modules/stream.js#L287-L291).
 3. After the first reply, [`_auto_title_thread`](../../src/api/routes/chat_stream.py#L360-L379) asks the LLM for a 3 to 5 word title ([`generate_thread_title`](../../src/services/thread_titling.py#L21-L43)) and sends `thread_title` to the sidebar.
 
 RLS on the checkpoint tables takes the owner from the second segment of `thread_id`:
@@ -91,6 +91,6 @@ Found while writing this page. Fixed gaps are marked; their notes stay as a reco
 1. **Fixed: the startup checkpoint purge deleted nothing.** [`purge_old_checkpoints`](../../src/agent/checkpoint_purge.py#L49-L58) filters on `thread_ts`, but the installed `langgraph-checkpoint-postgres` tables have no such column (no timestamp column at all). The error is caught and logged, so startup goes on and the 30-day retention never runs. Tests mock the connection, so they pass.
 2. **Fixed (removed): `purge_old_conversations` was never called.** `data_retention.py` had no caller in `src/`, and it uses the anon client, so RLS would block its deletes anyway. It also deleted learning sessions and vocabulary (progress), not chat history. The function and `CONVERSATION_RETENTION_DAYS` are gone; chat retention is the daily purge above, now tested against a real Postgres in CI.
 3. **Fixed: guest rows broke signed-in deletes.** Guest threads use a bare session UUID, so `checkpoint_owner()` cast `''` to UUID and raised. Reproduced on Postgres 16: with one guest row present, "Delete all conversations" failed (caught and logged) and deleted nothing. [Migration 007](../../migrations/007_checkpoint_owner_guest_safe.sql) casts only well-formed UUIDs; [test_checkpoint_owner_sql.py](../../tests/db/test_checkpoint_owner_sql.py) runs the real migrations as a signed-in user.
-4. **Thread switch ignores a failed select.** The sidebar loads `/chat/thread-content` even if `/threads/select` returned 404, because `fetch` does not reject on HTTP errors ([sidebar](../../src/templates/partials/thread_sidebar.html#L39-L40)).
+4. **Fixed: thread switch ignored a failed select.** The sidebar loaded `/chat/thread-content` even if `/threads/select` returned 404, because `fetch` does not reject on HTTP errors. [`fetchThreadContent`](../../src/static/js/modules/threads.js#L14-L29) now checks `response.ok` on both requests, and the sidebar falls back to its existing reload.
 
 Related: [security model](security-model.md), [one chat message](chat-message.md).

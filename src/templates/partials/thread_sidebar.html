@@ -34,15 +34,8 @@ Variables expected:
                 chatMessages.classList.add('opacity-30', 'pointer-events-none');
             }
 
-            // 3. Set cookie, then fetch partial content
-            const hdrs = {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'};
-            fetch('/threads/select', {method: 'POST', headers: hdrs, body: 'thread_id=' + encodeURIComponent(threadId)})
-                .then(() => fetch('/chat/thread-content', {headers: {'X-Requested-With': 'XMLHttpRequest'}}))
-                .then(r => {
-                    const lang = r.headers.get('X-Thread-Language') || 'es';
-                    const level = r.headers.get('X-Thread-Level') || 'A1';
-                    return r.text().then(html => ({html, lang, level}));
-                })
+            // 3. Set cookie, then fetch partial content (src/static/js/modules/threads.js)
+            window.hablaThreads.fetchThreadContent(threadId)
                 .then(({html, lang, level}) => {
                     if (chatMessages) {
                         chatMessages.innerHTML = html;
@@ -125,7 +118,8 @@ Variables expected:
             showPicker: false,
             newLang: localStorage.getItem('hermano-language') || 'es',
             newLevel: localStorage.getItem('hermano-level') || 'A1',
-            flagFor(l) { return l === 'es' ? '🇦🇷' : l === 'de' ? '🇩🇪' : l === 'hi' ? '🇮🇳' : '🇫🇷' },
+            flags: {{ language_flags | tojson | forceescape }},
+            flagFor(l) { return this.flags[l] || this.flags.es },
             langName(l) { return l === 'es' ? 'Spanish' : l === 'de' ? 'German' : l === 'hi' ? 'Hinglish' : 'French' },
             startChat() {
                 localStorage.setItem('hermano-language', this.newLang);
@@ -162,7 +156,7 @@ Variables expected:
                 <div>
                     <label class="text-xs font-medium text-text-muted mb-1.5 block">Language</label>
                     <div class="flex gap-1.5">
-                        {% for code, flag, name in [('es', '🇦🇷', 'Spanish'), ('de', '🇩🇪', 'German'), ('fr', '🇫🇷', 'French'), ('hi', '🇮🇳', 'Hinglish')] %}
+                        {% for code, name in [('es', 'Spanish'), ('de', 'German'), ('fr', 'French'), ('hi', 'Hinglish')] %}{% set flag = language_flags[code] %}
                         <button
                             @click="newLang = '{{ code }}'"
                             class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-sm transition-all duration-150 cursor-pointer"
@@ -204,7 +198,7 @@ Variables expected:
         </div>
 
         <!-- Thread list (auth) / Guest nav -->
-        <div x-show="mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+        <div id="thread-list" data-flags="{{ language_flags | tojson | forceescape }}" x-show="mobileOpen" class="flex-1 overflow-y-auto p-2 space-y-0.5">
             {% if user %}
             {% if threads %}
                 {% for thread in threads %}
@@ -217,7 +211,7 @@ Variables expected:
                     >
                         <!-- Language flag -->
                         <span class="flex-shrink-0 text-base leading-none mt-0.5" aria-hidden="true">
-                            {% if thread.language == 'es' %}🇦🇷{% elif thread.language == 'de' %}🇩🇪{% elif thread.language == 'fr' %}🇫🇷{% elif thread.language == 'hi' %}🇮🇳{% else %}🇦🇷{% endif %}
+                            {{ language_flags.get(thread.language, language_flags.es) }}
                         </span>
 
                         <!-- Title (or rename input) -->
@@ -323,7 +317,7 @@ Variables expected:
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="px-3 py-10 text-center">
+                <div data-thread-empty class="px-3 py-10 text-center">
                     <svg class="w-10 h-10 mx-auto text-text-subtle/40 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>

@@ -17,6 +17,7 @@ let isStreaming = false;
 let currentController = null;
 let bubbleCounter = 0;
 let tokenCounter = 0;
+export const STREAM_IDLE_TIMEOUT_MS = 60000;
 
 // ============================================
 // Lesson Mode Detection
@@ -292,13 +293,14 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                 // Keep URL clean — no thread_id in query string
                 window.history.replaceState({}, '', '/');
 
-                // Add the new thread to the sidebar (matches thread_sidebar.html structure)
-                const flagMap = { es: '\u{1F1EA}\u{1F1F8}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}' };
-                const flag = flagMap[data.language] || '\u{1F1EA}\u{1F1F8}';
-                const threadList = document.querySelector('.overflow-y-auto.p-2.space-y-0\\.5');
+                // Add the new thread to the sidebar. A short copy of a thread_sidebar.html
+                // row (no rename/delete); the full row appears on the next page load.
+                const threadList = document.getElementById('thread-list');
                 if (threadList) {
+                    const flags = JSON.parse(threadList.dataset.flags || '{}');
+                    const flag = flags[data.language] || flags.es || '';
                     // Remove "No conversations yet" placeholder if present
-                    const placeholder = threadList.querySelector('.text-center');
+                    const placeholder = threadList.querySelector('[data-thread-empty]');
                     if (placeholder) placeholder.remove();
 
                     // Remove active styling from any previously active thread
@@ -315,7 +317,7 @@ function handleStreamEvent(event, dataStr, bubbleId) {
                     // Insert new thread — href="/" so clicking re-selects via cookie
                     const wrapper = document.createElement('div');
                     wrapper.className = 'group relative flex items-center rounded-xl transition-all duration-200 bg-accent/10';
-                    wrapper.innerHTML = `<a href="/" data-thread-id="${escapeHtml(data.thread_id)}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="flex-1 truncate">New conversation</span></a>`;
+                    wrapper.innerHTML = `<a href="/" data-thread-id="${escapeHtml(data.thread_id)}" class="flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm cursor-pointer min-w-0 text-accent font-medium"><span class="flex-shrink-0 text-base leading-none" aria-hidden="true">${flag}</span><span class="thread-title flex-1 truncate">New conversation</span></a>`;
                     threadList.prepend(wrapper);
                 }
             }
@@ -363,11 +365,15 @@ async function streamChat(formData) {
     // Create the streaming bubble
     const bubbleId = createStreamingBubble();
 
-    // Set up abort controller with timeout
+    // Abort only after 60s with NO data, so a long reply that keeps streaming is not cut off.
     currentController = new AbortController();
-    const timeout = setTimeout(() => {
-        if (currentController) currentController.abort();
-    }, 60000);
+    const controller = currentController;
+    let timeout;
+    const resetIdleTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => controller.abort(), STREAM_IDLE_TIMEOUT_MS);
+    };
+    resetIdleTimer();
 
     try {
         const response = await fetch(getStreamUrl(), {
@@ -388,6 +394,7 @@ async function streamChat(formData) {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
+            resetIdleTimer();
 
             buffer += decoder.decode(value, { stream: true });
 

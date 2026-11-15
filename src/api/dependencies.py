@@ -20,6 +20,7 @@ from src.api.sanitize import render_markdown, sanitize_html
 from src.api.session import get_thread_id as _get_thread_id
 from src.api.supabase_client import get_supabase_for_user
 from src.lessons.service import LessonService, get_lesson_service
+from src.validation import LANGUAGE_FLAGS
 
 if TYPE_CHECKING:
     from supabase import Client as SupabaseClient
@@ -72,6 +73,7 @@ def _register_filters(templates: Jinja2Templates) -> Jinja2Templates:
     _settings = get_settings()
     templates.env.globals["sentry_dsn_js"] = _settings.SENTRY_DSN or ""
     templates.env.globals["debug"] = _settings.DEBUG
+    templates.env.globals["language_flags"] = LANGUAGE_FLAGS
 
     return templates
 

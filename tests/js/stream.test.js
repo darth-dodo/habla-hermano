@@ -693,3 +693,97 @@ describe('stream.js — getStreamUrl', () => {
         expect(getStreamUrl()).toBe('/chat/stream');
     });
 });
+
+describe('stream.js: sidebar and idle timeout (walkthrough gaps)', () => {
+    let initStreamingForm;
+    const FLAGS = { es: '\u{1F1E6}\u{1F1F7}', de: '\u{1F1E9}\u{1F1EA}', fr: '\u{1F1EB}\u{1F1F7}', hi: '\u{1F1EE}\u{1F1F3}' };
+
+    beforeEach(async () => {
+        document.body.innerHTML = '';
+        vi.useFakeTimers();
+        vi.restoreAllMocks();
+        initStreamingForm = (await import('../../src/static/js/modules/stream.js')).initStreamingForm;
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        document.body.innerHTML = '';
+    });
+
+    function addSidebar() {
+        const list = document.createElement('div');
+        list.id = 'thread-list';
+        list.dataset.flags = JSON.stringify(FLAGS);
+        list.innerHTML = '<div data-thread-empty>No conversations yet</div>';
+        document.body.appendChild(list);
+        return list;
+    }
+
+    it.each([['hi', FLAGS.hi], ['es', FLAGS.es], ['xx', FLAGS.es]])(
+        'new %s thread gets the server flag map flag',
+        async (language, flag) => {
+            setupChatDOM();
+            const list = addSidebar();
+            globalThis.fetch = vi.fn(() => Promise.resolve(createMockSSEResponse([
+                { event: 'thread_created', data: { thread_id: 'user:u:t1', language } },
+                { event: 'thread_title', data: { thread_id: 'user:u:t1', title: 'Charla' } },
+                { event: 'done', data: {} },
+            ])));
+            initStreamingForm();
+            document.getElementById('message-input').value = 'Hola';
+            document.getElementById('chat-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            await vi.waitFor(() => expect(list.querySelector('[data-thread-id="user:u:t1"]')).not.toBeNull());
+
+            const row = list.querySelector('[data-thread-id="user:u:t1"]');
+            expect(row.textContent).toContain(flag);
+            expect(row.querySelector('.thread-title').textContent).toBe('Charla');
+            expect(list.querySelector('[data-thread-empty]')).toBeNull();
+        },
+    );
+
+    /** A response whose body sends a chunk each time push() is called; aborting errors it. */
+    function controllableResponse(signal) {
+        let ctrl;
+        const body = new ReadableStream({ start(c) { ctrl = c; } });
+        signal.addEventListener('abort', () => ctrl.error(new DOMException('Aborted', 'AbortError')));
+        const enc = new TextEncoder();
+        return {
+            response: new Response(body, { status: 200 }),
+            push: (text) => ctrl.enqueue(enc.encode(`event: token\ndata: ${JSON.stringify({ content: text })}\n\n`)),
+            close: () => ctrl.close(),
+        };
+    }
+
+    async function startStream() {
+        setupChatDOM();
+        let stream;
+        globalThis.fetch = vi.fn((_url, opts) => {
+            stream = controllableResponse(opts.signal);
+            return Promise.resolve(stream.response);
+        });
+        initStreamingForm();
+        document.getElementById('message-input').value = 'Hola';
+        document.getElementById('chat-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(stream).toBeDefined());
+        return stream;
+    }
+
+    it('a reply that keeps streaming past 60s is not cut off', async () => {
+        const stream = await startStream();
+        for (let i = 0; i < 4; i++) {  // 4 chunks, 40s apart: 160s in total
+            stream.push(`palabra${i} `);
+            await vi.advanceTimersByTimeAsync(40_000);
+        }
+        stream.close();
+        await vi.advanceTimersByTimeAsync(200);
+        expect(document.body.textContent).not.toContain('timed out');
+        expect(document.body.textContent).toContain('palabra3');
+    });
+
+    it('times out after 60s with no data', async () => {
+        const stream = await startStream();
+        stream.push('hola ');
+        await vi.advanceTimersByTimeAsync(61_000);
+        expect(document.body.textContent).toContain('Response timed out');
+    });
+});
