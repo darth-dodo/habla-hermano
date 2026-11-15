@@ -93,6 +93,11 @@ db-init: ## Initialize database
 db-seed: ## Seed database with initial data
 	uv run python src/db/seed.py
 
+.PHONY: seed-demo
+seed-demo: ## Seed the demo account: make seed-demo EMAIL=you@x.com [YES=1] (dry run unless YES=1; needs DEMO_PASSWORD for a new user)
+	@test -n "$(EMAIL)" || { echo "Usage: make seed-demo EMAIL=demo@example.com [YES=1]"; exit 1; }
+	uv run --no-sync python -m scripts.seed_demo --email "$(EMAIL)" $(if $(YES),--yes,)
+
 db-reset: ## Reset database (drop and recreate)
 	rm -f data/habla.db
 	$(MAKE) db-init

@@ -10,7 +10,10 @@ fields (translations, display name) must use that environment's key:
     SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, SECRET_KEY, ENCRYPTION_SALT
     DEMO_PASSWORD   (only needed when the user does not exist yet)
 
-Usage:
+Usage (on the Render shell the env is already set):
+    make seed-demo EMAIL=demo@example.com          # dry run
+    make seed-demo EMAIL=demo@example.com YES=1    # write
+or directly:
     uv run python -m scripts.seed_demo --email demo@example.com         # dry run
     uv run python -m scripts.seed_demo --email demo@example.com --yes   # write
 
