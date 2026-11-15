@@ -1,6 +1,6 @@
 """Demo account seed data: about four weeks of believable learning history.
 
-Used by ``make seed-demo`` (scripts/seed_demo.py) and ``POST /demo/seed``.
+Used by ``make seed-demo`` (scripts/seed_demo.py) and the /demo admin page.
 Writes, for ONE user only: profile, learning sessions (a 9-day streak ending
 today), vocabulary with SM-2 review state (some due today), and completed
 lessons. Chat threads are not written; create them on the live site so
@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.db.encryption import encrypt_field
+from src.services.user_data import delete_user_rows
 
 LANGUAGE, LEVEL, DISPLAY_NAME = "es", "A1", "Demo"
 SEEDED_TABLES = ("vocabulary", "learning_sessions", "lesson_progress")
@@ -158,9 +159,60 @@ def seed_user(admin: Any, user_id: str) -> dict[str, int]:
     return written
 
 
+DEMO_EMAIL_PREFIX, DEMO_EMAIL_DOMAIN = "demo-", "@example.com"
+
+
+def is_demo_email(email: str | None) -> bool:
+    """True only for accounts this module created, so real users are never touched."""
+    email = (email or "").lower()
+    return email.startswith(DEMO_EMAIL_PREFIX) and email.endswith(DEMO_EMAIL_DOMAIN)
+
+
+def list_demo_accounts(admin: Any) -> list[dict[str, Any]]:
+    """Every demo account, newest first."""
+    accounts, page = [], 1
+    while users := admin.auth.admin.list_users(page=page, per_page=200):
+        accounts += [
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "created_at": u.created_at,
+                "last_sign_in_at": u.last_sign_in_at,
+            }
+            for u in users
+            if is_demo_email(u.email)
+        ]
+        page += 1
+    return sorted(accounts, key=lambda a: str(a["created_at"]), reverse=True)
+
+
+def get_demo_email(admin: Any, user_id: str) -> str:
+    """Return the account's email, or raise LookupError if it is missing or not a demo."""
+    try:
+        email = admin.auth.admin.get_user_by_id(user_id).user.email
+    except Exception as exc:
+        raise LookupError(user_id) from exc
+    if not is_demo_email(email):
+        raise LookupError(user_id)
+    return str(email)
+
+
+def new_demo_password(admin: Any, user_id: str) -> str:
+    """Give a demo account a fresh password and return it (passwords are never stored)."""
+    password = secrets.token_urlsafe(12)
+    admin.auth.admin.update_user_by_id(user_id, {"password": password})
+    return password
+
+
+def delete_demo_account(admin: Any, user_id: str) -> None:
+    """Delete a demo account and all its rows."""
+    delete_user_rows(admin, user_id)
+    admin.auth.admin.delete_user(user_id)
+
+
 def create_demo_account(admin: Any) -> tuple[str, str]:
     """Create a new confirmed demo user, seed it, and return (email, password)."""
-    email = f"demo-{secrets.token_hex(4)}@example.com"
+    email = f"{DEMO_EMAIL_PREFIX}{secrets.token_hex(4)}{DEMO_EMAIL_DOMAIN}"
     password = secrets.token_urlsafe(12)
     created = admin.auth.admin.create_user(
         {"email": email, "password": password, "email_confirm": True}

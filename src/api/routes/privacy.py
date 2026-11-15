@@ -15,6 +15,7 @@ from src.api.cookies import delete_secure_cookie
 from src.api.dependencies import TemplatesDep
 from src.api.supabase_client import get_supabase_admin, get_supabase_for_user
 from src.config import get_settings
+from src.services.user_data import delete_user_rows
 
 logger = logging.getLogger(__name__)
 
@@ -142,22 +143,7 @@ async def delete_account(
     try:
         admin_client = get_supabase_admin()
 
-        # Delete vocabulary, learning sessions, and lesson progress
-        for table in ("vocabulary", "learning_sessions", "lesson_progress"):
-            try:
-                admin_client.table(table).delete().eq("user_id", user.id).execute()
-            except Exception:
-                logger.exception("Failed to delete %s for user %s", table, user.id)
-
-        # Delete checkpoint data (freeform + lesson threads)
-        for pattern in (f"user:{user.id}:%", f"lesson:{user.id}:%"):
-            for table in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
-                try:
-                    admin_client.table(table).delete().like("thread_id", pattern).execute()
-                except Exception:
-                    logger.exception(
-                        "Failed to delete %s (pattern %s) for user %s", table, pattern, user.id
-                    )
+        delete_user_rows(admin_client, user.id)
 
         # Finally, delete the auth user (cascades user_profiles + conversation_threads)
         admin_client.auth.admin.delete_user(user.id)

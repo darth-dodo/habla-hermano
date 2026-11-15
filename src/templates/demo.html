@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Demo accounts - Habla Hermano{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <header class="flex-shrink-0 bg-surface-elevated border-b border-border px-4 py-3 shadow-sm">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 text-text-muted hover:text-text transition-colors" aria-label="Back to Chat">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back to Chat</span>
+            </a>
+            <h1 class="text-lg font-semibold text-text">Demo accounts</h1>
+            <div class="w-20"></div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto bg-surface">
+        <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+            <section class="bg-surface-elevated rounded-2xl p-5 border border-border">
+                <p class="text-sm text-text-muted">
+                    Each account gets a 9-day streak ending today, 40 Spanish words (some due for review) and 8 finished lessons.
+                    Reseed on demo day so the streak still ends today. Passwords are shown once and never stored.
+                </p>
+                <button type="button" class="mt-4 px-4 py-2 rounded-xl bg-accent text-white font-semibold"
+                        hx-post="/demo/accounts" hx-target="#demo-panel" hx-disabled-elt="this">
+                    Create demo account
+                </button>
+            </section>
+            <div id="demo-panel">
+                {% include "partials/demo_accounts.html" %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
