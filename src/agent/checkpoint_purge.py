@@ -21,10 +21,16 @@ _THREAD_TABLES = ("checkpoint_writes", "checkpoint_blobs", "checkpoints", "conve
 # checkpoints of an active thread are kept: they hold its history chain. The
 # only timestamp langgraph-checkpoint-postgres stores is "ts" in the
 # checkpoint JSON (plain JSON; channel values live encrypted in the blobs).
+# A ts that is not a date (production once had "207454.9907545") is skipped
+# instead of cast, so one bad row cannot fail the whole purge. A thread with
+# no readable ts has a NULL newest time and is kept.
+_TS_IS_DATE = r"checkpoint->>'ts' ~ '^\d{4}-\d{2}-\d{2}[T ]'"
 _STALE_THREADS_SQL = SQL(
     "SELECT thread_id FROM checkpoints GROUP BY thread_id "
-    "HAVING MAX((checkpoint->>'ts')::timestamptz) < NOW() - make_interval(days => %s)"
+    f"HAVING MAX(CASE WHEN {_TS_IS_DATE} THEN (checkpoint->>'ts')::timestamptz END)"
+    " < NOW() - make_interval(days => %s)"
 )
+_UNREADABLE_TS_SQL = SQL(f"SELECT COUNT(*) AS n FROM checkpoints WHERE NOT ({_TS_IS_DATE})")
 
 
 async def purge_old_checkpoints(retention_days: int | None = None) -> int:
@@ -51,6 +57,13 @@ async def purge_old_checkpoints(retention_days: int | None = None) -> int:
 
     try:
         async with pool.connection() as conn, conn.transaction():
+            cur = await conn.execute(_UNREADABLE_TS_SQL)
+            unreadable = (await cur.fetchone())["n"]
+            if unreadable:
+                logger.warning(
+                    "Checkpoint purge skipped %d checkpoints whose ts is not a date",
+                    unreadable,
+                )
             cur = await conn.execute(_STALE_THREADS_SQL, (retention_days,))
             threads = [row["thread_id"] for row in await cur.fetchall()]
             if threads:

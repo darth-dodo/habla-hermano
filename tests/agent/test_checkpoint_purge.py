@@ -40,7 +40,7 @@ def test_default_retention_is_30_days() -> None:
 
 
 @pytest.mark.skipif(not os.environ.get("TEST_DATABASE_URL"), reason="needs TEST_DATABASE_URL")
-async def test_deletes_only_idle_threads_whole() -> None:
+async def test_deletes_only_idle_threads_whole(caplog: pytest.LogCaptureFixture) -> None:
     from langgraph.checkpoint.base import empty_checkpoint
     from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
     from psycopg.rows import dict_row
@@ -70,7 +70,7 @@ async def test_deletes_only_idle_threads_whole() -> None:
                     "INSERT INTO conversation_threads (thread_id) VALUES (%s)", (thread_id,)
                 )
 
-        for thread_id in ("user:a:old", "user:a:active", "user:a:active"):
+        for thread_id in ("user:a:old", "user:a:active", "user:a:active", "user:a:odd"):
             await write(thread_id)
         async with pool.connection() as conn:
             # The old thread's last message was 40 days ago. The active thread
@@ -81,13 +81,28 @@ async def test_deletes_only_idle_threads_whole() -> None:
                 " OR checkpoint_id = (SELECT MIN(checkpoint_id) FROM checkpoints"
                 " WHERE thread_id = 'user:a:active')"
             )
+            # Production had a row whose ts was a bare number, which made the
+            # ::timestamptz cast fail the whole purge every day.
+            await conn.execute(
+                "UPDATE checkpoints SET checkpoint = jsonb_set(checkpoint, '{ts}',"
+                " to_jsonb('207454.9907545'::text)) WHERE thread_id = 'user:a:odd'"
+            )
 
         with patch("src.agent.checkpoint_purge._state", {"postgres_pool": pool}):
             assert await purge_old_checkpoints(retention_days=30) == 1
+        assert "skipped 1 checkpoints whose ts is not a date" in caplog.text
 
         async with pool.connection() as conn:
             for table in tables:
-                cur = await conn.execute(f"SELECT DISTINCT thread_id FROM {table}")
-                assert [r["thread_id"] for r in await cur.fetchall()] == ["user:a:active"], table
-            cur = await conn.execute("SELECT COUNT(*) AS n FROM checkpoints")
+                cur = await conn.execute(
+                    f"SELECT DISTINCT thread_id FROM {table} ORDER BY thread_id"
+                )
+                # A thread with no readable timestamp is kept, never guessed at.
+                assert [r["thread_id"] for r in await cur.fetchall()] == [
+                    "user:a:active",
+                    "user:a:odd",
+                ], table
+            cur = await conn.execute(
+                "SELECT COUNT(*) AS n FROM checkpoints WHERE thread_id = 'user:a:active'"
+            )
             assert (await cur.fetchone())["n"] == 2  # the active thread keeps its old checkpoint
