@@ -24,13 +24,17 @@ _THREAD_TABLES = ("checkpoint_writes", "checkpoint_blobs", "checkpoints", "conve
 # A ts that is not a date (production once had "207454.9907545") is skipped
 # instead of cast, so one bad row cannot fail the whole purge. A thread with
 # no readable ts has a NULL newest time and is kept.
-_TS_IS_DATE = r"checkpoint->>'ts' ~ '^\d{4}-\d{2}-\d{2}[T ]'"
+# Both queries spell the date check out in full (no string building, so
+# Bandit B608 has nothing to flag); keep the two regexes identical.
 _STALE_THREADS_SQL = SQL(
-    "SELECT thread_id FROM checkpoints GROUP BY thread_id "
-    f"HAVING MAX(CASE WHEN {_TS_IS_DATE} THEN (checkpoint->>'ts')::timestamptz END)"
-    " < NOW() - make_interval(days => %s)"
+    r"SELECT thread_id FROM checkpoints GROUP BY thread_id "
+    r"HAVING MAX(CASE WHEN checkpoint->>'ts' ~ '^\d{4}-\d{2}-\d{2}[T ]' "
+    r"THEN (checkpoint->>'ts')::timestamptz END) < NOW() - make_interval(days => %s)"
 )
-_UNREADABLE_TS_SQL = SQL(f"SELECT COUNT(*) AS n FROM checkpoints WHERE NOT ({_TS_IS_DATE})")
+_UNREADABLE_TS_SQL = SQL(
+    r"SELECT COUNT(*) AS n FROM checkpoints "
+    r"WHERE NOT (checkpoint->>'ts' ~ '^\d{4}-\d{2}-\d{2}[T ]')"
+)
 
 
 async def purge_old_checkpoints(retention_days: int | None = None) -> int:
