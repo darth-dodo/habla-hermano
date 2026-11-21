@@ -5,7 +5,8 @@ The full technical log, with every file and fix, is in [docs/history/changelog-d
 
 ## Unreleased
 
-Nothing yet.
+**Fixed**
+- Idle conversations are deleted after 30 days again. Since 1.1.0 the daily purge stopped at one stored message with a broken timestamp and deleted nothing; it now skips such messages, keeps their conversations and logs how many it skipped (#146).
 
 ## 1.1.0 (2026-11-15): data deletion that really deletes, and a ready-made demo
 
